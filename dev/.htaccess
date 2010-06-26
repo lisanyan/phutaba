@@ -1,0 +1,19 @@
+
+ErrorDocument 502 /errors/50x.html
+ErrorDocument 503 /errors/50x.html
+ErrorDocument 504 /errors/50x.html
+
+ErrorDocument 500 /errors/50x.html
+ErrorDocument 403 /errors/403.html
+ErrorDocument 404 /errors/404.html
+
+
+
+# Enable Rewrite Engine
+RewriteEngine on
+RewriteBase /www/ernstchan.ath.cx/htdocs/dis/
+RewriteRule ^src/(.*)/(.*)$ /dis/src/$1 
+RewriteRule ^seite/$ /dis/index.php
+RewriteRule ^seite/(\d+)$ /dis/$1.html
+RewriteRule ^faden/$ /dis/index.php
+RewriteRule ^faden/(\d*)$ /dis/res/$1.html

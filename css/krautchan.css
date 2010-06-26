@@ -1,0 +1,227 @@
+html, body {
+         background:#EEEEEE;
+         color:#000000;
+		 font: 10pt Arial, sans-serif;
+}
+a {
+  color: #222299;
+}
+a:visited {
+  color: #992222;
+}
+img {
+  border: 0;
+}
+.reflink a:hover {
+  color: #000000;
+  font-weight: bold;
+}
+.logo {
+       clear:both;
+        text-align:center;
+        font-size: 250%;
+        font-weight: bold;
+        width:100%;
+		cursor: pointer;
+		line-height: 20px;
+    margin-bottom: 5px;
+}
+.slogan {
+  text-align: center;
+  font-size: 130%;
+  font-style: italic;
+}
+.theader {
+        background:#313370;
+		color:#FFFFFF;
+	    font-weight: bold;
+        text-align:center;
+        padding:2px;
+        width:100%;
+}
+.postarea {
+}
+.postblock {
+        background:#313370;
+		color: #FFFFFF;
+		font-weight:bold;
+		padding:0px 5px;
+}
+.postblock a {
+        color: #FFFFFF;
+		text-decoration: underline;
+}
+.postblock a:hover {
+        color: #FFFFFF;
+		text-decoration: none;
+}
+.footer {
+        text-align:center;
+        font-size:12px;
+        font-family:serif;
+}
+.passvalid {
+	background:#313370;
+	text-align:center;
+	width:100%;
+	color:#FFFFFF;
+	font-weight: bold;
+}
+.dellist {
+	font-weight: bold;
+	text-align:center;
+}
+.delbuttons {
+	text-align:center;
+	padding-bottom:4px;
+
+}
+.managehead {
+	background:#AAAA66;
+	color:#400000;
+	padding:0px;
+}
+.postlists {
+	background:#FFFFFF;
+	width:100%;
+	padding:0px;
+	color:#800000;
+}
+.row1 {
+	background:#EEEECC;
+	color:#800000;
+}
+.row2 {
+        background:#DDDDAA;
+        color:#800000;
+}
+.unkfunc {
+  color:#007777;
+}
+.reply .thread_file {
+  float: left;
+  background-color: #9999bb;
+  border: #aaaaff 1px solid;
+  text-align: center;
+}
+.filename {
+        padding-top: 2px;
+}
+.filesize {
+	text-decoration:none;
+	width:200px;
+  margin-bottom: 5px;
+  font-style: italic;
+  font-size: 80%;
+  padding-bottom: 2px;
+}
+.filetitle {
+	background:inherit;
+	font-size:1.2em;
+	color:#B20000;
+	font-weight:bold;
+}
+.postername {
+	color:#3333CC;
+	font-weight:bold;
+}
+.postertrip {
+	color:#228854;
+}
+.oldpost {
+        color:#B20000;
+        font-weight:bold;
+}
+.omittedposts {
+        color:#707070;
+}
+.reply {
+	background:#AAAACC;
+	font: 10pt Arial, sans-serif;
+	padding-bottom: 10px;
+}
+.doubledash {
+ 	vertical-align:top;
+	clear:both;
+	float:left;
+}
+.replytitle {
+	font-size: 1.2em;
+        color:#CC3333;
+        font-weight:bold;
+}
+.commentpostername {
+        color:#3333CC;
+	font-weight:bold;
+}
+.thumbnailmsg {
+	font-size: small;
+	color:#800000;
+}
+.abbrev {
+  color:#707070;
+}
+.highlight {
+	background:#AAAACC;
+	border:2px dashed #313370;
+}
+.thread_file {
+  background:none repeat scroll 0 0 #DDDDDD;
+  float:left;
+  margin:5px 20px 20px 5px;
+  text-align:center;
+  line-height: 13px;
+  border:1px solid #AAAAAA;
+}
+.thread_head {
+  font-size: small;
+}
+.thread_head_reply {
+  border-bottom:1px solid #B0A99D;
+}
+.thread_body {
+  font-size: normal;
+  clear: right;
+}
+.sage {
+  color: #FF0000;
+  font-weight: bold;
+  font-size: 100%;
+}
+
+.sageinfo {
+  font-style: italic;
+
+}
+
+blockquote {
+  margin-left: 25px;
+}
+.adminpost {
+  color: #FF0000;
+  font-weight: bold;
+  font-size: 100%;
+}
+
+.spoiler {
+  color: #000000;
+  background-color: #000000;
+}
+
+.spoiler:hover {
+  color: #ffffff;
+}
+
+.footer {
+  text-align: center;
+  font-size: 90%;
+
+}
+
+
+.reply .thread_file {
+  float: left;
+  background-color: #9999bb;
+  border: #aaaaff 1px solid;
+  text-align: left;
+}

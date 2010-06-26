@@ -1,0 +1,31 @@
+
+CREATE TABLE IF NOT EXISTS `phutaba_dev` (
+  `num` int(11) NOT NULL auto_increment,
+  `parent` int(11) default NULL,
+  `timestamp` int(11) default NULL,
+  `lasthit` int(11) default NULL,
+  `ip` text,
+  `date` text,
+  `name` text,
+  `trip` text,
+  `email` text,
+  `subject` text,
+  `password` text,
+  `comment` text,
+  `image` text,
+  `size` int(11) default NULL,
+  `md5` text,
+  `width` int(11) default NULL,
+  `height` int(11) default NULL,
+  `thumbnail` text,
+  `tn_width` text,
+  `tn_height` text,
+  `autosage` tinyint(1) default NULL,
+  `adminpost` tinyint(1) default NULL,
+  `uploadname` text,
+  `uploadshort` text,
+  `displaysize` text,
+  `locked` tinyint(1) default NULL,
+  PRIMARY KEY  (`num`)
+) ENGINE=MyISAM  DEFAULT CHARSET=latin1 AUTO_INCREMENT=13392 ;
+
