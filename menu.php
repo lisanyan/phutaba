@@ -70,7 +70,7 @@
   <body>
     
    <div class="part">
-	<h1>Ernstchan</h1>
+	<h1>Phutaba 1</h1>
      <ul>
       <li><a href="main.php" target="main">&nbsp;Hauptseite</a></li>
 	  <li><a href="faq.html" target="main">&nbsp;FAQ</a></li>
@@ -86,7 +86,7 @@
 	 </div>
 	 
     <div class="part">
-    <h2>Voller Ernst</h2>
+    <h2>Allgemein</h2>
      <ul>
 	<li>Keine Boards</li>
      </ul>
