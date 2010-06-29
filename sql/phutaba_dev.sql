@@ -27,5 +27,5 @@ CREATE TABLE IF NOT EXISTS `phutaba_dev` (
   `displaysize` text,
   `locked` tinyint(1) default NULL,
   PRIMARY KEY  (`num`)
-) ENGINE=MyISAM  DEFAULT CHARSET=latin1 AUTO_INCREMENT=13392 ;
+) ENGINE=MyISAM  DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
 
