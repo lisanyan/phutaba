@@ -2,6 +2,8 @@
 
 use CGI::Carp qw(fatalsToBrowser);
 
+umask 0022; # Fix some problems 
+
 use strict;
 use CGI;
 use DBI;
