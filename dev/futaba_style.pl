@@ -40,7 +40,7 @@ form .trap { display:none }
 <if $thread><body class="replypage"></if>
 <if !$thread><body></if>
 
-}.include("../globals/header.html").q{
+}.include("../globals/header.html").include("tpl/header.html").q{
 
 };
 
@@ -92,7 +92,7 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 
 	<tr><td class="postblock"><const S_DELPASS></td><td><input type="password" name="password" size="8" /> <const S_DELEXPL></td></tr>
 	<tr><td colspan="2">
-	<div class="rules">}.include("../globals/rules.html").q{</div></td></tr>
+	<div class="rules">}.include("tpl//rules.html").q{</div></td></tr>
 	</tbody></table></form></div>
 	<script type="text/javascript">set_inputs("postform")</script>
 
