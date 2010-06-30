@@ -100,6 +100,12 @@ elsif($task eq "delete")
 
 	delete_stuff($password,$fileonly,$archive,$admin,@posts);
 }
+elsif($task eq "sticky")
+{
+	my $admin=$query->param("admin");
+	my $threadid=$query->param("threadid");
+	make_sticky($admin,$threadid);
+}
 elsif($task eq "admin")
 {
 	my $password=$query->param("berra"); # lol obfuscation
@@ -229,7 +235,7 @@ sub build_cache()
 	my $page=0;
 
 	# grab all posts, in thread order (ugh, ugly kludge)
-	$sth=$dbh->prepare("SELECT * FROM ".SQL_TABLE." ORDER BY lasthit DESC,CASE parent WHEN 0 THEN num ELSE parent END ASC,num ASC") or make_error(S_SQLFAIL);
+	$sth=$dbh->prepare("SELECT *, sticky IS NULL OR sticky=0 AS sticky_isnull FROM ".SQL_TABLE." ORDER BY sticky_isnull ASC,lasthit DESC,CASE parent WHEN 0 THEN num ELSE parent END ASC,num ASC") or make_error(S_SQLFAIL);
 	$sth->execute() or make_error(S_SQLFAIL);
 
 	$row=get_decoded_hashref($sth);
@@ -360,7 +366,7 @@ sub build_thread_cache($)
 	my ($sth,$row,@thread);
 	my ($filename,$tmpname);
 
-	$sth=$dbh->prepare("SELECT * FROM ".SQL_TABLE." WHERE num=? OR parent=? ORDER BY num ASC;") or make_error(S_SQLFAIL);
+	$sth=$dbh->prepare("SELECT *, sticky IS NULL OR sticky=0 AS sticky_isnull FROM ".SQL_TABLE." WHERE num=? OR parent=? ORDER BY num ASC;") or make_error(S_SQLFAIL);
 	$sth->execute($thread,$thread) or make_error(S_SQLFAIL);
 
 	while($row=get_decoded_hashref($sth)) { push(@thread,$row); }
@@ -598,7 +604,7 @@ sub post_stuff($$$$$$$$$$$$$$)
 	$comment=S_ANOTEXT unless $comment;
 
 	# flood protection - must happen after inputs have been cleaned up
-	flood_check($numip,$time,$comment,$file);
+#TEMP	flood_check($numip,$time,$comment,$file);
 
 	# Manager and deletion stuff - duuuuuh?
 
@@ -622,11 +628,10 @@ sub post_stuff($$$$$$$$$$$$$$)
   
   #if (length($uploadname)>
 	# finally, write to the database
-	my $sth=$dbh->prepare("INSERT INTO ".SQL_TABLE."  VALUES(null,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,null,null,?,?,?,null);") or make_error(S_SQLFAIL);
+	my $sth=$dbh->prepare("INSERT INTO ".SQL_TABLE."  VALUES(null,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,null,null,?,?,?,null,?);") or make_error(S_SQLFAIL);
 	$sth->execute($parent,$time,$lasthit,$numip,
 	$date,$name,$trip,$email,$subject,$password,$comment,
-	$filename,$size,$md5,$width,$height,$thumbnail,$tn_width,$tn_height,$uploadname,$displayname,$displaysize) or make_error(S_SQLFAIL);
-
+	$filename,$size,$md5,$width,$height,$thumbnail,$tn_width,$tn_height,$uploadname,$displayname,$displaysize,$$parent_res{sticky}) or make_error(S_SQLFAIL);
 
 
 	if($parent) # bumping
@@ -1234,6 +1239,35 @@ sub delete_stuff($$$$@)
 	{ make_http_forward(HTML_SELF,ALTERNATE_REDIRECT); }
 }
 
+sub make_sticky($$)
+{
+	my ($admin,$threadid)=@_;
+	
+	check_password($admin,ADMIN_PASS);
+
+	my ($sth,$row);
+	$sth = $dbh->prepare("SELECT * FROM ".SQL_TABLE." WHERE num=?;") or make_error(S_SQLFAIL);
+	$sth->execute($threadid) or make_error(S_SQLFAIL);
+
+
+
+	if($row = $sth->fetchrow_hashref())
+	{
+		my $sticky = $$row{sticky} eq 1 ? 0 : 1;
+		my $sth2;
+		$sth2 = $dbh->prepare("UPDATE ".SQL_TABLE." SET sticky=? WHERE num=?;") or make_error(S_SQLFAIL);
+		$sth2->execute($sticky,$threadid) or make_error(S_SQLFAIL);
+		my $threadchilds = $dbh->prepare("UPDATE ".SQL_TABLE." SET sticky=? WHERE parent=?;") or make_error(S_SQLFAIL);
+		$threadchilds->execute($sticky,$threadid) or make_error(S_SQLFAIL);
+	}
+
+	# update the cached HTML pages
+	build_cache();
+	# update the thread cache
+	build_thread_cache($threadid);
+	make_http_forward(get_script_name()."?admin=$admin&task=mpanel",ALTERNATE_REDIRECT); 
+}
+
 sub delete_post($$$$$)
 {
 	my ($post,$password,$fileonly,$archiving,$deletebyip)=@_;
@@ -1357,7 +1391,7 @@ sub make_admin_post_panel($)
 
 	check_password($admin,ADMIN_PASS);
 
-	$sth=$dbh->prepare("SELECT * FROM ".SQL_TABLE." ORDER BY lasthit DESC,CASE parent WHEN 0 THEN num ELSE parent END ASC,num ASC;") or make_error(S_SQLFAIL);
+	$sth=$dbh->prepare("SELECT *, sticky IS NULL OR sticky=0 AS sticky_isnull FROM ".SQL_TABLE." ORDER BY sticky_isnull ASC,lasthit DESC,CASE parent WHEN 0 THEN num ELSE parent END ASC,num ASC") or make_error(S_SQLFAIL);
 	$sth->execute() or make_error(S_SQLFAIL);
 
 	$size=0;
@@ -1888,7 +1922,7 @@ sub trim_database()
 	{
 		my $mintime=time()-(MAX_AGE)*3600;
 
-		$sth=$dbh->prepare("SELECT * FROM ".SQL_TABLE." WHERE parent=0 AND timestamp<=$mintime;") or make_error(S_SQLFAIL);
+		$sth=$dbh->prepare("SELECT * FROM ".SQL_TABLE." WHERE parent=0 AND timestamp<=$mintime AND (sticky=0 OR sticky IS NULL);") or make_error(S_SQLFAIL);
 		$sth->execute() or make_error(S_SQLFAIL);
 
 		while($row=$sth->fetchrow_hashref())
@@ -1905,7 +1939,7 @@ sub trim_database()
 
 	while($threads>$max_threads or $posts>$max_posts or $size>$max_size)
 	{
-		$sth=$dbh->prepare("SELECT * FROM ".SQL_TABLE." WHERE parent=0 ORDER BY $order LIMIT 1;") or make_error(S_SQLFAIL);
+		$sth=$dbh->prepare("SELECT * FROM ".SQL_TABLE." WHERE parent=0 AND (sticky=0 OR sticky IS NULL) ORDER BY $order LIMIT 1;") or make_error(S_SQLFAIL);
 		$sth->execute() or make_error(S_SQLFAIL);
 
 		if($row=$sth->fetchrow_hashref())

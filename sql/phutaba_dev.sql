@@ -26,6 +26,7 @@ CREATE TABLE IF NOT EXISTS `phutaba_dev` (
   `uploadshort` text,
   `displaysize` text,
   `locked` tinyint(1) default NULL,
+  `sticky` tinyint(1) default NULL,
   PRIMARY KEY  (`num`)
 ) ENGINE=MyISAM  DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
 

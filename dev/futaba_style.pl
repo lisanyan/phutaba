@@ -117,6 +117,7 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 			<if !$thread><a href="<var get_reply_link($num,0)>#<var $num>">#</a>&nbsp;<a href="<var get_reply_link($num,0)>#i<var $num>">Nr. <var $num></a>&nbsp;</if>
 			<if $thread><a href="<var get_reply_link($num,0)>#<var $num>">#</a>&nbsp;<a href="javascript:insert('&gt;&gt;<var $num>\n')">Nr. <var $num></a>&nbsp;</if>
 			</span>
+			<if !$sticky_isnull><span class="sticky"><img src="/img/sticky.png" title="<var S_STICKYTITLE>"></span></if>
 			<if !$autosage><if $email><span class="sage">KONTRA!&nbsp;</span></if></if>
 			<if $locked><span class="sage">LOCKED&nbsp;</span></if>
 			<if $autosage><span class="sage">SYSTEMKONTRA&nbsp;</span></if>
@@ -316,13 +317,25 @@ use constant POST_PANEL_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 <tr class="managehead"><const S_MPTABLE></tr>
 
 <loop $posts>
-	<if !$parent><tr class="managehead"><th colspan="6"></th></tr></if>
+	<if !$parent><tr class="managehead"><th colspan="6"></th> </tr></if>
 
 	<tr class="row<var $rowtype>">
 
 	<if !$image><td></if>
 	<if $image><td rowspan="2"></if>
-	<label><input type="checkbox" name="delete" value="<var $num>" /><big><b><var $num></b></big>&nbsp;&nbsp;</label></td>
+	<if $parent>
+		<label><input type="checkbox" name="delete" value="<var $num>" /><big><b><var $num></b></big>&nbsp;&nbsp;</label></td>
+	</if>
+	<if !$parent>
+		<label><input type="checkbox" name="delete" value="<var $num>" /><big><b><var $num></b></big>&nbsp;&nbsp;</label>
+		<if $sticky_isnull>
+			[<a href="<var $self>?admin=<var $admin>&amp;task=sticky&amp;threadid=<var $num>"><const S_MPSTICKY></a>]</td>
+		</if>
+		<if !$sticky_isnull>
+			[<a href="<var $self>?admin=<var $admin>&amp;task=sticky&amp;threadid=<var $num>"><const S_MPUNSTICKY></a>]</td>
+		</if>
+
+	</if>
 
 	<td><var make_date($timestamp,"tiny")></td>
 	<td><var clean_string(substr $subject,0,20)></td>
