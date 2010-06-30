@@ -604,7 +604,7 @@ sub post_stuff($$$$$$$$$$$$$$)
 	$comment=S_ANOTEXT unless $comment;
 
 	# flood protection - must happen after inputs have been cleaned up
-#TEMP	flood_check($numip,$time,$comment,$file);
+	flood_check($numip,$time,$comment,$file);
 
 	# Manager and deletion stuff - duuuuuh?
 
