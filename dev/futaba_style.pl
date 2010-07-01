@@ -118,8 +118,8 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 			<if $thread><a href="<var get_reply_link($num,0)>#<var $num>">#</a>&nbsp;<a href="javascript:insert('&gt;&gt;<var $num>\n')">Nr. <var $num></a>&nbsp;</if>
 			</span>
 			<if !$sticky_isnull><span class="sticky"><img src="/img/sticky.png" title="<var S_STICKYTITLE>"></span></if>
+			<if $locked><span class="locked"><img src="/img/locked.png" title="<var S_LOCKEDTITLE>"></span></if>
 			<if !$autosage><if $email><span class="sage">KONTRA!&nbsp;</span></if></if>
-			<if $locked><span class="sage">LOCKED&nbsp;</span></if>
 			<if $autosage><span class="sage">SYSTEMKONTRA&nbsp;</span></if>
 			<if !$thread>[<a href="<var get_reply_link($num,0)>"><const S_REPLY></a>]</if>
 			</div>
@@ -329,12 +329,18 @@ use constant POST_PANEL_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 	<if !$parent>
 		<label><input type="checkbox" name="delete" value="<var $num>" /><big><b><var $num></b></big>&nbsp;&nbsp;</label>
 		<if $sticky_isnull>
-			[<a href="<var $self>?admin=<var $admin>&amp;task=sticky&amp;threadid=<var $num>"><const S_MPSTICKY></a>]</td>
+			[<a href="<var $self>?admin=<var $admin>&amp;task=sticky&amp;threadid=<var $num>"><const S_MPSTICKY></a>]
 		</if>
 		<if !$sticky_isnull>
-			[<a href="<var $self>?admin=<var $admin>&amp;task=sticky&amp;threadid=<var $num>"><const S_MPUNSTICKY></a>]</td>
+			[<a href="<var $self>?admin=<var $admin>&amp;task=sticky&amp;threadid=<var $num>"><const S_MPUNSTICKY></a>]
 		</if>
-
+		<if $locked>
+			[<a href="<var $self>?admin=<var $admin>&amp;task=lock&amp;threadid=<var $num>"><const S_MPUNLOCK></a>]
+		</if>
+		<if !$locked>
+			[<a href="<var $self>?admin=<var $admin>&amp;task=lock&amp;threadid=<var $num>"><const S_MPLOCK></a>]
+		</if>
+		</td>
 	</if>
 
 	<td><var make_date($timestamp,"tiny")></td>

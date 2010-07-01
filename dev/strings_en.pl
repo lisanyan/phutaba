@@ -39,6 +39,7 @@ use constant S_LASTPG => 'Vor';									# Defines next button
 use constant S_WEEKDAYS => ('So','Mo','Di','Mi','Do','Fr','Sa');	# Defines abbreviated weekday names.
 
 use constant S_STICKYTITLE => 'Sticky'; 					# Defines the title of the tiny sticky image on a thread if it is sticky
+use constant S_LOCKEDTITLE => 'Geschlossen'; 					# Defines the title of the tiny locked image on a thread if it is locked
 
 use constant S_MANARET => 'Zur&uuml;ck';										# Returns to HTML file instead of PHP--thus no log/SQLDB update occurs
 use constant S_MANAMODE => 'Admin :3';								# Prints heading on top of Manager page
@@ -66,6 +67,8 @@ use constant S_MPDELETE => 'L&ouml;schen';									# Defines for deletion button
 use constant S_MPARCHIVE => 'Archiv';
 use constant S_MPSTICKY => 'Sticky';
 use constant S_MPUNSTICKY => 'Un-Sticky';
+use constant S_MPLOCK => 'Lock';
+use constant S_MPUNLOCK => 'Un-Lock';
 use constant S_MPRESET => 'Resetten';										# Defines name for field reset button in Management Panel
 use constant S_MPONLYPIC => 'Nur Datei';								# Sets whether or not to delete only file, or entire post/thread
 use constant S_MPDELETEALL => 'Alle&nbsp;l&ouml;schen';							# 
@@ -87,6 +90,7 @@ use constant S_BANCOMMENT => 'Kommentar';
 use constant S_BANTRUST => 'Kein Captcha';
 use constant S_BANTRUSTTRIP => 'Tripcode';
 
+use constant S_LOCKED => 'Faden ist geschlossen';
 use constant S_PROXYTABLE => '<th>Typ</th><th>IP</th><th>L&auml;uft aus</th><th>Datum</th>'; # Explains names for Proxy Panel
 use constant S_PROXYIPLABEL => 'IP';
 use constant S_PROXYTIMELABEL => 'Zeit';

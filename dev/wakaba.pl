@@ -108,6 +108,12 @@ elsif($task eq "sticky")
 	my $threadid=$query->param("threadid");
 	make_sticky($admin,$threadid);
 }
+elsif($task eq "lock")
+{
+	my $admin=$query->param("admin");
+	my $threadid=$query->param("threadid");
+	make_locked($admin,$threadid);
+}
 elsif($task eq "admin")
 {
 	my $password=$query->param("berra"); # lol obfuscation
@@ -476,9 +482,9 @@ sub dnsbl_check($)
 # Posting
 #
 
-sub post_stuff($$$$$$$$$$$$$$)
+sub post_stuff($$$$$$$$$$$$$$$)
 {
-	my ($parent,$name,$email,$gb2,$subject,$comment,$file,$uploadname,$password,$nofile,$captcha,$admin,$no_captcha,$no_format,$postfix,$sage,$locked)=@_;
+	my ($parent,$name,$email,$gb2,$subject,$comment,$file,$uploadname,$password,$nofile,$captcha,$admin,$no_captcha,$no_format,$postfix,$sage)=@_;
 
 	# get a timestamp for future use
 	my $time=time();
@@ -486,18 +492,23 @@ sub post_stuff($$$$$$$$$$$$$$)
 	# check that the request came in as a POST, or from the command line
 	make_error(S_UNJUST) if($ENV{REQUEST_METHOD} and $ENV{REQUEST_METHOD} ne "POST");
 
+
 	if($admin) # check admin password - allow both encrypted and non-encrypted
 	{
 		check_password($admin,ADMIN_PASS);
 	}
 	else
 	{
+
 		# forbid admin-only features
 		make_error(S_WRONGPASS) if($no_captcha or $no_format or $postfix);
 
 		# check what kind of posting is allowed
 		if($parent)
 		{
+			# check if the thread is locked and return error if it is
+			check_locked($parent);
+
 			make_error(S_NOTALLOWED) if($file and !ALLOW_IMAGE_REPLIES);
 			make_error(S_NOTALLOWED) if(!$file and !ALLOW_TEXT_REPLIES);
 		}
@@ -720,6 +731,15 @@ sub is_trusted($)
         return 1 if(($sth->fetchrow_array())[0]);
 
 	return 0;
+}
+
+sub check_locked($)
+{
+	my ($parent) = @_;
+	my $sth;
+        $sth=$dbh->prepare("SELECT locked FROM ".SQL_TABLE." WHERE num=?;") or make_error(S_SQLFAIL);
+        $sth->execute($parent) or make_error(S_SQLFAIL);
+	if(($sth->fetchrow_array())[0]) { make_error(S_LOCKED); }
 }
 
 sub ban_check($$$$)
@@ -1240,6 +1260,30 @@ sub delete_stuff($$$$@)
 	{ make_http_forward(get_script_name()."?admin=$admin&task=mpanel",ALTERNATE_REDIRECT); }
 	else
 	{ make_http_forward(HTML_SELF,ALTERNATE_REDIRECT); }
+}
+
+sub make_locked($$)
+{
+	my ($admin,$threadid)=@_;
+	
+	check_password($admin,ADMIN_PASS);
+
+	my ($sth,$row);
+	$sth = $dbh->prepare("SELECT * FROM ".SQL_TABLE." WHERE num=?;") or make_error(S_SQLFAIL);
+	$sth->execute($threadid) or make_error(S_SQLFAIL);
+
+	if($row = $sth->fetchrow_hashref())
+	{
+		my $locked = $$row{locked} eq 1 ? 0 : 1;
+		my $sth2;
+		$sth2 = $dbh->prepare("UPDATE ".SQL_TABLE." SET locked=? WHERE num=?;") or make_error(S_SQLFAIL);
+		$sth2->execute($locked,$threadid) or make_error(S_SQLFAIL);
+	}
+	# update the cached HTML pages
+	build_cache();
+	# update the thread cache
+	build_thread_cache($threadid);
+	make_http_forward(get_script_name()."?admin=$admin&task=mpanel",ALTERNATE_REDIRECT); 
 }
 
 sub make_sticky($$)
