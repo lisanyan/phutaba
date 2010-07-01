@@ -9,7 +9,7 @@
      body {
 	   background: #ECE9E2;
        color: #000000;
-       font: 9pt Arial, sans-serif;
+       font: 10pt Arial, sans-serif;
      }
      
 	a {
