@@ -22,23 +22,46 @@
        text-decoration: none;
      }
 	 
-     #header, #slogan {
-       text-align: center;
-       margin: 0;
+.logo, .slogan {
+  color: #333333;
+  text-align: center;
+  font-family: Verdana;
+}
 
-     }
-     
-     #header {
-        font-size: 350%;
-        font-weight: bold;
-		padding-top: 30px;
-		line-height: 30px;
-     }
-      
-     #slogan {
-        font-size: 150%;
-        padding-bottom: 30px;
-     }
+.logo {
+  margin-top: 1em;
+  font-size: 200%;
+  font-weight: bold;
+  width: 100%;
+  line-height: 20px;
+  margin-bottom: 5px;
+  clear: both;
+}
+
+.logo a { 
+  color: #333333;
+  text-decoration: none;
+}
+
+.logo a:hover { 
+  color: #333333;
+  text-decoration: none;
+}
+
+.slogan {
+  font-size: 120%;
+  margin-bottom: 1em;
+  
+}
+.slogan a { 
+  color: #333333;
+  text-decoration: none;
+}
+
+.slogan a:hover { 
+  color: #333333;
+  text-decoration: none;
+}
 	 
 	 .item {
 	   background: #D7CFC0;
@@ -62,9 +85,7 @@
 
   <body >
     
-    <div id="header">Phutaba 1</div>
-    <div id="slogan">Slogan</div>
-    
+<div class="logo">Phutaba 1</div> <div class="slogan"><em>Slogan</em></div>
   <?php
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
