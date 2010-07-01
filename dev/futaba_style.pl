@@ -121,7 +121,7 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 			<if !$autosage><if $email><span class="sage">KONTRA!&nbsp;</span></if></if>
 			<if $locked><span class="sage">LOCKED&nbsp;</span></if>
 			<if $autosage><span class="sage">SYSTEMKONTRA&nbsp;</span></if>
-			<if !$thread>[ <a href="<var get_reply_link($num,0)>"><const S_REPLY></a> ]</if>
+			<if !$thread>[<a href="<var get_reply_link($num,0)>"><const S_REPLY></a>]</if>
 			</div>
 						<if $image>
 				<div class="thread_file">

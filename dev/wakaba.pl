@@ -379,6 +379,7 @@ sub build_thread_cache($)
   
 	print_page($filename,PAGE_TEMPLATE->(
 		thread=>$thread,
+		title=>$thread[0]{subject},
 		postform=>(ALLOW_TEXT_REPLIES or ALLOW_IMAGE_REPLIES),
 		image_inp=>ALLOW_IMAGE_REPLIES,
 		textonly_inp=>0,
