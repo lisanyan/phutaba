@@ -4,6 +4,7 @@ body {
   background:#ECE9E2;
   color:#000000;
   font: 10pt Arial, sans-serif;
+
 }
 
 a {
@@ -32,16 +33,16 @@ blockquote {
 .logo, .slogan {
   color: #333333;
   text-align: center;
+  font-family: Verdana;
 }
 
 .logo {
-  font-size: 250%;
+  font-size: 210%;
   font-weight: bold;
   width: 100%;
   line-height: 20px;
   margin-bottom: 5px;
   clear: both;
-  text-shadow: #FFFFFF 0 2px;
 }
 
 .logo a { 
@@ -57,6 +58,7 @@ blockquote {
 .slogan {
   font-size: 130%;
 }
+
 
 .theader {
   background: #333333;
