@@ -1,0 +1,74 @@
+[% META
+   title   = 'Statistiken'
+%]
+
+ <div class="caption">Statistiken</div>
+ 
+  <div class="item">
+  <div class="title">
+   Zugriffe insgesamt
+  </div>
+  <div class="content">
+   <img src="./img/usage.png" alt="" />
+  </div>
+  </div>
+
+ <div class="item">
+  <div class="title">
+   Anzahl der Posts
+  </div>
+  <div class="content">
+   <script type="text/javascript" src="https://www.google.com/jsapi"></script>
+
+<script type="text/javascript">
+
+google.load("visualization", "1", {packages:["corechart"]});
+google.load("jquery", "1.4.2");
+
+google.setOnLoadCallback(function() {
+	var data = {};
+	$.ajax({
+		url: "http://ernstchan.net/b/?json=stats&date_format=%Y-%m",
+		dataType: "json",
+		settins: {
+			"async": false,
+		},
+		success: function(res) {
+			$.each(res.data.stats[0], function(index, value) {
+				if (value[0] in data) {
+					data[value[0]] += value[1]*1;
+				} else {
+					data[value[0]] = value[1]*1;
+				}
+			});
+		}
+	});
+	drawChart(data);
+});
+
+function drawChart(data) {
+	vis_data = [];
+	console.log(data);
+	var vis = new google.visualization.DataTable();
+	vis.addColumn('string', 'Month');
+	vis.addColumn('number', 'Posts');
+//	for(var idx in data) { vis_data.push([idx, data[idx]]); };
+	vis_data = data.map(function (x,i) { return [i, x] });
+	console.log(vis_data);
+	var options = {
+	  width: 400, height: 240,
+	  title: 'Posts'
+	};
+
+	var chart = new google.visualization.LineChart(document.getElementById('post_chart_ec'));
+	chart.draw(vis, options);
+};
+
+ 
+
+</script>
+   <div id="post_chart_ec"></div>
+  </div>
+ </div>
+
+ <p>Weitere Statistiken folgen <del>vielleicht</del>.</p>

@@ -1,0 +1,122 @@
+#글작성은 반드시 UTF-8 형식으로.
+
+window_0=도구 표시 막대
+window_1=손질하기
+window_2=크기&팔레트
+window_3=텍스쳐
+window_4=색뽑아 냄
+window_5=도구
+window_6=레이어
+window_7=옵션
+window_8=Keep
+
+penm_0=보통
+penm_1=수채
+penm_2=브러시
+penm_3=EPen
+
+mask_0=마스크없음
+mask_1=적용
+mask_2=뒤집힘
+
+option_0=캔버스를 새로은 창 으로
+option_1=창 순서 변경
+option_author=시이쨩의 사이트로
+
+
+
+
+t000=연필
+t001=수채
+t002=에어브러시
+t003=펜
+t004=EPen
+t005=Mozaic
+
+t010=Dodge
+t011=Burn
+t012=Soft
+t013=Text
+t014=Combine
+
+t020=복사
+t021=좌우
+t022=상하
+t023=회전
+
+t030=지우개
+t031=ESmooth
+t032=EraseRect
+t033=화면해제
+
+t040=Color
+t041=Texture
+t042=Font
+t043=Keep
+
+t050=자유곡선
+t051=베지에르
+t052=직선
+t053=Beziers
+t054=직사각형
+t055=선 직사각형
+t056=타원
+t057=선 타원
+t058=색칠
+
+t060=보통
+t061=마스크
+t062=반대임 마스크
+
+Layer=레이어
+Combine=결합
+Shift=이동
+
+Font=폰트
+Size=사이즈
+WSpace=간격
+Italic=이탤릭
+Bold=Bold
+VText=세로 쓰기
+
+AddLayer=새로은 레이어
+DelLayer=삭제
+DelLayerQ=을 삭제합니까?
+Undo는 초기화 됩니다.
+CombineV=보이는 레이어 결합
+CombineVQ=보이는 레이어를 결합합니까?
+PropertyLayer=Property
+Normal=Normal
+Multiply=Multiply
+Reverse=Reverse
+
+MenuLayer=메뉴
+IsPreview=미리 보기 표시
+
+kakunin_0=시이쨩의 홈페이지를 새로은 창으로 표시합니까?
+
+kakunin_1=캔버스를 해제 하겠습니까?
+
+yes=예
+no=아니오
+
+sUpload=저장
+
+sF=새로은 창
+sRedo=Redo
+sUndo=Undo
+sFill=색칠
+
+Restore=이전의 편집 데이터를 복원합니까?
+IsSave=그림을 저장하겠습니까?
+저장에 성공하면 에디트를 종료합니다.
+TryAgain=
+저장 단추를 다시한번 누르어 주십시오.
+
+Send0=진행상태
+EncJPEG=Encoding JPEG...
+EncPNG=Encoding PNG...
+
+IsWindowView=창 모드로 표시합니까?
+IsIndependent=새로은 창으로 표시합니까?
+IsPageView=페이지 모드로 표시합니까?

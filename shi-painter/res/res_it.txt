@@ -1,0 +1,122 @@
+#Please make a language resource by UTF-8 format.
+
+window_0=Pennelli
+window_1=Modifica
+window_2=Dimensione&Tavolozza
+window_3=Trame
+window_4=Colore&Maschera
+window_5=Strumenti
+window_6=Livello
+window_7=Opzioni
+window_8=Pennelli Favoriti
+
+penm_0=Normale
+penm_1=Acquerello
+penm_2=Aerografo
+penm_3=EPenna
+
+mask_0=Maschera
+mask_1=ON
+mask_2=Inversa
+
+option_0=Area disegno riposizionabile
+option_1=Gira finestra
+option_author=Shi-chan homepage
+
+
+
+t000=Matita
+t001=Acquerello
+t002=Aerografo
+t003=Penna
+t004=Spugna
+t005=Mosaico
+
+t010=Scherma
+t011=Brucia
+t012=Sfuoca
+t013=Testo
+t014=Combina
+
+t020=Copia
+t021=Inverti X
+t022=Inverti Y
+t023=Ruota
+
+t030=Gomma
+t031=Sfuocata
+t032=Rettangolo
+t033=Elimina
+
+t040=Colore
+t041=Trama
+t042=Font
+t043=Favoriti
+
+t050=ManoLibera
+t051=Curva
+t052=Linea
+t053=Bezier
+t054=RettPieno
+t055=Rettangolo
+t056=OvalePieno
+t057=Ovale
+t058=Riempi
+
+t060=Normale
+t061=Maschera
+t062=Maschera Invertita
+
+Layer=Livello 
+Combine=Combina
+Shift=Scorri
+
+Font=Font
+Size=Dimensione
+WSpace=Distanza lettere
+Italic=Italico
+Bold=Grassetto
+Apply=Applica
+VText=Verticale
+
+AddLayer=Aggiungi Livello
+DelLayer=Elimina Livello
+DelLayerQ=Elimino?
+Undo data get resetted after merge.
+CombineV=Fondi livelli visibili.
+CombineVQ=Fondere i livelli visibili?
+PropertyLayer=Proprietà
+
+Normal=Normale
+Multiply=Multiplica
+Reverse=Inverti
+
+MenuLayer=Menu
+IsPreview=Usa anteprima
+
+kakunin_0=Vuoi aprire il sito di Shi-chan in una nuova finestra?
+
+kakunin_1=Sei sicuro di voler cancellare il disegno?
+
+yes=Sí
+no=No
+
+sUpload=Upload
+sF=Float
+sRedo=Ripeti
+sUndo=Annulla
+sFill=Riempi
+
+IsWindowView=Passare alla modalità Float?
+IsIndependent=Aprire come finestra indipendente?
+IsPageView=Tornare alla modalità pagina web?
+
+Restore=Vuoi ripristinare l'immagine temporanea nell'applet?
+IsSave=Hai finito?
+Premi "Sí" per spedire l'immagine.
+TryAgain= 
+Per favore, prova a premere Upload nuovamente.
+
+Send0=    Sto inviando l'immagine :    
+EncJPEG=Codifica JPEG...
+EncPNG=Codifica PNG...

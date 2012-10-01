@@ -1,0 +1,31 @@
+[% META
+   title   = 'Regeln'
+%]
+<div class="caption">Regeln</div>
+ 
+ <div class="item">
+  <div class="title">
+   1. Altersbeschr&auml;nkung
+  </div>
+  <div class="content">
+   Ernstchan richtet sich an Personen, die <strong>mindestens 18 Jahre alt</strong> sind. Minderj&auml;hrige haben hier nichts veloren.
+  </div>
+ </div>
+  
+ <div class="item">
+  <div class="title">
+   2. Uploads
+  </div>
+  <div class="content">
+   <strong>S&auml;mtliche Dateien, die gegen das niederl&auml;ndische Recht versto&szlig;en, d&uuml;rfen nicht hochgeladen werden!</strong>
+  </div>
+ </div>
+
+ <div class="item">
+  <div class="title">
+   3. IRC
+  </div>
+  <div class="content">
+   Im <a href="/irc">IRC-Channel</a> sollte man sich vern&uuml;nftig unterhalten. Wer sich nicht benehmen kann, fliegt raus.
+  </div>
+ </div>

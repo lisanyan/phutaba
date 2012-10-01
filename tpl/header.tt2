@@ -1,0 +1,31 @@
+<!DOCTYPE html> 
+<html lang="de"> 
+
+<head>
+
+ <title>Ernstchan [% IF template.title %]&raquo; [% template.title %][% END %]</title>
+ <meta charset="utf-8" />
+ <link rel="stylesheet" type="text/css" href="/css/static.css" />
+ <link rel="shortcut icon" href="/img/favicon.ico" />
+
+</head>
+
+<body >
+ <script type="text/javascript" src="/js/wz_tooltip.js"></script>
+
+ <div class="menu">
+  <a href="/news">News</a>
+  <a href="/faq">FAQ</a>
+  <a href="/rules">Regeln</a>
+  <a href="/irc">IRC-Channel</a>
+  <a href="/donate">Spenden</a>
+  <a href="/stats">Statistiken</a>
+ </div>
+
+ <div class="boardnav">
+[% INCLUDE content/boardnav.tt2 %]
+ </div> 
+ 
+ <div class="banner"><a href="/"><img src="/banner/generic" alt="Ernstchan" /></a></div>
+ 
+ <hr />

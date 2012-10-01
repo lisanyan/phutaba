@@ -8,12 +8,14 @@ ErrorDocument 403 /errors/403.html
 ErrorDocument 404 /errors/404.html
 
 
-
 # Enable Rewrite Engine
 RewriteEngine on
-RewriteBase /www/ernstchan.ath.cx/htdocs/
-RewriteRule ^(.*)/src/(.*)/(.*)$ /$1/src/$2 
-RewriteRule ^(.*)/seite/$ /$1/index.php
-RewriteRule ^(.*)/seite/(\d+)$ /$1/$2.html
-RewriteRule ^(.*)/faden/$ /$1/index.php
-RewriteRule ^(.*)/faden/(\d*)$ /$1/res/$2.html
+RewriteBase /
+RewriteRule ^([A-Za-z]+)$ index.pl?p=$1 [L,NS,DPI]
+RewriteRule ^([^/]+)/src/([^/]+)/([^/]+)$ $1/src/$2 [L,NS,DPI]
+RewriteRule ^([^/]+)/seite/$ $1/index.php [L]
+RewriteRule ^([^/]+)/seite/(\d+)$ $1/wakaba.pl?task=show&page=$2 [L]
+RewriteRule ^([^/]+)/faden/$ $1/index.php [L]
+RewriteRule ^([^/]+)/faden/(\d*)$ $1/wakaba.pl?task=show&thread=$2 [L]
+RewriteRule ^([^/]+)/$ $1/wakaba.pl [L]
+RewriteRule ^banner/([^/]+)$ banner.php?board=$1 [L]

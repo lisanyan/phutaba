@@ -1,1 +1,15 @@
-dump the sql files in sql/ into your database and edit main.php and dev/config.pl according your needs
+dump the sql files in sql/ into your database and edit index.pl, board/config.pl and the template files according your needs
+
+dependencies:
+* php
+* mysql
+* perl
+* libfile-mimeinfo-perl
+* libimage-exiftool-perl
+* libhtml-strip-perl
+* liblocale-codes-perl
+* Locale::Codes::Country (just install all dependencies)
+* Parse::BBCode
+* Net::Abuse::Utils
+* DateTime
+* ... and many more

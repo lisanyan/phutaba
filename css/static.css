@@ -1,0 +1,309 @@
+body {
+  background: #ECE9E2;
+  color: #000000;
+  font: 10pt sans-serif;
+  margin: 0 25px 0 25px;
+}
+  
+a:link, a:visited {
+  color: #702802;
+  text-decoration: underline;
+}
+
+a:hover {
+  text-decoration: none;
+}
+
+a:active {
+  position: relative;
+  top: 1px;
+}
+ 
+img {
+  border: 0;
+}
+
+p {
+  margin: 5px 0 5px 0;
+}
+  
+ul {
+  list-style: none;
+  padding-left: 0;
+  margin: 0;
+} 
+
+li {
+  margin: 0;
+}
+
+table {
+  margin-top: 10px;
+}
+ 
+th, .title {
+  background: #706B5E;
+  color: #FFFFFF;
+  font-size: 11pt;
+  font-weight: bold;
+  padding: 2px 0 2px 5px;
+  border-bottom: 2px solid #333333;
+}
+
+th, .title , .item {
+  border-top-left-radius: 5px;
+  border-top-right-radius: 5px;
+  -moz-border-radius-topleft: 5px;
+  -moz-border-radius-topright: 5px;
+  -webkit-border-top-left-radius: 5px;
+  -webkit-border-top-right-radius: 5px;
+}
+
+td {
+  text-align: center;
+  border: 1px solid #706B5E;
+  padding: 5px;
+}
+ 
+hr {
+  clear: both;
+  border: none;
+  border-bottom: 1px solid #706B5E;
+}
+
+blockquote {
+  color: #B55636;
+  margin: 0;
+}
+
+*:focus {
+  outline: none;
+}
+
+input[type='text'], input[type='password'] {
+  background: #FFFFFF;
+  font-family: monospace;
+  border: 1px solid #999999;
+  padding: 2px 5px 2px 5px;
+  transition: all 0.25s ease-in-out;
+  -webkit-transition: all 0.25s ease-in-out; 
+  -moz-transition: all 0.25s ease-in-out;
+}
+
+input[type='text']:focus, input[type='password']:focus {
+  border:1px solid #702802;
+  box-shadow: 0 0 5px #702802;
+  -webkit-box-shadow: 0 0 5px #702802;
+  -moz-box-shadow: 0 0 5px #702802;
+}
+
+input[type='submit']:hover {
+  cursor: pointer;
+}
+ 
+.menu {
+  position: absolute;
+  top: 2px;
+  left: 25px; 
+}
+
+.menu2 {
+  position: absolute;
+  top: 2px;
+  right: 25px;
+}
+
+.boardnav {
+  position: absolute;
+  top: 2px;
+  right: 25px;
+}
+ 
+.menu a, .menu2 a {
+  background: #D7CFC0;
+  color: #000000;
+  font-weight: bold;
+  text-decoration: none;
+  border: 1px solid #706B5E;
+  padding: 3px 5px 3px 5px;
+  border-bottom-right-radius: 5px;
+  border-bottom-left-radius: 5px;
+  -moz-border-radius-bottomright: 5px;
+  -moz-border-radius-bottomleft: 5px;
+  -webkit-border-bottom-right-radius: 5px;
+  -webkit-border-bottom-left-radius: 5px;
+}
+
+.menu a:hover, .menu2 a:hover {
+  box-shadow: 1px 1px 2px #999;
+  -moz-box-shadow: 1px 1px 2px #999;
+  -webkit-box-shadow: 1px 1px 2px #999;
+}
+
+.banner {
+  text-align: center;
+  margin: 40px 0 20px 0;
+}
+ 
+.caption {
+  color: #333333;
+  font-size: 13.5pt;
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+.error {
+  text-align: center;
+}
+
+.error p {
+  margin-top: 0;
+}
+
+.error_msg {
+  background: #FFCCCC;
+  color: #DD5555;
+  font: 12pt monospace;
+  font-weight: bold;
+  padding: 15px;
+  margin-left: 20%;
+  margin-right: 20%;
+}
+
+/*
+.boards {
+  float: left;
+  width: 33%;
+}
+
+.boards li a {
+  background: #D7CFC0;
+  color: #000000;
+  font-size: 150%;
+  text-decoration: none;
+  text-align: center;
+  display: block;
+  border: 1px solid #B3A996;
+  padding: 5px;
+  margin: 5px;
+}
+	 
+.boards li a:hover {
+  background: #E8E1D3;
+}
+
+
+.news {
+  width: 33%;
+  margin: 0 auto 0 auto;
+}
+
+.posts {
+  float: right;
+  width: 33%;
+}
+
+*/
+
+.item {
+  background: #D7CFC0;
+}
+ 
+.title a, .title a:hover {
+  color: #FFFFFF;
+  text-decoration: none;
+}
+
+.info {
+  font-size: 10pt;
+  float: right;
+  margin-right: 5px;
+}
+ 
+.content {
+  text-align: justify;
+  padding: 5px;
+  margin-bottom: 10px;
+}
+
+.search {
+  text-align: center;
+  margin: 5px;
+}
+
+.search input[type='text'] { 
+  width: 65%;
+}
+ 
+.green, .red {
+  font-weight: bold;
+}
+
+.green {
+  color: #008800;
+}
+
+.red {
+  color: #B20000;
+}
+
+.green_sign, .red_sign {
+  color: #FFFFFF;  
+  font-weight: bold;
+  padding: 0 3px 0 3px; 
+  border-radius: 5px; 
+  -moz-border-radius: 5px; 
+  -webkit-border-radius: 5px;
+}
+
+.green_sign {
+  background: #008800; 
+}
+ 
+.red_sign {
+  background: #B20000; 
+}
+
+.spoiler {
+  background: #000000;
+  color: #000000;
+}
+ 
+.spoiler:hover {
+  color: #FFFFFF;
+}
+
+.staff {
+  color: #A000CC
+}
+
+.staff a:link, .staff a:visited{
+  color: #A000CC;
+}
+
+.highlight {
+  background: #E8E1D3;
+}
+
+.footer_left, .footer_right {
+  margin-bottom: 10px;
+}
+
+.footer_left {
+  float: left;
+}
+
+.footer_right {
+  font-size: 11pt;
+  text-align: right;
+}
+
+.footer_right a {
+  color: #000000;
+  font-weight: bold;
+  text-decoration: none;
+}
+
+.footer_right a:hover {
+  opacity: 0.5;
+}

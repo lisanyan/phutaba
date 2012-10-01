@@ -1,0 +1,122 @@
+#Please make a language resource by UTF-8 format.
+
+window_0=Brushes
+window_1=Retouch
+window_2=Size&Palette
+window_3=Texture
+window_4=Color&Mask
+window_5=Tools
+window_6=Layer
+window_7=Options
+window_8=Pen Keep
+
+penm_0=Normal
+penm_1=WaterColor
+penm_2=Air Brush
+penm_3=EPen
+
+mask_0=Mask
+mask_1=ON
+mask_2=Reverse
+
+option_0=Float Canvas
+option_1=Turn Window
+option_author=Open Shi-chan's Site
+
+
+
+t000=Pencil
+t001=Water
+t002=AirBrush
+t003=Pen
+t004=EPen
+t005=Mosaic
+
+t010=Dodge
+t011=Burn
+t012=Soft
+t013=Text
+t014=Combine
+
+t020=Copy
+t021=Flip X
+t022=Flip Y
+t023=Rotate
+
+t030=Erase
+t031=ESmooth
+t032=EraseRect
+t033=EraseAll
+
+t040=Color
+t041=Texture
+t042=Font
+t043=Keep
+
+t050=Freehand
+t051=Curve
+t052=Line
+t053=Bezier
+t054=Solid Rect
+t055=Rect
+t056=Solid Oval
+t057=Oval
+t058=Fill
+
+t060=Normal
+t061=Mask
+t062=Reverse Mask
+
+Layer=Layer
+Combine=Merge
+Shift=Shift
+
+Font=Font
+Size=Size
+WSpace=White space
+Italic=Italic
+Bold=Bold
+Apply=Apply
+VText=Vertical
+
+AddLayer=Add layer
+DelLayer=Delete layer
+DelLayerQ=Delete?
+Undo data get resetted after merge.
+CombineV=Visible layers merge.
+CombineVQ=Merge visible layers?
+PropertyLayer=Property
+
+Normal=Normal
+Multiply=Multiply
+Reverse=Reverse
+
+MenuLayer=Menu
+IsPreview=Use preview
+
+kakunin_0=Would you like to open Shi-chan's website in a new window?
+
+kakunin_1=Are you sure you want to clear the canvas?
+
+yes=Yes
+no=No
+
+sUpload=Upload
+sF=Float
+sRedo=Redo
+sUndo=Undo
+sFill=Fill
+
+IsWindowView=Switch to floating mode?
+IsIndependent=Open as an independent window?
+IsPageView=Return to page mode?
+
+Restore=Would you like to restore the temporary applet image?
+IsSave=Are you done with your picture?
+Click Yes to submit your picture.
+TryAgain= 
+Please click the upload button again.
+
+Send0=    Sending your picture :    
+EncJPEG=Encoding JPEG...
+EncPNG=Encoding PNG...

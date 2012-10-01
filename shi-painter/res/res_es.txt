@@ -1,0 +1,119 @@
+#Por favor crear archivo de recursos de lenguage en formato UTF-8.
+
+window_0=Brochas
+window_1=Retocar
+window_2=Tamaño&Gama
+window_3=Textura
+window_4=Color&Mascara
+window_5=Herramientas
+window_6=Capas
+window_7=Opciones
+window_8=Mantener
+
+penm_0=Normal
+penm_1=Agua
+penm_2=Aerografo
+penm_3=EPluma
+
+mask_0=Mascara
+mask_1=SI
+mask_2=Inversa
+
+option_0=Canvas Flotante
+option_1=Hacer Ventana
+option_author=Abrir sitio de Shi-chan
+
+t000=Lapiz
+t001=Agua
+t002=Aerografo
+t003=Pluma
+t004=EPluma
+t005=Mosaico
+
+t010=Sobreexponer
+t011=Subexponer
+t012=Suavizar
+t013=Texto
+t014=Combinar
+
+t020=Copiar
+t021=Voltear X
+t022=Voltear Y
+t023=Rotar
+
+t030=Borrar
+t031=ESuavizar
+t032=BorrarRect
+t033=BorrarTodo
+
+t040=Color
+t041=Textura
+t042=Fuente
+t043=Mantener
+
+t050=Mano Libre
+t051=Curva
+t052=Linea
+t053=Bezier
+t054=Rect Solido
+t055=Rectangulo
+t056=Ovalo Solido
+t057=Ovalo
+t058=Rellenar
+
+t060=Normal
+t061=Mascara
+t062=Masc Reversa
+
+Layer=Capa
+Combine=Fusion
+Shift=Shift
+
+Font=Fuente
+Size=Tamaño
+WSpace=Espacio Blanco
+Italic=Italica
+Bold=Negrita
+Apply=Aplicar
+VText=Vertical
+
+AddLayer=Agregar Capa
+DelLayer=Borrar Capa
+DelLayerQ=Borrar?
+Undo data get resetted after merge.
+CombineV=Combinar Capas Visibles
+CombineVQ=Combinar Capas Visibles?
+PropertyLayer=Propiedades
+
+Normal=Normal
+Multiply=Multiplicar
+Reverse=Inversa
+
+MenuLayer=Menu
+IsPreview=Usar Prevista
+
+kakunin_0=Abrir sitio de web de Shi-chan en una ventana nueva?
+
+kakunin_1=Confirmar eliminacion de contenidos de canvas
+
+yes=Si
+no=No
+
+sUpload=Subir
+sF=Flotar
+sRedo=Rehacer
+sUndo=Deshacer
+sFill=Llenar
+
+IsWindowView=Cambiar a modo flotante?
+IsIndependent=Abrir como ventana independiente?
+IsPageView=Regresar a modo de pagina?
+
+Restore=Restaurar imagen temporal previa?
+IsSave=Terminado con imagen?
+Haga click en Si para submitir imagen.
+TryAgain=Porfavor hacer click en boton de Subir de nuevo.
+
+Send0= Enviando imagen :
+EncJPEG=Codificando JPEG...
+EncPNG=Codificando PNG...

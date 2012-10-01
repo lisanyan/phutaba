@@ -1,6 +1,6 @@
 body {
 	background-color: #ECE9E2;
-	font-family: "Verdana", serif;
+	font-family: sans-serif;
 }
 
 small {
@@ -38,7 +38,7 @@ small {
 
 .container {
 	text-align: center;
-	width: 20%;
+	width: 60%;
 	height: 20%;
 	margin-top: 1%;
 	margin-left: auto;

@@ -1,0 +1,119 @@
+﻿#Si us plau crear arxiu de recursos de llengutage en format UTF-8.
+
+window_0=Brotxes
+window_1=Retocar
+window_2=Tamany&Gama
+window_3=Textura
+window_4=Color&Màscara
+window_5=Eines
+window_6=Capes
+window_7=Opcions
+window_8=Mantenir
+
+penm_0=Normal
+penm_1=Aigua
+penm_2=Aerògraf
+penm_3=EPloma
+
+mask_0=Màscara
+mask_1=SI
+mask_2=Inversa
+
+option_0=Canvas Flotant
+option_1=Fer Finestra
+option_author=Obrir lloc de Shi-chan
+
+t000=Llapis
+t001=Aigua
+t002=Aerògraf
+t003=Ploma
+t004=EPloma
+t005=Mosaic
+
+t010=Sobreexposar
+t011=Subexposar
+t012=Suavitzar
+t013=Text
+t014=Combinar
+
+t020=Copiar
+t021=Voltejar X
+t022=Voltejar Y
+t023=Rotar
+
+t030=Esborrar
+t031=ESuavitzar
+t032=EsborrarRect
+t033=EsborrarTot
+
+t040=Color
+t041=Textura
+t042=Font
+t043=Mantenir
+
+t050=Ma Lliure
+t051=Corva
+t052=Linea
+t053=Bezier
+t054=Rect Sòlid
+t055=Rectangle
+t056=Òval Sòlid
+t057=Òval
+t058=Reomplir
+
+t060=Normal
+t061=Màscara
+t062=Màsc Reversa
+
+Layer=Capa
+Combine=Fusió
+Shift=Shift
+
+Font=Font
+Size=Tamany
+WSpace=Espai Blanc
+Italic=Itàlica
+Bold=Negreta
+Apply=Aplicar
+VText=Vertical
+
+AddLayer=Afegir Capa
+DelLayer=Esborrar Capa
+DelLayerQ=Esborrar?
+Undo data get resetted after merge.
+CombineV=Combinar Capes Visibles
+CombineVQ=Combinar Capes Visibles?
+PropertyLayer=Propietats
+
+Normal=Normal
+Multiply=Multiplicar
+Reverse=Inversa
+
+MenuLayer=Menú
+IsPreview=Usar Prevista
+
+kakunin_0=Obrir lloc de web de Shi-chan en una finestra nova?
+
+kakunin_1=Confirmar eliminació de continguts de canvas
+
+yes=Si
+no=No
+
+sUpload=Pujar
+sF=Surar
+sRedo=Refer
+sUndo=Desfer
+sFill=Omplir
+
+IsWindowView=Canviar a manera flotant?
+IsIndependent=Obrir com finestra independent?
+IsPageView=Retornar a manera de pàgina?
+
+Restore=Restaurar imatge temporal prèvia?
+IsSave=Acabat amb imatge?
+Feu click en Si per submitir imatge.
+TryAgain=Si us plau feu click en botó de pujar de nou.
+
+Send0= Enviant imatge :
+EncJPEG=Codificant JPEG...
+EncPNG=Codificant PNG...

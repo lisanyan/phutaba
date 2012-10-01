@@ -1,0 +1,13 @@
+[% META
+   title   = 'Phutaba'
+%]
+ <div class="caption">Phutaba</div>
+ 
+ <div class="item">
+  <div class="title">
+   Software-Hinweis
+  </div>
+  <div class="content">
+   Dieses Imageboard wird mit <img src="/img/phutaba_icon.png" alt="" style="vertical-align: middle;" /><strong>Phutaba</strong> betrieben, einer in Modifikation von <a href="http://wakaba.c3.cx/s/web/wakaba_kareha">Wakaba</a>.
+  </div>
+ </div>

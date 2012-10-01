@@ -1,0 +1,19 @@
+[% META
+   title   = 'IRC-Channel'
+%]
+ <div class="caption">IRC-Channel</div>
+ 
+ <div class="item">
+  <div class="title">
+   Chat
+  </div>
+  <div class="content">
+   <p>Unseren IRC-Channel <strong>#ernstchan</strong> findet man unter <a href="irc://irc.ernstchan.com:9999/ernstchan">irc.ernstchan.com:9999</a> (SSL, <a href="//www.hackint.org/">hackint</a>).<br />Alternativ hier der Webchat:</p>
+   <form name="cgiirclogin" method="post" action="http://evility.net/cgiirc/irc.cgi">
+    <input type="hidden" name="interface" value="ie" />
+    <input type="text" name="Nickname" placeholder="Nickname" value="" /><br />
+    <input type="text" id="channel" name="Channel" value="#ernstchan" readonly /><br />
+    <input type="submit" id="submit" value="Betreten" />
+   </form>
+  </div>
+ </div>

@@ -1,0 +1,123 @@
+#Pensez a enregistrer ce fichier language au format UTF-8.
+
+window_0=Outil
+window_1=Retouche
+window_2=Taille/Palette
+window_3=Texture
+window_4=Couleur/Masque
+window_5=Forme/Trait
+window_6=Calques
+window_7=Options
+window_8=Keep
+
+penm_0=Normal
+penm_1=Aquarelle
+penm_2=Aerographe
+penm_3=EPen
+
+mask_0=-Masque-
+mask_1=Actif
+mask_2=Inverse
+
+option_0=Tableau mobile
+option_1=Auto-focus sur fenetres
+option_author=Ouvrir le site de Shi-chan
+
+
+
+
+t000=Crayon
+t001=Aquarelle
+t002=Aerographe
+t003=Encre
+t004=Tampon
+t005=Mosaique
+
+t010=Amorti
+t011=Bruler
+t012=Estomper
+t013=Texte
+t014=Combiner
+
+t020=Copier
+t021=Mirroir X
+t022=Mirroir Y
+t023=Rotation
+
+t030=Gomme
+t031=Gomme douce
+t032=Gommer zone
+t033=Tout vider
+
+t040=Color
+t041=Texture
+t042=Font
+t043=Keep
+
+t050=Main libre
+t051=Ligne
+t052=Bezier
+t053=Rect.Plein
+t054=Rectangle
+t055=Oval.Plein
+t056=Ovale
+t057=Remplir
+
+t060=Normal
+t061=Masque
+t062=Masque Inv.
+
+Layer=Calque
+Combine=Combiner
+Shift=Shift
+
+Font=Font
+Size=Size
+WSpace=Word space
+Italic=Italic
+Bold=Bold
+Apply=appliquer
+VText=Vertical
+
+AddLayer=Ajouter Calque
+DelLayer=Supprimer Calque
+DelLayerQ=Supprimer ?
+La fonction Undo est remise a zero apres 'combiner'.
+CombineV=Combiner calques visibles
+CombineVQ=Combiner les calques visibles ?
+PropertyLayer=Property
+Normal=Normal
+Multiply=Multiply
+Reverse=Reverse
+
+MenuLayer=Menu
+IsPreview=Previsualisation
+
+kakunin_0=Voulez vous ouvrir le site de Shi-chan dans une nouvelle fenetre ?
+
+kakunin_1=Etes vous sur de vouloir effacer tout le tableau ?
+
+yes=Oui
+no=Non
+
+sUpload=Envoyer
+
+sF=Flotant
+sRedo=Refaire
+sUndo=Annuler
+sFill=Remplir
+
+Restore=Voulez vous recuperer les donnees temporaires (image) precedentes ?
+IsSave=Vous avez fini votre dessin ?
+Cliquez sur 'Oui' pour envoyer l'image.
+TryAgain= 
+Veuillez envoyer a nouveau.
+
+Send0=    Status d'avancement    
+EncJPEG=Encodage JPEG...
+EncPNG=Encodage PNG...
+
+IsWindowView=Passer en mode flotant ?
+IsIndependent=Ouvrir en fenetre indepandante ?
+IsPageView=Retourner en mode page ?
+
