@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS `ernstchan_b` (
+CREATE TABLE IF NOT EXISTS `board` (
   `num` int(11) NOT NULL AUTO_INCREMENT,
   `parent` int(11) DEFAULT NULL,
   `timestamp` int(11) DEFAULT NULL,
