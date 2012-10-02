@@ -10,8 +10,8 @@
 
 # System config
 use constant ADMIN_PASS => 'xxxxx';			# Admin password. For fucks's sake, change this.
-use constant NUKE_PASS => 'ufc4h37v478';			# Password to nuke a board. Change this too, NOW!
-use constant SECRET => 'jv45jc784mh5hc5gt4jhvb87ghczj549u8vhhvb';				# Cryptographic secret. CHANGE THIS to something totally random, and long.
+use constant NUKE_PASS => 'xxxxxxxx';			# Password to nuke a board. Change this too, NOW!
+use constant SECRET => 'xxxxxxxx';				# Cryptographic secret. CHANGE THIS to something totally random, and long.
 use constant SQL_DBI_SOURCE => 'DBI:mysql:database=xxxxx;host=localhost'; # DBI data source string (mysql version, put server and database name in here)
 use constant SQL_USERNAME => 'xxxxx';		# MySQL login name
 use constant SQL_PASSWORD => 'xxxxx';		# MySQL password
