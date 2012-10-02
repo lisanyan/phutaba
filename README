@@ -14,4 +14,10 @@ dependencies:
 * DateTime
 * Template
 * HTML::Entities
+* Net::DNS
+* Net::IP
+* JSON:XS
+* JSON
+* IO::Scalar
+* Geo::IP
 * ... and many more
