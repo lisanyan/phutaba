@@ -12,4 +12,6 @@ dependencies:
 * Parse::BBCode
 * Net::Abuse::Utils
 * DateTime
+* Template
+* HTML::Entities
 * ... and many more
