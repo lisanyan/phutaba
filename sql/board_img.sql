@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS `ernstchan_b_img` (
+CREATE TABLE IF NOT EXISTS `board_img` (
   `timestamp` bigint(20) NOT NULL,
   `image` text,
   `size` int(11) DEFAULT NULL,
