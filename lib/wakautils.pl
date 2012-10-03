@@ -1488,11 +1488,15 @@ sub make_thumbnail {
 
     # first try ImageMagick
 
+	my $background = "white";
+	# use transparency if a file-extension with transparency-support was passed
+	$background = "transparent" if ( $thumbnail =~ /\.png$/ or $thumbnail =~ /\.gif$/ );
+
     my $magickname = $filename;
     $magickname .= "[0]" if ( $magickname =~ /\.gif$/ );
 
     $convert = "convert" unless ($convert);
-`$convert -background white -flatten -size ${width}x${height} -geometry ${width}x${height}! -quality $quality $magickname $thumbnail`;
+`$convert -background $background -flatten -size ${width}x${height} -geometry ${width}x${height}! -quality $quality $magickname $thumbnail`;
 
     return 1 unless ($?);
 
