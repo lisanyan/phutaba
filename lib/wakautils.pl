@@ -498,7 +498,7 @@ s{ (?<![0-9a-zA-Z\*_\x80-\x9f\xe0-\xfc]) (\:kuhlgesicht\:) (?![0-9a-zA-Z\*_]) }{
 
         # o blau
         $line =~
-s{ (?<![0-9a-zA-Z\*_\x80-\x9f\xe0-\xfc]) (\:PENIS\:) (?![0-9a-zA-Z\*_]) }{<img src="/img/blau.png" alt="Schreikopf" style="vertical-align: bottom;" />}gx;
+s{ (?<![0-9a-zA-Z\*_\x80-\x9f\xe0-\xfc]) (\:PENIS\:) (?![0-9a-zA-Z\*_]) }{<img src="/img/blau.png" alt="Blauball" style="vertical-align: bottom;" />}gx;
 
    # do ^H
    #if($]>5.007)
