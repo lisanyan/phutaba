@@ -391,6 +391,7 @@ use constant PAGE_TEMPLATE => compile_template(
 <hr />
 <table class="userdelete"><tbody><tr><td>
 <input type="hidden" name="task" value="delete" />
+<if $thread><input type="hidden" name="parent" value="<var $thread>" /></if>
 <const S_DELKEY><input type="password" name="password" size="8" />
 <input value="<const S_DELETE>" type="submit" /></td></tr></tbody></table>
 </form>

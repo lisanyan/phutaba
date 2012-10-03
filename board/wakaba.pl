@@ -131,7 +131,7 @@ if ($ip =~ /:/) {
      $loc = "v6";
 }
 # testing in a local network never requires a captcha
-if ($ip =~ /192\.168\..+\..+/) {
+if ($ip =~ /^192\.168\.\d{1,3}\.\d{1,3}$/) {
      $loc = "DE";
 }
 my $task  = ( $query->param("task") or $query->param("action")) unless $query->param("POSTDATA");
@@ -264,9 +264,10 @@ elsif ( $task eq "delete" ) {
     my $fileonly = $query->param("fileonly");
     my $archive  = $query->param("archive");
     my $admin    = $query->param("admin");
+	my $parent   = $query->param("parent");
     my @posts    = $query->param("delete");
 
-    delete_stuff( $password, $fileonly, $archive, $admin, @posts );
+    delete_stuff( $password, $fileonly, $archive, $admin, $parent, @posts );
 }
 elsif ( $task eq "sticky" ) {
     my $admin    = $query->param("admin");
@@ -2208,9 +2209,10 @@ sub process_file {
 #
 
 sub delete_stuff {
-    my ( $password, $fileonly, $archive, $admin, @posts ) = @_;
+    my ( $password, $fileonly, $archive, $admin, $parent, @posts ) = @_;
     my ($post);
     my $deletebyip = 0;
+	my $noko = 1; # try to stay in thread after deletion by default	
 
     check_password( $admin, ADMIN_PASS ) if ($admin);
     if ( !$password and !$admin ) { $deletebyip = 1; }
@@ -2222,15 +2224,20 @@ sub delete_stuff {
 
     $password = "" if ($admin);
 
+	# only an admin can move stuff to the archive
+	$archive = 0 unless($admin);
+
     foreach $post (@posts) {
         delete_post( $post, $password, $fileonly, $archive, $deletebyip, $admin );
+		$noko = 0 if ( $parent and $post eq $parent ); # the thread is deleted and cannot be redirected to		
     }
 
     if ($admin) {
         make_http_forward( get_script_name() . "?admin=$admin&task=mpanel",
             ALTERNATE_REDIRECT );
-    }
-    else { make_http_forward( HTML_SELF, ALTERNATE_REDIRECT ); }
+    } elsif ( $noko == 1 and $parent ) {
+		make_http_forward( HTML_SELF . "?task=show&thread=" . $parent , ALTERNATE_REDIRECT );
+	} else { make_http_forward( HTML_SELF . "?task=show&page=0", ALTERNATE_REDIRECT ); }
 }
 
 sub make_locked {
@@ -2510,12 +2517,14 @@ s/href="(.*?)$redir(.*?).html/href="$1$archive$src$2/g;
             }
             else    # removing parent image
             {
-                show_thread( $$row{num}, $admin );
+#test ProtoFoo                show_thread( $$row{num}, $admin );
+# delete_post should not output anything, because delete_stuff should
+# redirect to the new page after all deletions are done
             }
         }
         else        # removing a reply, or a reply's image
         {
-            show_thread( $$row{parent}, $admin );
+#test ProtoFoo            show_thread( $$row{parent}, $admin );
         }
 
         ###### END #####
@@ -2776,7 +2785,7 @@ sub do_login {
             );
         }
 
-        make_http_forward( get_script_name() . "?task=$nexttask&amp;admin=$crypt",
+        make_http_forward( get_script_name() . "?task=$nexttask&admin=$crypt",
             ALTERNATE_REDIRECT );
     }
     else { make_admin_login() }
@@ -2873,7 +2882,7 @@ sub delete_all {
     $sth->execute( $mask, $ip, $mask ) or make_error(S_SQLFAIL);
     while ( $row = $sth->fetchrow_hashref() ) { push( @posts, $$row{num} ); }
 
-    delete_stuff( '', 0, 0, $admin, @posts );
+    delete_stuff( '', 0, 0, $admin, 0, @posts );
 }
 
 sub update_spam_file {
@@ -3124,8 +3133,8 @@ sub init_database {
           "thumbnail TEXT," .      # Thumbnail filename with path and extension
           "tn_width TEXT," .       # Thumbnail width in pixels
           "tn_height TEXT," .      # Thumbnail height in pixels
-          "uploadname TEXT," .     # Thumbnail height in pixels
-          "displaysize TEXT" .     # Thumbnail height in pixels
+          "uploadname TEXT," .     # Original filename supplied by the user agent
+          "displaysize TEXT" .     # Human readable size with B/K/M
 
           ");"
     ) or make_error(S_SQLFAIL);
@@ -3149,7 +3158,8 @@ sub init_admin_database {
           "comment TEXT," .    # Comment for the entry
           "ival1 TEXT," .      # Integer value 1 (usually IP)
           "ival2 TEXT," .      # Integer value 2 (usually netmask)
-          "sval1 TEXT" .       # String value 1
+          "sval1 TEXT," .       # String value 1
+          "date TEXT" .        # Human-readable form of date		  
 
           ");"
     ) or make_error(S_SQLFAIL);
