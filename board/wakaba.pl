@@ -120,13 +120,19 @@ return 1 if (caller);    # stop here if we're being called externally
 
 my $query = CGI->new;
 my $loc;
-my $ip = $ENV{HTTP_X_REAL_IP};
+my $ip;
+$ip = $ENV{HTTP_X_REAL_IP};
+$ip = $ENV{REMOTE_ADDR} if ($ip eq undef); # for crazy people who expose their server to the internet
 my $gi = Geo::IP->new(GEOIP_MEMORY_CACHE);
 if (($loc = $gi->country_code_by_addr($ip)) eq "") {
      $loc = "unk";
 }
 if ($ip =~ /:/) {
      $loc = "v6";
+}
+# testing in a local network never requires a captcha
+if ($ip =~ /192\.168\..+\..+/) {
+     $loc = "DE";
 }
 my $task  = ( $query->param("task") or $query->param("action")) unless $query->param("POSTDATA");
 $task = ( $query->url_param("task") ) unless $task;
@@ -1462,7 +1468,7 @@ sub post_stuff {
 	{
 	    # forward back to the main page
 	    make_http_forward( HTML_SELF, ALTERNATE_REDIRECT ) if ( $parent eq '0' );
-	    make_http_forward( HTML_SELF . "?task=show&amp;thread=" . $parent,
+	    make_http_forward( HTML_SELF . "?task=show&thread=" . $parent,
 	        ALTERNATE_REDIRECT )
 	      if ( $c_gb2 =~ /thread/i );
 	    make_http_forward( HTML_SELF, ALTERNATE_REDIRECT );
@@ -2054,7 +2060,20 @@ sub process_file {
     # generate random filename - fudges the microseconds
     my $filebase  = $time . sprintf( "%03d", int( rand(1000) ) );
     my $filename  = IMG_DIR . $filebase . '.' . $ext;
-    my $thumbnail = THUMB_DIR . $filebase . "s.jpg";
+    my $thumbnail = THUMB_DIR . $filebase;
+	if ( $ext eq "png" )
+	{
+		$thumbnail .= "s.png";
+	}
+	elsif ( $ext eq "gif" )
+	{
+		$thumbnail .= "s.gif";
+	}
+	else
+	{
+		$thumbnail .= "s.jpg";
+	}
+
     $filename .= MUNGE_UNKNOWN unless ($known);
 
     # do copying and MD5 checksum
