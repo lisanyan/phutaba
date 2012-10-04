@@ -21,3 +21,5 @@ dependencies:
 * IO::Scalar
 * Geo::IP
 * ... and many more
+
+only for enterprise imageboards
