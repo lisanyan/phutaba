@@ -386,7 +386,7 @@ elsif ( $task eq "rebuild" ) {
 }
 elsif ( $task eq "nuke" ) {
     my $admin = $query->param("admin");
-    do_nuke_database($admin);
+    #do_nuke_database($admin);
 }
 elsif ( $task eq "paint" ) {
     my $do = $query->param("do");
