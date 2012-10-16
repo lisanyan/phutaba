@@ -13,9 +13,9 @@ RewriteEngine on
 RewriteBase /
 RewriteRule ^([A-Za-z]+)$ index.pl?p=$1 [L,NS,DPI]
 RewriteRule ^([^/]+)/src/([^/]+)/([^/]+)$ $1/src/$2 [L,NS,DPI]
-RewriteRule ^([^/]+)/seite/$ $1/index.php [L]
+#RewriteRule ^([^/]+)/seite/$ $1/index.php [L]
 RewriteRule ^([^/]+)/seite/(\d+)$ $1/wakaba.pl?task=show&page=$2 [L]
-RewriteRule ^([^/]+)/faden/$ $1/index.php [L]
+#RewriteRule ^([^/]+)/faden/$ $1/index.php [L]
 RewriteRule ^([^/]+)/faden/(\d*)$ $1/wakaba.pl?task=show&thread=$2 [L]
 RewriteRule ^([^/]+)/$ $1/wakaba.pl [L]
-RewriteRule ^banner/([^/]+)$ banner.pl?board=$1 [L]
+RewriteRule ^banner/([^/]+)$ banner-redir.pl?board=$1 [L]
