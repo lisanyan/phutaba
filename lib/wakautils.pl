@@ -390,7 +390,7 @@ sub do_wakabamark {
                 shift @lines;
             }
             $res .=
-              "<span class='quote'>" . do_spans( $spanLinks, $handler, @quote ) . "</span>";
+              '<span class="quote">' . do_spans( $spanLinks, $handler, @quote ) . "</span><br />";
 
             #while($lines[0]=~/^&gt;(.*)/) { push @quote,$1; shift @lines; }
             #$res.="<blockquote>".do_blocks($handler,@quote)."</blockquote>";
