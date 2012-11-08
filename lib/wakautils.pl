@@ -304,11 +304,11 @@ sub do_bbcode {
 					's'			=> ['<s>', '</s>'],
 					'code'		=> ['<code>', '</code>'],
 					'spoiler'	=> ['<span class="spoiler">', '</span>'],
-					'quote'		=> ['<span class="quote">', '</span>'],
-					'fraktur'	=> ['<span class="fraktur">','</span>']	);
+					'quote'		=> ['<span class="quote">', '</span>']	);
 
 	my @bbtags = keys %html;
 
+	# this check can be moved to wakaba.pl: sub format_comment()
 	return do_wakabamark( $text, $handler ) if ( !detect_bbcode( $text, @bbtags ) );
 
 	my @lines = split /(?:\r\n|\n|\r)/,$text;
@@ -321,7 +321,7 @@ sub do_bbcode {
 		while ( $lines[0] =~ m/^\s*$/ and $lines[1] =~ m/^\s*$/ ) { shift @lines; }
 
 		# check if the line begins with a quote (>) and we are not already in a quote or code section
-		if ( $lines[0]=~m/^&gt;/ && !grep {$_ eq 'quote' or $_ eq 'code'} @opentags )
+		if ( $lines[0] =~ m/^&gt;/ and !grep {$_ eq 'quote' or $_ eq 'code'} @opentags )
 		{
 			$output .= @{$html{'quote'}}[0];
 			push( @opentags, 'quote' );
