@@ -54,6 +54,9 @@ my $query    = new CGI;
 my $key      = ( $query->param("key") or 'default' );
 my $selector = ( $query->param("selector") or ".captcha" );
 my $style    = ( $query->cookie("wakabastyle") or DEFAULT_STYLE );
+my $board    = $query->param("board") or make_error("Wrong call.");
+my $ip = $ENV{HTTP_X_REAL_IP};
+my $ip = $ENV{REMOTE_ADDR} if ($ip eq undef); # for crazy people who expose their server to the internet
 
 my @foreground = find_stylesheet_color( $style, $selector );
 my @background = ( 0xff, 0xff, 0xff );
@@ -65,13 +68,12 @@ my $dbh =
 init_captcha_database($dbh)
   unless ( table_exists_captcha( $dbh, SQL_CAPTCHA_TABLE ) );
 
-my $ip = ( $ENV{REMOTE_ADDR} or '0.0.0.0' );
-my ( $word, $timestamp ) = get_captcha_word( $dbh, $ip, $key );
+my ( $word, $timestamp ) = get_captcha_word( $dbh, $ip, $key, $board );
 
 if ( !$word ) {
     $word      = make_word();
     $timestamp = time();
-    save_captcha_word( $dbh, $ip, $key, $word, $timestamp );
+    save_captcha_word( $dbh, $ip, $key, $word, $timestamp, $board );
 }
 
 srand $timestamp;
@@ -150,15 +152,15 @@ sub get_captcha_key {
 #
 
 sub get_captcha_word {
-    my ( $dbh, $ip, $key ) = @_;
+    my ( $dbh, $ip, $key, $board ) = @_;
     my ( $sth, $row );
 
     $sth =
       $dbh->prepare( "SELECT word,timestamp FROM "
           . SQL_CAPTCHA_TABLE
-          . " WHERE ip=? AND pagekey=?;" )
+          . " WHERE ip=? AND pagekey=? AND board=?;" )
       or return undef;
-    $sth->execute( $ip, $key )
+    $sth->execute( $ip, $key, $board )
       or return
       undef
       ;    # the captcha script creates the database, so it might not exist yet
@@ -168,38 +170,37 @@ sub get_captcha_word {
 }
 
 sub save_captcha_word {
-    my ( $dbh, $ip, $key, $word, $time ) = @_;
+    my ( $dbh, $ip, $key, $word, $time, $board ) = @_;
 
     delete_captcha_word( $dbh, $ip, $key );
 
     my $sth =
-      $dbh->prepare( "INSERT INTO " . SQL_CAPTCHA_TABLE . " VALUES(?,?,?,?);" )
+      $dbh->prepare( "INSERT INTO " . SQL_CAPTCHA_TABLE . " VALUES(?,?,?,?,?);" )
       or die S_SQLFAIL;
-    $sth->execute( $ip, $key, $word, $time ) or die S_SQLFAIL;
+    $sth->execute( $ip, $key, $word, $time, $board ) or die S_SQLFAIL;
 
     trim_captcha_database($dbh);  # only cleans up on create - good idea or not?
 }
 
 sub check_captcha {
-    my ( $dbh, $captcha, $ip, $parent ) = @_;
+    my ( $dbh, $captcha, $ip, $parent, $board ) = @_;
 
     my $key = get_captcha_key($parent);
-    my ($word) = get_captcha_word( $dbh, $ip, $key );
-
+    my ($word) = get_captcha_word( $dbh, $ip, $key, $board );
     make_error(S_NOCAPTCHA) unless ($word);
     make_error(S_BADCAPTCHA) if ( $word ne lc($captcha) );
 
-    delete_captcha_word( $dbh, $ip, $key )
+    delete_captcha_word( $dbh, $ip, $key, $board )
       ; # should the captcha word be deleted on an UNSUCCESSFUL try, too, maybe?
 }
 
 sub delete_captcha_word {
-    my ( $dbh, $ip, $key ) = @_;
+    my ( $dbh, $ip, $key, $board ) = @_;
 
     my $sth = $dbh->prepare(
-        "DELETE FROM " . SQL_CAPTCHA_TABLE . " WHERE ip=? AND pagekey=?;" )
+        "DELETE FROM " . SQL_CAPTCHA_TABLE . " WHERE ip=? AND pagekey=? AND board=?;" )
       or return;
-    $sth->execute( $ip, $key ) or return;
+    $sth->execute( $ip, $key, $board ) or return;
 }
 
 #
@@ -218,7 +219,8 @@ sub init_captcha_database {
           . "ip TEXT,"
           . "pagekey TEXT,"
           . "word TEXT,"
-          . "timestamp INTEGER"
+          . "timestamp INTEGER,"
+          . "board TEXT"
           .
 
           #	",PRIMARY KEY(ip,key)".
