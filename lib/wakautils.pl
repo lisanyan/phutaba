@@ -9,7 +9,6 @@ use Locale::Country;
 use Locale::Codes::Country;
 use DateTime;
 
-use Parse::BBCode;
 use Net::Abuse::Utils qw( :all );
 
 
@@ -296,55 +295,134 @@ sub describe_allowed {
 }
 
 sub do_bbcode {
-    my ( $text, $handler, $simplify ) = @_;
-    $text = do_wakabamark($text, $handler, $simplify, 0);
-	$text =~ s/\r?\n|\r\n|\r|\n/<br\/>/g;
-    my $p = Parse::BBCode->new(
-        {
-            tags => {
-                '' => sub {
-                    my $e = $_[2];
-					do_links($handler, $e);
-                },
-                i       => '<em>%{parse}s</em>',
-                h1      => '<h1>%{noparse}s</h1>',
-                b       => '<strong>%{parse}s</strong>',
-                u       => '<u>%{parse}s</u>',
-                s       => '<s>%{parse}s</s>',
-		fraktur => '<span class="fraktur">%{parse}s</span>',
-                spoiler => '<span class="spoiler">%{parse}s</span>',
-                code    => {
-                    code => sub {
-                        my ( $parser, $attr, $content, $attribute_fallback ) =
-                          @_;
+	my ( $text, $handler ) = @_;
+	my ( $output, @opentags );
 
-                        #$content = Parse::BBCode::escape_html($$content);
-                        my $out = $$content;
-                        $out =~ s/\r?\n|\r\n|\r|\n/<br\/>/g;
-                        $out =~ s/&gtgt;/&gtgt_;/g;
-                        $out =~ s/&gt;/&gt_;/g;
-                        "<code>$out</code>";
-                    },
-                    parse => 0,
-                    class => 'block',
-                },
-            },
-			close_open_tags => 1,
-        }
-    );
-    $text = $p->render($text);
-    return $text;
+	my %html = (	'i'			=> ['<em>', '</em>'],
+					'b'			=> ['<strong>', '</strong>'],
+					'u'			=> ['<u>', '</u>'],
+					's'			=> ['<s>', '</s>'],
+					'code'		=> ['<code>', '</code>'],
+					'spoiler'	=> ['<span class="spoiler">', '</span>'],
+					'quote'		=> ['<span class="quote">', '</span>']	);
+
+	my @bbtags = keys %html;
+
+	# this check can be moved to wakaba.pl: sub format_comment()
+	return do_wakabamark( $text, $handler ) if ( !detect_bbcode( $text, @bbtags ) );
+
+	my @lines = split /(?:\r\n|\n|\r)/,$text;
+	my $findtags = join '|',@bbtags;
+
+	while ( @lines )
+	{
+
+		# do not allow more than one consecutive empty line
+		while ( $lines[0] =~ m/^\s*$/ and $lines[1] =~ m/^\s*$/ ) { shift @lines; }
+
+		# check if the line begins with a quote (>) and we are not already in a quote or code section
+		if ( $lines[0] =~ m/^&gt;/ and !grep {$_ eq 'quote' or $_ eq 'code'} @opentags )
+		{
+			$output .= @{$html{'quote'}}[0];
+			push( @opentags, 'quote' );
+		}
+
+		# match bb-tags in the current line
+		while ( $lines[0] =~ m!(.*?)\[(/?)($findtags)\]|(.+)$!sgi )
+		{
+			# $1 matches the text before a []-tag
+			# $4 matches the text after the last []-tag in one line
+			my ( $textpart, $closing, $tag, $textend ) = ( $1, $2, $3, $4 );
+			my $insert;    # contains [bbtag] which will be replaced by <html-equiv>
+			my $closetags; # used to close all open tags when a [code]-section begins
+
+			# convert links and simple wakaba markup if not inside [code]
+			if ( $opentags[$#opentags] ne 'code' )
+			{
+				$textpart = do_spans( $handler, $textpart );
+			}
+
+			# if the tag is unknown or not properly nested, it will be added back to the output
+			$insert = '[' . $closing . $tag . ']' if ( $tag );
+			$closetags = '';
+
+			if ( grep {$_ eq $tag} @bbtags ) # check for a known tag
+			{
+				if ( $closing )
+				{ # close the tag and pop it from the stack if it was opened last
+					if ( $opentags[$#opentags] eq $tag )
+					{
+						pop( @opentags );
+						$insert = @{$html{$tag}}[1];
+					}
+				}
+				else
+				{ # open the tag if it is not already open and put it on the stack
+					if ( !grep {$_ eq $tag} @opentags )
+					{
+						# close all open tags on [code] and open <code>
+						if ( $tag eq 'code' )
+						{
+							while ( my $otag = pop @opentags ) { $closetags .= @{$html{$otag}}[1]; }
+						}
+
+						# ignore any other tag if [code] is open
+						if ( $opentags[$#opentags] ne 'code' )
+						{
+							push( @opentags, $tag );
+							$insert = @{$html{$tag}}[0];
+						}
+					}
+				}
+			}
+
+			# convert links and simple wakaba markup if not inside [code]
+			if ( $opentags[$#opentags] ne 'code' )
+			{
+				$textend = do_spans( $handler, $textend );
+			}
+
+			$output .= $textpart . $closetags . $insert . $textend;
+		}
+
+		shift @lines;
+
+		# peek into the next line and if it does not start with a quote anymore:
+		# close everything that was opened inside the quote and finally close the quote itself
+		if ( $lines[0] !~ m/^&gt;/ and grep {$_ eq 'quote'} @opentags )
+		{
+			while ( my $otag = pop @opentags )
+			{
+				$output .= @{$html{$otag}}[1];
+				last if ( $otag eq 'quote' );
+			}
+		}
+
+		# processing of the current line is done. insert a break if not at the beginning or end of the comment.
+		$output .= '<br />' if ( $output and @lines );
+	}
+
+	# close any open tags
+	while ( my $otag = pop @opentags )
+	{
+		$output .= @{$html{$otag}}[1];
+	}
+
+	return $output;
+}
+
+sub detect_bbcode($@)
+{
+	my ( $text, @bbtags ) = @_;
+	my $findtags = join '|',@bbtags;
+	return 1 if ( $text =~ m/\[($findtags)\]/ );
+	return 0;
 }
 
 sub do_wakabamark {
-    my ( $text, $handler, $simplify, $makeLinks ) = @_;
+    my ( $text, $handler, $simplify ) = @_;
     my $res;
 
-	my $spanLinks = 1;
-	if(defined($makeLinks)) {
-		$spanLinks = $makeLinks;
-	}
-	
     my @lines = split /(?:\r\n|\n|\r)/, $text;
 
     while ( defined( $_ = $lines[0] ) ) {
@@ -390,7 +468,7 @@ sub do_wakabamark {
                 shift @lines;
             }
             $res .=
-              '<span class="quote">' . do_spans( $spanLinks, $handler, @quote ) . "</span><br />";
+              '<span class="quote">' . do_spans( $handler, @quote ) . "</span><br />";
 
             #while($lines[0]=~/^&gt;(.*)/) { push @quote,$1; shift @lines; }
             #$res.="<blockquote>".do_blocks($handler,@quote)."</blockquote>";
@@ -402,9 +480,9 @@ sub do_wakabamark {
                 push @text, shift @lines;
             }
             if ( !defined( $lines[0] ) and $simplify ) {
-                $res .= do_spans( $spanLinks, $handler, @text );
+                $res .= do_spans( $handler, @text );
             }
-            else { $res .= "<p>" . do_spans( $spanLinks, $handler, @text ) . "</p>" }
+            else { $res .= "<p>" . do_spans( $handler, @text ) . "</p>" }
         }
         $simplify = 0;
     }
@@ -412,28 +490,7 @@ sub do_wakabamark {
     return $res;
 }
 
-sub do_links
-{
-    my $handler = shift;
-	my $text = shift;
-    return join "<br />", map {
-        my $line = $_;
-        my @hidden;
-
-        	# make URLs into links and hide them
-	        $line =~
-    	    s{$url_re}{push @hidden,"<a href=\"$1\" rel=\"nofollow\">$1\</a>"; "<!--$#hidden-->$2"}sge;
-        
-			$line = $handler->($line) if ($handler);
-
-        # fix up hidden sections
-        $line =~ s{<!--([0-9]+)-->}{$hidden[$1]}ge;
-
-        $line;
-    } split /(<br[ \/]>)/, $text;
-}
 sub do_spans {
-    my $spanLinks = shift;
     my $handler = shift;
     return join "<br />", map {
         my $line = $_;
@@ -447,11 +504,9 @@ s{ (?<![\x80-\x9f\xe0-\xfc]) (`+) ([^<>]+?) (?<![\x80-\x9f\xe0-\xfc]) \1}{push @
         $line =~
 s{ (?<![0-9a-zA-Z\*_\x80-\x9f\xe0-\xfc]) (--) (?![<>\s\*_]) ([^<>]+?) (?<![<>\s\*_\x80-\x9f\xe0-\xfc]) \1 (?![0-9a-zA-Z\*_]) }{<h1>$2</h1>}gx;
 
-        if($spanLinks) {
-        	# make URLs into links and hide them
-	        $line =~
-    	    s{$url_re}{push @hidden,"<a href=\"$1\" rel=\"nofollow\">$1\</a>"; "<!--$#hidden-->$2"}sge;
-        }
+        # make URLs into links and hide them
+        $line =~
+s{$url_re}{push @hidden,"<a href=\"$1\" rel=\"nofollow\">$1\</a>"; "<!--$#hidden-->$2"}sge;
 
         # do <strong>
         $line =~
@@ -462,7 +517,6 @@ s{ (?<![0-9a-zA-Z\*_\x80-\x9f\xe0-\xfc]) (\*\*|__) (?![<>\s\*_]) ([^<>]+?) (?<![
 s{ (?<![0-9a-zA-Z\*_\x80-\x9f\xe0-\xfc]) (\*|_) (?![<>\s\*_]) ([^<>]+?) (?<![<>\s\*_\x80-\x9f\xe0-\xfc]) \1 (?![0-9a-zA-Z\*_]) }{<em>$2</em>}gx;
 
         # do <span class="spoiler">
-
         $line =~
 s{ (?<![0-9a-zA-Z\*_\x80-\x9f\xe0-\xfc]) (~~) (?![<>\s\*_]) ([^<>]+?) (?<![<>\s\*_\x80-\x9f\xe0-\xfc]) \1 (?![0-9a-zA-Z\*_]) }{<span class="spoiler">$2</span>}gx;
 
