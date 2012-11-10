@@ -334,11 +334,9 @@ use constant PAGE_TEMPLATE => compile_template(
 	</if>
 
 	<if $thread><tr id="trgetback"><td class="postblock">Gehe zur&uuml;ck</td> <td><label><input name="gb2" value="board" checked="checked" type="radio" /> zum Board</label> <label><input name="gb2" value="thread" type="radio" /> zum Faden</label> </td></tr></if>
-        <if use_captcha(ENABLE_CAPTCHA, $loc)>
-		<tr><td class="postblock"><const S_CAPTCHA> (<a href="/faq">?</a>)</td><td><input type="text" name="captcha" size="10" />
-		<img alt="" src="<var expand_filename(CAPTCHA_SCRIPT)>?key=<var get_captcha_key($thread)>&amp;dummy=<var $dummy>" />
-		</td></tr>
-	</if>
+  <if use_captcha(ENABLE_CAPTCHA, $loc)>
+    <tr><td class="postblock"><const S_CAPTCHA> (<a href="/faq">?</a>) (<var $loc>)</td><td><input type="text" name="captcha" size="10" /> <img alt="" src="<var expand_filename(CAPTCHA_SCRIPT)>?key=<var get_captcha_key($thread)>&amp;dummy=<var $dummy>&amp;board=<var BOARD_IDENT>" /></td></tr>
+  </if>
 
 	<tr id="passwordField"><td class="postblock"><const S_DELPASS></td><td><input type="password" name="password" size="8" /> <const S_DELEXPL></td></tr>
 	<tr><td colspan="2">
