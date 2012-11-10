@@ -1228,7 +1228,7 @@ sub post_stuff {
     
     
     # check captcha
-    check_captcha( $dbh, $captcha, $ip, $parent )
+    check_captcha( $dbh, $captcha, $ip, $parent, BOARD_IDENT )
       if ( (use_captcha(ENABLE_CAPTCHA, $loc) and !$admin) or (ENABLE_CAPTCHA and !$admin and !$no_captcha and !is_trusted($trip)) );
 
     # proxy check
