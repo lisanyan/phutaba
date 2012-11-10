@@ -1,5 +1,9 @@
 #!/usr/bin/perl
 
+BEGIN {
+	require 'lib/site_config.pl';
+}
+
 use CGI;
 use DBI;
 use Template;
@@ -21,7 +25,8 @@ my $tt = Template->new({
         POST_PROCESS => 'footer.tt2',
     }) || print Template->error(), "\n";
 
-$dbh = DBI->connect('DBI:mysql:database=xxxxx;host=localhost', 'xxxxx', 'xxxxx',  { AutoCommit => 1 }) or die($tt->process("error.tt2", { 'error' => {'type' => $DBI::err, 'info' => $DBI::errstr}})); 
+
+$dbh = DBI->connect(SQL_DBI_SOURCE, SQL_USERNAME, SQL_PASSWORD,  { AutoCommit => 1 }) or die($tt->process("error.tt2", { 'error' => {'type' => $DBI::err, 'info' => $DBI::errstr}})); 
 $sth = $dbh->prepare('SELECT * FROM news ORDER BY news.date DESC LIMIT 0, 10');
 $sth->execute or die($tt->process("error.tt2", { 'error' => {'type' => $DBI::err, 'info' => $DBI::errstr}}));
 while(my $row = $sth->fetchrow_hashref) {
