@@ -1,0 +1,6 @@
+use constant ADMIN_PASS => 'xxxxx';			# Admin password. For fucks's sake, change this.
+use constant NUKE_PASS => 'xxxxxxxx';			# Password to nuke a board. Change this too, NOW!
+use constant SECRET => 'xxxxxxxx';				# Cryptographic secret. CHANGE THIS to something totally random, and long.
+use constant SQL_DBI_SOURCE => 'DBI:mysql:database=xxxxx;host=localhost'; # DBI data source string (mysql version, put server and database name in here)
+use constant SQL_USERNAME => 'xxxx';		# MySQL login name
+use constant SQL_PASSWORD => 'xxxx';		# MySQL password

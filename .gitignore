@@ -1,4 +1,3 @@
-index.pl
 board/src/
 board/thumb/
-board/config.pl
+lib/site_config.pl

@@ -7,17 +7,9 @@
 # default values. You must specify ADMIN_PASS, NUKE_PASS, SECRET and the
 # SQL_ options.
 #
+require '../lib/site_config.pl';
 
 # System config
-use constant ADMIN_PASS => 'xxxxx';			# Admin password. For fucks's sake, change this.
-use constant NUKE_PASS => 'xxxxxxxx';			# Password to nuke a board. Change this too, NOW!
-use constant SECRET => 'xxxxxxxx';				# Cryptographic secret. CHANGE THIS to something totally random, and long.
-use constant SQL_DBI_SOURCE => 'DBI:mysql:database=xxxxx;host=localhost'; # DBI data source string (mysql version, put server and database name in here)
-use constant SQL_USERNAME => 'xxxxx';		# MySQL login name
-use constant SQL_PASSWORD => 'xxxxx';		# MySQL password
-#use constant SQL_DBI_SOURCE => 'dbi:SQLite:dbname=wakaba.sql';		# DBI data source string (SQLite version, put database filename in here)
-#use constant SQL_USERNAME => '';				# Not used by SQLite
-#use constant SQL_PASSWORD => '';				# Not used by SQLite
 use constant SQL_TABLE_IMG => 'board_img';			# Table (NOT DATABASE) used by image board for secondary images
 use constant SQL_TABLE => 'board';			# Table (NOT DATABASE) used by image board
 use constant SQL_ADMIN_TABLE => 'admin';		# Table used for admin information
