@@ -419,14 +419,21 @@ sub detect_bbcode($@)
 	return 0;
 }
 
-sub do_wakabamark {
-    my ( $text, $handler, $simplify ) = @_;
+sub do_wakabamark($;$$) {
+    my ($text, $handler, $simplify) = @_;
     my $res;
 
     my @lines = split /(?:\r\n|\n|\r)/, $text;
 
     while ( defined( $_ = $lines[0] ) ) {
-        if (/^\s*$/) { shift @lines; }    # skip empty lines
+        if (/^\s*$/) {		# handle empty lines
+			$res .= "<br />" if ($res); # skip empty lines at the beginning of the comment
+
+			# do not allow more than one consecutive empty line
+			while (@lines and $lines[0] =~ /^\s*$/ and $lines[1] =~ /^\s*$/) { shift @lines; }
+
+			shift @lines;
+		}
         elsif (/^(1\.|[\*\+\-]) /)        # lists
         {
             my ( $tag, $re, $skip, $html );
@@ -482,7 +489,7 @@ sub do_wakabamark {
             if ( !defined( $lines[0] ) and $simplify ) {
                 $res .= do_spans( $handler, @text );
             }
-            else { $res .= "<p>" . do_spans( $handler, @text ) . "</p>" }
+            else { $res .= do_spans( $handler, @text ) . "<br />" }
         }
         $simplify = 0;
     }
