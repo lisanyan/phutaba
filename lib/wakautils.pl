@@ -1697,11 +1697,11 @@ sub get_displayname($) {
 	$filename =~ m!([^/\\]+)$!;
 	$filename = $1;
 
-	# (.{15})    - first X characters of the file(base)name
+	# (.{12})    - first X characters of the file(base)name
 	# ...+       - has the basename X+3 or more characters?
 	# (\.[^.]+)$ - Match a dot, followed by any number of non-dots until the end
-	# output is: the first match ()->$1 a fixed string "(...)" and the extension ()->$2
-	$filename =~ s/(.{15})...+(\.[^.]+)$/$1\[...\]$2/;
+	# output is: the first match ()->$1 a fixed string "[...]" and the extension ()->$2
+	$filename =~ s/(.{12})...+(\.[^.]+)$/$1\[...\]$2/;
 
 	#return clean_string($filename);
 	return $filename;
@@ -1714,7 +1714,7 @@ sub get_displaysize($;$) {
 	if ($size < 1024) {
 		$out = sprintf("%d Bytes", $size);
 	} elsif ($size >= 1024 && $size < 1024*1024) {
-		$out = sprintf("%.0f KB", $size/1024);
+		$out = sprintf("%.0f kB", $size/1024);
 	} else {
 		$out = sprintf("%.2f MB", $size / (1024*1024));
 		$out =~ s/00 MB$/0 MB/;
