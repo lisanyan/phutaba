@@ -9,7 +9,7 @@ use DBI;
 use Template;
 use HTML::Entities;
 use Encode;
-use Data::Dumper;
+#use Data::Dumper;
 my $sth;
 my @news;
 my $q = CGI->new;
