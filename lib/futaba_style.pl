@@ -269,7 +269,7 @@ use constant NORMAL_HEAD_INCLUDE => q{
 <a href="/<const BOARD_IDENT>/"><img src="/banner/<const BOARD_IDENT>" class="banner" alt="<const BOARD_IDENT>" /></a></center>
 <div class="logo" <if BOARD_DESC>style="margin-bottom: 5px;"</if>>/<const BOARD_IDENT>/ - <const BOARD_NAME></div>
 <if BOARD_DESC><div class="slogan">&bdquo;<const BOARD_DESC>&ldquo;</div></if>
-<hr />
+<if !DISABLE_NEW_THREADS or $isAdmin or $thread or $admin><hr /></if>
 
 };
 
@@ -281,7 +281,7 @@ use constant MANAGER_HEAD_INCLUDE => NORMAL_HEAD_INCLUDE . q{
 	[<a href="<var decode('utf-8', $self)>?task=bans&amp;admin=<var $admin>"><const S_MANABANS></a>]
 	[<a href="<var decode('utf-8', $self)>?task=mpost&amp;admin=<var $admin>"><const S_MANAPOST></a>]
 	[<a href="<var decode('utf-8', $self)>?task=logout"><const S_MANALOGOUT></a>]
-	<div class="passvalid"><const S_MANAMODE></div><br />
+	<div class="passvalid"><const S_MANAMODE></div>
 </if>
 };
 use constant NORMAL_FOOT_INCLUDE => q{
@@ -293,6 +293,7 @@ use constant PAGE_TEMPLATE => compile_template(
     MANAGER_HEAD_INCLUDE . q{
 
 <if !$locked>
+<if !DISABLE_NEW_THREADS or $thread or $isAdmin>
 <if $postform>
 	<div class="postarea">
 	<form id="postform" action="<var decode('utf-8', $self)>" method="post" enctype="multipart/form-data">
@@ -354,6 +355,7 @@ use constant PAGE_TEMPLATE => compile_template(
 
 </form>
 </center>
+</if>
 </if>
 </if>
 <if $locked>

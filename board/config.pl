@@ -38,7 +38,6 @@ use constant S_ANONAME => 'Ernst';			# Defines what to print if there is no text
 use constant S_ANOTEXT => '';					# Defines what to print if there is no text entered in the comment field
 use constant S_ANOTITLE => '';					# Defines what to print if there is no text entered into subject field
 use constant SILLY_ANONYMOUS => '';			# Make up silly names for anonymous people (0 or '': don't display, any combination of 'day' or 'board': make names change for each day or board, 'static': static names)
-use constant DEFAULT_STYLE => 'Futaba';		# Title of the default style for the board.
 
 # Limitations
 use constant MAX_KB => 10240;					# Maximum upload size in KB

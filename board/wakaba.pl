@@ -826,8 +826,8 @@ sub output_page {
                 pages        => \@pages,
                 loc          => $loc,
                 threads      => \@threads,
-		isAdmin      => $isAdmin,
-		admin        => $adminPass
+		        isAdmin      => $isAdmin,
+		        admin        => $adminPass
             )
         )
     );
@@ -1101,6 +1101,7 @@ sub post_stuff {
         else {
             make_error(S_NOTALLOWED) if ( $file  and !ALLOW_IMAGES );
             make_error(S_NOTALLOWED) if ( !$file and !ALLOW_TEXTONLY );
+            make_error(S_NOTALLOWED) if (DISABLE_NEW_THREADS);
         }
     }
 
@@ -1311,9 +1312,9 @@ sub post_stuff {
             if ($socket) {
                 if ( $parent and IRC_NOTIFY_ON_NEW_POST ) {
                     print $socket S_IRC_NEW_POST_PREPEND . "/"
-                      . BOARD_IDENT . "/: "
+                      . encode('utf-8', decode_entities(BOARD_IDENT)) . "/: "
                       . S_IRC_BASE_BOARDURL
-                      . BOARD_IDENT
+                      . encode('utf-8', decode_entities(BOARD_IDENT))
                       . S_IRC_BASE_THREADURL
                       . $parent . "#"
                       . $$row{num} . " ["
@@ -1321,9 +1322,9 @@ sub post_stuff {
                 }
                 elsif ( !$parent and IRC_NOTIFY_ON_NEW_THREAD ) {
                     print $socket S_IRC_NEW_THREAD_PREPEND . "/"
-                      . BOARD_IDENT . "/: "
+                      . encode('utf-8', decode_entities(BOARD_IDENT)) . "/: "
                       . S_IRC_BASE_BOARDURL
-                      . BOARD_IDENT
+                      . encode('utf-8', decode_entities(BOARD_IDENT))
                       . S_IRC_BASE_THREADURL
                       . $$row{num} . " ["
                       . get_preview($original_comment) . "]\n";
@@ -1335,7 +1336,7 @@ sub post_stuff {
     }
 
     if (ENABLE_WEBSOCKET_NOTIFY) {
-        my $ufoporno = system('/usr/local/bin/push-post', BOARD_IDENT, $parent, $new_post_id, "2>&1", ">/dev/null");
+        my $ufoporno = system('/usr/local/bin/push-post', decode_entities(BOARD_IDENT), $parent, $new_post_id, "2>&1", ">/dev/null");
     }
 
     if ($parent)    # bumping
@@ -1394,16 +1395,16 @@ sub post_stuff {
 	if(!$admin)
 	{
 	    # forward back to the main page
-	    make_http_forward( HTML_SELF) if ( $parent eq '0' );
-	    make_http_forward( HTML_SELF . "?task=show&thread=" . $parent) if ( $c_gb2 =~ /thread/i );
-	    make_http_forward( HTML_SELF);
+	    make_http_forward( encode('utf-8', HTML_SELF)) if ( $parent eq '0' );
+	    make_http_forward( encode('utf-8', HTML_SELF) . "?task=show&thread=" . $parent) if ( $c_gb2 =~ /thread/i );
+	    make_http_forward( encode('utf-8', HTML_SELF));
 	}
 	else
 	{
 		# forward back to moderation page
-	    make_http_forward( HTML_SELF ."?task=show&amp;page=0&amp;admin=$admin") if ( $parent eq '0' );
-	    make_http_forward( HTML_SELF . "?task=show&amp;thread=" . $parent . "&amp;admin=$admin") if ( $c_gb2 =~ /thread/i );
-	    make_http_forward( HTML_SELF . "?task=show&amp;page=0&amp;admin=$admin");
+	    make_http_forward( encode('utf-8', HTML_SELF) ."?task=show&amp;page=0&amp;admin=$admin") if ( $parent eq '0' );
+	    make_http_forward( encode('utf-8', HTML_SELF) . "?task=show&amp;thread=" . $parent . "&amp;admin=$admin") if ( $c_gb2 =~ /thread/i );
+	    make_http_forward( encode('utf-8', HTML_SELF) . "?task=show&amp;page=0&amp;admin=$admin");
 	}
 }
 
@@ -1585,7 +1586,7 @@ sub format_comment {
 
         $line =~ s!&gtgt;([0-9]+)!
 			my $res=get_post($1);
-			if($res) { '<a href="'.get_reply_link($$res{num},$$res{parent}).'" onclick="highlight('.$1.')">&gt;&gt;'.$1.'</a>' }
+			if($res) { '<a href="'.decode("utf-8", get_reply_link($$res{num},$$res{parent})).'" onclick="highlight('.$1.')">&gt;&gt;'.$1.'</a>' }
 			else { "&gt;&gt;$1"; }
 		!ge;
 
@@ -2015,8 +2016,8 @@ sub delete_stuff {
     if ($admin) {
         make_http_forward( get_script_name() . "?admin=$admin&task=mpanel");
     } elsif ( $noko == 1 and $parent ) {
-		make_http_forward( HTML_SELF . "?task=show&thread=" . $parent);
-	} else { make_http_forward( HTML_SELF . "?task=show&page=0"); }
+		make_http_forward( encode('utf-8', HTML_SELF) . "?task=show&thread=" . $parent);
+	} else { make_http_forward( encode('utf-8', HTML_SELF) . "?task=show&page=0"); }
 }
 
 sub make_locked {
@@ -2225,28 +2226,6 @@ sub delete_post {
             $sth->execute($post) or make_error(S_SQLFAIL);
 
         }
-
-        ###### NOT SURE IF THIS IS NEEDED! (maybe for archiving mode?) ####
-
-        # fix up the thread cache
-        if ( !$$row{parent} ) {
-            unless ($fileonly)    # removing an entire thread
-            {
-            }
-            else    # removing parent image
-            {
-#test ProtoFoo                show_thread( $$row{num}, $admin );
-# delete_post should not output anything, because delete_stuff should
-# redirect to the new page after all deletions are done
-            }
-        }
-        else        # removing a reply, or a reply's image
-        {
-#test ProtoFoo            show_thread( $$row{parent}, $admin );
-        }
-
-        ###### END #####
-
     }
 }
 
@@ -2621,8 +2600,8 @@ sub get_reply_link {
 	if(defined($admin))
 	{
 		# TODO: a bit hacky!
-		return expand_filename( HTML_SELF."?task=show&amp;thread=$parent&amp;admin=$admin".'#'."$reply" ) if ($parent);
-		return expand_filename( HTML_SELF."?task=show&amp;thread=$reply&amp;admin=$admin" );
+		return expand_filename( encode('utf-8', HTML_SELF)."?task=show&amp;thread=$parent&amp;admin=$admin".'#'."$reply" ) if ($parent);
+		return expand_filename( encode('utf-8', HTML_SELF)."?task=show&amp;thread=$reply&amp;admin=$admin" );
 	}
 	else
 	{
