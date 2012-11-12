@@ -10,7 +10,7 @@ use constant NORMAL_HEAD_INCLUDE => q{
 <title><var strip_html(TITLE)> &raquo; <if $title><var strip_html($title)></if><if !$title>/<var strip_html(BOARD_IDENT)>/ - <var strip_html(BOARD_NAME)></if></title>
 <meta http-equiv="Content-Type" content="text/html;charset=<const CHARSET>" />
 <link rel="shortcut icon" href="/img/favicon.ico" />
-<link rel="stylesheet" type="text/css" href="/css/ernstchan.css" />
+<link rel="stylesheet" type="text/css" href="<const STYLESHEET>" />
 <link rel="stylesheet" type="text/css" href="/css/jquery.ui.css" />
 <script type="text/javascript" src="/js/prototype.js"></script>
 <script type="text/javascript" src="/js/jquery.js"></script>
@@ -158,7 +158,7 @@ use constant NORMAL_HEAD_INCLUDE => q{
 </if>
 /* ]]> */
 </script>
-<if $thread>
+<if $thread && ENABLE_WEBSOCKET_NOTIFY>
 	<script type="text/javascript">
 		var thread_id = <var $thread>;
 		var board = "<const BOARD_IDENT>";
@@ -224,7 +224,8 @@ use constant NORMAL_HEAD_INCLUDE => q{
 </div>
 </if>
 <div id="disclaimer" style="display: none">
-  <!--<div class="caption">Regeln</div>-->
+ <!--<div class="caption">Regeln</div>-->
+
  
  <div class="item">
   <div class="title">
@@ -257,7 +258,7 @@ use constant NORMAL_HEAD_INCLUDE => q{
 
 </div>
 <script type="text/javascript" src="/js/wz_tooltip.js"></script>
-<if $thread><script type="text/javascript" src="/js/websock.js"></script></if>
+<if $thread && ENABLE_WEBSOCKET_NOTIFY><script type="text/javascript" src="/js/websock.js"></script></if>
 } . include("../tpl/content/boardnav.tt2") . q{
 
 <div style="clear: both;"></div>
@@ -334,9 +335,9 @@ use constant PAGE_TEMPLATE => compile_template(
 	</if>
 
 	<if $thread><tr id="trgetback"><td class="postblock">Gehe zur&uuml;ck</td> <td><label><input name="gb2" value="board" checked="checked" type="radio" /> zum Board</label> <label><input name="gb2" value="thread" type="radio" /> zum Faden</label> </td></tr></if>
-  <if use_captcha(ENABLE_CAPTCHA, $loc)>
-    <tr><td class="postblock"><const S_CAPTCHA> (<a href="/faq">?</a>) (<var $loc>)</td><td><input type="text" name="captcha" size="10" /> <img alt="" src="<var expand_filename(CAPTCHA_SCRIPT)>?key=<var get_captcha_key($thread)>&amp;dummy=<var $dummy>&amp;board=<var BOARD_IDENT>" /></td></tr>
-  </if>
+	<if use_captcha(ENABLE_CAPTCHA, $loc)>
+		<tr><td class="postblock"><const S_CAPTCHA> (<a href="/faq">?</a>) (<var $loc>)</td><td><input type="text" name="captcha" size="10" /> <img alt="" src="<var expand_filename(CAPTCHA_SCRIPT)>?key=<var get_captcha_key($thread)>&amp;dummy=<var $dummy>&amp;board=<var BOARD_IDENT>" /></td></tr>
+	</if>
 
 	<tr id="passwordField"><td class="postblock"><const S_DELPASS></td><td><input type="password" name="password" size="8" /> <const S_DELEXPL></td></tr>
 	<tr><td colspan="2">
@@ -392,6 +393,7 @@ use constant PAGE_TEMPLATE => compile_template(
 <hr />
 <table class="userdelete"><tbody><tr><td>
 <input type="hidden" name="task" value="delete" />
+<if $thread><input type="hidden" name="parent" value="<var $thread>" /></if>
 <const S_DELKEY><input type="password" name="password" size="8" />
 <input value="<const S_DELETE>" type="submit" /></td></tr></tbody></table>
 </form>

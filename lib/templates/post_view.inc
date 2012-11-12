@@ -43,11 +43,11 @@
 	</span>
 	<if !$parent>
 		<if !$sticky_isnull><span class="sticky" onmouseover="Tip('<var S_STICKYTITLE>')" onmouseout="UnTip()">PRO</span></if>
-		<if $locked><span class="locked"><img src="/img/locked.png" onmdec_to_dotouseover="Tip('<var S_LOCKEDTITLE>')" onmouseout="UnTip()"></span></if>
+		<if $locked><span class="locked"><img src="/img/locked.png" onmouseover="Tip('<var S_LOCKEDTITLE>')" onmouseout="UnTip()" alt="Lock" /></span></if>
 		<if !$autosage><if $email><span class="sage">KONTRA</span></if></if>
 		<if $sticky_isnull><if $autosage><span class="systemsage">SYSTEMKONTRA</span></if></if>
 	</if>
-	<if $ssl><span class="ssl" onmouseover="Tip('<var $ssl>')" onmouseout="UnTip()"><img src="<var SSL_ICON>"></span></if>
+	<if $ssl><span class="ssl" onmouseover="Tip('<var $ssl>')" onmouseout="UnTip()"><img src="<var SSL_ICON>" alt="SSL" /></span></if>
 	<if $parent>
 		<if $email><span class="sage">KONTRA</span></if>
 	</if>
@@ -101,11 +101,11 @@
 	</div>
 	<div class="thread_file">
 		<span class="filename">&nbsp;<const S_PICNAME><a target="_blank" title="<var $uploadname>" href="<var decode('utf-8', expand_image_filename($image))>/<var $uploadname>"><var get_displayname($uploadname)></a></span><br />
-		<span class="filesize">&nbsp;<if !$displaysize><var $size> Bytes</if><if $displaysize><var $displaysize></if><if $width><if $height>, <var $width>x<var $height>&nbsp;</if></if></span>
+		<span class="filesize">&nbsp;<if !$displaysize><var $size> Bytes</if><if $displaysize><var $displaysize></if><if $width><if $height>, <var $width>&nbsp;&times;&nbsp;<var $height>&nbsp;</if></if></span>
 		<span class="thumbnailmsg"><const S_THUMB></span><br />
 		<if $thumbnail>
 			<a target="_blank" href="<var decode('utf-8', expand_image_filename($image))>">
-				<img onmouseover="TagToTip('imageinfo_<var md5_hex($image)>', TITLE, 'Dateiinformationen', WIDTH, 300)" onmouseout="UnTip()" src="<var decode('utf-8', expand_filename($thumbnail))>" alt="<var $size>" class="thumb" />
+				<img onmouseover="TagToTip('imageinfo_<var md5_hex($image)>', TITLE, 'Dateiinformationen', WIDTH, 300)" onmouseout="UnTip()" src="<var decode('utf-8', expand_filename($thumbnail))>" width="<var $tn_width>" height="<var $tn_height>" alt="<var $size>" class="thumb" />
 			</a>
 		</if>
 		<if !$thumbnail>
@@ -130,11 +130,11 @@
 	</div>
 	<div class="thread_file">
 		<span class="filename">&nbsp;<const S_PICNAME><a target="_blank" title="<var $uploadname1>" href="<var decode('utf-8', expand_image_filename($image1))>/<var $uploadname1>"><var get_displayname($uploadname1)></a></span><br />
-		<span class="filesize">&nbsp;<if !$displaysize><var $size> Bytes</if><if $displaysize1><var $displaysize1></if><if $width1><if $height1>, <var $width1>x<var $height1>&nbsp;</if></if></span>
+		<span class="filesize">&nbsp;<if !$displaysize><var $size> Bytes</if><if $displaysize1><var $displaysize1></if><if $width1><if $height1>, <var $width1>&nbsp;&times;&nbsp;<var $height1>&nbsp;</if></if></span>
 		<span class="thumbnailmsg"><const S_THUMB></span><br />
 		<if $thumbnail1>
 			<a target="_blank" href="<var decode('utf-8', expand_image_filename($image1))>">
-				<img onmouseover="TagToTip('imageinfo_<var md5_hex($image1)>', TITLE, 'Dateiinformationen', WIDTH, 300)" onmouseout="UnTip()" src="<var decode('utf-8', expand_filename($thumbnail1))>" alt="<var $size1>" class="thumb" />
+				<img onmouseover="TagToTip('imageinfo_<var md5_hex($image1)>', TITLE, 'Dateiinformationen', WIDTH, 300)" onmouseout="UnTip()" src="<var decode('utf-8', expand_filename($thumbnail1))>" width="<var $tn_width1>" height="<var $tn_height1>" alt="<var $size1>" class="thumb" />
 			</a>
 		</if>
 		<if !$thumbnail1>
@@ -159,11 +159,11 @@
 	</div>
 	<div class="thread_file">
 		<span class="filename">&nbsp;<const S_PICNAME><a target="_blank" title="<var $uploadname2>" href="<var decode('utf-8', expand_image_filename($image2))>/<var $uploadname2>"><var get_displayname($uploadname2)></a></span><br />
-		<span class="filesize">&nbsp;<if !$displaysize><var $size> Bytes</if><if $displaysize2><var $displaysize2></if><if $width2><if $height2>, <var $width2>x<var $height2>&nbsp;</if></if></span>
+		<span class="filesize">&nbsp;<if !$displaysize><var $size> Bytes</if><if $displaysize2><var $displaysize2></if><if $width2><if $height2>, <var $width2>&nbsp;&times;&nbsp;<var $height2>&nbsp;</if></if></span>
 		<span class="thumbnailmsg"><const S_THUMB></span><br />
 		<if $thumbnail2>
 			<a target="_blank" href="<var decode('utf-8', expand_image_filename($image2))>">
-				<img onmouseover="TagToTip('imageinfo_<var md5_hex($image2)>', TITLE, 'Dateiinformationen', WIDTH, 300)" onmouseout="UnTip()" src="<var decode('utf-8', expand_filename($thumbnail2))>" alt="<var $size2>" class="thumb" />
+				<img onmouseover="TagToTip('imageinfo_<var md5_hex($image2)>', TITLE, 'Dateiinformationen', WIDTH, 300)" onmouseout="UnTip()" src="<var decode('utf-8', expand_filename($thumbnail2))>" width="<var $tn_width2>" height="<var $tn_height2>" alt="<var $size2>" class="thumb" />
 			</a>
 		</if>
 		<if !$thumbnail2>
@@ -188,11 +188,11 @@
 	</div>
 	<div class="thread_file">
 		<span class="filename">&nbsp;<const S_PICNAME><a target="_blank" title="<var $uploadname3>" href="<var decode('utf-8', expand_image_filename($image3))>/<var $uploadname3>"><var get_displayname($uploadname3)></a></span><br />
-		<span class="filesize">&nbsp;<if !$displaysize><var $size> Bytes</if><if $displaysize3><var $displaysize3></if><if $width3><if $height3>, <var $width3>x<var $height3>&nbsp;</if></if></span>
+		<span class="filesize">&nbsp;<if !$displaysize><var $size> Bytes</if><if $displaysize3><var $displaysize3></if><if $width3><if $height3>, <var $width3>&nbsp;&times;&nbsp;<var $height3>&nbsp;</if></if></span>
 		<span class="thumbnailmsg"><const S_THUMB></span><br />
 		<if $thumbnail3>
 			<a target="_blank" href="<var decode('utf-8', expand_image_filename($image3))>">
-				<img onmouseover="TagToTip('imageinfo_<var md5_hex($image3)>', TITLE, 'Dateiinformationen', WIDTH, 300)" onmouseout="UnTip()" src="<var decode('utf-8', expand_filename($thumbnail3))>" alt="<var $size3>" class="thumb" />
+				<img onmouseover="TagToTip('imageinfo_<var md5_hex($image3)>', TITLE, 'Dateiinformationen', WIDTH, 300)" onmouseout="UnTip()" src="<var decode('utf-8', expand_filename($thumbnail3))>" width="<var $tn_width3>" height="<var $tn_height3>" alt="<var $size3>" class="thumb" />
 			</a>
 		</if>
 		<if !$thumbnail3>
