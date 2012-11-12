@@ -279,8 +279,6 @@ use constant MANAGER_HEAD_INCLUDE => NORMAL_HEAD_INCLUDE . q{
 	[<a href="<var expand_filename(HTML_SELF)>"><const S_MANARET></a>]
 	[<a href="<var decode('utf-8', $self)>?task=mpanel&amp;admin=<var $admin>"><const S_MANAPANEL></a>]
 	[<a href="<var decode('utf-8', $self)>?task=bans&amp;admin=<var $admin>"><const S_MANABANS></a>]
-	[<a href="<var decode('utf-8', $self)>?task=sqldump&amp;admin=<var $admin>"><const S_MANASQLDUMP></a>]
-	[<a href="<var decode('utf-8', $self)>?task=sql&amp;admin=<var $admin>"><const S_MANASQLINT></a>]
 	[<a href="<var decode('utf-8', $self)>?task=mpost&amp;admin=<var $admin>"><const S_MANAPOST></a>]
 	[<a href="<var decode('utf-8', $self)>?task=logout"><const S_MANALOGOUT></a>]
 	<div class="passvalid"><const S_MANAMODE></div><br />
@@ -520,8 +518,6 @@ use constant ADMIN_LOGIN_TEMPLATE => compile_template(
 <select name="nexttask">
 <option value="mpanel"><const S_MANAPANEL></option>
 <option value="bans"><const S_MANABANS></option>
-<option value="sqldump"><const S_MANASQLDUMP></option>
-<option value="sql"><const S_MANASQLINT></option>
 <option value="mpost"><const S_MANAPOST></option>
 </select>
 <input type="submit" value="<const S_MANASUB>" />
@@ -797,36 +793,6 @@ use constant BAN_PANEL_TEMPLATE => compile_template(
     #   <i>none</i>
     # </if>
 
-
-use constant SQL_DUMP_TEMPLATE => compile_template(
-    MANAGER_HEAD_INCLUDE . q{
-
-<div class="dellist"><const S_MANASQLDUMP></div>
-
-<pre><code><var $database></code></pre>
-
-} . NORMAL_FOOT_INCLUDE
-);
-
-use constant SQL_INTERFACE_TEMPLATE => compile_template(
-    MANAGER_HEAD_INCLUDE . q{
-
-<div class="dellist"><const S_MANASQLINT></div>
-
-<div align="center">
-<form action="<var decode('utf-8', $self)>" method="post">
-<input type="hidden" name="task" value="sql" />
-<input type="hidden" name="admin" value="<var $admin>" />
-
-<textarea name="sql" rows="10" cols="60"></textarea>
-
-</form>
-</div>
-
-<pre><code><var $results></code></pre>
-
-} . NORMAL_FOOT_INCLUDE
-);
 
 use constant ADMIN_POST_TEMPLATE => compile_template(
     MANAGER_HEAD_INCLUDE . q{

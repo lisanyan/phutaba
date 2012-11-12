@@ -324,15 +324,6 @@ elsif ( $task eq "removeban" ) {
     my $num   = $query->param("num");
     remove_admin_entry( $admin, $num );
 }
-elsif ( $task eq "sqldump" ) {
-    my $admin = $query->param("admin");
-    make_sql_dump($admin);
-}
-elsif ( $task eq "sql" ) {
-    my $admin = $query->param("admin");
-    my $sql   = $query->param("sql");
-    make_sql_interface( $admin, $sql );
-}
 elsif ( $task eq "mpost" ) {
     my $admin = $query->param("admin");
     make_admin_post($admin);
@@ -2373,69 +2364,6 @@ sub make_admin_ban_panel {
         BAN_PANEL_TEMPLATE->( admin => $admin, bans => \@bans ) );
 }
 
-
-sub make_sql_dump {
-    my ($admin) = @_;
-    my ( $sth, $row, @database );
-
-    check_password( $admin, ADMIN_PASS );
-
-    $sth = $dbh->prepare( "SELECT * FROM " . SQL_TABLE . ";" )
-      or make_error(S_SQLFAIL);
-    $sth->execute() or make_error(S_SQLFAIL);
-    while ( $row = get_decoded_arrayref($sth) ) {
-        push @database,
-            "INSERT INTO "
-          . SQL_TABLE
-          . " VALUES('"
-          . ( join "','", map { s/\\/&#92;/g; $_ } @{$row} )
-          . # escape ' and \, and join up all values with commas and apostrophes
-          "');";
-    }
-
-    make_http_header();
-    print encode_string(
-        SQL_DUMP_TEMPLATE->(
-            admin    => $admin,
-            database => join "<br />",
-            map { clean_string( $_, 1 ) } @database
-        )
-    );
-}
-
-sub make_sql_interface {
-    my ( $admin, $sql ) = @_;
-    my ( $sth, $row, @results );
-
-    check_password( $admin, ADMIN_PASS );
-
-    if ($sql) {
-        my @statements = grep { /^\S/ } split /\r?\n/,
-          decode_string( $sql, CHARSET, 1 );
-
-        foreach my $statement (@statements) {
-            push @results, ">>> $statement";
-            if ( $sth = $dbh->prepare($statement) ) {
-                if ( $sth->execute() ) {
-                    while ( $row = get_decoded_arrayref($sth) ) {
-                        push @results, join ' | ', @{$row};
-                    }
-                }
-                else { push @results, "!!! " . $sth->errstr() }
-            }
-            else { push @results, "!!! " . $sth->errstr() }
-        }
-    }
-
-    make_http_header();
-    print encode_string(
-        SQL_INTERFACE_TEMPLATE->(
-            admin   => $admin,
-            results => join "<br />",
-            map { clean_string( $_, 1 ) } @results
-        )
-    );
-}
 
 sub make_admin_post {
     my ($admin) = @_;
