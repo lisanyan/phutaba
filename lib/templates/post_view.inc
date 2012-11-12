@@ -134,7 +134,7 @@
 		<span class="thumbnailmsg"><const S_THUMB></span><br />
 		<if $thumbnail1>
 			<a target="_blank" href="<var decode('utf-8', expand_image_filename($image1))>">
-				<img onmouseover="TagToTip('imageinfo_<var md5_hex($image1)>', TITLE, 'Dateiinformationen', WIDTH, 300)" onmouseout="UnTip()" src="<var decode('utf-8', expand_filename($thumbnail1))>" width="<var $tn_width1>" height="<var $tn_width1>" alt="<var $size1>" class="thumb" />
+				<img onmouseover="TagToTip('imageinfo_<var md5_hex($image1)>', TITLE, 'Dateiinformationen', WIDTH, 300)" onmouseout="UnTip()" src="<var decode('utf-8', expand_filename($thumbnail1))>" width="<var $tn_width1>" height="<var $tn_height1>" alt="<var $size1>" class="thumb" />
 			</a>
 		</if>
 		<if !$thumbnail1>
@@ -163,7 +163,7 @@
 		<span class="thumbnailmsg"><const S_THUMB></span><br />
 		<if $thumbnail2>
 			<a target="_blank" href="<var decode('utf-8', expand_image_filename($image2))>">
-				<img onmouseover="TagToTip('imageinfo_<var md5_hex($image2)>', TITLE, 'Dateiinformationen', WIDTH, 300)" onmouseout="UnTip()" src="<var decode('utf-8', expand_filename($thumbnail2))>" width="<var $tn_width2>" height="<var $height2>" alt="<var $size2>" class="thumb" />
+				<img onmouseover="TagToTip('imageinfo_<var md5_hex($image2)>', TITLE, 'Dateiinformationen', WIDTH, 300)" onmouseout="UnTip()" src="<var decode('utf-8', expand_filename($thumbnail2))>" width="<var $tn_width2>" height="<var $tn_height2>" alt="<var $size2>" class="thumb" />
 			</a>
 		</if>
 		<if !$thumbnail2>
@@ -192,7 +192,7 @@
 		<span class="thumbnailmsg"><const S_THUMB></span><br />
 		<if $thumbnail3>
 			<a target="_blank" href="<var decode('utf-8', expand_image_filename($image3))>">
-				<img onmouseover="TagToTip('imageinfo_<var md5_hex($image3)>', TITLE, 'Dateiinformationen', WIDTH, 300)" onmouseout="UnTip()" src="<var decode('utf-8', expand_filename($thumbnail3))>" width="<var $tn_width3>" height="<var $height3>" alt="<var $size3>" class="thumb" />
+				<img onmouseover="TagToTip('imageinfo_<var md5_hex($image3)>', TITLE, 'Dateiinformationen', WIDTH, 300)" onmouseout="UnTip()" src="<var decode('utf-8', expand_filename($thumbnail3))>" width="<var $tn_width3>" height="<var $tn_height3>" alt="<var $size3>" class="thumb" />
 			</a>
 		</if>
 		<if !$thumbnail3>

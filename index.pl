@@ -9,7 +9,6 @@ use DBI;
 use Template;
 use HTML::Entities;
 use Encode;
-#use Data::Dumper;
 my $sth;
 my @news;
 my $q = CGI->new;
@@ -33,4 +32,3 @@ while(my $row = $sth->fetchrow_hashref) {
     push(@news, $row);
 }
 $tt->process("content/$page.tt2", {'news' => \@news}) or die($tt->process("error.tt2", { 'error' => $tt->error }));
-
