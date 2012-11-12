@@ -10,17 +10,14 @@ BEGIN {
       ;    # Returns error when the config is incomplete
 
     die S_NOADMIN  unless ( defined &ADMIN_PASS );
-    die S_NOADMIN  unless ( defined &NUKE_PASS );
     die S_NOSECRET unless ( defined &SECRET );
     die S_NOSQL    unless ( defined &SQL_DBI_SOURCE );
     die S_NOSQL    unless ( defined &SQL_USERNAME );
     die S_NOSQL    unless ( defined &SQL_PASSWORD );
-
+    eval "use constant DISABLE_NEW_THREADS => 0" unless (defined &DISABLE_NEW_THREADS);
     eval "use constant SQL_TABLE => 'comments'" unless ( defined &SQL_TABLE );
     eval "use constant SQL_ADMIN_TABLE => 'admin'"
       unless ( defined &SQL_ADMIN_TABLE );
-    eval "use constant SQL_PROXY_TABLE => 'proxy'"
-      unless ( defined &SQL_PROXY_TABLE );
     eval "use constant SSL_ICON => '/img/ssl.png'" unless (defined &SSL_ICON);
     eval "use constant USE_TEMPFILES => 1" unless ( defined &USE_TEMPFILES );
     eval "use constant ENABLE_LOCATION => 0"
@@ -52,8 +49,6 @@ BEGIN {
     eval "use constant S_ANOTITLE => ''"         unless ( defined &S_ANOTITLE );
     eval "use constant SILLY_ANONYMOUS => ''"
       unless ( defined &SILLY_ANONYMOUS );
-    eval "use constant DEFAULT_STYLE => 'Futaba'"
-      unless ( defined &DEFAULT_STYLE );
     eval "use constant PREVENT_GHOST_BUMPING => 1"
       unless ( defined &PREVENT_GHOST_BUMPING );
     eval "use constant ENABLE_HIDE_THREADS => 1"
@@ -113,20 +108,6 @@ eval "use constant SQL_PREFIX => 'ernstchan_';" unless ( defined &SQL_PREFIX );
     eval "use constant CAPTCHA_SPACING => 2.5"
       unless ( defined &CAPTCHA_SPACING );
 
-    eval "use constant ENABLE_LOAD => 0" unless ( defined &ENABLE_LOAD );
-    eval "use constant LOAD_SENDER_SCRIPT => 'sender.pl'"
-      unless ( defined &LOAD_SENDER_SCRIPT );
-    eval "use constant LOAD_LOCAL => 999" unless ( defined &LOAD_LOCAL );
-    eval "use constant LOAD_HOSTS => ()"  unless ( defined &LOAD_HOSTS );
-
-    eval "use constant ENABLE_PROXY_CHECK => 0"
-      unless ( defined &ENABLE_PROXY_CHECK );
-    eval "use constant PROXY_COMMAND => ''" unless ( defined &PROXY_COMMAND );
-    eval "use constant PROXY_WHITE_AGE => 604800"
-      unless ( defined &PROXY_WHITE_AGE );
-    eval "use constant PROXY_BLACK_AGE => 604800"
-      unless ( defined &PROXY_BLACK_AGE );
-
     eval "use constant THUMBNAIL_SMALL => 1"
       unless ( defined &THUMBNAIL_SMALL );
     eval "use constant THUMBNAIL_QUALITY => 70"
@@ -156,7 +137,6 @@ eval "use constant SQL_PREFIX => 'ernstchan_';" unless ( defined &SQL_PREFIX );
     eval "use constant CONVERT_CHARSETS => 1"
       unless ( defined &CONVERT_CHARSETS );
     eval "use constant TRIM_METHOD => 0"       unless ( defined &TRIM_METHOD );
-    eval "use constant ARCHIVE_MODE => 0"      unless ( defined &ARCHIVE_MODE );
     eval "use constant DATE_STYLE => 'futaba'" unless ( defined &DATE_STYLE );
     eval "use constant DISPLAY_ID => 0"        unless ( defined &DISPLAY_ID );
     eval "use constant EMAIL_ID => 'Heaven'"   unless ( defined &EMAIL_ID );
@@ -168,45 +148,28 @@ eval "use constant SQL_PREFIX => 'ernstchan_';" unless ( defined &SQL_PREFIX );
       unless ( defined &APPROX_LINE_LENGTH );
     eval "use constant STUPID_THUMBNAILING => 0"
       unless ( defined &STUPID_THUMBNAILING );
-    eval "use constant ALTERNATE_REDIRECT => 0"
-      unless ( defined &ALTERNATE_REDIRECT );
     eval "use constant COOKIE_PATH => 'root'" unless ( defined &COOKIE_PATH );
     eval "use constant STYLE_COOKIE => 'wakabastyle'"
       unless ( defined &STYLE_COOKIE );
 	eval "use constant STYLESHEET => '/css/ernstchan.css'" unless (defined &STYLESHEET);
     eval "use constant FORCED_ANON => 0" unless ( defined &FORCED_ANON );
     eval "use constant USE_XHTML => 1"   unless ( defined &USE_XHTML );
-    eval "use constant SPAM_TRAP => 1"   unless ( defined &SPAM_TRAP );
 
     eval "use constant IMG_DIR => 'src/'"      unless ( defined &IMG_DIR );
     eval "use constant THUMB_DIR => 'thumb/'"  unless ( defined &THUMB_DIR );
     eval "use constant RES_DIR => 'res/'"      unless ( defined &RES_DIR );
-    eval "use constant ARCHIVE_DIR => 'arch/'" unless ( defined &ARCHIVE_DIR );
     eval "use constant REDIR_DIR => 'redir/'"  unless ( defined &REDIR_DIR );
     eval "use constant HTML_SELF => 'wakaba.html'"
       unless ( defined &HTML_SELF );
     eval "use constant JS_FILE => 'wakaba3.js'" unless ( defined &JS_FILE );
     eval "use constant CSS_DIR => 'css/'"       unless ( defined &CSS_DIR );
-    eval "use constant PAGE_EXT => '.html'"     unless ( defined &PAGE_EXT );
     eval "use constant ERRORLOG => ''"          unless ( defined &ERRORLOG );
     eval "use constant CONVERT_COMMAND => 'convert'"
       unless ( defined &CONVERT_COMMAND );
 
     eval "use constant RANDOM_NAMES => qw(Adolf Anna Anneliese Alex Alexander Arne Berta Bertha Burkhard Charlotte Clara Klara Edith Elfriede Elisabeth Ella Else Emma Erika Erna Ernst Ernsthard Frieda Frida Felix Gerda Gertrud Gisela Hedwig Helene Helga Herta Hertha Hildegard Ida Ilse Ingeborg Irmgard Johanna Kaete Kaethe Lieselotte Liselotte Louise Luise Margarethe Margarete Margot Maria Marie Marta Martha Ruth Ursula Waltraud Waltraut Alfred Arthur Artur Bruno Carl Christian Claus Curt Erich Ernst Franz Friedrich Fritz Georg Gerhard Guenther Guenter Hans Harry Heinz Helmut Helmuth Herbert Hermann Horst Joachim Karl Carl Karlheinz Kai Karl-Heinz Klaus Claus Kurt Curt Manfred Max Otto Paul Richard Rudolf Walter Werner Wilhelm Willi Willy Wolfgang Andrea Angelika Anja Anke Anna Anne Annett Antje Barbara Birgit Brigitte Christin Christina Christine Cindy Claudia Daniela Diana Doreen Franziska Gabriele Heike Ines Jana Janina Jennifer Jessica Jessika Julia Juliane Karin Karolin Katharina Kathrin Katrin Katja Kerstin Klaudia Claudia Klemens Kristin Christin Laura Lea Lena Lisa Mandy Manuela Maria Marie Marina Martina Melanie Monika Nadine Nicole Petra Sabine Sabrina Sandra Sara Sarah Sascha  Silke Simone Sophia Sophie Stefanie Stephanie Susanne Tanja Ulrike Ursula Uta Ute Vanessa Yvonne Alexander Andreas Benjamin Bernd Christian Daniel David Dennis Dieter Dirk Dominik Eric Erik Felix Florian Frank Jan Jens Jonas Joerg Juergen Kevin Klaus Kristian Christian Leon Lukas Marcel Marco Marko Mario Marion Markus Martin Matthias Max Maximilian Michael Mike Maik Niklas Patrick Paul Peter Philipp Phillipp Ralf Ralph René Robert Sebastian Stefan Stephan Steffen Sven Swen Siegfried Thomas Thorsten Torsten Tim Tobias Tom Ulrich Uwe Vinzent Wolfgang Edeltraud)" unless ( defined &RANDOM_NAMES );
     eval "use constant ENABLE_RANDOM_NAMES => 0" unless ( defined &ENABLE_RANDOM_NAMES );
-    unless ( defined &SPAM_FILES ) {
-        if ( defined &SPAM_FILE ) {
-            eval "use constant SPAM_FILES => (SPAM_FILE)";
-        }
-        else { eval "use constant SPAM_FILES => ('spam.txt')" }
-    }
-
-    #	eval "use constant SPAM_FILE => 'spam.txt'" unless(defined &SPAM_FILE);
-
     eval "use constant FILETYPES => ()" unless ( defined &FILETYPES );
-
-    eval "use constant WAKABA_VERSION => '3.0.8'"
-      unless ( defined &WAKABA_VERSION );
 }
 
 1;

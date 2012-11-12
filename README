@@ -6,8 +6,7 @@ dependencies:
 * libfile-mimeinfo-perl
 * libimage-exiftool-perl
 * libhtml-strip-perl
-* liblocale-codes-perl
-* Locale::Codes::Country (just install all dependencies)
+* Locale::Codes
 * Net::Abuse::Utils
 * DateTime
 * Template

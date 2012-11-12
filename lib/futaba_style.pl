@@ -269,7 +269,7 @@ use constant NORMAL_HEAD_INCLUDE => q{
 <a href="/<const BOARD_IDENT>/"><img src="/banner/<const BOARD_IDENT>" width="300" height="100" class="banner" alt="<const BOARD_IDENT>" /></a></center>
 <div class="logo" <if BOARD_DESC>style="margin-bottom: 5px;"</if>>/<const BOARD_IDENT>/ - <const BOARD_NAME></div>
 <if BOARD_DESC><div class="slogan">&bdquo;<const BOARD_DESC>&ldquo;</div></if>
-<hr />
+<if !DISABLE_NEW_THREADS or $isAdmin or $thread or $admin><hr /></if>
 
 };
 
@@ -279,14 +279,9 @@ use constant MANAGER_HEAD_INCLUDE => NORMAL_HEAD_INCLUDE . q{
 	[<a href="<var expand_filename(HTML_SELF)>"><const S_MANARET></a>]
 	[<a href="<var decode('utf-8', $self)>?task=mpanel&amp;admin=<var $admin>"><const S_MANAPANEL></a>]
 	[<a href="<var decode('utf-8', $self)>?task=bans&amp;admin=<var $admin>"><const S_MANABANS></a>]
-	[<a href="<var decode('utf-8', $self)>?task=proxy&amp;admin=<var $admin>"><const S_MANAPROXY></a>]
-	[<a href="<var decode('utf-8', $self)>?task=spam&amp;admin=<var $admin>"><const S_MANASPAM></a>]
-	[<a href="<var decode('utf-8', $self)>?task=sqldump&amp;admin=<var $admin>"><const S_MANASQLDUMP></a>]
-	[<a href="<var decode('utf-8', $self)>?task=sql&amp;admin=<var $admin>"><const S_MANASQLINT></a>]
 	[<a href="<var decode('utf-8', $self)>?task=mpost&amp;admin=<var $admin>"><const S_MANAPOST></a>]
-	[<a href="<var decode('utf-8', $self)>?task=rebuild&amp;admin=<var $admin>"><const S_MANAREBUILD></a>]
 	[<a href="<var decode('utf-8', $self)>?task=logout"><const S_MANALOGOUT></a>]
-	<div class="passvalid"><const S_MANAMODE></div><br />
+	<div class="passvalid"><const S_MANAMODE></div>
 </if>
 };
 use constant NORMAL_FOOT_INCLUDE => q{
@@ -298,6 +293,7 @@ use constant PAGE_TEMPLATE => compile_template(
     MANAGER_HEAD_INCLUDE . q{
 
 <if !$locked>
+<if !DISABLE_NEW_THREADS or $thread or $isAdmin>
 <if $postform>
 	<div class="postarea">
 	<form id="postform" action="<var decode('utf-8', $self)>" method="post" enctype="multipart/form-data">
@@ -311,8 +307,6 @@ use constant PAGE_TEMPLATE => compile_template(
 		<input type="hidden" name="nofile" value="1" />
 	</if>
 	<if FORCED_ANON><input type="hidden" name="name" /></if>
-	<if SPAM_TRAP><div class="trap"><const S_SPAMTRAP><input type="text" name="name" size="28" /><input type="text" name="link" size="28" /></div></if>
-
 	<table><tbody id="postTableBody">
 		<if $isAdmin>
 			<tr><td class="postblock">## Team ##</td><td><input type="checkbox" name="as_admin" value="1" /></td></tr>
@@ -361,6 +355,7 @@ use constant PAGE_TEMPLATE => compile_template(
 
 </form>
 </center>
+</if>
 </if>
 </if>
 <if $locked>
@@ -525,14 +520,7 @@ use constant ADMIN_LOGIN_TEMPLATE => compile_template(
 <select name="nexttask">
 <option value="mpanel"><const S_MANAPANEL></option>
 <option value="bans"><const S_MANABANS></option>
-<option value="proxy"><const S_MANAPROXY></option>
-<option value="spam"><const S_MANASPAM></option>
-<option value="sqldump"><const S_MANASQLDUMP></option>
-<option value="sql"><const S_MANASQLINT></option>
 <option value="mpost"><const S_MANAPOST></option>
-<option value="rebuild"><const S_MANAREBUILD></option>
-<option value=""></option>
-<option value="nuke"><const S_MANANUKE></option>
 </select>
 <input type="submit" value="<const S_MANASUB>" />
 </form></div>
@@ -806,127 +794,7 @@ use constant BAN_PANEL_TEMPLATE => compile_template(
     # <if get_ip_info(2, $ival1) eq undef>
     #   <i>none</i>
     # </if>
-use constant PROXY_PANEL_TEMPLATE => compile_template(
-    MANAGER_HEAD_INCLUDE . q{
 
-<div class="dellist"><const S_MANAPROXY></div>
-
-<div class="postarea">
-<table><tbody><tr><td valign="bottom">
-
-<if !ENABLE_PROXY_CHECK>
-	<div class="dellist"><const S_PROXYDISABLED></div>
-	<br />
-</if>
-<form action="<var decode('utf-8', $self)>" method="post">
-<input type="hidden" name="task" value="addproxy" />
-<input type="hidden" name="type" value="white" />
-<input type="hidden" name="admin" value="<var $admin>" />
-<table><tbody>
-<tr><td class="postblock"><const S_PROXYIPLABEL></td><td><input type="text" name="ip" size="24" /></td></tr>
-<tr><td class="postblock"><const S_PROXYTIMELABEL></td><td><input type="text" name="timestamp" size="24" />
-<input type="submit" value="<const S_PROXYWHITELIST>" /></td></tr>
-</tbody></table></form>
-
-</td></tr></tbody></table>
-</div><br />
-
-<table align="center"><tbody>
-<tr class="managehead"><const S_PROXYTABLE></tr>
-
-<loop $scanned>
-        <if $divider><tr class="managehead"><th colspan="6"></th></tr></if>
-
-        <tr class="row<var $rowtype>">
-
-        <if $type eq 'white'>
-                <td>White</td>
-	        <td><var $ip></td>
-        	<td><var $timestamp+PROXY_WHITE_AGE-time()></td>
-        </if>
-        <if $type eq 'black'>
-                <td>Black</td>
-	        <td><var $ip></td>
-        	<td><var $timestamp+PROXY_BLACK_AGE-time()></td>
-        </if>
-
-        <td><var $date></td>
-        <td><a href="<var decode('utf-8', $self)>?admin=<var $admin>&amp;task=removeproxy&amp;num=<var $num>"><const S_PROXYREMOVEBLACK></a></td>
-        </tr>
-</loop>
-
-</tbody></table><br />
-
-} . NORMAL_FOOT_INCLUDE
-);
-
-use constant SPAM_PANEL_TEMPLATE => compile_template(
-    MANAGER_HEAD_INCLUDE . q{
-
-<div align="center">
-<div class="dellist"><const S_MANASPAM></div>
-<p><const S_SPAMEXPL></p>
-
-<form action="<var decode('utf-8', $self)>" method="post">
-
-<input type="hidden" name="task" value="updatespam" />
-<input type="hidden" name="admin" value="<var $admin>" />
-
-<div class="buttons">
-<input type="submit" value="<const S_SPAMSUBMIT>" />
-<input type="button" value="<const S_SPAMCLEAR>" onclick="document.forms[0].spam.value=''" />
-<input type="reset" value="<const S_SPAMRESET>" />
-</div>
-
-<textarea name="spam" rows="<var $spamlines>" cols="60"><var $spam></textarea>
-
-<div class="buttons">
-<input type="submit" value="<const S_SPAMSUBMIT>" />
-<input type="button" value="<const S_SPAMCLEAR>" onclick="document.forms[0].spam.value=''" />
-<input type="reset" value="<const S_SPAMRESET>" />
-</div>
-
-</form>
-
-</div>
-
-} . NORMAL_FOOT_INCLUDE
-);
-
-use constant SQL_DUMP_TEMPLATE => compile_template(
-    MANAGER_HEAD_INCLUDE . q{
-
-<div class="dellist"><const S_MANASQLDUMP></div>
-
-<pre><code><var $database></code></pre>
-
-} . NORMAL_FOOT_INCLUDE
-);
-
-use constant SQL_INTERFACE_TEMPLATE => compile_template(
-    MANAGER_HEAD_INCLUDE . q{
-
-<div class="dellist"><const S_MANASQLINT></div>
-
-<div align="center">
-<form action="<var decode('utf-8', $self)>" method="post">
-<input type="hidden" name="task" value="sql" />
-<input type="hidden" name="admin" value="<var $admin>" />
-
-<textarea name="sql" rows="10" cols="60"></textarea>
-
-<div class="delbuttons"><const S_SQLNUKE>
-<input type="password" name="nuke" value="<var $nuke>" />
-<input type="submit" value="<const S_SQLEXECUTE>" />
-</div>
-
-</form>
-</div>
-
-<pre><code><var $results></code></pre>
-
-} . NORMAL_FOOT_INCLUDE
-);
 
 use constant ADMIN_POST_TEMPLATE => compile_template(
     MANAGER_HEAD_INCLUDE . q{
