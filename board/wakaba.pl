@@ -1214,9 +1214,6 @@ sub post_stuff {
       if ($file);
 
 
-
-    my $displaysize = get_displaysize($size);
-
     my $tsf1 = 0;
     my $tsf2 = 0;
     my $tsf3 = 0;
@@ -1226,16 +1223,15 @@ sub post_stuff {
             $filename1,  $md51,      $width1, $height1,
             $thumbnail1, $tn_width1, $tn_height1
         ) = process_file( $file1, $file1, $tsf1 );
-        my $displaysize1 = get_displaysize($size1);
         my $sth2 =
           $dbh->prepare( "INSERT INTO "
               . SQL_TABLE_IMG
-              . " VALUES(?,?,?,?,?,?,?,?,?,?,?);" )
+              . " VALUES(?,?,?,?,?,?,?,?,?,?,null);" )
           or make_error(S_SQLFAIL);
         $sth2->execute(
             $tsf1,       $filename1, $size1,        $md51,
             $width1,     $height1,   $thumbnail1,   $tn_width1,
-            $tn_height1, $file1, $displaysize1
+            $tn_height1, $file1
         ) or make_error(S_SQLFAIL);
     }
 
@@ -1245,16 +1241,15 @@ sub post_stuff {
             $filename1,  $md51,      $width1, $height1,
             $thumbnail1, $tn_width1, $tn_height1
         ) = process_file( $file2, $file2, $tsf2 );
-        my $displaysize1 = get_displaysize($size2);
         my $sth2 =
           $dbh->prepare( "INSERT INTO "
               . SQL_TABLE_IMG
-              . " VALUES(?,?,?,?,?,?,?,?,?,?,?);" )
+              . " VALUES(?,?,?,?,?,?,?,?,?,?,null);" )
           or make_error(S_SQLFAIL);
         $sth2->execute(
             $tsf2,       $filename1, $size2,        $md51,
             $width1,     $height1,   $thumbnail1,   $tn_width1,
-            $tn_height1, $file2, $displaysize1
+            $tn_height1, $file2
         ) or make_error(S_SQLFAIL);
     }
 
@@ -1264,33 +1259,32 @@ sub post_stuff {
             $filename1,  $md51,      $width1, $height1,
             $thumbnail1, $tn_width1, $tn_height1
         ) = process_file( $file3, $file3, $tsf3 );
-        my $displaysize1 = get_displaysize($size3);
         my $sth2 =
           $dbh->prepare( "INSERT INTO "
               . SQL_TABLE_IMG
-              . " VALUES(?,?,?,?,?,?,?,?,?,?,?);" )
+              . " VALUES(?,?,?,?,?,?,?,?,?,?,null);" )
           or make_error(S_SQLFAIL);
         $sth2->execute(
             $tsf3,       $filename1, $size3,        $md51,
             $width1,     $height1,   $thumbnail1,   $tn_width1,
-            $tn_height1, $file3, $displaysize1
+            $tn_height1, $file3
         ) or make_error(S_SQLFAIL);
     }
 
     # finally, write to the database
     my $sth = $dbh->prepare(
         "INSERT INTO " . SQL_TABLE . "
-		VALUES(null,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,null,?,?,?,null,?,?,?,?,?,?);"
+		VALUES(null,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,null,?,?,null,null,?,?,?,?,?,?);"
     ) or make_error(S_SQLFAIL);
     $sth->execute(
         $parent,      $time,                $lasthit,
-        $numip,                $name,
+        $numip,       $name,
         $trip,        $email,               $subject,
         $password,    $comment,             $filename,
         $size,        $md5,                 $width,
         $height,      $thumbnail,           $tn_width,
         $tn_height,   $isAdminPost,  $uploadname,
-        $displaysize, $$parent_res{sticky}, $tsf1,
+        $$parent_res{sticky}, $tsf1,
         $tsf2,        $tsf3,                $loc,
         $ssl
     ) or make_error(S_SQLFAIL);
@@ -1816,16 +1810,6 @@ sub get_preview {
     return $preview;
 }
 
-sub get_displaysize {
-    my ($size) = @_;
-    my $displaysize = $size;
-    $displaysize = sprintf( "%d B", $size ) if ( $size < 1024 );
-    $displaysize = sprintf( "%.2f K", $displaysize / 1024 )
-      if ( $displaysize > 1024 );    #KB
-    $displaysize = sprintf( "%.2f M", $displaysize / 1024 )
-      if ( $displaysize > 1024 );    #MB
-    return $displaysize;
-}
 
 sub process_file {
     my ( $file, $uploadname, $time ) = @_;

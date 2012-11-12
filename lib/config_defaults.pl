@@ -141,6 +141,7 @@ eval "use constant SQL_PREFIX => 'ernstchan_';" unless ( defined &SQL_PREFIX );
     eval "use constant DISPLAY_ID => 0"        unless ( defined &DISPLAY_ID );
     eval "use constant EMAIL_ID => 'Heaven'"   unless ( defined &EMAIL_ID );
     eval "use constant TRIPKEY => '!'"         unless ( defined &TRIPKEY );
+    eval "use constant DECIMAL_MARK => ','"    unless ( defined &DECIMAL_MARK );
     eval "use constant ENABLE_WAKABAMARK => 0"
       unless ( defined &ENABLE_WAKABAMARK );
     eval "use constant ENABLE_BBCODE => 1" unless ( defined &ENABLE_BBCODE );

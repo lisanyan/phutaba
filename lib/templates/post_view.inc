@@ -101,7 +101,7 @@
 	</div>
 	<div class="thread_file">
 		<span class="filename">&nbsp;<const S_PICNAME><a target="_blank" title="<var $uploadname>" href="<var decode('utf-8', expand_image_filename($image))>/<var $uploadname>"><var get_displayname($uploadname)></a></span><br />
-		<span class="filesize">&nbsp;<if !$displaysize><var $size> Bytes</if><if $displaysize><var $displaysize></if><if $width><if $height>, <var $width>&nbsp;&times;&nbsp;<var $height>&nbsp;</if></if></span>
+		<span class="filesize">&nbsp;<var get_displaysize($size, DECIMAL_MARK)><if $width && $height>, <var $width>&nbsp;&times;&nbsp;<var $height>&nbsp;</if></span>
 		<span class="thumbnailmsg"><const S_THUMB></span><br />
 		<if $thumbnail>
 			<a target="_blank" href="<var decode('utf-8', expand_image_filename($image))>">
@@ -130,7 +130,7 @@
 	</div>
 	<div class="thread_file">
 		<span class="filename">&nbsp;<const S_PICNAME><a target="_blank" title="<var $uploadname1>" href="<var decode('utf-8', expand_image_filename($image1))>/<var $uploadname1>"><var get_displayname($uploadname1)></a></span><br />
-		<span class="filesize">&nbsp;<if !$displaysize><var $size> Bytes</if><if $displaysize1><var $displaysize1></if><if $width1><if $height1>, <var $width1>&nbsp;&times;&nbsp;<var $height1>&nbsp;</if></if></span>
+		<span class="filesize">&nbsp;<var get_displaysize($size1, DECIMAL_MARK)><if $width1 && $height1>, <var $width1>&nbsp;&times;&nbsp;<var $height1>&nbsp;</if></span>
 		<span class="thumbnailmsg"><const S_THUMB></span><br />
 		<if $thumbnail1>
 			<a target="_blank" href="<var decode('utf-8', expand_image_filename($image1))>">
@@ -159,7 +159,7 @@
 	</div>
 	<div class="thread_file">
 		<span class="filename">&nbsp;<const S_PICNAME><a target="_blank" title="<var $uploadname2>" href="<var decode('utf-8', expand_image_filename($image2))>/<var $uploadname2>"><var get_displayname($uploadname2)></a></span><br />
-		<span class="filesize">&nbsp;<if !$displaysize><var $size> Bytes</if><if $displaysize2><var $displaysize2></if><if $width2><if $height2>, <var $width2>&nbsp;&times;&nbsp;<var $height2>&nbsp;</if></if></span>
+		<span class="filesize">&nbsp;<var get_displaysize($size2, DECIMAL_MARK)><if $width2 && $height2>, <var $width2>&nbsp;&times;&nbsp;<var $height2>&nbsp;</if></span>
 		<span class="thumbnailmsg"><const S_THUMB></span><br />
 		<if $thumbnail2>
 			<a target="_blank" href="<var decode('utf-8', expand_image_filename($image2))>">
@@ -188,7 +188,7 @@
 	</div>
 	<div class="thread_file">
 		<span class="filename">&nbsp;<const S_PICNAME><a target="_blank" title="<var $uploadname3>" href="<var decode('utf-8', expand_image_filename($image3))>/<var $uploadname3>"><var get_displayname($uploadname3)></a></span><br />
-		<span class="filesize">&nbsp;<if !$displaysize><var $size> Bytes</if><if $displaysize3><var $displaysize3></if><if $width3><if $height3>, <var $width3>&nbsp;&times;&nbsp;<var $height3>&nbsp;</if></if></span>
+		<span class="filesize">&nbsp;<var get_displaysize($size3, DECIMAL_MARK)><if $width3 && $height3>, <var $width3>&nbsp;&times;&nbsp;<var $height3>&nbsp;</if></span>
 		<span class="thumbnailmsg"><const S_THUMB></span><br />
 		<if $thumbnail3>
 			<a target="_blank" href="<var decode('utf-8', expand_image_filename($image3))>">
