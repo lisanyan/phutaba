@@ -72,20 +72,10 @@ BEGIN {
 use lib '.';
 BEGIN {
     require "config.pl";
-}
-BEGIN {
     require "../lib/config_defaults.pl";
-}
-BEGIN {
-    require "../lib/strings_en.pl";
-}
-BEGIN {
+    require "../lib/strings_en.pl"; # need some good replacement
     require "../lib/wakautils.pl";
-}
-BEGIN {
     require "../lib/futaba_style.pl";
-}
-BEGIN {
     require "captcha.pl";
 }
 
@@ -110,9 +100,7 @@ my $dbh =
   DBI->connect( SQL_DBI_SOURCE, SQL_USERNAME, SQL_PASSWORD,
     { AutoCommit => 1 } )
   or make_error(S_SQLCONF);
-my $ih =
-  DBI->connect( 'DBI:mysql:database=information_schema;host=localhost', SQL_USERNAME, SQL_PASSWORD,
-    { AutoCommit => 1 } );
+
 $sth = $dbh->prepare("SET NAMES 'latin1';");
 $sth->execute() or make_error(S_SQLFAIL);
 
@@ -140,9 +128,6 @@ my $json  = ( $query->param("json") or "" );
 
 # check for admin table
 init_admin_database() if ( !table_exists(SQL_ADMIN_TABLE) );
-
-# check for proxy table
-init_proxy_database() if ( !table_exists(SQL_PROXY_TABLE) );
 
 if ( $json eq "post" ) {
     my $id = $query->param("id");
@@ -262,12 +247,11 @@ elsif ( $task eq "post" ) {
 elsif ( $task eq "delete" ) {
     my $password = $query->param("password");
     my $fileonly = $query->param("fileonly");
-    my $archive  = $query->param("archive");
     my $admin    = $query->param("admin");
 	my $parent   = $query->param("parent");
     my @posts    = $query->param("delete");
 
-    delete_stuff( $password, $fileonly, $archive, $admin, $parent, @posts );
+    delete_stuff( $password, $fileonly, $admin, $parent, @posts );
 }
 elsif ( $task eq "sticky" ) {
     my $admin    = $query->param("admin");
@@ -340,53 +324,18 @@ elsif ( $task eq "removeban" ) {
     my $num   = $query->param("num");
     remove_admin_entry( $admin, $num );
 }
-elsif ( $task eq "proxy" ) {
-    my $admin = $query->param("admin");
-    make_admin_proxy_panel($admin);
-}
-elsif ( $task eq "addproxy" ) {
-    my $admin     = $query->param("admin");
-    my $type      = $query->param("type");
-    my $ip        = $query->param("ip");
-    my $timestamp = $query->param("timestamp");
-    my $date      = make_date( time(), DATE_STYLE );
-    add_proxy_entry( $admin, $type, $ip, $timestamp, $date );
-}
-elsif ( $task eq "removeproxy" ) {
-    my $admin = $query->param("admin");
-    my $num   = $query->param("num");
-    remove_proxy_entry( $admin, $num );
-}
-elsif ( $task eq "spam" ) {
-    my ($admin);
-    $admin = $query->param("admin");
-    make_admin_spam_panel($admin);
-}
-elsif ( $task eq "updatespam" ) {
-    my $admin = $query->param("admin");
-    my $spam  = $query->param("spam");
-    update_spam_file( $admin, $spam );
-}
 elsif ( $task eq "sqldump" ) {
     my $admin = $query->param("admin");
     make_sql_dump($admin);
 }
 elsif ( $task eq "sql" ) {
     my $admin = $query->param("admin");
-    my $nuke  = $query->param("nuke");
     my $sql   = $query->param("sql");
-    make_sql_interface( $admin, $nuke, $sql );
+    make_sql_interface( $admin, $sql );
 }
 elsif ( $task eq "mpost" ) {
     my $admin = $query->param("admin");
     make_admin_post($admin);
-}
-elsif ( $task eq "rebuild" ) {
-    make_error("DEPRECATED");
-}
-elsif ( $task eq "nuke" ) {
-    my $admin = $query->param("admin");
-    #do_nuke_database($admin);
 }
 elsif ( $task eq "paint" ) {
     my $do = $query->param("do");
@@ -1215,24 +1164,10 @@ sub post_stuff {
 
     # check for bans
     ban_check( $numip, $c_name, $subject, $comment ) unless $whitelisted;
-
-    # spam check
-    spam_engine(
-        query           => $query,
-        trap_fields     => SPAM_TRAP ? [ "name", "link" ] : [],
-        spam_files      => [SPAM_FILES],
-        charset         => CHARSET,
-        included_fields => [ "field1", "field2", "field3", "field4" ],
-    ) unless $whitelisted;
-
-    
     
     # check captcha
     check_captcha( $dbh, $captcha, $ip, $parent, BOARD_IDENT )
       if ( (use_captcha(ENABLE_CAPTCHA, $loc) and !$admin) or (ENABLE_CAPTCHA and !$admin and !$no_captcha and !is_trusted($trip)) );
-
-    # proxy check
-    proxy_check($ip) if ( !$whitelisted and ENABLE_PROXY_CHECK );
 
     # check if thread exists, and get lasthit value
     my ( $parent_res, $lasthit );
@@ -1468,20 +1403,16 @@ sub post_stuff {
 	if(!$admin)
 	{
 	    # forward back to the main page
-	    make_http_forward( HTML_SELF, ALTERNATE_REDIRECT ) if ( $parent eq '0' );
-	    make_http_forward( HTML_SELF . "?task=show&thread=" . $parent,
-	        ALTERNATE_REDIRECT )
-	      if ( $c_gb2 =~ /thread/i );
-	    make_http_forward( HTML_SELF, ALTERNATE_REDIRECT );
+	    make_http_forward( HTML_SELF) if ( $parent eq '0' );
+	    make_http_forward( HTML_SELF . "?task=show&thread=" . $parent) if ( $c_gb2 =~ /thread/i );
+	    make_http_forward( HTML_SELF);
 	}
 	else
 	{
 		# forward back to moderation page
-	    make_http_forward( HTML_SELF ."?task=show&amp;page=0&amp;admin=$admin", ALTERNATE_REDIRECT ) if ( $parent eq '0' );
-	    make_http_forward( HTML_SELF . "?task=show&amp;thread=" . $parent . "&amp;admin=$admin",
-	        ALTERNATE_REDIRECT )
-	      if ( $c_gb2 =~ /thread/i );
-	    make_http_forward( HTML_SELF . "?task=show&amp;page=0&amp;admin=$admin", ALTERNATE_REDIRECT );
+	    make_http_forward( HTML_SELF ."?task=show&amp;page=0&amp;admin=$admin") if ( $parent eq '0' );
+	    make_http_forward( HTML_SELF . "?task=show&amp;thread=" . $parent . "&amp;admin=$admin") if ( $c_gb2 =~ /thread/i );
+	    make_http_forward( HTML_SELF . "?task=show&amp;page=0&amp;admin=$admin");
 	}
 }
 
@@ -1516,8 +1447,7 @@ sub make_kontra {
           or make_error(S_SQLFAIL);
         $sth2->execute( $kontra, $threadid ) or make_error(S_SQLFAIL);
     }
-    make_http_forward( get_script_name() . "?admin=$admin&task=mpanel",
-        ALTERNATE_REDIRECT );
+    make_http_forward( get_script_name() . "?admin=$admin&task=mpanel");
 
 }
 
@@ -1650,139 +1580,7 @@ sub flood_check {
     }
 }
 
-sub proxy_check {
-    my ($ip) = @_;
-    my ($sth);
 
-    proxy_clean();
-
-    # check if IP is from a known banned proxy
-    $sth =
-      $dbh->prepare( "SELECT count(*) FROM "
-          . SQL_PROXY_TABLE
-          . " WHERE type='black' AND ip = ?;" )
-      or make_error(S_SQLFAIL);
-    $sth->execute($ip) or make_error(S_SQLFAIL);
-
-    make_error(S_BADHOSTPROXY) if ( ( $sth->fetchrow_array() )[0] );
-
-    # check if IP is from a known non-proxy
-    $sth =
-      $dbh->prepare( "SELECT count(*) FROM "
-          . SQL_PROXY_TABLE
-          . " WHERE type='white' AND ip = ?;" )
-      or make_error(S_SQLFAIL);
-    $sth->execute($ip) or make_error(S_SQLFAIL);
-
-    my $timestamp = time();
-    my $date = make_date( $timestamp, DATE_STYLE );
-
-    if ( ( $sth->fetchrow_array() )[0] ) {    # known good IP, refresh entry
-        $sth =
-          $dbh->prepare( "UPDATE "
-              . SQL_PROXY_TABLE
-              . " SET timestamp=?, date=? WHERE ip=?;" )
-          or make_error(S_SQLFAIL);
-        $sth->execute( $timestamp, $date, $ip ) or make_error(S_SQLFAIL);
-    }
-    else {                                    # unknown IP, check for proxy
-        my $command = PROXY_COMMAND . " " . $ip;
-        $sth = $dbh->prepare(
-            "INSERT INTO " . SQL_PROXY_TABLE . " VALUES(null,?,?,?,?);" )
-          or make_error(S_SQLFAIL);
-
-        if (`$command`) {
-            $sth->execute( 'black', $ip, $timestamp, $date )
-              or make_error(S_SQLFAIL);
-            make_error(S_PROXY);
-        }
-        else {
-            $sth->execute( 'white', $ip, $timestamp, $date )
-              or make_error(S_SQLFAIL);
-        }
-    }
-}
-
-sub add_proxy_entry {
-    my ( $admin, $type, $ip, $timestamp, $date ) = @_;
-    my ($sth);
-
-    check_password( $admin, ADMIN_PASS );
-
-    # Verifies IP range is sane. The price for a human-readable db...
-    unless ( $ip =~ /^(\d+)\.(\d+)\.(\d+)\.(\d+)$/
-        && $1 <= 255
-        && $2 <= 255
-        && $3 <= 255
-        && $4 <= 255 )
-    {
-        make_error(S_BADIP);
-    }
-    if ( $type == 'white' ) {
-        $timestamp = $timestamp - PROXY_WHITE_AGE + time();
-    }
-    else {
-        $timestamp = $timestamp - PROXY_BLACK_AGE + time();
-    }
-
-    # This is to ensure user doesn't put multiple entries for the same IP
-    $sth = $dbh->prepare( "DELETE FROM " . SQL_PROXY_TABLE . " WHERE ip=?;" )
-      or make_error(S_SQLFAIL);
-    $sth->execute($ip) or make_error(S_SQLFAIL);
-
-    # Add requested entry
-    $sth = $dbh->prepare(
-        "INSERT INTO " . SQL_PROXY_TABLE . " VALUES(null,?,?,?,?);" )
-      or make_error(S_SQLFAIL);
-    $sth->execute( $type, $ip, $timestamp, $date ) or make_error(S_SQLFAIL);
-
-    make_http_forward( get_script_name() . "?admin=$admin&task=proxy",
-        ALTERNATE_REDIRECT );
-}
-
-sub proxy_clean {
-    my ( $sth, $timestamp );
-
-    if ( PROXY_BLACK_AGE == PROXY_WHITE_AGE ) {
-        $timestamp = time() - PROXY_BLACK_AGE;
-        $sth       = $dbh->prepare(
-            "DELETE FROM " . SQL_PROXY_TABLE . " WHERE timestamp<?;" )
-          or make_error(S_SQLFAIL);
-        $sth->execute($timestamp) or make_error(S_SQLFAIL);
-    }
-    else {
-        $timestamp = time() - PROXY_BLACK_AGE;
-        $sth =
-          $dbh->prepare( "DELETE FROM "
-              . SQL_PROXY_TABLE
-              . " WHERE type='black' AND timestamp<?;" )
-          or make_error(S_SQLFAIL);
-        $sth->execute($timestamp) or make_error(S_SQLFAIL);
-
-        $timestamp = time() - PROXY_WHITE_AGE;
-        $sth =
-          $dbh->prepare( "DELETE FROM "
-              . SQL_PROXY_TABLE
-              . " WHERE type='white' AND timestamp<?;" )
-          or make_error(S_SQLFAIL);
-        $sth->execute($timestamp) or make_error(S_SQLFAIL);
-    }
-}
-
-sub remove_proxy_entry {
-    my ( $admin, $num ) = @_;
-    my ($sth);
-
-    check_password( $admin, ADMIN_PASS );
-
-    $sth = $dbh->prepare( "DELETE FROM " . SQL_PROXY_TABLE . " WHERE num=?;" )
-      or make_error(S_SQLFAIL);
-    $sth->execute($num) or make_error(S_SQLFAIL);
-
-    make_http_forward( get_script_name() . "?admin=$admin&task=proxy",
-        ALTERNATE_REDIRECT );
-
-}
 
 sub format_comment {
     my ($comment) = @_;
@@ -2194,12 +1992,6 @@ sub process_file {
     #		}
     #	}
 
-    if (ENABLE_LOAD) {    # only called if files to be distributed across web
-        $ENV{SCRIPT_NAME} =~ m!^(.*/)[^/]+$!;
-        my $root = $1;
-        system( LOAD_SENDER_SCRIPT. " $filename $root $md5 &" );
-    }
-
     return ( clean_string( decode_string( $filename, CHARSET ) ), $md5, $width, $height, $thumbnail, $tn_width,
         $tn_height );
 }
@@ -2209,7 +2001,7 @@ sub process_file {
 #
 
 sub delete_stuff {
-    my ( $password, $fileonly, $archive, $admin, $parent, @posts ) = @_;
+    my ( $password, $fileonly, $admin, $parent, @posts ) = @_;
     my ($post);
     my $deletebyip = 0;
 	my $noko = 1; # try to stay in thread after deletion by default	
@@ -2224,20 +2016,16 @@ sub delete_stuff {
 
     $password = "" if ($admin);
 
-	# only an admin can move stuff to the archive
-	$archive = 0 unless($admin);
-
     foreach $post (@posts) {
-        delete_post( $post, $password, $fileonly, $archive, $deletebyip, $admin );
+        delete_post( $post, $password, $fileonly, $deletebyip, $admin );
 		$noko = 0 if ( $parent and $post eq $parent ); # the thread is deleted and cannot be redirected to		
     }
 
     if ($admin) {
-        make_http_forward( get_script_name() . "?admin=$admin&task=mpanel",
-            ALTERNATE_REDIRECT );
+        make_http_forward( get_script_name() . "?admin=$admin&task=mpanel");
     } elsif ( $noko == 1 and $parent ) {
-		make_http_forward( HTML_SELF . "?task=show&thread=" . $parent , ALTERNATE_REDIRECT );
-	} else { make_http_forward( HTML_SELF . "?task=show&page=0", ALTERNATE_REDIRECT ); }
+		make_http_forward( HTML_SELF . "?task=show&thread=" . $parent);
+	} else { make_http_forward( HTML_SELF . "?task=show&page=0"); }
 }
 
 sub make_locked {
@@ -2258,8 +2046,7 @@ sub make_locked {
           or make_error(S_SQLFAIL);
         $sth2->execute( $locked, $threadid ) or make_error(S_SQLFAIL);
     }
-    make_http_forward( get_script_name() . "?admin=$admin&task=mpanel",
-        ALTERNATE_REDIRECT );
+    make_http_forward( get_script_name() . "?admin=$admin&task=mpanel");
 }
 
 sub make_sticky {
@@ -2285,12 +2072,11 @@ sub make_sticky {
         $threadchilds->execute( $sticky, $threadid ) or make_error(S_SQLFAIL);
     }
 
-    make_http_forward( get_script_name() . "?admin=$admin&task=mpanel",
-        ALTERNATE_REDIRECT );
+    make_http_forward( get_script_name() . "?admin=$admin&task=mpanel");
 }
 
 sub delete_post {
-    my ( $post, $password, $fileonly, $archiving, $deletebyip, $admin ) = @_;
+    my ( $post, $password, $fileonly, $deletebyip, $admin ) = @_;
     my ( $sth, $row, $res, $reply );
 
 	if(defined($admin))
@@ -2299,7 +2085,6 @@ sub delete_post {
 	}
 
     my $thumb   = THUMB_DIR;
-    my $archive = ARCHIVE_DIR;
     my $src     = IMG_DIR;
     my $ip      = dot_to_dec( $ENV{REMOTE_ADDR} );
     $sth = $dbh->prepare( "SELECT * FROM " . SQL_TABLE . " WHERE num=?;" )
@@ -2333,20 +2118,8 @@ sub delete_post {
                       or make_error(S_SQLFAIL);
                     $sth2->execute($secImgID);
                     my $res2 = $sth2->fetchrow_hashref();
-                    system( LOAD_SENDER_SCRIPT. " $$res2{image} &" )
-                      if (ENABLE_LOAD);
-                    if ($archiving) {
-                        rename $$res2{image}, ARCHIVE_DIR . $$res2{image};
-                        rename $$res2{thumbnail},
-                          ARCHIVE_DIR . $$res2{thumbnail}
-                          if ( $$res2{thumbnail} =~ /^$thumb/ );
-                    }
-                    else {
-                        unlink $$res2{image};
-                        unlink $$res2{thumbnail}
-                          if ( $$res2{thumbnail} =~ /^$thumb/ );
-                    }
-
+                    unlink $$res2{image};
+                    unlink $$res2{thumbnail} if ( $$res2{thumbnail} =~ /^$thumb/ );
                     # remove the row in image table
                     $sth2 = $dbh->prepare(
                         "DELETE FROM " . SQL_TABLE_IMG . " WHERE timestamp=?;" )
@@ -2354,23 +2127,9 @@ sub delete_post {
                     $sth2->execute($secImgID) or make_error(S_SQLFAIL);
                 }
 
-                system( LOAD_SENDER_SCRIPT. " $$res{image} &" )
-                  if (ENABLE_LOAD);
-
-                if ($archiving) {
-
-                    # archive images
-                    rename $$res{image},     ARCHIVE_DIR . $$res{image};
-                    rename $$res{thumbnail}, ARCHIVE_DIR . $$res{thumbnail}
-                      if ( $$res{thumbnail} =~ /^$thumb/ );
-                }
-                else {
-
                     # delete images if they exist
                     unlink $$res{image};
-                    unlink $$res{thumbnail}
-                      if ( $$res{thumbnail} =~ /^$thumb/ );
-                }
+                    unlink $$res{thumbnail} if ( $$res{thumbnail} =~ /^$thumb/ );
             }
 
             # remove post and possible replies
@@ -2435,8 +2194,6 @@ sub delete_post {
         else    # remove just the image and update the database
         {
             if ( $$row{image} ) {
-                system( LOAD_SENDER_SCRIPT. " $$row{image} &" )
-                  if (ENABLE_LOAD);
 
                 # remove images
                 unlink $$row{image};
@@ -2460,8 +2217,6 @@ sub delete_post {
                   or make_error(S_SQLFAIL);
                 $sth2->execute($secImgID);
                 my $res2 = $sth2->fetchrow_hashref();
-                system( LOAD_SENDER_SCRIPT. " $$res2{image} &" )
-                  if (ENABLE_LOAD);
                 unlink $$res2{image};
                 unlink $$res2{thumbnail} if ( $$res2{thumbnail} =~ /^$thumb/ );
 
@@ -2486,34 +2241,6 @@ sub delete_post {
         if ( !$$row{parent} ) {
             unless ($fileonly)    # removing an entire thread
             {
-                if ($archiving) {
-                    my $captcha = CAPTCHA_SCRIPT;
-                    my $line;
-
-                    open RESIN, '<', RES_DIR . $$row{num} . PAGE_EXT;
-                    open RESOUT, '>',
-                      ARCHIVE_DIR . RES_DIR . $$row{num} . PAGE_EXT;
-                    while ( $line = <RESIN> ) {
-                        $line =~
-                          s/img src="(.*?)$thumb/img src="$1$archive$thumb/g;
-                        if (ENABLE_LOAD)
-
-                        {
-                            my $redir = REDIR_DIR;
-                            $line =~
-s/href="(.*?)$redir(.*?).html/href="$1$archive$src$2/g;
-                        }
-                        else {
-                            $line =~ s/href="(.*?)$src/href="$1$archive$src/g;
-                        }
-                        $line =~ s/src="[^"]*$captcha[^"]*"/src=""/g
-                          if (ENABLE_CAPTCHA);
-                        print RESOUT $line;
-                    }
-                    close RESIN;
-                    close RESOUT;
-                }
-                unlink RES_DIR . $$row{num} . PAGE_EXT;
             }
             else    # removing parent image
             {
@@ -2646,47 +2373,6 @@ sub make_admin_ban_panel {
         BAN_PANEL_TEMPLATE->( admin => $admin, bans => \@bans ) );
 }
 
-sub make_admin_proxy_panel {
-    my ($admin) = @_;
-    my ( $sth, $row, @scanned, $prevtype );
-
-    check_password( $admin, ADMIN_PASS );
-
-    proxy_clean();
-
-    $sth = $dbh->prepare(
-        "SELECT * FROM " . SQL_PROXY_TABLE . " ORDER BY timestamp ASC;" )
-      or make_error(S_SQLFAIL);
-    $sth->execute() or make_error(S_SQLFAIL);
-    while ( $row = get_decoded_hashref($sth) ) {
-        $$row{divider} = 1 if ( $prevtype ne $$row{type} );
-        $prevtype      = $$row{type};
-        $$row{rowtype} = @scanned % 2 + 1;
-        push @scanned, $row;
-    }
-
-    make_http_header();
-    print encode_string(
-        PROXY_PANEL_TEMPLATE->( admin => $admin, scanned => \@scanned ) );
-}
-
-sub make_admin_spam_panel {
-    my ($admin)    = @_;
-    my @spam_files = SPAM_FILES;
-    my @spam       = read_array( $spam_files[0] );
-
-    check_password( $admin, ADMIN_PASS );
-
-    make_http_header();
-    print encode_string(
-        SPAM_PANEL_TEMPLATE->(
-            admin     => $admin,
-            spamlines => scalar @spam,
-            spam      => join "\n",
-            map { clean_string( $_, 1 ) } @spam
-        )
-    );
-}
 
 sub make_sql_dump {
     my ($admin) = @_;
@@ -2718,14 +2404,12 @@ sub make_sql_dump {
 }
 
 sub make_sql_interface {
-    my ( $admin, $nuke, $sql ) = @_;
+    my ( $admin, $sql ) = @_;
     my ( $sth, $row, @results );
 
     check_password( $admin, ADMIN_PASS );
 
     if ($sql) {
-        make_error(S_WRONGPASS) if ( $nuke ne NUKE_PASS ); # check nuke password
-
         my @statements = grep { /^\S/ } split /\r?\n/,
           decode_string( $sql, CHARSET, 1 );
 
@@ -2747,7 +2431,6 @@ sub make_sql_interface {
     print encode_string(
         SQL_INTERFACE_TEMPLATE->(
             admin   => $admin,
-            nuke    => $nuke,
             results => join "<br />",
             map { clean_string( $_, 1 ) } @results
         )
@@ -2776,7 +2459,7 @@ sub do_login {
     }
 
     if ($crypt) {
-        if ( $savelogin and $nexttask ne "nuke" ) {
+        if ( $savelogin ) {
             make_cookies(
                 wakaadmin => $crypt,
                 -charset  => CHARSET,
@@ -2785,15 +2468,14 @@ sub do_login {
             );
         }
 
-        make_http_forward( get_script_name() . "?task=$nexttask&admin=$crypt",
-            ALTERNATE_REDIRECT );
+        make_http_forward( get_script_name() . "?task=$nexttask&admin=$crypt");
     }
     else { make_admin_login() }
 }
 
 sub do_logout {
     make_cookies( wakaadmin => "", -expires => 1 );
-    make_http_forward( get_script_name() . "?task=admin", ALTERNATE_REDIRECT );
+    make_http_forward( get_script_name() . "?task=admin");
 }
 
 sub add_admin_entry {
@@ -2832,7 +2514,7 @@ sub add_admin_entry {
     $utf8_encoded_json_text = encode_json( { "error_code" => 200, "banned_ip" => dec_to_dot($ival1), "banned_mask" => dec_to_dot($ival2), "reason" => $comment, "postid" => $postid, "debug" => $ival1 } );
     make_http_header();
     print $utf8_encoded_json_text;
-    #make_http_forward( get_script_name() . "?admin=$admin&task=bans", ALTERNATE_REDIRECT );
+    #make_http_forward( get_script_name() . "?admin=$admin&task=bans");
 }
 
 sub check_admin_entry {
@@ -2866,8 +2548,7 @@ sub remove_admin_entry {
       or make_error(S_SQLFAIL);
     $sth->execute($num) or make_error(S_SQLFAIL);
 
-    make_http_forward( get_script_name() . "?admin=$admin&task=bans",
-        ALTERNATE_REDIRECT );
+    make_http_forward( get_script_name() . "?admin=$admin&task=bans");
 }
 
 sub delete_all {
@@ -2883,37 +2564,6 @@ sub delete_all {
     while ( $row = $sth->fetchrow_hashref() ) { push( @posts, $$row{num} ); }
 
     delete_stuff( '', 0, 0, $admin, 0, @posts );
-}
-
-sub update_spam_file {
-    my ( $admin, $spam ) = @_;
-
-    check_password( $admin, ADMIN_PASS );
-
-    my @spam = split /\r?\n/, $spam;
-    my @spam_files = SPAM_FILES;
-    write_array( $spam_files[0], @spam );
-
-    make_http_forward( get_script_name() . "?admin=$admin&task=spam",
-        ALTERNATE_REDIRECT );
-}
-
-sub do_nuke_database {
-    my ($admin) = @_;
-
-    check_password( $admin, NUKE_PASS );
-
-    init_database();
-
-    #init_admin_database();
-    #init_proxy_database();
-
-    # remove images, thumbnails and threads
-    unlink glob IMG_DIR . '*';
-    unlink glob THUMB_DIR . '*';
-    unlink glob RES_DIR . '*';
-
-    make_http_forward( HTML_SELF, ALTERNATE_REDIRECT );
 }
 
 sub check_password {
@@ -3029,7 +2679,7 @@ sub get_secure_script_name {
 sub expand_image_filename {
     my $filename = shift;
 
-    return expand_filename( clean_path($filename) ) unless ENABLE_LOAD;
+    return expand_filename( clean_path($filename) );
 
     my ($self_path) = $ENV{SCRIPT_NAME} =~ m!^(.*/)[^/]+$!;
     my $src = IMG_DIR;
@@ -3048,8 +2698,6 @@ sub get_reply_link {
 	}
 	else
 	{
-	    #	return expand_filename(RES_DIR.$parent.PAGE_EXT).'#'.$reply if($parent);
-	    #	return expand_filename(RES_DIR.$reply.PAGE_EXT);
 	 	return expand_filename( "faden/" . $parent ) . '#' . $reply if ($parent);
    		return expand_filename( "faden/" . $reply );
 	}
@@ -3166,28 +2814,6 @@ sub init_admin_database {
     $sth->execute() or make_error(S_SQLFAIL);
 }
 
-sub init_proxy_database {
-    my ($sth);
-
-    $sth = $dbh->do( "DROP TABLE " . SQL_PROXY_TABLE . ";" )
-      if ( table_exists(SQL_PROXY_TABLE) );
-    $sth = $dbh->prepare(
-            "CREATE TABLE "
-          . SQL_PROXY_TABLE . " ("
-          .
-
-          "num "
-          . get_sql_autoincrement() . ","
-          .                         # Entry number, auto-increments
-          "type TEXT," .            # Type of entry (black, white, etc)
-          "ip TEXT," .              # IP address
-          "timestamp INTEGER," .    # Age since epoch
-          "date TEXT" .             # Human-readable form of date
-
-          ");"
-    ) or make_error(S_SQLFAIL);
-    $sth->execute() or make_error(S_SQLFAIL);
-}
 
 sub repair_database {
     my ( $sth, $row, @threads, $thread );
@@ -3238,7 +2864,7 @@ sub trim_database {
         $sth->execute() or make_error(S_SQLFAIL);
 
         while ( $row = $sth->fetchrow_hashref() ) {
-            delete_post( $$row{num}, "", 0, ARCHIVE_MODE, 0 );
+            delete_post( $$row{num}, "", 0, 0 );
         }
     }
 
@@ -3262,7 +2888,7 @@ sub trim_database {
         if ( $row = $sth->fetchrow_hashref() ) {
             my ( $threadposts, $threadsize ) = count_posts( $$row{num} );
 
-            delete_post( $$row{num}, "", 0, ARCHIVE_MODE, 0 );
+            delete_post( $$row{num}, "", 0, 0 );
 
             $threads--;
             $posts -= $threadposts;

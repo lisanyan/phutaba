@@ -13,7 +13,6 @@ require '../lib/site_config.pl';
 use constant SQL_TABLE_IMG => 'board_img';			# Table (NOT DATABASE) used by image board for secondary images
 use constant SQL_TABLE => 'board';			# Table (NOT DATABASE) used by image board
 use constant SQL_ADMIN_TABLE => 'admin';		# Table used for admin information
-use constant SQL_PROXY_TABLE => 'proxy';		# Table used for proxy information
 use constant USE_TEMPFILES => 1;				# Set this to 1 under Unix and 0 under Windows! (Use tempfiles when creating pages)
 use constant ENABLE_WEBSOCKET_NOTIFY => 1;
 
@@ -69,19 +68,6 @@ use constant CAPTCHA_SCALING => 0.15;
 use constant CAPTCHA_ROTATION => 0.3;
 use constant CAPTCHA_SPACING => 2.5;
 
-# Load Balancing
-use constant ENABLE_LOAD => 0;					# Enable the distribution of image files across multiple hosts (0: no, 1: yes). May not work on a windows host. Do not enable if using STUPID_THUMBNAILING.
-use constant LOAD_SENDER_SCRIPT => './sender.pl';
-use constant LOAD_LOCAL => 120;				# Gigabytes of available bandwidth relative to other hosts (please read documentation)
-use constant LOAD_HOSTS => (['http://somesite/loader.pl', 'password', 100]);
-use constant LOAD_KBRATE => 25;				# minimum send rate that will be accepted without timing out
-
-# Proxy
-use constant ENABLE_PROXY_CHECK => 0;			# Enable proxy checking (0: no, 1:yes). Please read the documentation first!
-use constant PROXY_COMMAND => 'proxycheck -s -d CHANGEME -c chat:CHANGEME ESMTP" -aaaa';	# Only uncomment if you know what you're doing... 
-use constant PROXY_WHITE_AGE => 604800;		# Seconds until confirmed non-proxy entry expires.
-use constant PROXY_BLACK_AGE => 604800;		# Seconds until confirmed proxy entry expires.
-
 # Tweaks
 use constant THUMBNAIL_SMALL => 1;				# Thumbnail small images (1: yes, 0: no)
 use constant THUMBNAIL_QUALITY => 70;			# Thumbnail JPEG quality
@@ -115,26 +101,20 @@ use constant TRIPKEY => '!';					# this character is displayed before tripcodes
 use constant ENABLE_WAKABAMARK => 0;			# Enable WakabaMark formatting. (0: no, 1: yes)
 use constant APPROX_LINE_LENGTH => 150;		# Approximate line length used by reply abbreviation code to guess at the length of a reply.
 use constant STUPID_THUMBNAILING => 0;			# Bypass thumbnailing code and just use HTML to resize the image. STUPID, wastes bandwidth. (1: enable, 0: disable)
-use constant ALTERNATE_REDIRECT => 0;			# Use alternate redirect method. (Javascript/meta-refresh instead of HTTP forwards. Needed to run on certain servers, like IIS.)
 use constant COOKIE_PATH => 'root';			# Path argument for cookies ('root': cookies apply to all boards on the site, 'current': cookies apply only to this board, 'parent': cookies apply to all boards in the parent directory)
 use constant FORCED_ANON => 1;					# Force anonymous posting (0: no, 1: yes)
 use constant USE_XHTML => 0;					# Send pages as application/xhtml+xml to browsers that support this (0:no, 1:yes)
-use constant SPAM_TRAP => 1;					# Enable the spam trap (empty, hidden form fields that spam bots usually fill out) (0:no, 1:yes)
 
 # Internal paths and files - might as well leave this alone.
 use constant IMG_DIR => 'src/';				# Image directory (needs to be writeable by the script)
 use constant THUMB_DIR => 'thumb/';			# Thumbnail directory (needs to be writeable by the script)
 use constant RES_DIR => 'res/';				# Reply cache directory (needs to be writeable by the script)
-use constant ARCHIVE_DIR => 'arch/';			# Root of archive directories (all need to be writeable by the script)
 use constant REDIR_DIR => 'redir/';			# Redir directory, used for redirecting clients when load balancing
 use constant HTML_SELF => 'wakaba.pl';
 use constant JS_FILE => 'wakaba.js';			# Location of the js file
-use constant PAGE_EXT => '.html';				# Extension used for board pages after first
 use constant ERRORLOG => '';					# Writes out all errors seen by user, mainly useful for debugging
 use constant CONVERT_COMMAND => 'convert';		# location of the ImageMagick convert command (usually just 'convert', but sometime a full path is needed)
 #use constant CONVERT_COMMAND => '/usr/X11R6/bin/convert';
-use constant SPAM_FILES => ('spam.txt');		# Spam definition files, as a Perl list.
-												# Hints: * Set all boards to use the same file for easy updating.
 use constant ADMIN_MASK_IPS => 1;												#        * Set up two files, one being the official list from
 												#          http://wakaba.c3.cx/antispam/spam.txt, and one your own additions.
 

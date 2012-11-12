@@ -836,23 +836,8 @@ sub get_http {
 }
 
 sub make_http_forward {
-    my ( $location, $alternate_method ) = @_;
+    my ($location) = @_;
 
-    if ($alternate_method) {
-        print "Content-Type: text/html\n";
-        print "\n";
-        print "<html><head>";
-        print '<meta http-equiv="refresh" content="0; url='
-          . $location . '" />';
-        print '<script type="text/javascript">document.location="'
-          . $location
-          . '";</script>';
-        print '</head><body><a href="'
-          . $location . '">'
-          . $location
-          . '</a></body></html>';
-    }
-    else {
         print "Status: 303 Go West\n";
         print "Location: $location\n";
         print "Content-Type: text/html\n";
@@ -861,7 +846,6 @@ sub make_http_forward {
           . $location . '">'
           . $location
           . '</a></body></html>';
-    }
 }
 
 sub make_cookies {
@@ -1321,78 +1305,6 @@ sub write_array {
     }
 }
 
-#
-# Spam utilities
-#
-
-sub spam_check    # Deprecated function
-{
-    my ( $text, $spamfile ) = @_;
-    return compile_spam_checker($spamfile)->($text);
-}
-
-sub compile_spam_checker {
-    my @re = map {
-        s{(\\?\\?&\\?#([0-9]+)\\?;|\\?&\\?#x([0-9a-f]+)\\?;)}{
-			sprintf("\\x{%x}",($2 or hex $3));
-		}gei if $has_encode;
-        $_;
-      } map {
-        s/(^|\s+)#.*//;
-        s/^\s+//;
-        s/\s+$//;    # strip perl-style comments and whitespace
-        if    ( !length )   { () }    # nothing left, skip
-        elsif (m!^/(.*)/$!) { $1 }    # a regular expression
-        elsif (m!^/(.*)/([xism]+)$!) {
-            "(?$2)$1";
-        }                             # a regular expression with xism modifiers
-        else { quotemeta }            # a normal string
-      } map read_array($_), @_;
-
-    return eval 'sub {
-		$_=shift;
-		# study; # causes a strange bug - moved to spam_engine()
-		return ' . ( join "||", map "/$_/mo", (@re) ) . ';
-	}';
-}
-
-sub spam_engine {
-    my %args            = @_;
-    my @spam_files      = @{ $args{spam_files} || [] };
-    my @trap_fields     = @{ $args{trap_fields} || [] };
-    my @included_fields = @{ $args{included_fields} || [] };
-    my %excluded_fields;
-    my $query = $args{query} || new CGI;
-    my $charset = $args{charset};
-
-    #	for(@trap_fields) { spam_screen($query) if $query->param($_) }
-
-    my $spam_checker = compile_spam_checker(@spam_files);
-    my @fields = @included_fields ? @included_fields : $query->param;
-    @fields = grep !$excluded_fields{$_}, @fields if %excluded_fields;
-
- #	my $fulltext=join "\n",map decode_string($query->param($_),$charset),@fields;
-    my $fulltext = join "\n", map $query->param($_), @fields;
-    study $fulltext;
-
-    #	spam_screen($query) if $spam_checker->($fulltext);
-}
-
-sub spam_screen {
-    my $query = shift;
-
-    print "Content-Type: text/html\n\n";
-    print "<html><body>";
-    print "<h1>Anti-spam filters triggered.</h1>";
-    print "<p>If you are not a spammer, you are probably accidentially ";
-    print "trying to use an URL that is listed in the spam file. Try ";
-    print "editing your post to remove it. Sorry for any inconvenience.</p>";
-    print "<small style='color:white'><small>";
-    print "$_<br>" for ( map $query->param($_), $query->param );
-    print "</small></small>";
-
-    exit 0;
-}
 
 #
 # File utilities
