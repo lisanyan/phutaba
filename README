@@ -1,4 +1,4 @@
-dump the sql files in sql/ into your database and edit index.pl, board/config.pl and the template files according your needs
+dump the sql files in sql/ into your database and edit lib/site_config.pl, board/config.pl and the template files according your needs
 
 dependencies:
 * mysql
