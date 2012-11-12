@@ -512,3 +512,4 @@ sub end_gif {
     }
     print pack( 'C', ';' );
 }
+
