@@ -923,7 +923,7 @@ sub add_secondary_images_to_row {
         $$row{height1}      = $$res2{height};
         $$row{thumbnail1}   = $$res2{thumbnail};
         $$row{tn_width1}    = $$res2{tn_width};
-        $$row{tn_height1}   = $$res2{th_height};
+        $$row{tn_height1}   = $$res2{tn_height};
         $$row{size1}        = $$res2{size};
         $secondaryImageSize += $$res2{size};
         $extImageCount++;
@@ -942,7 +942,7 @@ sub add_secondary_images_to_row {
         $$row{height2}      = $$res2{height};
         $$row{thumbnail2}   = $$res2{thumbnail};
         $$row{tn_width2}    = $$res2{tn_width};
-        $$row{tn_height2}   = $$res2{th_height};
+        $$row{tn_height2}   = $$res2{tn_height};
         $$row{size2}        = $$res2{size};
         $secondaryImageSize += $$res2{size};
         $extImageCount++;
@@ -960,7 +960,7 @@ sub add_secondary_images_to_row {
         $$row{height3}      = $$res2{height};
         $$row{thumbnail3}   = $$res2{thumbnail};
         $$row{tn_width3}    = $$res2{tn_width};
-        $$row{tn_height3}   = $$res2{th_height};
+        $$row{tn_height3}   = $$res2{tn_height};
         $$row{size3}        = $$res2{size};
         $secondaryImageSize += $$res2{size};
         $extImageCount++;
