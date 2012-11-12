@@ -76,7 +76,7 @@ BEGIN {
     require "../lib/strings_en.pl"; # need some good replacement
     require "../lib/wakautils.pl";
     require "../lib/futaba_style.pl";
-    require "captcha.pl";
+    require "../lib/captcha.pl";
 }
 
 #
