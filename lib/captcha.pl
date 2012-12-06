@@ -8,7 +8,7 @@ use CGI;
 use DBI;
 
 use lib '.';
-BEGIN { require "config.pl"; }
+BEGIN { require "../lib/site_config.pl"; }
 BEGIN { require "../lib/config_defaults.pl"; }
 BEGIN { require "../lib/strings_en.pl"; }
 BEGIN { require "../lib/wakautils.pl"; }
@@ -54,9 +54,9 @@ my $query    = new CGI;
 my $key      = ( $query->param("key") or 'default' );
 my $selector = ( $query->param("selector") or ".captcha" );
 my $style    = ( $query->cookie("wakabastyle"));
-my $board    = $query->param("board") or make_error("Wrong call.");
+my $board    = $query->param("board") or 'default';
 my $ip = $ENV{HTTP_X_REAL_IP};
-my $ip = $ENV{REMOTE_ADDR} if ($ip eq undef); # for crazy people who expose their server to the internet
+$ip = $ENV{REMOTE_ADDR} if ($ip eq undef); # for crazy people who expose their server to the internet
 
 my @foreground = find_stylesheet_color( $style, $selector );
 my @background = ( 0xff, 0xff, 0xff );
