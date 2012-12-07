@@ -1366,7 +1366,8 @@ sub analyze_image {
     return ( "jpg", @res ) if ( @res = analyze_jpeg($file) );
     return ( "png", @res ) if ( @res = analyze_png($file) );
     return ( "gif", @res ) if ( @res = analyze_gif($file) );
-
+	return ( "pdf", @res ) if ( @res = analyze_pdf($file) );
+	
     # find file extension for unknown files
     my ($ext) = $name =~ /\.([^\.]+)$/;
     return ( lc($ext), 0, 0 );
@@ -1456,6 +1457,21 @@ sub analyze_gif {
     return ( $width, $height );
 }
 
+# very basic pdf-header check
+sub analyze_pdf($) {
+	my ($file) = @_;
+	my ($bytes, $buffer);
+
+	$bytes = read($file, $buffer, 5);
+	seek($file, 0, 0);
+	return () unless($bytes == 5);
+
+	my $magic = unpack("A5", $buffer);
+	return () unless($magic eq "%PDF-");
+
+	return (1, 1);
+}
+
 sub make_thumbnail {
     my ( $filename, $thumbnail, $width, $height, $quality, $convert ) = @_;
 
@@ -1466,10 +1482,14 @@ sub make_thumbnail {
 	$background = "transparent" if ( $thumbnail =~ /\.png$/ or $thumbnail =~ /\.gif$/ );
 
     my $magickname = $filename;
-    $magickname .= "[0]" if ( $magickname =~ /\.gif$/ );
+    $magickname .= "[0]" if ($magickname =~ /\.gif$/ or $magickname =~ /\.pdf$/);
+
+	my $ignore_ar = "!"; # flag to force ImageMagick to ignore the aspect ratio of the image
+	# pdf files have no physical resolution - let ImageMagick figure out the thumbnail-ratio
+	$ignore_ar = "" if ($filename =~ /\.pdf$/);
 
     $convert = "convert" unless ($convert);
-`$convert -background $background -flatten -size ${width}x${height} -geometry ${width}x${height}! -quality $quality $magickname $thumbnail`;
+`$convert -background $background -flatten -size ${width}x${height} -geometry ${width}x${height}${ignore_ar} -quality $quality -colorspace RGB $magickname $thumbnail`;
 
     return 1 unless ($?);
 

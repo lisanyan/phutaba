@@ -1601,12 +1601,6 @@ sub format_comment {
     # restore >>1 references hidden in code blocks
     $comment =~ s/&gtgt;/&gt;&gt;/g;
 
-    # restore >>1 references hidden in bbcode-code blocks
-    $comment =~ s/&gtgt_;/&gt;&gt;/g;
-
-    # restore quotes hidden in bbcode-code blocks
-    $comment =~ s/&gt_;/&gt;/g;
-
     return $comment;
 }
 
@@ -1915,7 +1909,8 @@ sub process_file {
     elsif ($width > MAX_W
         or $height > MAX_H
         or THUMBNAIL_SMALL
-        or $filename =~ /\.svg$/ )
+        or $filename =~ /\.svg$/
+		or $ext eq 'pdf')
     {
         if ( $width <= MAX_W and $height <= MAX_H ) {
             $tn_width  = $width;
@@ -1930,8 +1925,18 @@ sub process_file {
                 $tn_height = MAX_H;
             }
         }
+		
+		if ($ext eq 'pdf') { # pdf support - we cannot know the thumbnail-dimensions yet
+			$width = undef;
+			$height = undef;
+			$tn_width = MAX_W;
+			$tn_height = MAX_H;				
+		}
 
-        if (STUPID_THUMBNAILING) { $thumbnail = $filename }
+        if (STUPID_THUMBNAILING) {
+			$thumbnail = $filename;
+			$thumbnail = undef if($ext eq 'pdf');
+		}
         else {
             $thumbnail = undef
               unless (
@@ -1941,6 +1946,13 @@ sub process_file {
                     THUMBNAIL_QUALITY, CONVERT_COMMAND
                 )
               );
+
+			if ($thumbnail and $ext eq 'pdf') { # get the thumbnail size created by ImageMagick
+				open THUMBNAIL,$thumbnail;
+				binmode THUMBNAIL;
+				($tn_ext, $tn_width, $tn_height) = analyze_image(\*THUMBNAIL, $thumbnail);
+				close THUMBNAIL;
+			}
         }
     }
     else {
@@ -2604,7 +2616,7 @@ sub get_page_count {
 
 sub get_filetypes {
     my %filetypes = FILETYPES;
-    $filetypes{gif} = $filetypes{jpg} = $filetypes{png} = 1;
+    $filetypes{gif} = $filetypes{jpg} = $filetypes{png} = $filetypes{pdf} = 1;
     return join ", ", map { uc } sort keys %filetypes;
 }
 

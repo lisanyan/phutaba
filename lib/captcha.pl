@@ -54,7 +54,7 @@ my $query    = new CGI;
 my $key      = ( $query->param("key") or 'default' );
 my $selector = ( $query->param("selector") or ".captcha" );
 my $style    = ( $query->cookie("wakabastyle"));
-my $board    = $query->param("board") or 'default';
+my $board    = ( $query->param("board") or 'default');
 my $ip = $ENV{HTTP_X_REAL_IP};
 $ip = $ENV{REMOTE_ADDR} if ($ip eq undef); # for crazy people who expose their server to the internet
 
