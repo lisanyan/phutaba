@@ -503,13 +503,13 @@ sub do_spans {
         my $line = $_;
         my @hidden;
 
-        # hide <code> sections
-        $line =~
-s{ (?<![\x80-\x9f\xe0-\xfc]) (`+) ([^<>]+?) (?<![\x80-\x9f\xe0-\xfc]) \1}{push @hidden,"<code>$2</code>"; "<!--$#hidden-->"}sgex;
-
         # do h1
         $line =~
 s{ (?<![0-9a-zA-Z\*_\x80-\x9f\xe0-\xfc]) (--) (?![<>\s\*_]) ([^<>]+?) (?<![<>\s\*_\x80-\x9f\xe0-\xfc]) \1 (?![0-9a-zA-Z\*_]) }{<h1>$2</h1>}gx;
+
+        # hide <code> sections
+        $line =~
+s{ (?<![\x80-\x9f\xe0-\xfc]) (`+) ([^<>]+?) (?<![\x80-\x9f\xe0-\xfc]) \1}{push @hidden,"<code>$2</code>"; "<!--$#hidden-->"}sgex;
 
         # make URLs into links and hide them
         $line =~
@@ -1489,7 +1489,7 @@ sub make_thumbnail {
 	$ignore_ar = "" if ($filename =~ /\.pdf$/);
 
     $convert = "convert" unless ($convert);
-`$convert -background $background -flatten -size ${width}x${height} -geometry ${width}x${height}${ignore_ar} -quality $quality -colorspace RGB $magickname $thumbnail`;
+`$convert -background $background -flatten -size ${width}x${height} -geometry ${width}x${height}${ignore_ar} -quality $quality $magickname $thumbnail`;
 
     return 1 unless ($?);
 

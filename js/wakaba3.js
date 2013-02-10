@@ -115,7 +115,7 @@ function set_inputs(id) {
 		if (!name.value) name.value = get_cookie("name");
 		if (!field2.value) field2.value = get_cookie("email");
 		if (!password.value) password.value = get_password("password");
-		gb2[1].checked = (get_cookie("gb2")=="thread");
+		if (typeof gb2 == "object")	gb2[1].checked = (get_cookie("gb2")=="thread");
 	}
 }
 
@@ -123,10 +123,11 @@ function set_delpass(id) {
 	with (document.getElementById(id)) password.value = get_cookie("password");
 }
 
+/*
 window.onunload = function (e) {
 	if (style_cookie) {
 		var title = get_active_stylesheet();
 		set_cookie(style_cookie, title, 365);
 	}
 }
-
+*/

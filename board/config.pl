@@ -156,7 +156,6 @@ use constant FILETYPES => (
 	svg => '../img/svg.png',
 	rar => '../img/rar.png',
 	zip => '../img/zip.png',
-  pdf => '../img/pdf.png',
   mp3 => '../img/mp3.png',
   ogg => '../img/ogg.png',
   wma => '../img/wma.png',
