@@ -67,7 +67,7 @@ BEGIN {
       unless ( defined &IRC_NOTIFY_PORT );
 eval "use constant SQL_PREFIX => 'ernstchan_';" unless ( defined &SQL_PREFIX );
     use constant S_IRC_NEW_THREAD_PREPEND => "Neuer Thread auf ";
-    use constant S_IRC_BASE_BOARDURL      => "http://ernstchan.net/";
+    use constant S_IRC_BASE_BOARDURL      => "https://ernstchan.com/";
     use constant S_IRC_BASE_THREADURL     => "/faden/";
     use constant S_IRC_NEW_POST_PREPEND   => "Neuer Post in ";
     eval "use constant MAX_KB => 1000"     unless ( defined &MAX_KB );
@@ -152,7 +152,7 @@ eval "use constant SQL_PREFIX => 'ernstchan_';" unless ( defined &SQL_PREFIX );
     eval "use constant COOKIE_PATH => 'root'" unless ( defined &COOKIE_PATH );
     eval "use constant STYLE_COOKIE => 'wakabastyle'"
       unless ( defined &STYLE_COOKIE );
-	eval "use constant STYLESHEET => '/css/ernstchan.css'" unless (defined &STYLESHEET);
+	eval "use constant STYLESHEET => '/css/style.css'" unless (defined &STYLESHEET);
     eval "use constant FORCED_ANON => 0" unless ( defined &FORCED_ANON );
     eval "use constant USE_XHTML => 1"   unless ( defined &USE_XHTML );
 

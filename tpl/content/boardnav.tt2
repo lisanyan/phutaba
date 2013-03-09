@@ -1,4 +1,20 @@
-<div class="boardnav_l">
-[ <a href="/" onmouseover="Tip('Start')" onmouseout="UnTip()">/</a> ] [ <a href="/b/" onmouseover="Tip('Ernstchan')" onmouseout="UnTip()">b</a> ] [ <a href="/c/" onmouseover="Tip('Computer &amp; Programmieren')" onmouseout="UnTip()">c</a> / <a href="/m/" onmouseover="Tip('Musik')" onmouseout="UnTip()">m</a> ] [ <a href="/fefe/" onmouseover="Tip('Fefes Blog')" onmouseout="UnTip()">fefe</a> / <a href="/&ouml;/" onmouseover="Tip('Neu-Kaiserchan')" onmouseout="UnTip()">&ouml;</a> / <a href="/rant/" onmouseover="Tip('HASS HASS HASS')" onmouseout="UnTip()">rant</a> ]
-</div>
+<nav>
+	<ul class="menu">
+		<li>Boards:</li>
+		<li title="Random"><a href="/b/">/b/</a></li>
+		<li title="Computer &amp; Programmieren"><a href="/c/">/c/</a></li>
+		<li title="Musik"><a href="/m/">/m/</a></li>
+		<li title="Fefes Blog"><a href="/fefe/">/fefe/</a></li>
+		<li title="Neu-Kaiserchan"><a href="/&ouml;/">/&ouml;/</a></li>
+		<li title="HASS HASS HASS"><a href="/rant/">/rant/</a></li>
+	</ul>
 
+	<ul class="menu right">
+		<li>Seiten:</li>
+		<li><a href="/news">News</a></li>
+		<li><a href="/rules">Regeln</a></li>
+		<li><a href="/faq">FAQ</a></li>
+		<li><a href="/irc">IRC-Channel</a></li>
+		<li><a href="/stats">Statistiken</a></li>
+	</ul>
+</nav>
