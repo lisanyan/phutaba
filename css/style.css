@@ -215,6 +215,7 @@ ul.rules {
 	border-bottom: 1px solid #BFB5A1;
 	padding: 0.5em 1em 1em 0.5em;
 	margin: 0 0 0.5em 2em;
+	overflow: hidden;
 }
 
 .thread_OP .post {
@@ -243,21 +244,17 @@ ul.rules {
 	padding: 5px;
 }
 
-.reflink a, .replylink a, .filename a, .filetype a {
+.reflink a, .filename a, .filetype a, .togglethread a {
 	color: #000000;
 	text-decoration: none;
 }
 
-.reflink a:hover, .replylink a:hover, .filename a:hover, .filetype a:hover {
+.reflink a:hover, .filename a:hover, .filetype a:hover {
 	text-decoration: underline;
 }
 
 .post_head {
 	margin-bottom: 0.5em;
-}
-
-.togglethread:hover{
-	cursor: pointer;
 }
 
 .postername {
@@ -290,11 +287,9 @@ ul.rules {
 	background-color: #BFB5A1;
 	text-align: center;
 	margin: 0 0 0.5em 0.5em;
-	display: inline-block;
+	float: left;
+	display: block;
 	vertical-align: top;
-}
-
-.file img {
 }
 
 .filesize {
@@ -376,6 +371,10 @@ blockquote.unkfunc {
 	padding: 0 0.5em;
 	border-right: 1px solid #008800;
 	border-bottom: 1px solid #008800;
+}
+
+.togglethread a:hover {
+	cursor: pointer;
 }
 
 ul.pagelist {

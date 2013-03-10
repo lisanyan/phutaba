@@ -155,7 +155,7 @@ use constant NORMAL_HEAD_INCLUDE => q{
   };
 
   function getHiddenHTML(tid) {
-	return "<div class='show_"+tid+"'><div class='togglethread'><img src='/img/show.png' onclick='showThread("+tid+");' alt='Thread "+tid+" einblenden' /> <a class='hide' onclick='showThread("+tid+");'><strong>Thread "+tid+"</strong> einblenden</a></div></div>";
+	return "<div class='show_"+tid+"'><div class='togglethread'><a class='hide' onclick='showThread("+tid+");'><img src='/img/show.png' onclick='showThread("+tid+");' alt='Thread "+tid+" einblenden' /> <strong>Thread "+tid+"</strong> einblenden</a></div></div>";
   };
 
 </if>
