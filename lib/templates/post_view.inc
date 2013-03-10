@@ -35,7 +35,7 @@
 	<if ENABLE_HIDE_THREADS>
 		<if !$thread and !$parent>
 			<span class="togglethread">
-			<img src="/img/hide.png" title="Thread <var $num> ausblenden" alt="Hide" onclick="hideThread('<var $num>');" />
+			<img src="/img/icons/hide.png" title="Thread <var $num> ausblenden" alt="Hide" onclick="hideThread('<var $num>');" />
 			</span>
 		</if>
 	</if>
@@ -47,6 +47,10 @@
 		<if $adminpost><span class="teampost">## Team ##</span></if>
 		<span class="date"><var encode_entities(get_date($timestamp))></span>
 	</label>
+
+	<if $ssl>
+		<span class="ssl" onmouseover="Tip('<var $ssl>')" onmouseout="UnTip()"><img src="<var SSL_ICON>" alt="SSL" /></span>
+	</if>
 
 	<span class="reflink">
 		<if !$thread>
@@ -70,13 +74,9 @@
 		<if $thread><a href="javascript:insert('&gt;&gt;<var $num>\n')">Nr. <var $num></a></if>		
 	</span>
 
-	<if $ssl>
-		<span class="ssl" onmouseover="Tip('<var $ssl>')" onmouseout="UnTip()"><img src="<var SSL_ICON>" alt="SSL" /></span>
-	</if>
-
 	<if !$parent>
-		<if !$sticky_isnull><span class="sticky"><img src="/img/pin.png" onmouseover="Tip('<var S_STICKYTITLE>')" onmouseout="UnTip()" alt="Pin" /></span></if>
-		<if $locked><span class="locked"><img src="/img/lock.png" onmouseover="Tip('<var S_LOCKEDTITLE>')" onmouseout="UnTip()" alt="Lock" /></span></if>
+		<if !$sticky_isnull><span class="sticky"><img src="/img/icons/pin.png" onmouseover="Tip('<var S_STICKYTITLE>')" onmouseout="UnTip()" alt="Pin" /></span></if>
+		<if $locked><span class="locked"><img src="/img/icons/locked.png" onmouseover="Tip('<var S_LOCKEDTITLE>')" onmouseout="UnTip()" alt="Lock" /></span></if>
 		<if !$autosage><if $email><span class="sage">Kontra</span></if></if>
 		<if $sticky_isnull><if $autosage><span class="systemsage">Systemkontra</span></if></if>
 	</if>
@@ -160,19 +160,25 @@
 		</div>
 	</if>
 	<if !$thumbnail>
-		<if DELETED_THUMBNAIL>
-			<a target="_blank" href="<var expand_image_filename(DELETED_IMAGE)>">
-				<img src="<var expand_filename(DELETED_THUMBNAIL)>" width="<var $tn_width>" height="<var $tn_height>" alt="" class="thumb" />
-			</a>
+		<if !$size>
+			<div class="filedeleted">Datei gel&ouml;scht</div>
 		</if>
-		<if !DELETED_THUMBNAIL>
-			<div class="nothumb">
-				<a target="_blank" href="<var decode('utf-8', expand_image_filename($image))>/<var $uploadname>"><const S_NOTHUMB></a>
-			</div>
-		</if>
+		<if $size>
+			<if DELETED_THUMBNAIL>
+				<a target="_blank" href="<var expand_image_filename(DELETED_IMAGE)>">
+					<img src="<var expand_filename(DELETED_THUMBNAIL)>" width="<var $tn_width>" height="<var $tn_height>" alt="" />
+				</a>
+			</if>
+			<if !DELETED_THUMBNAIL>
+				<div class="nothumb">
+					<a target="_blank" href="<var decode('utf-8', expand_image_filename($image))>/<var $uploadname>"><const S_NOTHUMB></a>
+				</div>
+			</if>
+		</if>		
 	</if>
 </section>
 </if>
+
 <if $image1>
 <section class="file">
 	<div style="display: none; min-width: 100px;" id="imageinfo_<var md5_hex($image1)>">
@@ -190,19 +196,25 @@
 		</div>
 	</if>
 	<if !$thumbnail1>
-		<if DELETED_THUMBNAIL>
-			<a target="_blank" href="<var expand_image_filename(DELETED_IMAGE)>">
-				<img src="<var expand_filename(DELETED_THUMBNAIL)>" width="<var $tn_width1>" height="<var $tn_height1>" alt="" />
-			</a>
+		<if !$size>
+			<div class="filedeleted">Datei gel&ouml;scht</div>
 		</if>
-		<if !DELETED_THUMBNAIL>
-			<div class="nothumb">
-				<a target="_blank" href="<var decode('utf-8', expand_image_filename($image1))>/<var $uploadname1>"><const S_NOTHUMB></a>
-			</div>
-		</if>
+		<if $size>
+			<if DELETED_THUMBNAIL>
+				<a target="_blank" href="<var expand_image_filename(DELETED_IMAGE)>">
+					<img src="<var expand_filename(DELETED_THUMBNAIL)>" width="<var $tn_width1>" height="<var $tn_height1>" alt="" />
+				</a>
+			</if>
+			<if !DELETED_THUMBNAIL>
+				<div class="nothumb">
+					<a target="_blank" href="<var decode('utf-8', expand_image_filename($image1))>/<var $uploadname1>"><const S_NOTHUMB></a>
+				</div>
+			</if>
+		</if>		
 	</if>
 </section>
 </if>
+
 <if $image2>
 <section class="file">
 	<div style="display: none; min-width: 100px;" id="imageinfo_<var md5_hex($image2)>">
@@ -220,19 +232,25 @@
 		</div>
 	</if>
 	<if !$thumbnail2>
-		<if DELETED_THUMBNAIL>
-			<a target="_blank" href="<var expand_image_filename(DELETED_IMAGE)>">
-				<img src="<var expand_filename(DELETED_THUMBNAIL)>" width="<var $tn_width2>" height="<var $tn_height2>" alt="" />
-			</a>
+		<if !$size>
+			<div class="filedeleted">Datei gel&ouml;scht</div>
 		</if>
-		<if !DELETED_THUMBNAIL>
-			<div class="nothumb">
-				<a target="_blank" href="<var decode('utf-8', expand_image_filename($image2))>/<var $uploadname2>"><const S_NOTHUMB></a>
-			</div>
-		</if>
+		<if $size>
+			<if DELETED_THUMBNAIL>
+				<a target="_blank" href="<var expand_image_filename(DELETED_IMAGE)>">
+					<img src="<var expand_filename(DELETED_THUMBNAIL)>" width="<var $tn_width2>" height="<var $tn_height2>" alt="" />
+				</a>
+			</if>
+			<if !DELETED_THUMBNAIL>
+				<div class="nothumb">
+					<a target="_blank" href="<var decode('utf-8', expand_image_filename($image2))>/<var $uploadname2>"><const S_NOTHUMB></a>
+				</div>
+			</if>
+		</if>		
 	</if>
 </section>
 </if>
+
 <if $image3>
 <section class="file">
 	<div style="display: none; min-width: 100px;" id="imageinfo_<var md5_hex($image3)>">
@@ -250,16 +268,21 @@
 		</div>
 	</if>
 	<if !$thumbnail3>
-		<if DELETED_THUMBNAIL>
-			<a target="_blank" href="<var expand_image_filename(DELETED_IMAGE)>">
-				<img src="<var expand_filename(DELETED_THUMBNAIL)>" width="<var $tn_width3>" height="<var $tn_height3>" alt="" />
-			</a>
+		<if !$size>
+			<div class="filedeleted">Datei gel&ouml;scht</div>
 		</if>
-		<if !DELETED_THUMBNAIL>
-			<div class="nothumb">
-				<a target="_blank" href="<var decode('utf-8', expand_image_filename($image3))>/<var $uploadname3>"><const S_NOTHUMB></a>
-			</div>
-		</if>
+		<if $size>
+			<if DELETED_THUMBNAIL>
+				<a target="_blank" href="<var expand_image_filename(DELETED_IMAGE)>">
+					<img src="<var expand_filename(DELETED_THUMBNAIL)>" width="<var $tn_width3>" height="<var $tn_height3>" alt="" />
+				</a>
+			</if>
+			<if !DELETED_THUMBNAIL>
+				<div class="nothumb">
+					<a target="_blank" href="<var decode('utf-8', expand_image_filename($image3))>/<var $uploadname3>"><const S_NOTHUMB></a>
+				</div>
+			</if>
+		</if>		
 	</if>
 </section>	
 </if>

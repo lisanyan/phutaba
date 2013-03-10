@@ -44,14 +44,14 @@ function resizeCommentfield(id, srcelement) {
 	if (resized == 1) {
 		textarea.cols = 48;
 		textarea.rows = 6;
-		srcelement.src = '/img/expand.png';
+		srcelement.src = '/img/icons/expand.png';
 		srcelement.title = 'Textfeld vergrößern';
 		resized = 0;
 	} else {
 		resized = 1;
 		textarea.cols = 90;
 		textarea.rows = 10;
-		srcelement.src = '/img/collapse.png';
+		srcelement.src = '/img/icons/collapse.png';
 		srcelement.title = 'Textfeld verkleinern';
 	}
 

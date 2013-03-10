@@ -18,7 +18,7 @@ BEGIN {
     eval "use constant SQL_TABLE => 'comments'" unless ( defined &SQL_TABLE );
     eval "use constant SQL_ADMIN_TABLE => 'admin'"
       unless ( defined &SQL_ADMIN_TABLE );
-    eval "use constant SSL_ICON => '/img/ssl.png'" unless (defined &SSL_ICON);
+    eval "use constant SSL_ICON => '/img/icons/ssl.png'" unless (defined &SSL_ICON);
     eval "use constant USE_TEMPFILES => 1" unless ( defined &USE_TEMPFILES );
     eval "use constant ENABLE_LOCATION => 0"
       unless ( defined &ENABLE_LOCATION );

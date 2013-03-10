@@ -29,8 +29,8 @@ use constant NORMAL_HEAD_INCLUDE => q{
     if ((match = /#([0-9]+)/.exec(document.location.toString()))) highlight(match[1]);
     $j('#postform_submit').click(function() {
 	$j('.postarea').block({
-		message: 'Bitte warten',
-		css: { fontSize: '20pt', background: '#DEDBD5', border: '3px solid #B5B2AC' },
+		message: 'Bitte warten &hellip;',
+		css: { fontSize: '2em', color: '#FFFFFF', background: '#706B5E', border: 'none' },
 	});
 	setTimeout($j.unblockUI, 5000);
     });
@@ -86,7 +86,7 @@ use constant NORMAL_HEAD_INCLUDE => q{
   }
 </if>
 <if ENABLE_HIDE_THREADS>
-   function hideThreads() {
+  function hideThreads() {
     hidThreads = $j.cookie('hidden_<const BOARD_IDENT>');
     if(hidThreads != null)
         hidThreads = jQuery.parseJSON(hidThreads);
@@ -155,7 +155,7 @@ use constant NORMAL_HEAD_INCLUDE => q{
   };
 
   function getHiddenHTML(tid) {
-	return "<div class='show_"+tid+"'><div class='togglethread'><a class='hide' onclick='showThread("+tid+");'><img src='/img/show.png' onclick='showThread("+tid+");' alt='Thread "+tid+" einblenden' /> <strong>Thread "+tid+"</strong> einblenden</a></div></div>";
+	return "<div class='show_"+tid+"'><div class='togglethread'><a class='hide' onclick='showThread("+tid+");'><img src='/img/icons/show.png' onclick='showThread("+tid+");' alt='Thread "+tid+" einblenden' /> <strong>Thread "+tid+"</strong> einblenden</a></div></div>";
   };
 
 </if>
@@ -358,7 +358,7 @@ use constant PAGE_TEMPLATE => compile_template(
 	</tr>
 	</if>
 
-	<tr><td class="postblock"><const S_COMMENT></td><td><textarea id="field4" name="field4" cols="48" rows="6"></textarea> <img onclick="resizeCommentfield('field4', this)" src="/img/expand.png" alt="Textfeld vergr&ouml;&szlig;ern" title="Textfeld vergr&ouml;&szlig;ern" />
+	<tr><td class="postblock"><const S_COMMENT></td><td><textarea id="field4" name="field4" cols="48" rows="6"></textarea> <img onclick="resizeCommentfield('field4', this)" src="/img/icons/expand.png" alt="Textfeld vergr&ouml;&szlig;ern" title="Textfeld vergr&ouml;&szlig;ern" />
 	</td></tr>
 
 	<if $image_inp>

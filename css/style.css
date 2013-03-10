@@ -14,7 +14,7 @@ html, body, div, span, applet, object, iframe, h1, h2, h3, h4, h5, h6, p, blockq
 	outline: 0;
 }
 
-strong, b, ul.menu a, .boardname, .caption, .subject, .postblock, .postername, .teampost, .sage, .ban, .title, .info th, .error p {
+strong, b, ul.menu a, .boardname, .caption, .subject, .postblock, .postername, .teampost, .sage, .ban, .title, .info th, .error p, .dellist {
 	font-weight: bold;
 }
 
@@ -377,6 +377,33 @@ blockquote.unkfunc {
 	cursor: pointer;
 }
 
+.passvalid {
+	background-color: #706B5E;
+	color: #FFFFFF;
+	font-weight: bold;
+	padding: 5px;
+	margin: 5px 0;
+}
+
+.managehead th, .row1 td, .row2 td {
+	padding: 5px;
+}
+
+.managehead {
+	background-color: #706B5E;
+	color: #FFFFFF;
+	font-weight: bold;
+	text-align: center;
+}
+
+.row1 {
+	background-color: #D7CFC0;
+}
+
+.row2 {
+	background-color: #BFB5A1;
+}
+
 ul.pagelist {
 	background-color: #D7CFC0;
 	border-right: 1px solid #BFB5A1;
@@ -405,6 +432,7 @@ ul.pagelist {
 .delete input[type='password']:-ms-input-placeholder {
 	color: #000000;
 }
+
 .delete input[type='password']:-moz-placeholder {
 	color: #000000;
 }
