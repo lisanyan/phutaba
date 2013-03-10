@@ -2382,8 +2382,7 @@ sub do_logout {
 }
 
 sub add_admin_entry {
-    my ($blame) =
-"<br /><span class=\"user_banned\">(USER WURDE F&Uuml;R DIESEN POST GESPERRT)</span>";
+    my ($blame) = "<p class=\"ban\">(User wurde f&uuml;r diesen Post gesperrt)</p>";
     my ( $admin, $type, $comment, $ival1, $ival2, $sval1, $postid ) = @_;
     my ( $sth, $row, $oldcomment, $newcomment, $threadid, $utf8_encoded_json_text);
     my ($time) = time();
@@ -2601,8 +2600,8 @@ sub get_reply_link {
 	}
 	else
 	{
-	 	return expand_filename( "faden/" . $parent ) . '#' . $reply if ($parent);
-   		return expand_filename( "faden/" . $reply );
+	 	return expand_filename( "thread/" . $parent ) . '#' . $reply if ($parent);
+   		return expand_filename( "thread/" . $reply );
 	}
 }
 

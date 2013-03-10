@@ -294,8 +294,11 @@ ul.rules {
 	vertical-align: top;
 }
 
-.file img { /*temporaer*/
-	height: 132px;
+.file img {
+}
+
+.filesize {
+	font-size: 0.85em;
 }
 
 .filelink {

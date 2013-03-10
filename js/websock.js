@@ -26,7 +26,7 @@ initws = function() {
   webSocket.onmessage = function(e) {
     if (e.data === "hi") {
       last_update_ts = Math.floor(new Date().getTime() / 1000);
-      jQuery("#websock_enabled").html("<p class='loading'>Neue Posts werden automatisch nachgeladen.</p>");
+      jQuery("#websock_enabled").html("<div class='notice'><img src='/img/loading.png' alt="" /> <span>Neue Posts</span> werden automatisch nachgeladen.</div>");
       webSocket.send("+/" + board + "/" + thread_id);
       watchdog_timer = setTimeout("watchdog()", 10000);
       connected = true;
@@ -54,7 +54,7 @@ initws = function() {
 watchdog = function() {
   clearTimeout(watchdog_timer);
   if (Math.floor(new Date().getTime() / 1000) - last_update_ts > 20) {
-    jQuery("#websock_enabled").html("<p class='loading'>Verbindung verloren, versuche neu aufzubauen...</p>");
+    jQuery("#websock_enabled").html("<div class='notice'>Verbindung verloren, versuche neu aufzubauen ...</div>");
     reconnect_timer = setTimeout("reconnect_failed()", 6000);
     webSocket.close();
     webSocket = null;
@@ -65,7 +65,7 @@ watchdog = function() {
 };
 
 reconnect_failed = function() {
-  return jQuery("#websock_enabled").html("<p class='noloading'>Verbindung verloren. <a href=\"\">Seite neu laden</a></p>");
+  return jQuery("#websock_enabled").html("<div class='notice'>Verbindung verloren. <a href=\"\">Seite neu laden</a></div>");
 };
 
 loadpost = function(thread, post) {

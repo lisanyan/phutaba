@@ -33,7 +33,7 @@ use constant S_ABBR =>
 use constant S_ABBRIMG => '%d Post(s) und %d Datei(en) ausgeblendet.'
   ;    # Prints text to be shown when replies and images are hidden
 use constant S_ABBRTEXT =>
-  '<p>[ <a href="%s">ZL;NG</a> ]</p>';
+  '<p class="tldr">[<a href="%s">Vollst&auml;ndigen Post anzeigen</a>]</p>';
 
 use constant S_REPDEL => ' ';    # Prints text next to S_DELPICONLY (left)
 use constant S_DELPICONLY =>
@@ -50,9 +50,9 @@ use constant S_LASTPG  => 'Vor';            # Defines next button
 use constant S_WEEKDAYS => ( 'So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa' )
   ;                                         # Defines abbreviated weekday names.
 
-use constant S_STICKYTITLE => 'Sticky'
+use constant S_STICKYTITLE => 'Thread ist angepinnt'
   ;    # Defines the title of the tiny sticky image on a thread if it is sticky
-use constant S_LOCKEDTITLE => 'Geschlossen'
+use constant S_LOCKEDTITLE => 'Thread ist geschlossen'
   ;    # Defines the title of the tiny locked image on a thread if it is locked
 
 use constant S_MANARET => 'Zur&uuml;ck'

@@ -8,7 +8,7 @@ use constant NORMAL_HEAD_INCLUDE => q{
 <html lang="de">
 <head>
 <title><var strip_html(TITLE)> &raquo; <if $title><var strip_html($title)></if><if !$title>/<var strip_html(BOARD_IDENT)>/ - <var strip_html(BOARD_NAME)></if></title>
-<meta charset=<const CHARSET>" />
+<meta charset="<const CHARSET>" />
 <link rel="shortcut icon" href="/img/favicon.ico" />
 <link rel="stylesheet" type="text/css" href="<const STYLESHEET>" />
 <link rel="stylesheet" type="text/css" href="/css/jquery.ui.css" />
@@ -352,9 +352,11 @@ use constant PAGE_TEMPLATE => compile_template(
 	<input type="submit" id="postform_submit" value="<if $thread>Antworten auf /<var BOARD_IDENT>/<var $thread></if><if !$thread>Neuen Thread erstellen</if>" /></td>
 	</tr>
 
+	<if $thread>
 	<tr><td class="postblock">Kontra</td><td><input type="checkbox" name="field2" value="sage" id="kontra" />
-	<label for="kontra">Thread auslaufen lassen</label></td>
+	<label for="kontra">Thread ausklingen lassen</label></td>
 	</tr>
+	</if>
 
 	<tr><td class="postblock"><const S_COMMENT></td><td><textarea id="field4" name="field4" cols="48" rows="6"></textarea> <img onclick="resizeCommentfield('field4', this)" src="/img/expand.png" alt="Textfeld vergr&ouml;&szlig;ern" title="Textfeld vergr&ouml;&szlig;ern" />
 	</td></tr>
@@ -367,8 +369,8 @@ use constant PAGE_TEMPLATE => compile_template(
 
 	<if $thread><tr id="trgetback"><td class="postblock">Gehe zur&uuml;ck</td>
 	<td>
-	<label><input name="gb2" value="board" checked="checked" type="radio" /> zum Board</label>
-	<label><input name="gb2" value="thread" type="radio" /> zum Thread</label>
+	<label><input name="gb2" value="board" checked="checked" type="radio" /> Zum Board</label>
+	<label><input name="gb2" value="thread" type="radio" /> Zum Thread</label>
 	</td></tr>
 	</if>
 
@@ -390,7 +392,7 @@ use constant PAGE_TEMPLATE => compile_template(
 </if>
 
 <if $locked>
-<p class="locked">Thread <var $thread> ist gesperrt.</p>
+<p class="locked">Thread <var $thread> ist geschlossen. Es kann nicht geantwortet werden.</p>
 </if>
 
 <form id="delform" action="<var decode('utf-8', $self)>" method="post">
@@ -417,33 +419,39 @@ use constant PAGE_TEMPLATE => compile_template(
 <if $thread>
 <div id="websock_enabled"></div>
 </if>
-<div style="clear: both;"></div>
+
 <hr />
-<table class="userdelete"><tbody><tr><td>
-<input type="hidden" name="task" value="delete" />
-<if $thread><input type="hidden" name="parent" value="<var $thread>" /></if>
-<const S_DELKEY><input type="password" name="password" size="8" />
-<input value="<const S_DELETE>" type="submit" /></td></tr></tbody></table>
+
+<if !$thread>
+	<nav>
+		<ul class="pagelist">
+			<li>
+			<if $prevpage><a href="<var decode('utf-8', $prevpage)>"><const S_PREV></a></if>
+			<if !$prevpage><const S_PREV></if>
+			</li>
+		<loop $pages>
+			<li>
+			<if !$current><a href="<var decode('utf-8', $filename)>"><var $page+1></a></if>
+			<if $current>[<strong><var $page+1></strong>]</if>
+			</li>
+		</loop>
+			<li>
+			<if $nextpage><a href="<var decode('utf-8', $nextpage)>"><const S_NEXT></a></if>
+			<if !$nextpage><const S_NEXT></if>
+			</li>
+		</ul>
+	</nav>
+</if>
+
+<div class="delete">
+	<input type="hidden" name="task" value="delete" />
+	<if $thread><input type="hidden" name="parent" value="<var $thread>" /></if>
+	<input type="password" name="password" placeholder="<const S_DELKEY>" />
+	<input value="<const S_DELETE>" type="submit" />
+</div>
+
 </form>
 <script type="text/javascript">set_delpass("delform")</script>
-<if !$thread>
-	<table class="paginator" border="1"><tbody><tr><td>Seiten:</td><if $prevpage><td>
-
-	[<a href="<var decode('utf-8', $prevpage)>"><const S_PREV></a>]
-	</td></if><td>
-
-	<loop $pages>
-		<if !$current><a href="<var decode('utf-8', $filename)>"><var $page+1></a></if>
-		<if $current>[<b><var $page+1></b>]</if>
-	</loop>
-
-	</td><if $nextpage><td>
-
-	[<a href="<var decode('utf-8', $nextpage)>"><const S_NEXT></a>]
-
-	</td></if></tr></tbody></table>
-</if>
-<div style="clear: both; padding-top: 15px;"></div>
 
 } . NORMAL_FOOT_INCLUDE);
 

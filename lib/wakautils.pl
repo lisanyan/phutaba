@@ -962,6 +962,7 @@ sub get_xhtml_content_type {
 
 sub expand_filename {
     my ($filename) = @_;
+
     return $filename if ( $filename =~ m!^/! );
     return $filename if ( $filename =~ m!^\w+:! );
 
@@ -1710,6 +1711,12 @@ sub mul {
           ( $b & 65535 ) ) % 4294967296;
 }
 
+sub get_urlstring($) {
+    my ($filename) = @_;
+	$filename =~ s/ /%20/g;
+	return $filename;
+}
+
 sub get_displayname($) {
 	my ($filename) = @_;
 
@@ -1718,10 +1725,10 @@ sub get_displayname($) {
 	$filename = $1;
 
 	# (.{12})    - first X characters of the file(base)name
-	# ...+       - has the basename X+3 or more characters?
+	# .....+     - has the basename X+5 or more characters?
 	# (\.[^.]+)$ - Match a dot, followed by any number of non-dots until the end
 	# output is: the first match ()->$1 a fixed string "[...]" and the extension ()->$2
-	$filename =~ s/(.{12})...+(\.[^.]+)$/$1\[...\]$2/;
+	$filename =~ s/(.{12}).....+(\.[^.]+)$/$1\[...\]$2/;
 
 	#return clean_string($filename);
 	return $filename;
