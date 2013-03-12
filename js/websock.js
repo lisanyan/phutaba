@@ -26,7 +26,7 @@ initws = function() {
   webSocket.onmessage = function(e) {
     if (e.data === "hi") {
       last_update_ts = Math.floor(new Date().getTime() / 1000);
-      jQuery("#websock_enabled").html("<div class='notice'><img src='/img/loading.png' alt="" /> <span>Neue Posts</span> werden automatisch nachgeladen.</div>");
+      jQuery("#websock_enabled").html("<div class='notice'><img src='/img/icons/loading.png' alt="" /> <span>Neue Posts</span> werden automatisch nachgeladen.</div>");
       webSocket.send("+/" + board + "/" + thread_id);
       watchdog_timer = setTimeout("watchdog()", 10000);
       connected = true;

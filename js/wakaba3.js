@@ -1,6 +1,4 @@
-var fileUploadCounter = 0,
-	MAX_FILES_PER_POST = 4,
-	resized;
+var resized;
 
 function get_cookie(name) {
 	with (document.cookie) {
@@ -57,24 +55,70 @@ function resizeCommentfield(id, srcelement) {
 
 }
 
-function addFileUploadBox(srcelement) {
-	fileUploadCounter++;
-	var postTableBody = document.getElementById("postTableBody"),
-	passwordField = document.getElementById("passwordField"),
-	targetBackField = document.getElementById("trgetback"),
-	div = document.createElement("div"),
-	input = document.createElement("input");
-	if (fileUploadCounter >= MAX_FILES_PER_POST) return;
-	input.name = "file" + fileUploadCounter;
-	input.id = "";
-	input.size = 35;
-	input.type = "file";
-	input.onchange = function () {
-		addFileUploadBox(srcelement);
-	};
-	input.value = "";
-	div.appendChild(input);
-	document.getElementById("fileInput").appendChild(div);
+function file_input_change(max)
+{
+	var total = 0;     // total number of file inputs
+	var empty = 0;     // number of empty file inputs
+	var filename = ""; // the filename without path that will be shown in the span
+
+	var postfiles = document.getElementById("fileInput"); // table cell id that contains the file inputs and filename spans
+	var inputs = postfiles.getElementsByTagName("input"); // the actual file inputs
+	var spans = postfiles.getElementsByTagName("span");   // spans with delete-icon and filename
+
+	for (i = 0; i < inputs.length; i++) {
+		if (inputs[i].type != 'file') continue;
+
+		// the initial first file input is empty and does not have a span containing the filename
+		if (spans.length == 0) {
+			var spacer = document.createTextNode("\n ");
+			var span = document.createElement("span");
+			inputs[i].parentNode.appendChild(spacer);
+			inputs[i].parentNode.appendChild(span);
+		}
+
+		total++;
+		filename = inputs[i].value;
+		if (filename.length == 0) {
+			empty++;
+			spans[i].innerHTML = "";
+		}
+		else
+		{
+			var lastIndex = filename.lastIndexOf("\\");
+			if (lastIndex >= 0) {
+				filename = filename.substring(lastIndex + 1);
+			}
+			inputs[i].style.display = "none";
+			spans[i].innerHTML = ' <a class="hide" href="javascript:void(0)" onclick="del_file_input(this,'+max+')"><img src="/img/icons/cancel.png" /></a> ' +filename+ '\n';
+		}
+
+	}
+
+	// add a new file input if there are less than "max" AND none of them is empty
+	if (total < max && empty == 0) {
+		var div = document.createElement("div");
+		var input = document.createElement("input");
+		var spacer = document.createTextNode("\n ");
+		var span = document.createElement("span");
+
+		input.type="file";
+		input.name="file";
+		input.setAttribute('size', '35');
+		input.onchange=function() {
+			file_input_change(max)
+		}
+
+		div.appendChild(input);
+		div.appendChild(spacer);
+		div.appendChild(span);
+		postfiles.appendChild(div);
+	}
+}
+
+function del_file_input(sender, max) {
+	// <a>   <span>     <div>      <td>                  <a>    <span>    <div>
+	sender.parentNode.parentNode.parentNode.removeChild(sender.parentNode.parentNode);
+	file_input_change(max);
 }
 
 function insert(text) {
@@ -112,10 +156,16 @@ function highlight(post) {
 
 function set_inputs(id) {
 	with (document.getElementById(id)) {
-		if (!name.value) name.value = get_cookie("name");
-		if (!field2.value) field2.value = get_cookie("email");
+		if ((typeof field1 == "object") && (!field1.value)) field1.value = get_cookie("name");
+		/* if (!field2.value) field2.value = get_cookie("email"); */
+		if (typeof gb2 == "object")	gb2[1].checked = (get_cookie("gb2") == "thread");
 		if (!password.value) password.value = get_password("password");
-		if (typeof gb2 == "object")	gb2[1].checked = (get_cookie("gb2")=="thread");
+
+		// preload images for post form
+		if (document.images) {
+			new Image().src = "/img/icons/collapse.png";
+			new Image().src = "/img/icons/cancel.png";
+		}		
 	}
 }
 

@@ -30,61 +30,13 @@ use constant NORMAL_HEAD_INCLUDE => q{
     $j('#postform_submit').click(function() {
 	$j('.postarea').block({
 		message: 'Bitte warten &hellip;',
-		css: { fontSize: '2em', color: '#FFFFFF', background: '#706B5E', border: 'none' },
+		css: { fontSize: '2em', color: '#000000', background: '#D7CFC0', border: '1px solid #BFB5A1' },
 	});
 	setTimeout($j.unblockUI, 5000);
     });
     <if ENABLE_HIDE_THREADS><if !$thread>hideThreads();</if></if>
-    <if ENABLE_DISCLAIMER>showDisclaimer();</if>
   });
 
-<if ENABLE_DISCLAIMER>
-  function showDisclaimer() {
-    accepted = $j.cookie('disclaimer');
-    if(accepted == null)
-        accepted = 0;
-    if(accepted == "1")
-        return;
-    disclaimer = {
-        buttons: {
-            "Ok": function() {
-                accepted = 1;
-                $j.cookie('disclaimer', accepted, { expires: 365, path: '/' });
-                $j.unblockUI();
-                $j(this).dialog('close');
-            },
-            "Abbrechen": function() {
-                accepted = 0;
-                $j.cookie('disclaimer', accepted, { expires: 365, path: '/' });
-                window.location.replace("http://krautchan.net");
-            }
-        },
-    };
-    
-    $j.blockUI({
-                message: '',
-                css: {
-                    cursor: "default",
-                },
-                overlayCSS: {
-                    backgroundColor: "#000",
-                    opacity: 0.92,
-                    cursor: "default",
-                },
-    });
-
-    $j("#disclaimer").dialog({
-        buttons: disclaimer.buttons,
-        draggable: false,
-        closeOnEscape: false,
-        resizable: false,
-        title: 'Regeln',
-        open: function(event, ui) { $j(".ui-dialog-titlebar-close").hide(); },
-        width: 800,
-    });
-    
-  }
-</if>
 <if ENABLE_HIDE_THREADS>
   function hideThreads() {
     hidThreads = $j.cookie('hidden_<const BOARD_IDENT>');
@@ -155,7 +107,7 @@ use constant NORMAL_HEAD_INCLUDE => q{
   };
 
   function getHiddenHTML(tid) {
-	return "<div class='show_"+tid+"'><div class='togglethread'><a class='hide' onclick='showThread("+tid+");'><img src='/img/icons/show.png' onclick='showThread("+tid+");' alt='Thread "+tid+" einblenden' /> <strong>Thread "+tid+"</strong> einblenden</a></div></div>";
+	return "<div class='show_"+tid+"'><div class='togglethread'><a class='hide' onclick='showThread("+tid+");'><img src='/img/icons/show.png' alt='Thread "+tid+" einblenden' /> <strong>Thread "+tid+"</strong> einblenden</a></div></div>";
   };
 
 </if>
@@ -230,52 +182,17 @@ use constant NORMAL_HEAD_INCLUDE => q{
 <p id="error" style="display: none"><span style="font-weight: bolder; color: #FF0000;">Error: <span style="font-weight: bolder" id="errordetails"></span></span></p>
 </div>
 </if>
-
-
-<div id="disclaimer" style="display: none">
- <!--<div class="caption">Regeln</div>-->
- 
- <div class="item">
-  <div class="title">
-   1. Altersbeschr&auml;nkung
-  </div>
-  <div class="content">
-   Ernstchan richtet sich in erster Linie an Personen, die <strong>mindestens 18 Jahre alt</strong> sind. Minderj&auml;hrige haben hier nichts veloren.
-  </div>
- </div>
-  
- <div class="item">
-  <div class="title">
-   2. Uploads
-  </div>
-  <div class="content">
-   <strong>S&auml;mtliche Dateien, die gegen das niederl&auml;ndische Recht versto&szlig;en, d&uuml;rfen nicht hochgeladen werden!</strong>
-  </div>
- </div>
-
- <div class="item">
-  <div class="title">
-   3. IRC
-  </div>
-  <div class="content">
-   Im <a href="/irc">IRC-Channel</a> sollte man sich vern&uuml;nftig unterhalten. Wer sich nicht benehmen kann, fliegt raus.
-  </div>
- </div>
-
-</div>
-
-
 <div class="content">
 
 <script type="text/javascript" src="/js/wz_tooltip.js"></script>
 <if $thread && ENABLE_WEBSOCKET_NOTIFY><script type="text/javascript" src="/js/websock.js"></script></if>
-} . include("../tpl/content/boardnav.tt2") . q{
+} . include("../tpl/content/boardnav.html") . q{
 
 <header>
 	<div class="header">
 		<div class="banner">
 			<a href="/<const BOARD_IDENT>/">
-				<img src="/banner/<const BOARD_IDENT>" width="300" height="100" class="banner" alt="<const BOARD_IDENT>" />
+				<img src="/banner/<const BOARD_IDENT>" alt="<const BOARD_IDENT>" />
 			</a>
 		</div>
 		<div class="boardname" <if BOARD_DESC>style="margin-bottom: 5px;"</if>>/<const BOARD_IDENT>/ &ndash; <const BOARD_NAME></div>
@@ -331,7 +248,6 @@ use constant PAGE_TEMPLATE => compile_template(
 	<if !$image_inp and !$thread and ALLOW_TEXTONLY>
 		<input type="hidden" name="nofile" value="1" />
 	</if>
-	<if FORCED_ANON><input type="hidden" name="name" /></if>
 
 	<div class="trap">
 		<input type="text" name="name" size="28" />
@@ -358,11 +274,13 @@ use constant PAGE_TEMPLATE => compile_template(
 	</tr>
 	</if>
 
-	<tr><td class="postblock"><const S_COMMENT></td><td><textarea id="field4" name="field4" cols="48" rows="6"></textarea> <img onclick="resizeCommentfield('field4', this)" src="/img/icons/expand.png" alt="Textfeld vergr&ouml;&szlig;ern" title="Textfeld vergr&ouml;&szlig;ern" />
+	<tr><td class="postblock"><const S_COMMENT></td>
+	<td><textarea id="field4" name="field4" cols="48" rows="6"></textarea> <img onclick="resizeCommentfield('field4', this)" src="/img/icons/expand.png" alt="Textfeld vergr&ouml;&szlig;ern" title="Textfeld vergr&ouml;&szlig;ern" />
 	</td></tr>
 
 	<if $image_inp>
-		<tr id="fileUploadField"><td class="postblock"><const S_UPLOADFILE> (max. 4)</td><td id="fileInput"><div><input type="file" name="file" size="35" onchange="addFileUploadBox(this)"/></div>
+		<tr id="fileUploadField"><td class="postblock"><const S_UPLOADFILE> (max. 4)</td>
+		<td id="fileInput"><div><input type="file" name="file" size="35" onchange="file_input_change(4)" /></div>
 		<if $textonly_inp>[<label><input type="checkbox" name="nofile" value="on" /><const S_NOFILE> ]</label></if>
 		</td></tr>
 	</if>
@@ -380,7 +298,7 @@ use constant PAGE_TEMPLATE => compile_template(
 
 	<tr id="passwordField"><td class="postblock"><const S_DELPASS></td><td><input type="password" name="password" size="8" /> <const S_DELEXPL></td></tr>
 	<tr><td colspan="2">
-	<div class="rules">} . include("tpl/rules.html") . q{</div></td></tr>
+	<div class="rules">} . include("rules.html") . q{</div></td></tr>
 	</tbody>
 	</table>
 	</form>
@@ -392,7 +310,7 @@ use constant PAGE_TEMPLATE => compile_template(
 </if>
 
 <if $locked>
-<p class="locked">Thread <var $thread> ist geschlossen. Es kann nicht geantwortet werden.</p>
+<p class="locked"><strong>Thread <var $thread></strong> ist geschlossen. Es kann nicht geantwortet werden.</p>
 </if>
 
 <form id="delform" action="<var decode('utf-8', $self)>" method="post">
@@ -431,8 +349,8 @@ use constant PAGE_TEMPLATE => compile_template(
 			</li>
 		<loop $pages>
 			<li>
-			<if !$current><a href="<var decode('utf-8', $filename)>"><var $page+1></a></if>
-			<if $current>[<strong><var $page+1></strong>]</if>
+			<if !$current>[<a href="<var decode('utf-8', $filename)>"><var $page></a>]</if>
+			<if $current>[<strong><var $page></strong>]</if>
 			</li>
 		</loop>
 			<li>
@@ -506,26 +424,38 @@ body {
 
 
 use constant ERROR_HEAD_INCLUDE => q{
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml">
+<!DOCTYPE html>
+<html lang="de">
 <head>
 <title><const TITLE> &raquo; <var $error_page></title>
-<link rel="stylesheet" type="text/css" href="/css/prototype.css" />
+<meta charset="<const CHARSET>" />
+<link rel="shortcut icon" href="/img/favicon.ico" />
+<link rel="stylesheet" type="text/css" href="/css/style.css" />
 </head>
+
 <body>
 <div class="content">
-<div class="header">
-<h1><const TITLE></h1>
-<em><var $error_subtitle></em>
-</div>
-<div class="container">
-<div id="title"><var $error_title></div>
-<img class="image" src="/errors/logo.png" alt="Logo" />
+
+} . include("../tpl/content/boardnav.html") . q{
+
+<header>
+	<div class="header">
+		<div class="banner"><a href="/"><img src="/banner-redir.pl" alt="Ernstchan" /></a></div>
+		<div class="boardname"><const TITLE></div>
+	</div>
+</header>
+
+<hr />
+
+<section class="error">
+	<p><var $error_title></p>
 };
 
 use constant ERROR_FOOT_INCLUDE => q{
-<small>Fragen? Das <a href="irc://irc.euirc.net/ernstchan">IRC</a> ist f&uuml;r euch offen!</small>
-</div>
+
+</section>
+<hr />
+<footer>Powered by <img src="/img/phutaba_icon.png" alt="" /> <strong>Phutaba</strong>.</footer>
 </div>
 </body>
 </html>
@@ -538,11 +468,12 @@ use constant ERROR_TEMPLATE => compile_template(
 <p><var $error></p>
 </if>
 <if $banned>
-<p>Deine IP <b><var $ip></b> wurde wegen <b><var $reason></b> auf unbestimmte Zeit gesperrt. Bitte kontaktiere uns im IRC wenn du wieder posten willst!</p>
+<p>Deine IP <strong><var $ip></strong> wurde wegen <strong><var $reason></strong> auf unbestimmte Zeit gesperrt. Bitte kontaktiere uns im IRC wenn du wieder posten willst!</p>
 </if>
 <if $dnsbl>
-<p>Deine IP <b><var $ip></b> wurde in der Blacklist <b><var $dnsbl></b> gelistet. Aufgrund dieser Tatsache ist es dir nicht gestattet zu posten! Bitte kontaktiere uns im IRC wenn du wieder posten willst!</p>
+<p>Deine IP <strong><var $ip></strong> wurde in der Blacklist <strong><var $dnsbl></strong> gelistet. Aufgrund dieser Tatsache ist es dir nicht gestattet zu posten! Bitte kontaktiere uns im IRC wenn du wieder posten willst!</p>
 </if>
+
 } . ERROR_FOOT_INCLUDE
 );
 
@@ -855,7 +786,7 @@ use constant ADMIN_POST_TEMPLATE => compile_template(
 <table><tbody>
 <tr><td class="postblock"><const S_SUBJECT></td><td><input type="text" name="field3" size="35" />
 <input type="submit" value="<const S_SUBMIT>" /></td></tr>
-<tr><td class="postblock">S&auml;ge</td><td><input type="checkbox" name="field2" value="sage" /></td></tr>
+<tr><td class="postblock">Kontra</td><td><input type="checkbox" name="field2" value="sage" /></td></tr>
 <tr><td class="postblock"><const S_COMMENT></td><td><textarea name="field4" cols="48" rows="4"></textarea></td></tr>
 <tr><td class="postblock"><const S_UPLOADFILE></td><td><input type="file" name="file" size="35" />
 [<label><input type="checkbox" name="nofile" value="on" /><const S_NOFILE> ]</label>
@@ -869,4 +800,3 @@ use constant ADMIN_POST_TEMPLATE => compile_template(
 );
 
 1;
-

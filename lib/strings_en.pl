@@ -23,17 +23,25 @@ use constant S_THUMB => '';    # Prints instructions for viewing real source
 use constant S_HIDDEN =>
   '';    # Prints instructions for viewing hidden image reply
 use constant S_NOTHUMB =>
-  'Kein<br />Thumbnail';    # Printed when there's no thumbnail
+  'Datei';    # Printed when there's no thumbnail
 use constant S_PICNAME => '';             # Prints text before upload name/link
 use constant S_REPLY   => 'Antworten';    # Prints text for reply link
 use constant S_OLD => 'Dieses Thema ist kurz vor der L&ouml;schung.'
   ; # Prints text to be displayed before post is marked for deletion, see: retention
+
 use constant S_ABBR =>
   '%d Post(s) ausgeblendet.';  # Prints text to be shown when replies are hidden
 use constant S_ABBRIMG => '%d Post(s) und %d Datei(en) ausgeblendet.'
   ;    # Prints text to be shown when replies and images are hidden
+
+use constant S_ABBR1 => '1 Post ';				# Prints text to be shown when replies are hidden
+use constant S_ABBR2 => '%d Posts ';
+use constant S_ABBRIMG1 => 'und 1 Datei ';		# Prints text to be shown when replies and files are hidden
+use constant S_ABBRIMG2 => 'und %d Dateien ';
+use constant S_ABBR_END => 'ausgeblendet.'; 
+
 use constant S_ABBRTEXT =>
-  '<p class="tldr">[<a href="%s">Vollst&auml;ndigen Post anzeigen</a>]</p>';
+  '<p class="tldr">[<a href="%s">Post gek&uuml;rzt. Vollst&auml;ndigen Post anzeigen.</a>]</p>';
 
 use constant S_REPDEL => ' ';    # Prints text next to S_DELPICONLY (left)
 use constant S_DELPICONLY =>
@@ -57,7 +65,7 @@ use constant S_LOCKEDTITLE => 'Thread ist geschlossen'
 
 use constant S_MANARET => 'Zur&uuml;ck'
   ;    # Returns to HTML file instead of PHP--thus no log/SQLDB update occurs
-use constant S_MANAMODE => 'Admin :3';   # Prints heading on top of Manager page
+use constant S_MANAMODE => 'Admin';   # Prints heading on top of Manager page
 
 use constant S_MANALOGIN => 'Login'
   ; # Defines Management Panel radio button--allows the user to view the management panel (overview of all posts)
@@ -86,8 +94,9 @@ use constant S_NOTAGS => '<p>HTML-Tags sind m&ouml;glich. Kein WakabaMark.</p>'
 use constant S_MPDELETEIP => 'Alle l&ouml;schen';
 use constant S_MPDELETE =>
   'L&ouml;schen';    # Defines for deletion button in Management Panel
+use constant S_MPDELFILE  => 'Datei(en) l&ouml;schen';
 use constant S_MPARCHIVE  => 'Archiv';
-use constant S_MPSTICKY   => 'Sticky';
+use constant S_MPSTICKY   => 'Sticky setzen';
 use constant S_MPUNSTICKY => 'Sticky entfernen';
 use constant S_MPLOCK     => 'Schlie&szlig;en';
 use constant S_MPUNLOCK   => '&Ouml;ffnen';

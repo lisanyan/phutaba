@@ -26,31 +26,45 @@ use Geo::IP;
 my $sth;
 my $JSON = JSON->new->utf8;
 $JSON = $JSON->pretty(1);
+
+
+
 use constant HANDLER_ERROR_PAGE_HEAD => q{
-	
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"> 
-<html xmlns="http://www.w3.org/1999/xhtml"> 
-<head> 
-<title>Ernstchan</title> 
-<link rel="stylesheet" type="text/css" href="/css/prototype.css" /> 
-</head> 
-<body> 
-<div class="content"> 
-<div class="header"> 
-<h1>Ernstchan</h1> 
-</div> 
+<!DOCTYPE html>
+<html lang="de"> 
+<head>
+<title>Ernstchan &raquo; Serverfehler</title>
+<meta charset="utf-8" />
+<link rel="shortcut icon" href="/img/favicon.ico" />
+<link rel="stylesheet" type="text/css" href="/css/style.css" />
+</head>
+<body>
+<div class="content">
+<header>
+	<div class="header">
+		<div class="banner"><a href="/"><img src="/banner-redir.pl" alt="Ernstchan" /></a></div>
+		<div class="boardname">Serverfehler</div>
+	</div>
+</header>
+	<hr />
+
 <div class="container" style="background-color: rgba(170, 0, 0, 0.2);margin-top: 50px;"> 
 <p>
 
 };
 
 use constant HANDLER_ERROR_PAGE_FOOTER => q{
+
 </p>
 </div> 
 <p style="text-align: center;margin-top: 50px;"><span style="font-size: small; font-style: italic;">This is a <strong>fatal error</strong> in the <em>request/response handler</em>. Please contact the administrator of this site at the <a href="irc://irc.euirc.net/#ernstchan">IRC</a> or via <a href="mailto:admin@ernstchan.net">email</a> and ask him to fix this error</span></p>
-</div> 
-</body> 
-</html> 
+
+
+	<hr />
+	<footer>Powered by <img src="/img/phutaba_icon.png" alt="" /> <strong>Phutaba</strong>.</footer>
+</div>
+</body>
+</html>
 };
 
 # Error Handling
@@ -168,12 +182,12 @@ if ( !table_exists(SQL_TABLE) )    # check for comments table
     init_database();
 
     # if nothing exists show the first page.
-    show_page(0);
+    show_page(1);
 }
 elsif ( !$task and !$json ) {
 
     # when there is no task, show the first page.
-    show_page(0);
+    show_page(1);
 }
 elsif ( $task eq "show" ) {
 
@@ -222,7 +236,6 @@ elsif ( $task eq "post" ) {
     my $email      = $query->param("field2");
     my $subject    = $query->param("field3");
     my $comment    = $query->param("field4");
-    my $file       = $query->param("file");
     my $password   = $query->param("password");
     my $nofile     = $query->param("nofile");
     my $captcha    = $query->param("captcha");
@@ -232,16 +245,13 @@ elsif ( $task eq "post" ) {
     my $postfix    = $query->param("postfix");
     my $sage       = $query->param("sage");
 	my $postAsAdmin = $query->param("as_admin");
-
-    my $file1 = $query->param("file1");
-    my $file2 = $query->param("file2");
-    my $file3 = $query->param("file3");
+	my @files = $query->param("file"); # multiple uploads
 
     post_stuff(
-        $parent,  $name,  $email,      $gb2,       $subject,
-        $comment, $file,  $file,       $password,  $nofile,
-        $captcha, $admin, $no_captcha, $no_format, $postfix,
-        $sage,    $file1, $file2,      $file3,     $postAsAdmin
+        $parent,  $name,      $email,      $gb2,       $subject,
+        $comment, $password,  $nofile,
+        $captcha, $admin,     $no_captcha, $no_format, $postfix,
+        $sage,    $postAsAdmin, @files
     );
 }
 elsif ( $task eq "delete" ) {
@@ -283,7 +293,7 @@ elsif ( $task eq "logout" ) {
 elsif ( $task eq "mpanel" ) {
     my $admin = $query->param("admin");
     my $page  = $query->param("page");
-    if ( !defined($page) ) { $page = 0; }
+    if ( !defined($page) ) { $page = 1; }
 	#make_admin_post_panel( $admin, $page );
 	show_page($page, $admin);
 }
@@ -636,7 +646,7 @@ sub show_post {
 
 sub show_page {
     my ($pageToShow, $admin) = @_;
-    my $page = 0;
+    my $page = 1;
     my ( $sth, $row, @thread );
 	# if we try to call show_page with admin parameter
 	# the admin password will be checked and this
@@ -660,7 +670,7 @@ sub show_page {
 
     if ( !$row )    # no posts on the board!
     {
-        output_page( 0, 1, $isAdmin, $admin, () );    # make an empty page 0
+        output_page( 1, 1, $isAdmin, $admin, () );    # make an empty page 1
     }
     else {
         my $threadcount = 0;
@@ -679,12 +689,12 @@ sub show_page {
 		else {
 			$total = get_page_count($totalThreadCount);
 		}
-        if ( $pageToShow > ( $total - 1 ) ) {
+        if ( $pageToShow > ( $total ) ) {
             make_error(S_INVALID_PAGE);
         }
 
         while ( $row = get_decoded_hashref($sth)
-            and $threadcount <= ( IMAGES_PER_PAGE * ( $pageToShow + 1 ) ) )
+            and $threadcount <= ( IMAGES_PER_PAGE * ( $pageToShow ) ) )
         {
             add_secondary_images_to_row($row);
 			if($isAdmin) {
@@ -766,9 +776,10 @@ sub output_page {
         }
         # write the shortened list of replies back
         $$thread{posts}      = [ $parent, @replies ];
-        $$thread{omit}       = $replies - $curr_replies;
-        $$thread{omitimages} = $images - $curr_images;
-	$$thread{num}	     = ${$$thread{posts}}[0]{num};
+#        $$thread{omit}       = $replies - $curr_replies;
+#        $$thread{omitimages} = $images - $curr_images;
+		$$thread{omitmsg}    = get_omit_message($replies - $curr_replies, $images - $curr_images);
+		$$thread{num}	     = ${$$thread{posts}}[0]{num};
 
         # abbreviate the remaining posts
         foreach my $post ( @{ $$thread{posts} } ) {
@@ -783,19 +794,19 @@ sub output_page {
     }
 
     # make the list of pages
-    my @pages = map +{ page => $_ }, ( 0 .. $total - 1 );
+    my @pages = map +{ page => $_ }, ( 1 .. $total );
     foreach my $p (@pages) {
-        if ( $$p{page} == 0 ) {
-			if($isAdmin)
-	        {
-				$$p{filename} = expand_filename("wakaba.pl?task=show&amp;page=0&amp;admin=$adminPass");
-			}
-			else
-			{
-				$$p{filename} = expand_filename("wakaba.pl?task=show&amp;page=0");			
-			}
-        }    # first page
-        else {
+        #if ( $$p{page} == 0 ) {
+		#	if($isAdmin)
+	    #    {
+		#		$$p{filename} = expand_filename("wakaba.pl?task=show&amp;page=0&amp;admin=$adminPass");
+		#	}
+		#	else
+		#	{
+		#		$$p{filename} = expand_filename("wakaba.pl?task=show&amp;page=0");			
+		#	}
+        #}    # first page
+        #else {
             if($isAdmin)
 			{
 				$$p{filename} =
@@ -803,16 +814,19 @@ sub output_page {
 			}
 			else
 			{
-				$$p{filename} =
-	              expand_filename( "wakaba.pl?task=show&amp;page=" . $$p{page} );
+				#$$p{filename} = expand_filename( "wakaba.pl?task=show&amp;page=" . $$p{page} );
+				$$p{filename} = expand_filename( "page/" . $$p{page} );
 			}
-        }
+        #}
         if ( $$p{page} == $page ) { $$p{current} = 1 }   # current page, no link
     }
 
     my ( $prevpage, $nextpage );
-    $prevpage = $pages[ $page - 1 ]{filename} if ( $page != 0 );
-    $nextpage = $pages[ $page + 1 ]{filename} if ( $page != $total - 1 );
+	# phutaba pages:    1 2 3
+	# perl array index: 0 1 2
+	# example for page 2: the prev page is at array pos 0, current page at array pos 1, next page at array pos 2
+    $prevpage = $pages[ $page - 2 ]{filename} if ( $page != 1 );
+    $nextpage = $pages[ $page     ]{filename} if ( $page != $total );
 
     make_http_header();
     print(
@@ -841,6 +855,22 @@ sub fixup_admin_reference_links
     my ($row, $admin) = @_;
 	$$row{comment} =~ s/\/faden\/([0-9]*)#([0-9]*)/\/wakaba.pl?task=show&amp;thread=$1&amp;admin=$admin#$2/ig;
 	$$row{comment} =~ s/\/faden\/([0-9]*)/\/wakaba.pl?task=show&amp;thread=$1&amp;admin=$admin/ig;
+	$$row{comment} =~ s/\/thread\/([0-9]*)#([0-9]*)/\/wakaba.pl?task=show&amp;thread=$1&amp;admin=$admin#$2/ig;
+	$$row{comment} =~ s/\/thread\/([0-9]*)/\/wakaba.pl?task=show&amp;thread=$1&amp;admin=$admin/ig;
+}
+
+sub get_omit_message($$) {
+	my ($posts, $files) = @_;
+	return "" if !$posts;
+
+	my $omitposts = S_ABBR1;
+	$omitposts = sprintf(S_ABBR2, $posts) if ($posts > 1);
+
+	my $omitfiles = "";
+	$omitfiles = S_ABBRIMG1 if ($files == 1);
+	$omitfiles = sprintf(S_ABBRIMG2, $files) if ($files > 1);
+
+	return $omitposts . $omitfiles . S_ABBR_END;
 }
 
 sub show_thread {
@@ -899,7 +929,7 @@ sub add_secondary_images_to_row {
 
     #NOTE: this sub will also add a special field to the row
     # which will denote if the row contains more than 2 images.
-    # this is used to determine the post style in the template
+    # this is used to determine the post style in the template # not anymore it's not
     my ($row)              = @_;
     my $extImageCount      = 0;
     my $secondaryImageSize = 0;
@@ -1062,10 +1092,16 @@ sub strip_html {
 sub post_stuff {
     my (
         $parent,  $name,  $email,      $gb2,       $subject,
-        $comment, $file,  $uploadname, $password,  $nofile,
+        $comment, $password,  $nofile,
         $captcha, $admin, $no_captcha, $no_format, $postfix,
-        $sage,    $file1, $file2,      $file3,     $postAsAdmin
+        $sage,    $postAsAdmin, @files
     ) = @_;
+
+	my $file = $files[0];
+	my $uploadname = $files[0];
+	my $file1 = $files[1];
+	my $file2 = $files[2];
+	my $file3 = $files[3];
 
     my $original_comment = $comment;
     # get a timestamp for future use
@@ -1379,7 +1415,7 @@ sub post_stuff {
     # set the name, email and password cookies
     make_cookies(
         name      => $c_name,
-        email     => $c_email,
+        #email     => $c_email,
         gb2       => $c_gb2,
         password  => $c_password,
         -charset  => CHARSET,
@@ -1389,16 +1425,16 @@ sub post_stuff {
 	if(!$admin)
 	{
 	    # forward back to the main page
-	    make_http_forward( encode('utf-8', HTML_SELF)) if ( $parent eq '0' );
-	    make_http_forward( encode('utf-8', HTML_SELF) . "?task=show&thread=" . $parent) if ( $c_gb2 =~ /thread/i );
-	    make_http_forward( encode('utf-8', HTML_SELF));
+	    make_http_forward( "/" . encode('utf-8', BOARD_IDENT) . "/" ) if ( $parent eq '0' );
+	    make_http_forward( "/" . encode('utf-8', BOARD_IDENT) . "/thread/" . $parent) if ( $c_gb2 =~ /thread/i );
+	    make_http_forward( "/" . encode('utf-8', BOARD_IDENT) . "/" );
 	}
 	else
 	{
 		# forward back to moderation page
-	    make_http_forward( encode('utf-8', HTML_SELF) ."?task=show&amp;page=0&amp;admin=$admin") if ( $parent eq '0' );
+	    make_http_forward( encode('utf-8', HTML_SELF) . "?task=show&amp;page=1&amp;admin=$admin") if ( $parent eq '0' );
 	    make_http_forward( encode('utf-8', HTML_SELF) . "?task=show&amp;thread=" . $parent . "&amp;admin=$admin") if ( $c_gb2 =~ /thread/i );
-	    make_http_forward( encode('utf-8', HTML_SELF) . "?task=show&amp;page=0&amp;admin=$admin");
+	    make_http_forward( encode('utf-8', HTML_SELF) . "?task=show&amp;page=1&amp;admin=$admin");
 	}
 }
 
@@ -2012,8 +2048,8 @@ sub delete_stuff {
     if ($admin) {
         make_http_forward( get_script_name() . "?admin=$admin&task=mpanel");
     } elsif ( $noko == 1 and $parent ) {
-		make_http_forward( encode('utf-8', HTML_SELF) . "?task=show&thread=" . $parent);
-	} else { make_http_forward( encode('utf-8', HTML_SELF) . "?task=show&page=0"); }
+		make_http_forward( "/" . encode('utf-8', BOARD_IDENT ) . "/thread/" . $parent);
+	} else { make_http_forward( "/" . encode('utf-8', BOARD_IDENT) . "/"); }
 }
 
 sub make_locked {
@@ -2508,7 +2544,7 @@ sub make_error {
         ERROR_TEMPLATE->(
             error          => $error,
             error_page     => 'Fehler aufgetreten',
-            error_subtitle => 'Fehler aufgetreten',
+            #error_subtitle => 'Fehler aufgetreten',
             error_title    => 'Fehler aufgetreten'
         )
     );

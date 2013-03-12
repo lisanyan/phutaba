@@ -78,7 +78,7 @@
 		<if !$sticky_isnull><span class="sticky"><img src="/img/icons/pin.png" onmouseover="Tip('<var S_STICKYTITLE>')" onmouseout="UnTip()" alt="Pin" /></span></if>
 		<if $locked><span class="locked"><img src="/img/icons/locked.png" onmouseover="Tip('<var S_LOCKEDTITLE>')" onmouseout="UnTip()" alt="Lock" /></span></if>
 		<if !$autosage><if $email><span class="sage">Kontra</span></if></if>
-		<if $sticky_isnull><if $autosage><span class="systemsage">Systemkontra</span></if></if>
+		<if $sticky_isnull><if $autosage><span class="sage">Systemkontra</span></if></if>
 	</if>
 
 	<if $parent>
@@ -102,33 +102,34 @@
 		[<var dec_to_dot($ip)>] 
 		<if !$parent>	
 			<if $sticky_isnull>
-				<span class="sticky" onmouseover="Tip('<const S_MPSTICKY>')" onmouseout="UnTip()"><a href="<var decode('utf-8', $self)>?admin=<var $admin>&amp;task=sticky&amp;threadid=<var $num>"><img src="/img/admin_sticky.png"></a></span>
+				<span class="sticky" onmouseover="Tip('<const S_MPSTICKY>')" onmouseout="UnTip()"><a href="<var decode('utf-8', $self)>?admin=<var $admin>&amp;task=sticky&amp;threadid=<var $num>"><img src="/img/icons/sticky.png"></a></span>
 			</if>
-			
+
 			<if !$sticky_isnull>
-				<span class="unsticky" onmouseover="Tip('<const S_MPUNSTICKY>')" onmouseout="UnTip()"><a href="<var decode('utf-8', $self)>?admin=<var $admin>&amp;task=sticky&amp;threadid=<var $num>"><img src="/img/admin_unsticky.png"></a></span>
-			</if>
-			
-			<if $locked>
-				<span class="unlock" onmouseover="Tip('<const S_MPUNLOCK>')" onmouseout="UnTip()"><a href="<var decode('utf-8', $self)>?admin=<var $admin>&amp;task=lock&amp;threadid=<var $num>"><img src="/img/admin_unlock.png"></a></span>
+				<span class="unsticky" onmouseover="Tip('<const S_MPUNSTICKY>')" onmouseout="UnTip()"><a href="<var decode('utf-8', $self)>?admin=<var $admin>&amp;task=sticky&amp;threadid=<var $num>"><img src="/img/icons/unsticky.png"></a></span>
 			</if>
 			
 			<if !$locked>
-				<span class="lock" onmouseover="Tip('<const S_MPLOCK>')" onmouseout="UnTip()"><a href="<var decode('utf-8', $self)>?admin=<var $admin>&amp;task=lock&amp;threadid=<var $num>"><img src="/img/admin_lock.png"></a></span>
+				<span class="lock" onmouseover="Tip('<const S_MPLOCK>')" onmouseout="UnTip()"><a href="<var decode('utf-8', $self)>?admin=<var $admin>&amp;task=lock&amp;threadid=<var $num>"><img src="/img/icons/lock.png"></a></span>
 			</if>
-			
-			<if $autosage>
-				<span class="autosage" onmouseover="Tip('L&ouml;se Systemkontra')" onmouseout="UnTip()"><a href="<var decode('utf-8', $self)>?admin=<var $admin>&amp;task=kontra&amp;threadid=<var $num>"><img src="/img/admin_autosage_off.png"></a></span>
+
+			<if $locked>
+				<span class="unlock" onmouseover="Tip('<const S_MPUNLOCK>')" onmouseout="UnTip()"><a href="<var decode('utf-8', $self)>?admin=<var $admin>&amp;task=lock&amp;threadid=<var $num>"><img src="/img/icons/unlock.png"></a></span>
 			</if>
 		
 			<if !$autosage>
-				<span class="lock" onmouseover="Tip('Setze Systemkontra')" onmouseout="UnTip()"><a href="<var decode('utf-8', $self)>?admin=<var $admin>&amp;task=kontra&amp;threadid=<var $num>"><img src="/img/admin_autosage_on.png"></a></span>
+				<span class="lock" onmouseover="Tip('Setze Systemkontra')" onmouseout="UnTip()"><a href="<var decode('utf-8', $self)>?admin=<var $admin>&amp;task=kontra&amp;threadid=<var $num>"><img src="/img/icons/sage.png"></a></span>
 			</if>
+
+			<if $autosage>
+				<span class="autosage" onmouseover="Tip('L&ouml;se Systemkontra')" onmouseout="UnTip()"><a href="<var decode('utf-8', $self)>?admin=<var $admin>&amp;task=kontra&amp;threadid=<var $num>"><img src="/img/icons/unsage.png"></a></span>
+			</if>
+			
 		</if>
-		<span class="delete" onmouseover="Tip('<const S_MPDELETE>')" onmouseout="UnTip()"><a href="<var decode('utf-8', $self)>?admin=<var $admin>&amp;task=delete&amp;delete=<var $num>"><img src="/img/admin_delete.png"></a></span>
-		<span class="delete_file" onmouseover="Tip('Datei L&ouml;schen')" onmouseout="UnTip()"><a href="<var decode('utf-8', $self)>?admin=<var $admin>&amp;task=delete&amp;delete=<var $num>&amp;fileonly=on"><img src="/img/admin_delete_file.png"></a></span>
-		<span class="ban" onmouseover="Tip('<const S_MPBAN>')" onmouseout="UnTip()"><a onclick="do_ban('<var dec_to_dot($ip)>', <var $num>, '<const BOARD_IDENT>', '<var $admin>')"><img src="/img/admin_ban.png"></a></span>
-		<span class="deleteall" onmouseover="Tip('<const S_MPDELETEALL>')" onmouseout="UnTip()"><a href="<var decode('utf-8', $self)>?admin=<var $admin>&amp;task=deleteall&amp;ip=<var $ip>"><img src="/img/admin_delete_all.png"></a></span>
+		<span class="ban"         onmouseover="Tip('<const S_MPBAN>')"       onmouseout="UnTip()"><a onclick="do_ban('<var dec_to_dot($ip)>', <var $num>, '<const BOARD_IDENT>', '<var $admin>')"><img src="/img/icons/ban.png"></a></span>
+		<span class="deleteall"   onmouseover="Tip('<const S_MPDELETEALL>')" onmouseout="UnTip()"><a href="<var decode('utf-8', $self)>?admin=<var $admin>&amp;task=deleteall&amp;ip=<var $ip>"><img src="/img/icons/delete_all.png"></a></span>
+		<span class="delete_file" onmouseover="Tip('<const S_MPDELFILE>')"   onmouseout="UnTip()"><a href="<var decode('utf-8', $self)>?admin=<var $admin>&amp;task=delete&amp;delete=<var $num>&amp;fileonly=on"><img src="/img/icons/delete_file.png"></a></span>
+		<span class="delete_post" onmouseover="Tip('<const S_MPDELETE>')"    onmouseout="UnTip()"><a href="<var decode('utf-8', $self)>?admin=<var $admin>&amp;task=delete&amp;delete=<var $num>"><img src="/img/icons/delete.png"></a></span>
 	</if>
 
 <if !$parent>
@@ -170,7 +171,7 @@
 				</a>
 			</if>
 			<if !DELETED_THUMBNAIL>
-				<div class="nothumb">
+				<div class="filetype">
 					<a target="_blank" href="<var decode('utf-8', expand_image_filename($image))>/<var $uploadname>"><const S_NOTHUMB></a>
 				</div>
 			</if>
@@ -206,7 +207,7 @@
 				</a>
 			</if>
 			<if !DELETED_THUMBNAIL>
-				<div class="nothumb">
+				<div class="filetype">
 					<a target="_blank" href="<var decode('utf-8', expand_image_filename($image1))>/<var $uploadname1>"><const S_NOTHUMB></a>
 				</div>
 			</if>
@@ -242,7 +243,7 @@
 				</a>
 			</if>
 			<if !DELETED_THUMBNAIL>
-				<div class="nothumb">
+				<div class="filetype">
 					<a target="_blank" href="<var decode('utf-8', expand_image_filename($image2))>/<var $uploadname2>"><const S_NOTHUMB></a>
 				</div>
 			</if>
@@ -278,7 +279,7 @@
 				</a>
 			</if>
 			<if !DELETED_THUMBNAIL>
-				<div class="nothumb">
+				<div class="filetype">
 					<a target="_blank" href="<var decode('utf-8', expand_image_filename($image3))>/<var $uploadname3>"><const S_NOTHUMB></a>
 				</div>
 			</if>
@@ -310,6 +311,11 @@
 		<aside class="omittedposts">
 			<if $omitimages><var sprintf S_ABBRIMG,$omit,$omitimages></if>
 			<if !$omitimages><var sprintf S_ABBR,$omit></if>
+		</aside>
+	</if>
+	<if $omitmsg>
+		<aside class="omittedposts">
+			<var $omitmsg>
 		</aside>
 	</if>
 </if>

@@ -40,7 +40,7 @@ BEGIN {
 
     eval "use constant IMAGE_REPLIES_PER_STICKY_THREAD => 0"
       unless ( defined &IMAGE_REPLIES_PER_STICKY_THREAD );
-    eval "use constant REPLIES_PER_LOCKED_THREAD => 0"
+    eval "use constant REPLIES_PER_LOCKED_THREAD => 1"
       unless ( defined &REPLIES_PER_LOCKED_THREAD );
     eval "use constant IMAGE_REPLIES_PER_LOCKED_THREAD => 0"
       unless ( defined &IMAGE_REPLIES_PER_LOCKED_THREAD );
@@ -68,7 +68,7 @@ BEGIN {
 eval "use constant SQL_PREFIX => 'ernstchan_';" unless ( defined &SQL_PREFIX );
     use constant S_IRC_NEW_THREAD_PREPEND => "Neuer Thread auf ";
     use constant S_IRC_BASE_BOARDURL      => "https://ernstchan.com/";
-    use constant S_IRC_BASE_THREADURL     => "/faden/";
+    use constant S_IRC_BASE_THREADURL     => "/thread/";
     use constant S_IRC_NEW_POST_PREPEND   => "Neuer Post in ";
     eval "use constant MAX_KB => 1000"     unless ( defined &MAX_KB );
     eval "use constant MAX_W => 200"       unless ( defined &MAX_W );

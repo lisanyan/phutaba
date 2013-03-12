@@ -14,7 +14,7 @@ html, body, div, span, applet, object, iframe, h1, h2, h3, h4, h5, h6, p, blockq
 	outline: 0;
 }
 
-strong, b, ul.menu a, .boardname, .caption, .subject, .postblock, .postername, .teampost, .sage, .ban, .title, .info th, .error p, .dellist {
+strong, b, ul.menu a, .boardname, .caption, .subject, .postblock, .postername, .teampost, .sage, .ban, .title, .info th, .dellist {
 	font-weight: bold;
 }
 
@@ -72,7 +72,7 @@ a:active {
 
 ul.menu {
 	position: absolute;
-	top: 0;
+	top: 4px;
 	list-style-type: none;
 }
 
@@ -90,18 +90,22 @@ ul.menu a {
 	text-decoration: none;
 	border: 1px solid #706B5E;
 	padding: 5px;
-	border-bottom-right-radius: 5px;
-	border-bottom-left-radius: 5px;
-	-moz-border-radius-bottomright: 5px;
-	-moz-border-radius-bottomleft: 5px;
-	-webkit-border-bottom-right-radius: 5px;
-	-webkit-border-bottom-left-radius: 5px;
+	border-bottom-right-radius: 3px;
+	border-bottom-left-radius: 3px;
+	-moz-border-radius-bottomright: 3px;
+	-moz-border-radius-bottomleft: 3px;
+	-webkit-border-bottom-right-radius: 3px;
+	-webkit-border-bottom-left-radius: 3px;
 }
 
-.menu a:hover {
+ul.menu a:hover {
 	box-shadow: 1px 1px 2px #999999;
 	-moz-box-shadow: 1px 1px 2px #999999;
 	-webkit-box-shadow: 1px 1px 2px #999999;
+}
+
+ul.menu a:active {
+	top: 0;
 }
 
 .header {
@@ -146,7 +150,7 @@ ul.menu a {
 	padding: 0 5px;
 }
 
-.postarea input[type='checkbox'], .postarea input[type='radio'], .postarea input[type='file'] {
+.postarea input[type='checkbox'], .postarea input[type='radio'] {
 	margin: 5px;
 }
 
@@ -188,27 +192,6 @@ ul.rules {
 	color: #000000;
 }
 
-.info {
-	background-color: #D7CFC0;
-	border-right: 1px solid #BFB5A1;
-	border-bottom: 1px solid #BFB5A1;
-	padding: 0.5em 1em 1em 0.5em;
-	margin: 0 0 0.5em 0;
-}
-
-.info {
-}
-
-.info table {
-	margin-top: 1em;
-}
-
-.info td {
-	text-align: center;
-	border: 1px solid #706B5E;
-	padding: 5px;
-}
-
 .post {
 	background-color: #D7CFC0;
 	border-right: 1px solid #BFB5A1;
@@ -223,8 +206,8 @@ ul.rules {
 }
 
 .post_new {
-	border-right: 1px solid #008800;
-	border-bottom: 1px solid #008800;
+	border-right: 1px solid #B20000;
+	border-bottom: 1px solid #B20000;
 }
 
 .post.highlight, :target .post {
@@ -239,7 +222,7 @@ ul.rules {
 	color: #BFB5A1;
 }
 
-.thread_head, .title, .info th {
+.thread_head {
 	background-color: #BFB5A1;
 	padding: 5px;
 }
@@ -342,7 +325,6 @@ blockquote.unkfunc {
 
 .spoiler:hover, .spoiler a:hover {
 	color: #FFFFFF;
-	cursor: help;
 }
 
 .ban, .tldr {
@@ -369,18 +351,36 @@ blockquote.unkfunc {
 
 .notice span {
 	padding: 0 0.5em;
-	border-right: 1px solid #008800;
-	border-bottom: 1px solid #008800;
+	border-right: 1px solid #B20000;
+	border-bottom: 1px solid #B20000;
 }
 
-.togglethread a:hover {
+.togglethread a:hover, .togglethread img:hover {
 	cursor: pointer;
+}
+
+ul.pagelist {
+	background-color: #D7CFC0;
+	border-right: 1px solid #BFB5A1;
+	border-bottom: 1px solid #BFB5A1;
+	padding: 0.5em;
+	margin-left: 0;
+	float: left;
+}
+
+.delete {
+	float: right;
+}
+
+input[type='password'] {
+	width: 8em;
 }
 
 .passvalid {
 	background-color: #706B5E;
 	color: #FFFFFF;
 	font-weight: bold;
+	text-align: center;
 	padding: 5px;
 	margin: 5px 0;
 }
@@ -404,38 +404,34 @@ blockquote.unkfunc {
 	background-color: #BFB5A1;
 }
 
-ul.pagelist {
+.title, .info th {
+	background-color: #706B5E;
+	color: #FFFFFF;
+	font-weight: bold;
+	padding: 5px;
+}
+
+.info {
 	background-color: #D7CFC0;
 	border-right: 1px solid #BFB5A1;
 	border-bottom: 1px solid #BFB5A1;
-	padding: 0.5em;
-	margin-left: 0;
-	float: left;
+	border-left: 1px solid #BFB5A1;
+	padding: 1em;
+	margin: 0 0 0.5em 0;
 }
 
-.delete {
-	float: right;
+.info table {
+	margin-top: 1em;
 }
 
-.delete input[type='password'] {
-	width: 8em;
+.info td {
+	text-align: center;
+	border: 1px solid #706B5E;
+	padding: 5px;
 }
 
-.delete input[type='password']::-webkit-input-placeholder {
-	color: #000000;
-}
 
-.delete input[type='password']::-moz-placeholder {
-	color: #000000;
-}
-
-.delete input[type='password']:-ms-input-placeholder {
-	color: #000000;
-}
-
-.delete input[type='password']:-moz-placeholder {
-	color: #000000;
-}
+/*
 
 .boards {
 	float: left;
@@ -490,12 +486,12 @@ ul.pagelist {
 	width: 49%;
 }
 
-.error {
-	text-align: center;
-}
+*/
 
-.error img {
-	margin-bottom: 1em;
+.error {
+	color: #B20000;
+	font-size: 2em;
+	text-align: center;
 }
 
 footer {
