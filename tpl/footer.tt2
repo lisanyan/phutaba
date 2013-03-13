@@ -1,8 +1,7 @@
- <hr />
- 
- <div class="footer_left">&copy; 2010-2012 Ernstchan</div>
- <div class="footer_right"><a href="/phutaba"><img src="/img/phutaba_icon.png" alt="" style="vertical-align: middle;" /><span class="phutaba">Phutaba</span></a></div>
- 
-</body>
 
-</html> 
+<hr />
+
+<footer>Powered by <img src="/img/phutaba_icon.png" alt="" /> <strong>Phutaba</strong>.</footer>
+</div>
+</body>
+</html>

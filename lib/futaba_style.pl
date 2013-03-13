@@ -4,11 +4,11 @@ BEGIN { require "../lib/wakautils.pl"; }
 
 use constant NORMAL_HEAD_INCLUDE => q{
 
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<!DOCTYPE html>
+<html lang="de">
 <head>
 <title><var strip_html(TITLE)> &raquo; <if $title><var strip_html($title)></if><if !$title>/<var strip_html(BOARD_IDENT)>/ - <var strip_html(BOARD_NAME)></if></title>
-<meta http-equiv="Content-Type" content="text/html;charset=<const CHARSET>" />
+<meta charset="<const CHARSET>" />
 <link rel="shortcut icon" href="/img/favicon.ico" />
 <link rel="stylesheet" type="text/css" href="<const STYLESHEET>" />
 <link rel="stylesheet" type="text/css" href="/css/jquery.ui.css" />
@@ -29,62 +29,14 @@ use constant NORMAL_HEAD_INCLUDE => q{
     if ((match = /#([0-9]+)/.exec(document.location.toString()))) highlight(match[1]);
     $j('#postform_submit').click(function() {
 	$j('.postarea').block({
-		message: 'Bitte warten',
-		css: { fontSize: '20pt', background: '#DEDBD5', border: '3px solid #B5B2AC' },
+		message: 'Bitte warten &hellip;',
+		css: { fontSize: '2em', color: '#000000', background: '#D7CFC0', border: '1px solid #BFB5A1' },
 	});
 	setTimeout($j.unblockUI, 5000);
     });
     <if ENABLE_HIDE_THREADS><if !$thread>hideThreads();</if></if>
-    <if ENABLE_DISCLAIMER>showDisclaimer();</if>
   });
 
-<if ENABLE_DISCLAIMER>
-  function showDisclaimer() {
-    accepted = $j.cookie('disclaimer');
-    if(accepted == null)
-        accepted = 0;
-    if(accepted == "1")
-        return;
-    disclaimer = {
-        buttons: {
-            "Ok": function() {
-                accepted = 1;
-                $j.cookie('disclaimer', accepted, { expires: 365, path: '/' });
-                $j.unblockUI();
-                $j(this).dialog('close');
-            },
-            "Abbrechen": function() {
-                accepted = 0;
-                $j.cookie('disclaimer', accepted, { expires: 365, path: '/' });
-                window.location.replace("http://krautchan.net");
-            }
-        },
-    };
-    
-    $j.blockUI({
-                message: '',
-                css: {
-                    cursor: "default",
-                },
-                overlayCSS: {
-                    backgroundColor: "#000",
-                    opacity: 0.92,
-                    cursor: "default",
-                },
-    });
-
-    $j("#disclaimer").dialog({
-        buttons: disclaimer.buttons,
-        draggable: false,
-        closeOnEscape: false,
-        resizable: false,
-        title: 'Regeln',
-        open: function(event, ui) { $j(".ui-dialog-titlebar-close").hide(); },
-        width: 800,
-    });
-    
-  }
-</if>
 <if ENABLE_HIDE_THREADS>
   function hideThreads() {
     hidThreads = $j.cookie('hidden_<const BOARD_IDENT>');
@@ -97,7 +49,7 @@ use constant NORMAL_HEAD_INCLUDE => q{
         if (thread == null)
             continue;
         $j("#thread_"+hidThreads[i]).hide();
-        $j("#thread_"+hidThreads[i]).after("<div class='show_"+hidThreads[i]+"'><div class='thread_head'><p style='margin: 0'><img style='vertical-align: middle;' src='/img/show.png' onclick='showThread("+hidThreads[i]+");' alt='Thread "+hidThreads[i]+" anzeigen' /> <a class='hide' onclick='showThread("+hidThreads[i]+");'>Thread <b>"+hidThreads[i]+"</b> anzeigen</a></div></div>");
+        $j("#thread_"+hidThreads[i]).after(getHiddenHTML(hidThreads[i]));
 
     }
   }
@@ -142,7 +94,7 @@ use constant NORMAL_HEAD_INCLUDE => q{
                 return;
     }
     $j("#thread_"+tid).hide();
-    $j("#thread_"+tid).after("<div class='show_"+tid+"'><div class='thread_head'><p style='margin: 0'><img style='vertical-align: middle;' src='/img/show.png' onclick='showThread("+tid+");'  alt='Thread "+tid+" anzeigen' /> <a class='hide' onclick='showThread("+tid+");'>Thread <b>"+tid+"</b> anzeigen</a></p></div></div>");
+    $j("#thread_"+tid).after(getHiddenHTML(tid));
     addHideThread(tid);
 
   };
@@ -154,48 +106,32 @@ use constant NORMAL_HEAD_INCLUDE => q{
     removeHideThread(tid);
   };
 
+  function getHiddenHTML(tid) {
+	return '<div class="show_' + tid + ' togglethread">'
+		+ '<a class="hide" onclick="showThread(' + tid + ');">'
+		+ '<img src="/img/icons/show.png" alt="Thread ' + tid + ' einblenden" />'
+		+ ' <strong>Thread ' + tid + '</strong> einblenden</a></div>';
+  };
 
 </if>
 /* ]]> */
 </script>
+
 <if $thread && ENABLE_WEBSOCKET_NOTIFY>
 	<script type="text/javascript">
 		var thread_id = <var $thread>;
 		var board = "<const BOARD_IDENT>";
 	</script>
 </if>
+
 <style type="text/css">
 <const ADDITIONAL_CSS>
- .caption {
-   font-size: 125%;
-   font-weight: bold;
-   padding-bottom: 15px;
- }
- .item {
-   background: #D7CFC0;
- }
- 
- .title {
-   background: #706B5E;
-   color: #FFFFFF;
-   font-weight: bold;
-   padding: 1px 1px 1px 5px;
- }
- 
- .title a, .title a:hover {
-   color: #FFFFFF;
-   text-decoration: none;
- }
- 
- .content {
-   text-align: justify;
-   padding: 5px;
-   margin-bottom: 10px;
- }
 </style>
 </head>
+
 <if $thread><body class="replypage"></if>
 <if !$thread><body></if>
+
 <if $isAdmin>
 <div id="modpanel" style="display: none">
 <table>
@@ -223,55 +159,30 @@ use constant NORMAL_HEAD_INCLUDE => q{
 <p id="error" style="display: none"><span style="font-weight: bolder; color: #FF0000;">Error: <span style="font-weight: bolder" id="errordetails"></span></span></p>
 </div>
 </if>
-<div id="disclaimer" style="display: none">
- <!--<div class="caption">Regeln</div>-->
 
- 
- <div class="item">
-  <div class="title">
-   1. Altersbeschr&auml;nkung
-  </div>
-  <div class="content">
-   Ernstchan richtet sich in erster Linie an Personen, die <strong>mindestens 18 Jahre alt</strong> sind. Minderj&auml;hrige haben hier nichts veloren.
-  </div>
+<div class="content">
 
- </div>
-  
- <div class="item">
-  <div class="title">
-   2. Uploads
-  </div>
-  <div class="content">
-   <strong>S&auml;mtliche Dateien, die gegen das niederl&auml;ndische Recht versto&szlig;en, d&uuml;rfen nicht hochgeladen werden!</strong>
-  </div>
-
- </div>
-
- <div class="item">
-  <div class="title">
-   3. IRC
-  </div>
-  <div class="content">
-   Im <a href="/irc">IRC-Channel</a> sollte man sich vern&uuml;nftig unterhalten. Wer sich nicht benehmen kann, fliegt raus.
-  </div>
-
- </div>
-
-</div>
 <script type="text/javascript" src="/js/wz_tooltip.js"></script>
 <if $thread && ENABLE_WEBSOCKET_NOTIFY><script type="text/javascript" src="/js/websock.js"></script></if>
-} . include("../tpl/content/boardnav.tt2") . q{
+} . include("../tpl/content/boardnav.html") . q{
 
-<div style="clear: both;"></div>
-<br />
-<br />
-<center>
-<a href="/<const BOARD_IDENT>/"><img src="/banner/<const BOARD_IDENT>" width="300" height="100" class="banner" alt="<const BOARD_IDENT>" /></a></center>
-<div class="logo" <if BOARD_DESC>style="margin-bottom: 5px;"</if>>/<const BOARD_IDENT>/ - <const BOARD_NAME></div>
-<if BOARD_DESC><div class="slogan">&bdquo;<const BOARD_DESC>&ldquo;</div></if>
+<header>
+	<div class="header">
+		<div class="banner">
+			<a href="/<const BOARD_IDENT>/">
+				<img src="/banner/<const BOARD_IDENT>" alt="<const BOARD_IDENT>" />
+			</a>
+		</div>
+		<div class="boardname" <if BOARD_DESC>style="margin-bottom: 5px;"</if>>/<const BOARD_IDENT>/ &ndash; <const BOARD_NAME></div>
+		<if BOARD_DESC><div class="slogan">&bdquo;<const BOARD_DESC>&ldquo;</div></if>
+	</div>
+
+</header>
+
 <if !DISABLE_NEW_THREADS or $isAdmin or $thread or $admin><hr /></if>
 
 };
+
 
 use constant MANAGER_HEAD_INCLUDE => NORMAL_HEAD_INCLUDE . q{
 
@@ -284,10 +195,19 @@ use constant MANAGER_HEAD_INCLUDE => NORMAL_HEAD_INCLUDE . q{
 	<div class="passvalid"><const S_MANAMODE></div>
 </if>
 };
+
+
 use constant NORMAL_FOOT_INCLUDE => q{
-<div style="clear: both;"></div>
-<p class="footer"> <img src="/img/phutaba_icon.png" alt="" style="vertical-align: middle;" /> <strong title="Version 1.3 Blasphemischer Blaus&auml;ufer">Phutaba</strong><br /><em>Report illegal material to <a href="mailto:post-abuse@ernstchan.net">post-abuse@ernstchan.net</a></em>.</p></body></html>
+
+<footer>
+	<p>Powered by <img src="/img/phutaba_icon.png" alt="" /> <strong>Phutaba</strong>.</p>
+	<p><em>Report illegal material to <a href="mailto:post-abuse@ernstchan.com">post-abuse@ernstchan.com</a>.</em></p>
+</footer>
+</div>
+</body>
+</html>
 };
+
 
 use constant PAGE_TEMPLATE => compile_template(
     MANAGER_HEAD_INCLUDE . q{
@@ -295,7 +215,7 @@ use constant PAGE_TEMPLATE => compile_template(
 <if !$locked>
 <if !DISABLE_NEW_THREADS or $thread or $isAdmin>
 <if $postform>
-	<div class="postarea">
+	<section class="postarea">
 	<form id="postform" action="<var decode('utf-8', $self)>" method="post" enctype="multipart/form-data">
 
 	<input type="hidden" name="task" value="post" />
@@ -306,110 +226,132 @@ use constant PAGE_TEMPLATE => compile_template(
 	<if !$image_inp and !$thread and ALLOW_TEXTONLY>
 		<input type="hidden" name="nofile" value="1" />
 	</if>
-	<if FORCED_ANON><input type="hidden" name="name" /></if>
-	<table><tbody id="postTableBody">
+
+	<div class="trap">
+		<input type="text" name="name" size="28" />
+		<input type="text" name="link" size="28" />
+	</div>	
+
+	<table>
+	<tbody id="postTableBody">
 		<if $isAdmin>
-			<tr><td class="postblock">## Team ##</td><td><input type="checkbox" name="as_admin" value="1" /></td></tr>
+			<tr><td class="postblock">## Team ##</td>
+			<td><label><input type="checkbox" name="as_admin" value="1" /> Administrationskennung am Post anzeigen</label></td></tr>
 		</if>
 		<if $isAdmin>
-			<tr><td class="postblock">HTML</td><td><input type="checkbox" name="no_format" value="1" /></td></tr>
+			<tr><td class="postblock">HTML</td>
+			<td><label><input type="checkbox" name="no_format" value="1" /> Kommentar nicht durch den Parser verarbeiten</label></td></tr>
 		</if>
 	<if !FORCED_ANON or $isAdmin><tr><td class="postblock"><const S_NAME></td><td><input type="text" name="field1" size="28" /></td></tr></if>
+
 	<tr><td class="postblock"><const S_SUBJECT></td><td><input type="text" name="field3" size="35" />
-	<input type="submit" id="postform_submit" value="<if $thread>Antworten auf /<var BOARD_IDENT>/<var $thread></if><if !$thread>Neuen Thread erstellen</if>" /></td></tr>
-		<tr><td class="postblock">Kontra</td><td><input type="checkbox" name="field2" value="sage" /></td></tr>
-	<tr><td class="postblock"><const S_COMMENT></td><td><textarea id="field4" name="field4" cols="48" rows="6"></textarea> <img onclick="resizeCommentfield('field4', this)" src="/img/expand.png" alt="Textfeld vergr&ouml;&szlig;ern" title="Textfeld vergr&ouml;&szlig;ern" /></td></tr>
+	<input type="submit" id="postform_submit" value="<if $thread>Antworten auf /<var BOARD_IDENT>/<var $thread></if><if !$thread>Neuen Thread erstellen</if>" /></td>
+	</tr>
+
+	<if $thread>
+	<tr><td class="postblock">Kontra</td>
+	<td><label><input type="checkbox" name="field2" value="sage" /> Thread ausklingen lassen</label></td>
+	</tr>
+	</if>
+
+	<tr><td class="postblock"><const S_COMMENT></td>
+	<td><textarea id="field4" name="field4" cols="48" rows="6"></textarea> <img onclick="resizeCommentfield('field4', this)" src="/img/icons/expand.png" alt="Textfeld vergr&ouml;&szlig;ern" title="Textfeld vergr&ouml;&szlig;ern" />
+	</td></tr>
 
 	<if $image_inp>
-		<tr id="fileUploadField"><td class="postblock"><const S_UPLOADFILE> (max. 4)</td><td id="fileInput"><div><input type="file" name="file" size="35" onchange="addFileUploadBox(this)"/></div>
+		<tr id="fileUploadField"><td class="postblock"><const S_UPLOADFILE> (max. 4)</td>
+		<td id="fileInput"><div><input type="file" name="file" size="35" onchange="file_input_change(4)" /></div>
 		<if $textonly_inp>[<label><input type="checkbox" name="nofile" value="on" /><const S_NOFILE> ]</label></if>
 		</td></tr>
 	</if>
 
-	<if $thread><tr id="trgetback"><td class="postblock">Gehe zur&uuml;ck</td> <td><label><input name="gb2" value="board" checked="checked" type="radio" /> zum Board</label> <label><input name="gb2" value="thread" type="radio" /> zum Faden</label> </td></tr></if>
+	<if $thread><tr id="trgetback"><td class="postblock">Gehe zur&uuml;ck</td>
+	<td>
+	<label><input name="gb2" value="board" checked="checked" type="radio" /> Zum Board</label>
+	<label><input name="gb2" value="thread" type="radio" /> Zum Thread</label>
+	</td></tr>
+	</if>
+
 	<if use_captcha(ENABLE_CAPTCHA, $loc)>
 		<tr><td class="postblock"><const S_CAPTCHA> (<a href="/faq">?</a>) (<var $loc>)</td><td><input type="text" name="captcha" size="10" /> <img alt="" src="/lib/captcha.pl?key=<var get_captcha_key($thread)>&amp;dummy=<var $dummy>&amp;board=<var BOARD_IDENT>" /></td></tr>
 	</if>
 
 	<tr id="passwordField"><td class="postblock"><const S_DELPASS></td><td><input type="password" name="password" size="8" /> <const S_DELEXPL></td></tr>
 	<tr><td colspan="2">
-	<div class="rules">} . include("tpl/rules.html") . q{</div></td></tr>
-	</tbody></table></form></div>
+	<div class="rules">} . include("rules.html") . q{</div></td></tr>
+	</tbody>
+	</table>
+	</form>
+	</section>
 	<script type="text/javascript">set_inputs("postform")</script>
-<br />
-<center>
-<form action="<var decode('utf-8', $self)>">
-   <input type="hidden" name="do" value="new" />
-   <input type="hidden" name="task" value="paint" />
 
-   Zeichnen:
-   <select name="applet">
-      <option value="shipainter" selected="selected">Shi-Painter</option>
-      <option value="shipainterpro">Shi-Painter Pro</option>
-   </select>
-   Breite:
-   <input type="text" name="width" size="3" value="800" />
-   H&ouml;he:
-   <input type="text" name="height" size="3" value="600" />
-   <input type="submit" value="Los!" />
+</if>
+</if>
+</if>
 
-</form>
-</center>
-</if>
-</if>
-</if>
 <if $locked>
-<p class="locked">Thread <var $thread> ist gesperrt.</p>
+<p class="locked"><strong>Thread <var $thread></strong> ist geschlossen. Es kann nicht geantwortet werden.</p>
 </if>
+
 <form id="delform" action="<var decode('utf-8', $self)>" method="post">
 
 <loop $threads>
-  <div class="thread" style="clear: both">
   <hr />
+  <article class="thread">
+
 <if $thread>
 	<div id="thread_<var $thread>">
 </if>
 <if !$thread>
 	<div id="thread_<var $num>">
 </if>
+
 		<loop $posts>
 			} . include("../lib/templates/post_view.inc") . q{
 		</loop>
+
 	</div>
-  </div>
+  </article>
 </loop>
+
 <if $thread>
 <div id="websock_enabled"></div>
 </if>
-<div style="clear: both;"></div>
+
 <hr />
-<table class="userdelete"><tbody><tr><td>
-<input type="hidden" name="task" value="delete" />
-<if $thread><input type="hidden" name="parent" value="<var $thread>" /></if>
-<const S_DELKEY><input type="password" name="password" size="8" />
-<input value="<const S_DELETE>" type="submit" /></td></tr></tbody></table>
+
+<if !$thread>
+	<nav>
+		<ul class="pagelist">
+			<li>
+			<if $prevpage><a href="<var decode('utf-8', $prevpage)>"><const S_PREV></a></if>
+			<if !$prevpage><const S_PREV></if>
+			</li>
+		<loop $pages>
+			<li>
+			<if !$current>[<a href="<var decode('utf-8', $filename)>"><var $page></a>]</if>
+			<if $current>[<strong><var $page></strong>]</if>
+			</li>
+		</loop>
+			<li>
+			<if $nextpage><a href="<var decode('utf-8', $nextpage)>"><const S_NEXT></a></if>
+			<if !$nextpage><const S_NEXT></if>
+			</li>
+		</ul>
+	</nav>
+</if>
+
+<div class="delete">
+	<input type="hidden" name="task" value="delete" />
+	<if $thread><input type="hidden" name="parent" value="<var $thread>" /></if>
+	<input type="password" name="password" placeholder="<const S_DELKEY>" />
+	<input value="<const S_DELETE>" type="submit" />
+</div>
+
 </form>
 <script type="text/javascript">set_delpass("delform")</script>
-<if !$thread>
-	<table class="paginator" border="1"><tbody><tr><td>Seiten:</td><if $prevpage><td>
 
-	[<a href="<var decode('utf-8', $prevpage)>"><const S_PREV></a>]
-	</td></if><td>
-
-	<loop $pages>
-		<if !$current><a href="<var decode('utf-8', $filename)>"><var $page+1></a></if>
-		<if $current>[<b><var $page+1></b>]</if>
-	</loop>
-
-	</td><if $nextpage><td>
-
-	[<a href="<var decode('utf-8', $nextpage)>"><const S_NEXT></a>]
-
-	</td></if></tr></tbody></table>
-</if>
-<div style="clear: both; padding-top: 15px;"></div>
-
-} . include("../tpl/content/boardnav.tt2") . NORMAL_FOOT_INCLUDE);
+} . NORMAL_FOOT_INCLUDE);
 
 
 use constant SINGLE_POST_TEMPLATE => compile_template(q{
@@ -420,6 +362,7 @@ use constant SINGLE_POST_TEMPLATE => compile_template(q{
 
 
 use constant OEKAKI_TEMPLATE => compile_template(q{
+
 <html>
 <head>
 <title><const TITLE> &raquo; <var $title></title>
@@ -462,26 +405,39 @@ body {
 
 
 use constant ERROR_HEAD_INCLUDE => q{
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml">
+
+<!DOCTYPE html>
+<html lang="de">
 <head>
-<title><const TITLE> &raquo; <var $error_page></title>
-<link rel="stylesheet" type="text/css" href="/css/prototype.css" />
+	<title><const TITLE> &raquo; <var $error_page></title>
+	<meta charset="<const CHARSET>" />
+	<link rel="shortcut icon" href="/img/favicon.ico" />
+	<link rel="stylesheet" type="text/css" href="/css/style.css" />
 </head>
+
 <body>
 <div class="content">
-<div class="header">
-<h1><const TITLE></h1>
-<em><var $error_subtitle></em>
-</div>
-<div class="container">
-<div id="title"><var $error_title></div>
-<img class="image" src="/errors/logo.png" alt="Logo" />
+
+} . include("../tpl/content/boardnav.html") . q{
+
+<header>
+	<div class="header">
+		<div class="banner"><a href="/"><img src="/banner-redir.pl" alt="Ernstchan" /></a></div>
+		<div class="boardname"><const TITLE></div>
+	</div>
+</header>
+
+<hr />
+
+<section class="error">
+	<p><var $error_title></p>
 };
 
 use constant ERROR_FOOT_INCLUDE => q{
-<small>Fragen? Das <a href="irc://irc.euirc.net/ernstchan">IRC</a> ist f&uuml;r euch offen!</small>
-</div>
+
+</section>
+<hr />
+<footer>Powered by <img src="/img/phutaba_icon.png" alt="" /> <strong>Phutaba</strong>.</footer>
 </div>
 </body>
 </html>
@@ -494,11 +450,14 @@ use constant ERROR_TEMPLATE => compile_template(
 <p><var $error></p>
 </if>
 <if $banned>
-<p>Deine IP <b><var $ip></b> wurde wegen <b><var $reason></b> auf unbestimmte Zeit gesperrt. Bitte kontaktiere uns im IRC wenn du wieder posten willst!</p>
+<p>Deine IP <strong><var $ip></strong> wurde wegen <strong><var $reason></strong> auf unbestimmte Zeit gesperrt.
+ Bitte kontaktiere uns im IRC wenn du wieder posten willst!</p>
 </if>
 <if $dnsbl>
-<p>Deine IP <b><var $ip></b> wurde in der Blacklist <b><var $dnsbl></b> gelistet. Aufgrund dieser Tatsache ist es dir nicht gestattet zu posten! Bitte kontaktiere uns im IRC wenn du wieder posten willst!</p>
+<p>Deine IP <strong><var $ip></strong> wurde in der Blacklist <strong><var $dnsbl></strong> gelistet.
+ Aufgrund dieser Tatsache ist es dir nicht gestattet zu posten. Bitte kontaktiere uns im IRC wenn du wieder posten willst!</p>
 </if>
+
 } . ERROR_FOOT_INCLUDE
 );
 
@@ -811,7 +770,7 @@ use constant ADMIN_POST_TEMPLATE => compile_template(
 <table><tbody>
 <tr><td class="postblock"><const S_SUBJECT></td><td><input type="text" name="field3" size="35" />
 <input type="submit" value="<const S_SUBMIT>" /></td></tr>
-<tr><td class="postblock">S&auml;ge</td><td><input type="checkbox" name="field2" value="sage" /></td></tr>
+<tr><td class="postblock">Kontra</td><td><input type="checkbox" name="field2" value="sage" /></td></tr>
 <tr><td class="postblock"><const S_COMMENT></td><td><textarea name="field4" cols="48" rows="4"></textarea></td></tr>
 <tr><td class="postblock"><const S_UPLOADFILE></td><td><input type="file" name="file" size="35" />
 [<label><input type="checkbox" name="nofile" value="on" /><const S_NOFILE> ]</label>
@@ -825,4 +784,3 @@ use constant ADMIN_POST_TEMPLATE => compile_template(
 );
 
 1;
-

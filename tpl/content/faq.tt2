@@ -2,99 +2,78 @@
    title   = 'H&auml;ufig gestellte Fragen'
 %]
 
- <div class="caption">H&auml;ufig gestellte Fragen</div>
- 
- <div class="item">
-  <div class="title">
-   Was ist das hier?
-  </div>
-  <div class="content">
-   Ernstchan ist ein <a href="//de.wikipedia.org/wiki/Imageboard">Imageboard</a>, also ein Forum, in dem haupts&auml;chlich Bilder ausgetauscht werden.<br />Bitte beachtet, dass ihr hier weder eine Quelle seri&ouml;ser News, noch einen Kummerkasten finden werdet. Wer nichts mit Sarkasmus und schwarzem Humor anfangen kann, geht am besten gleich wieder.
-  </div>
- </div>
-  
- <div class="item">
-  <div class="title">
-   Wo melde ich mich an?
-  </div>
-  <div class="content">
-   Auf einem klassischen Imageboard wie Ernstchan kann man sich nicht registrieren. Normalerweise tauscht man sich hier anonym aus.
-  </div>
- </div>
- 
- <div class="item">
-  <div class="title">
-   &Uuml;ber welche Domains kann ich Ernstchan erreichen?
-  </div>
-  <div class="content">
-   Ernstchan kann &uuml;ber <a href="//ernstchan.com">ernstchan.com</a>, <a href="//ernstchan.net">ernstchan.net</a> und <a href="//22chan.net">22chan.net</a> erreicht werden.
-  </div>
- </div>
- 
- <div class="item">
-  <div class="title">
-   Wie kann ich in Beitr&auml;gen die Schrift formatieren?
-  </div>
-  <div class="content">
-   <p>Folgende BBCode-Tags stehen zur Auswahl:</p>
-   <table>
-     <tr>
-      <th>Eingabe</th>
-      <th>Ausgabe</th>
-     </tr>
-     <tr>
-      <td>[i]kursiv[/i]</td>
-      <td><em>kursiv</em></td>
-     </tr>
-     <tr>
-      <td>[b]fett[/b]</td>
-      <td><strong>fett</strong></td>
-     </tr>
-     <tr>
-      <td>[u]unterstrichen[/u]</td>
-      <td><ins>unterstrichen</ins></td>
-     </tr>
-     <tr>
-      <td>[s]durchgestrichen[/s]</td>
-      <td><del>durchgestrichen</del></td>
-     </tr>
-     <tr>
-      <td>[spoiler]Spoiler[/spoiler]</td>
-      <td><span class="spoiler">Spoiler</span></td>
-     </tr>
-     <tr>
-      <td>[code]Code[/code]</td>
-      <td><code>Code</code></td>
-     </tr>
-    </table>
-  </div>
- </div>
+	<header class="title">Was ist das hier?</header>
+	<section class="info">
+		<p>Ernstchan ist ein deutschsprachiges <a href="//de.wikipedia.org/wiki/Imageboard">Imageboard</a>, das 2010 gegründet wurde. Bitte beachtet, dass ihr hier weder eine Quelle seriöser News, noch einen Kummerkasten finden werdet. Wer nichts mit Sarkasmus und schwarzem Humor anfangen kann, geht am besten direkt wieder.</p>
+	</section>
 
- <div class="item">
-  <div class="title">
-   Wieso muss ich Captchas eingeben, um Beitr&auml;ge abschicken zu k&ouml;nnen?
-  </div>
-  <div class="content">
-   Um Spam vorzubeugen m&uuml;ssen, m&uuml;ssen Nutzer aus nicht deutschsprachigen L&auml;ndern zum Posten Captchas best&auml;tigen. Falls deine IP also nicht aus Deutschland, &Ouml;sterreich, der Schweiz, Liechtenstein, Belgien, D&auml;nemark, Luxemburg (oder der Niederlande) stammst, wirst du dich wohl oder &uuml;bel damit abfinden m&uuml;ssen.
-  </div>
- </div>
- 
- <div class="item">
-  <div class="title">
-   Was stellt das Logo dar?
-  </div>
-  <div class="content">
-   Es zeigt ein Eichenblatt in den Farben des <a href="//wakaba.c3.cx/s/web/wakaba_kareha">Wakaba</a>-Logos:<br /><a href="/img/logo_gross.png" target="top" title="Klicke auf den Thumbnail, um das Bild in vollst&auml;ndiger Gr&ouml;&szlig;e zu sehen."><img src="/img/logo_klein.png" alt="" /></a>
-  </div>
- </div>
+	<header class="title">Wo melde ich mich an?</header>
+	<section class="info">
+		<p>Auf einem klassischen Imageboard wie Ernstchan kann man sich nicht registrieren. Normalerweise tauscht man sich hier anonym aus.</p>
+	</section>
 
- <div class="item">
-  <div class="title">
-   Darf ich Moderator werden?
-  </div>
-  <div class="content">
-   Nein.
-  </div>
- </div>
+	<header class="title">Über welche Domains kann ich Ernstchan erreichen?</header>
+	<section class="info">
+		<p>Ernstchan kann unter <a href="//ernstchan.com">ernstchan.com</a>, <a href="//ernstchan.net">ernstchan.net</a> und <a href="//22chan.net">22chan.net</a> erreicht werden.</p>
+	</section>
 
- <p>Bei weiteren Fragen kann man uns via <a href="mailto:admin@ernstchan.net">E-Mail</a> oder im <a href="/irc">IRC</a> erreichen.</p>
+	<header class="title">Wie kann ich in Beiträgen die Schrift formatieren?</header>
+	<section class="info">
+		<p>Folgende <a href="http://de.wikipedia.org/wiki/BBCode">BBCode</a>-Tags stehen zur Auswahl:</p>
+		<table>
+			<tr>
+				<th>Eingabe</th>
+				<th>Ausgabe</th>
+			</tr>
+			<tr>
+				<td>[i]kursiv[/i]</td>
+				<td><em>kursiv</em></td>
+			</tr>
+			<tr>
+				<td>[b]fett[/b]</td>
+			 	<td><strong>fett</strong></td>
+			</tr>
+			<tr>
+				<td>[u]unterstrichen[/u]</td>
+				<td><ins>unterstrichen</ins></td>
+			</tr>
+			<tr>
+				<td>[s]durchgestrichen[/s]</td>
+				<td><del>durchgestrichen</del></td>
+			</tr>
+			<tr>
+				<td>[spoiler]Spoiler[/spoiler]</td>
+				<td><span class="spoiler">Spoiler</span></td>
+			</tr>
+			<tr>
+				<td>[code]Code[/code]</td>
+				<td><code>Code</code></td>
+			</tr>
+		</table>
+	</section>
+
+	<header class="title">Wieso muss ich Captchas eingeben, um Posts abschicken zu k&ouml;nnen?</header>
+	<section class="info">
+		<p>Um Spam vorzubeugen, müssen Nutzer aus nicht deutschsprachigen Ländern vor jedem Beitrag ein Captcha bestätigen. Falls deine IP also nicht aus Deutschland, Österreich, der Schweiz, Liechtenstein, Belgien, Dänemark, Luxemburg (oder der Niederlande) stammt, wirst du dich wohl oder übel damit abfinden müssen.</p>
+	</section>
+
+	<header class="title">Wie kann ich die Administratoren konktaktieren?</header>
+	<section class="info">
+		<p>Für allgemeine Fragen kann man uns jederzeit per E-Mail an <a href="mailto:admin@ernstchan.com">admin@ernstchan.com</a> erreichen. Zudem sind wir im <a href="/irc">IRC-Channel</a> anzutreffen.<br />Falls du unangebrachte/illegale Inhalte melden möchtest, benutze bitte <a href="mailto:post-abuse@ernstchan.com">post-abuse@ernstchan.com</a>.</p>
+	</section>
+
+	<header class="title">Was steckt unter der Haube von Ernstchan?</header>
+	<section class="info">
+		<p>Ernstchan wird mit Phutaba, einer Modifikation von <a href="http://wakaba.c3.cx/s/web/wakaba_kareha">Wakaba</a>, auf einem niderländischen Server betrieben. Die aktuelle Version von Phutaba kann frei von <a href="https://github.com/ernstchan/phutaba1">GitHub</a> geladen werden, sie steht unter keiner bestimmten Lizenz. Einige Icons stammen von <a href="http://p.yusukekamiyamane.com/">Yusuke Kamiyamane</a> (CC BY 3.0).</p>
+	</section>
+
+	<header class="title">Woher bekomme ich euer Logo?</header>
+	<section class="info">
+		<p>Bitte einmal hier klicken:</p>
+		<p><a href="https://ernstchan.com/img/logo_gross.png"><img src="https://ernstchan.com/img/logo_klein.png" /></a></p>
+	</section>
+
+	<header class="title">Darf ich Moderator werden?</header>
+	<section class="info">
+		<p>Nein.</p>
+	</section>

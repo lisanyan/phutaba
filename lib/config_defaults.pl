@@ -18,7 +18,7 @@ BEGIN {
     eval "use constant SQL_TABLE => 'comments'" unless ( defined &SQL_TABLE );
     eval "use constant SQL_ADMIN_TABLE => 'admin'"
       unless ( defined &SQL_ADMIN_TABLE );
-    eval "use constant SSL_ICON => '/img/ssl.png'" unless (defined &SSL_ICON);
+    eval "use constant SSL_ICON => '/img/icons/ssl.png'" unless (defined &SSL_ICON);
     eval "use constant USE_TEMPFILES => 1" unless ( defined &USE_TEMPFILES );
     eval "use constant ENABLE_LOCATION => 0"
       unless ( defined &ENABLE_LOCATION );
@@ -40,7 +40,7 @@ BEGIN {
 
     eval "use constant IMAGE_REPLIES_PER_STICKY_THREAD => 0"
       unless ( defined &IMAGE_REPLIES_PER_STICKY_THREAD );
-    eval "use constant REPLIES_PER_LOCKED_THREAD => 0"
+    eval "use constant REPLIES_PER_LOCKED_THREAD => 1"
       unless ( defined &REPLIES_PER_LOCKED_THREAD );
     eval "use constant IMAGE_REPLIES_PER_LOCKED_THREAD => 0"
       unless ( defined &IMAGE_REPLIES_PER_LOCKED_THREAD );
@@ -67,8 +67,8 @@ BEGIN {
       unless ( defined &IRC_NOTIFY_PORT );
 eval "use constant SQL_PREFIX => 'ernstchan_';" unless ( defined &SQL_PREFIX );
     use constant S_IRC_NEW_THREAD_PREPEND => "Neuer Thread auf ";
-    use constant S_IRC_BASE_BOARDURL      => "http://ernstchan.net/";
-    use constant S_IRC_BASE_THREADURL     => "/faden/";
+    use constant S_IRC_BASE_BOARDURL      => "https://ernstchan.com/";
+    use constant S_IRC_BASE_THREADURL     => "/thread/";
     use constant S_IRC_NEW_POST_PREPEND   => "Neuer Post in ";
     eval "use constant MAX_KB => 1000"     unless ( defined &MAX_KB );
     eval "use constant MAX_W => 200"       unless ( defined &MAX_W );
@@ -152,7 +152,7 @@ eval "use constant SQL_PREFIX => 'ernstchan_';" unless ( defined &SQL_PREFIX );
     eval "use constant COOKIE_PATH => 'root'" unless ( defined &COOKIE_PATH );
     eval "use constant STYLE_COOKIE => 'wakabastyle'"
       unless ( defined &STYLE_COOKIE );
-	eval "use constant STYLESHEET => '/css/ernstchan.css'" unless (defined &STYLESHEET);
+	eval "use constant STYLESHEET => '/css/style.css'" unless (defined &STYLESHEET);
     eval "use constant FORCED_ANON => 0" unless ( defined &FORCED_ANON );
     eval "use constant USE_XHTML => 1"   unless ( defined &USE_XHTML );
 

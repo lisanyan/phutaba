@@ -1,4 +1,0 @@
-<div class="boardnav_l">
-[ <a href="/" onmouseover="Tip('Start')" onmouseout="UnTip()">/</a> ] [ <a href="/b/" onmouseover="Tip('Ernstchan')" onmouseout="UnTip()">b</a> ] [ <a href="/c/" onmouseover="Tip('Computer &amp; Programmieren')" onmouseout="UnTip()">c</a> / <a href="/m/" onmouseover="Tip('Musik')" onmouseout="UnTip()">m</a> ] [ <a href="/fefe/" onmouseover="Tip('Fefes Blog')" onmouseout="UnTip()">fefe</a> / <a href="/&ouml;/" onmouseover="Tip('Neu-Kaiserchan')" onmouseout="UnTip()">&ouml;</a> / <a href="/rant/" onmouseover="Tip('HASS HASS HASS')" onmouseout="UnTip()">rant</a> ]
-</div>
-

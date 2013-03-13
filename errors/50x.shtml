@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="de"> 
+
+<head>
+
+<title>Ernstchan &raquo; Serverfehler</title>
+
+<meta charset="utf-8" />
+
+<link rel="shortcut icon" href="/img/favicon.ico" />
+<link rel="stylesheet" type="text/css" href="/css/style.css" />
+
+</head>
+
+<body>
+
+<div class="content">
+
+<!--#include virtual="/tpl/content/boardnav.html" -->
+
+<header>
+	<div class="header">
+		<div class="banner"><a href="/"><img src="/banner-redir.pl" alt="Ernstchan" /></a></div>
+		<div class="boardname">Serverfehler</div>
+	</div>
+</header>
+
+	<hr />
+
+	<section class="error">
+		<p>Es gab einen Fehler beim Verarbeiten dieser Anfrage.</p>
+	</section>
+
+	<hr />
+
+	<footer>Powered by <img src="/img/phutaba_icon.png" alt="" /> <strong>Phutaba</strong>.</footer>
+
+</div>
+
+</body>
+
+</html>

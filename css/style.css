@@ -1,0 +1,505 @@
+html, body, div, span, applet, object, iframe, h1, h2, h3, h4, h5, h6, p, blockquote, pre, a, abbr, acronym, address, big, cite, code, del, dfn, em, font, img, ins, kbd, q, s, samp, small, strike, strong, sub, sup, tt, var, dl, dt, dd, ol, ul, li, fieldset, form, label, legend, table, caption, tbody, tfoot, thead, tr, th, td {
+	font-size: 100%;
+	font-weight: inherit;
+	font-style: inherit;
+	font-family: inherit;
+	vertical-align: baseline;
+	margin: 0;
+	padding: 0;
+	border: 0;
+	outline: 0;
+}
+
+*:focus {
+	outline: 0;
+}
+
+strong, b, ul.menu a, .boardname, .caption, .subject, .postblock, .postername, .teampost, .sage, .ban, .title, .info th, .dellist {
+	font-weight: bold;
+}
+
+em, i, .omittedposts, .notice {
+	font-style: italic;
+}
+
+hr {
+	border: none;
+	border-top: 1px solid #706B5E;
+	margin: 1em 0 1em 0;
+	clear: both;
+}
+
+code {
+	font: normal 1.2em monospace;
+}
+
+ul, ol {
+	margin-left: 1.6em;
+}
+
+ul {
+	list-style-type: square;
+}
+
+td, th {
+	display: table-cell;
+	vertical-align: middle;
+}
+
+body {
+	background-color: #ECE9E2;
+	color: #000000;
+	font: normal 0.8em sans-serif;
+}
+
+a:link, a:visited, a:hover {
+	color: #702802;
+	text-decoration: underline;
+}
+
+a:hover {
+	text-decoration: none;
+}
+
+a:active {
+	position: relative;
+	top: 1px;
+}
+
+.content {
+	margin: 3em 1em 0 1em;
+}
+
+ul.menu {
+	position: absolute;
+	top: 4px;
+	list-style-type: none;
+}
+
+ul.right {
+	right: 1em;
+}
+
+ul.menu li, ul.pagelist li {
+	display: inline;
+}
+
+ul.menu a {
+	background-color: #D7CFC0;
+	color: #000000;
+	text-decoration: none;
+	border: 1px solid #706B5E;
+	padding: 5px;
+	border-bottom-right-radius: 3px;
+	border-bottom-left-radius: 3px;
+	-moz-border-radius-bottomright: 3px;
+	-moz-border-radius-bottomleft: 3px;
+	-webkit-border-bottom-right-radius: 3px;
+	-webkit-border-bottom-left-radius: 3px;
+}
+
+ul.menu a:hover {
+	box-shadow: 1px 1px 2px #999999;
+	-moz-box-shadow: 1px 1px 2px #999999;
+	-webkit-box-shadow: 1px 1px 2px #999999;
+}
+
+ul.menu a:active {
+	top: 0;
+}
+
+.header {
+	text-align: center;
+}
+
+.banner {
+}
+
+.banner img {
+	width: 300px;
+	height: 100px;
+}
+
+.teampost img, .sticky img, .locked img { 
+	width: 16px; 
+	height: 16px; 
+}
+
+.boardname, .caption {
+	color: #333333;
+	font-size: 2em;
+	margin-top: 0.5em;
+}
+
+.postarea {
+	text-align: center;
+}
+
+.postarea table {
+	text-align: left;
+	margin: 0 auto;
+}
+
+.postarea img:hover {
+	cursor: pointer;
+}
+
+.postblock {
+	background-color: #706B5E;
+	color: #FFFFFF;
+	padding: 0 5px;
+}
+
+.postarea input[type='checkbox'], .postarea input[type='radio'] {
+	margin: 5px;
+}
+
+.comment img {
+
+}
+
+input[type='text'], input[type='password'], textarea {
+	background-color: #FFFFFF;
+	font-family: monospace;
+	border: 1px solid #706B5E;
+	padding: 2px 4px;
+}
+
+input[type='submit']:hover {
+	cursor: pointer;
+}
+
+.trap {
+	display: none;
+}
+
+ul.rules {
+	margin-top: 1em;
+}
+
+.doubledash {
+	float: left;
+	vertical-align: top;
+	margin-top: 0.5em;
+}
+
+.doubledash a:link, .doubledash a:visited {
+	color: #707070;
+	text-decoration: none;
+}
+
+.doubledash a:hover {
+	color: #000000;
+}
+
+.post {
+	background-color: #D7CFC0;
+	border-right: 1px solid #BFB5A1;
+	border-bottom: 1px solid #BFB5A1;
+	padding: 0.5em 1em 1em 0.5em;
+	margin: 0 0 0.5em 2em;
+	overflow: hidden;
+}
+
+.thread_OP .post {
+	margin-left: 0;
+}
+
+.post_new {
+	border-right: 1px solid #B20000;
+	border-bottom: 1px solid #B20000;
+}
+
+.post.highlight, :target .post {
+	background-color: #BFB5A1;
+}
+
+.post.highlight .file, :target .post .file {
+	background-color: #D7CFC0;
+}
+
+:target .filedeleted {
+	color: #BFB5A1;
+}
+
+.thread_head {
+	background-color: #BFB5A1;
+	padding: 5px;
+}
+
+.reflink a, .filename a, .filetype a, .togglethread a {
+	color: #000000;
+	text-decoration: none;
+}
+
+.reflink a:hover, .filename a:hover, .filetype a:hover {
+	text-decoration: underline;
+}
+
+.post_head {
+	margin-bottom: 0.5em;
+}
+
+.postername {
+	color: #635537;
+}
+
+.postername .tripcode {
+	font-weight: normal;
+}
+
+.teampost {
+	color: #A000CC;
+}
+
+.backreflink del {
+	color: #702802;
+}
+
+.sticky {
+}
+
+.locked {
+}
+
+.sage {
+	color: #B20000;
+}
+
+.file {
+	background-color: #BFB5A1;
+	text-align: center;
+	margin: 0 0 0.5em 0.5em;
+	float: left;
+	display: block;
+	vertical-align: top;
+}
+
+.filesize {
+	font-size: 0.85em;
+}
+
+.filelink {
+	line-height: 0;
+}
+
+.filelink a:active {
+	top: 0;
+}
+
+.filetype, .filedeleted {
+	font: bold 2em sans-serif;
+	width: 200px;
+	padding: 0.5em 0 0.5em 0;
+}
+
+.filedeleted {
+	color: #D7CFC0;
+}
+
+.text {
+	margin-left: 2em;
+	word-wrap: break-word;
+	display: inline-block;
+	vertical-align: top;
+}
+
+.text ul, .text ol {
+	margin-left: 1.6em;
+}
+
+blockquote.unkfunc {
+	color: #B55636;
+	margin: 0;
+}
+
+.spoiler {
+	background-color: #000000;
+	color: #000000;
+	text-shadow:none;
+}
+
+.spoiler a {
+	color: #000000;
+}
+
+.spoiler:hover, .spoiler a:hover {
+	color: #FFFFFF;
+}
+
+.ban, .tldr {
+	margin-top: 0.8em;
+}
+
+.ban {
+	color: #B20000;
+	text-transform: uppercase;
+}
+
+.omittedposts, .notice {
+	color: #707070;
+	margin-left: 2em;
+}
+
+.omittedposts {
+	margin-bottom: 0.5em;
+}
+
+.notice img {
+	vertical-align: middle;
+}
+
+.notice span {
+	padding: 0 0.5em;
+	border-right: 1px solid #B20000;
+	border-bottom: 1px solid #B20000;
+}
+
+.togglethread a:hover, .togglethread img:hover {
+	cursor: pointer;
+}
+
+ul.pagelist {
+	background-color: #D7CFC0;
+	border-right: 1px solid #BFB5A1;
+	border-bottom: 1px solid #BFB5A1;
+	padding: 0.5em;
+	margin-left: 0;
+	float: left;
+}
+
+.delete {
+	float: right;
+}
+
+input[type='password'] {
+	width: 8em;
+}
+
+.passvalid {
+	background-color: #706B5E;
+	color: #FFFFFF;
+	font-weight: bold;
+	text-align: center;
+	padding: 5px;
+	margin: 5px 0;
+}
+
+.managehead th, .row1 td, .row2 td {
+	padding: 5px;
+}
+
+.managehead {
+	background-color: #706B5E;
+	color: #FFFFFF;
+	font-weight: bold;
+	text-align: center;
+}
+
+.row1 {
+	background-color: #D7CFC0;
+}
+
+.row2 {
+	background-color: #BFB5A1;
+}
+
+.title, .info th {
+	background-color: #706B5E;
+	color: #FFFFFF;
+	font-weight: bold;
+	padding: 5px;
+}
+
+.info {
+	background-color: #D7CFC0;
+	border-right: 1px solid #BFB5A1;
+	border-bottom: 1px solid #BFB5A1;
+	border-left: 1px solid #BFB5A1;
+	padding: 1em;
+	margin: 0 0 0.5em 0;
+}
+
+.info table {
+	margin-top: 1em;
+}
+
+.info td {
+	text-align: center;
+	border: 1px solid #706B5E;
+	padding: 5px;
+}
+
+
+/*
+
+.boards {
+	float: left;
+	width: 50%;
+}
+
+.boardlist {
+	background-color: #D7CFC0;
+	padding: 1em;
+	border-right: 1px solid #BFB5A1;
+	border-bottom: 1px solid #BFB5A1;
+}
+
+.boardlist ul {
+	list-style-type: none;
+}
+
+.boardlist ul li {
+	text-align: center;
+	margin-bottom: 1em;
+}
+
+.boardlist ul li:last-child {
+	margin-bottom: 0;
+}
+
+.boardlist ul li a {
+	background-color: #BFB5A1;
+	color: #000000;
+	font-size: 2em;
+	text-decoration: none;
+	padding: 0.5em;
+	border: 1px solid #706B5E;
+	display: block;
+}
+
+.boardlist ul li a:hover {
+	background-color: #706B5E;
+	color: #FFFFFF;
+}
+
+.boardlist ul li .boardfolder {
+	float: left;
+}
+
+.boardlist ul li .boardtitle {
+	float: right;
+}
+
+.news {
+	float: right;
+	width: 49%;
+}
+
+*/
+
+.error {
+	color: #B20000;
+	font-size: 2em;
+	text-align: center;
+}
+
+footer {
+	text-align: center;
+	padding: 1em 0 1em 0;
+	clear: both;
+}
+
+footer img {
+	vertical-align: middle;
+}

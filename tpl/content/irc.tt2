@@ -1,19 +1,20 @@
 [% META
    title   = 'IRC-Channel'
 %]
- <div class="caption">IRC-Channel</div>
- 
- <div class="item">
-  <div class="title">
-   Chat
-  </div>
-  <div class="content">
-   <p>Unseren IRC-Channel <strong>#ernstchan</strong> findet man unter <a href="irc://irc.ernstchan.com:9999/ernstchan">irc.ernstchan.com:9999</a> (SSL, <a href="//www.hackint.org/">hackint</a>).<br />Alternativ hier der Webchat:</p>
-   <form name="cgiirclogin" method="post" action="http://evility.net/cgiirc/irc.cgi">
-    <input type="hidden" name="interface" value="ie" />
-    <input type="text" name="Nickname" placeholder="Nickname" value="" /><br />
-    <input type="text" id="channel" name="Channel" value="#ernstchan" readonly /><br />
-    <input type="submit" id="submit" value="Betreten" />
-   </form>
-  </div>
- </div>
+
+	<header class="title">Hinweis</header>
+	<section class="info">
+		<p>Unseren IRC-Channel <strong>#ernstchan</strong> findet man im Netzwerk <a href="http://www.hackint.eu/">hackint</a> unter <a href="irc://irc.ernstchan.com:9999/ernstchan">irc.ernstchan.com:9999</a> (SSL).</p>
+		<p>Um ihn zu betreten, kannst du entweder den Webchat unten oder einen eigenen Client benutzen, wie z. B. <a href="http://www.irssi.org/">Irssi</a>, <a href="http://www.hexchat.org/">HexChat</a> oder <a href="http://codeux.com/textual/">Textual</a>.</p>
+	</section>
+
+	<header class="title">Webchat</header>
+	<section class="info">
+		   <form name="cgiirclogin" method="post" action="http://evility.net/cgiirc/irc.cgi">
+		   	<input type="hidden" name="interface" value="ie" />
+		   	<input type="text" name="Nickname" placeholder="Nickname" value="" /><br />
+		   	<input type="text" id="channel" name="Channel" value="#ernstchan" readonly="readonly" /><br />
+		   	<input type="submit" id="submit" value="Verbinden" />
+		   	<p>(Bitte beachte unsere <a href="/rules">Regeln</a>.)</p>
+		   </form>
+	</section>

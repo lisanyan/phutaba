@@ -95,7 +95,7 @@ sub get_meta_markup {
 	foreach (keys %$exifData) {
 		if(!$options{$_} eq undef) {
 			if(!$$exifData{$_} eq "") {
-				$markup = $markup . "<strong>$options{$_}</strong>: $$exifData{$_}<br />";
+				$markup = $markup . "<strong>$options{$_}</strong>: $$exifData{$_}<br />\n\t\t";
 			}				
 			
 		}
@@ -962,6 +962,7 @@ sub get_xhtml_content_type {
 
 sub expand_filename {
     my ($filename) = @_;
+
     return $filename if ( $filename =~ m!^/! );
     return $filename if ( $filename =~ m!^\w+:! );
 
@@ -1085,6 +1086,10 @@ sub make_date {
     }
     elsif ( $style eq "cookie" ) {
         my ( $sec, $min, $hour, $mday, $mon, $year, $wday ) = gmtime($time);
+		# cookie date has to stay in english
+		@days   = qw(Sun Mon Tue Wed Thu Fri Sat);
+		@months = qw(Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec);
+
         return sprintf(
             "%s, %02d-%s-%04d %02d:%02d:%02d GMT",
             $days[$wday], $mday, $months[$mon], $year + 1900,
@@ -1710,6 +1715,19 @@ sub mul {
           ( $b & 65535 ) ) % 4294967296;
 }
 
+sub get_urlstring($) {
+    my ($filename) = @_;
+	$filename =~ s/ /%20/g;
+	return $filename;
+}
+
+sub get_extension($) {
+	my ($filename) = @_;
+	$filename =~ m/\.([^.]+)$/;
+	#return uc(clean_string($1));
+	return uc($1);
+}
+
 sub get_displayname($) {
 	my ($filename) = @_;
 
@@ -1718,10 +1736,10 @@ sub get_displayname($) {
 	$filename = $1;
 
 	# (.{12})    - first X characters of the file(base)name
-	# ...+       - has the basename X+3 or more characters?
+	# .....+     - has the basename X+5 or more characters?
 	# (\.[^.]+)$ - Match a dot, followed by any number of non-dots until the end
 	# output is: the first match ()->$1 a fixed string "[...]" and the extension ()->$2
-	$filename =~ s/(.{12})...+(\.[^.]+)$/$1\[...\]$2/;
+	$filename =~ s/(.{12}).....+(\.[^.]+)$/$1\[...\]$2/;
 
 	#return clean_string($filename);
 	return $filename;

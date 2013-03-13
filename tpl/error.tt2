@@ -1,1 +1,7 @@
-Fehler. ([[% error.type %]] [% error.info %])
+[% META
+   title   = 'Fehler'
+%]
+
+	<section class="error">
+		<p>Fehler: [[% error.type %]] [% error.info %]</p>
+	</section>
