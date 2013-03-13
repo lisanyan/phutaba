@@ -95,7 +95,7 @@ sub get_meta_markup {
 	foreach (keys %$exifData) {
 		if(!$options{$_} eq undef) {
 			if(!$$exifData{$_} eq "") {
-				$markup = $markup . "<strong>$options{$_}</strong>: $$exifData{$_}<br />";
+				$markup = $markup . "<strong>$options{$_}</strong>: $$exifData{$_}<br />\n\t\t";
 			}				
 			
 		}
@@ -1086,6 +1086,10 @@ sub make_date {
     }
     elsif ( $style eq "cookie" ) {
         my ( $sec, $min, $hour, $mday, $mon, $year, $wday ) = gmtime($time);
+		# cookie date has to stay in english
+		@days   = qw(Sun Mon Tue Wed Thu Fri Sat);
+		@months = qw(Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec);
+
         return sprintf(
             "%s, %02d-%s-%04d %02d:%02d:%02d GMT",
             $days[$wday], $mday, $months[$mon], $year + 1900,
@@ -1715,6 +1719,13 @@ sub get_urlstring($) {
     my ($filename) = @_;
 	$filename =~ s/ /%20/g;
 	return $filename;
+}
+
+sub get_extension($) {
+	my ($filename) = @_;
+	$filename =~ m/\.([^.]+)$/;
+	#return uc(clean_string($1));
+	return uc($1);
 }
 
 sub get_displayname($) {

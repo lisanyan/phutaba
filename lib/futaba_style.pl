@@ -107,53 +107,30 @@ use constant NORMAL_HEAD_INCLUDE => q{
   };
 
   function getHiddenHTML(tid) {
-	return "<div class='show_"+tid+"'><div class='togglethread'><a class='hide' onclick='showThread("+tid+");'><img src='/img/icons/show.png' alt='Thread "+tid+" einblenden' /> <strong>Thread "+tid+"</strong> einblenden</a></div></div>";
+	return '<div class="show_' + tid + ' togglethread">'
+		+ '<a class="hide" onclick="showThread(' + tid + ');">'
+		+ '<img src="/img/icons/show.png" alt="Thread ' + tid + ' einblenden" />'
+		+ ' <strong>Thread ' + tid + '</strong> einblenden</a></div>';
   };
 
 </if>
 /* ]]> */
 </script>
+
 <if $thread && ENABLE_WEBSOCKET_NOTIFY>
 	<script type="text/javascript">
 		var thread_id = <var $thread>;
 		var board = "<const BOARD_IDENT>";
 	</script>
 </if>
+
 <style type="text/css">
 <const ADDITIONAL_CSS>
- .caption {
-   font-size: 125%;
-   font-weight: bold;
-   padding-bottom: 15px;
- }
- .item {
-   background: #D7CFC0;
- }
- 
- .title {
-   background: #706B5E;
-   color: #FFFFFF;
-   font-weight: bold;
-   padding: 1px 1px 1px 5px;
- }
- 
- .title a, .title a:hover {
-   color: #FFFFFF;
-   text-decoration: none;
- }
- 
- .content {
-   text-align: justify;
-   padding: 5px;
-   margin-bottom: 10px;
- }
 </style>
 </head>
 
-
 <if $thread><body class="replypage"></if>
 <if !$thread><body></if>
-
 
 <if $isAdmin>
 <div id="modpanel" style="display: none">
@@ -182,6 +159,7 @@ use constant NORMAL_HEAD_INCLUDE => q{
 <p id="error" style="display: none"><span style="font-weight: bolder; color: #FF0000;">Error: <span style="font-weight: bolder" id="errordetails"></span></span></p>
 </div>
 </if>
+
 <div class="content">
 
 <script type="text/javascript" src="/js/wz_tooltip.js"></script>
@@ -257,10 +235,12 @@ use constant PAGE_TEMPLATE => compile_template(
 	<table>
 	<tbody id="postTableBody">
 		<if $isAdmin>
-			<tr><td class="postblock">## Team ##</td><td><input type="checkbox" name="as_admin" value="1" /></td></tr>
+			<tr><td class="postblock">## Team ##</td>
+			<td><label><input type="checkbox" name="as_admin" value="1" /> Administrationskennung am Post anzeigen</label></td></tr>
 		</if>
 		<if $isAdmin>
-			<tr><td class="postblock">HTML</td><td><input type="checkbox" name="no_format" value="1" /></td></tr>
+			<tr><td class="postblock">HTML</td>
+			<td><label><input type="checkbox" name="no_format" value="1" /> Kommentar nicht durch den Parser verarbeiten</label></td></tr>
 		</if>
 	<if !FORCED_ANON or $isAdmin><tr><td class="postblock"><const S_NAME></td><td><input type="text" name="field1" size="28" /></td></tr></if>
 
@@ -269,8 +249,8 @@ use constant PAGE_TEMPLATE => compile_template(
 	</tr>
 
 	<if $thread>
-	<tr><td class="postblock">Kontra</td><td><input type="checkbox" name="field2" value="sage" id="kontra" />
-	<label for="kontra">Thread ausklingen lassen</label></td>
+	<tr><td class="postblock">Kontra</td>
+	<td><label><input type="checkbox" name="field2" value="sage" /> Thread ausklingen lassen</label></td>
 	</tr>
 	</if>
 
@@ -382,6 +362,7 @@ use constant SINGLE_POST_TEMPLATE => compile_template(q{
 
 
 use constant OEKAKI_TEMPLATE => compile_template(q{
+
 <html>
 <head>
 <title><const TITLE> &raquo; <var $title></title>
@@ -424,13 +405,14 @@ body {
 
 
 use constant ERROR_HEAD_INCLUDE => q{
+
 <!DOCTYPE html>
 <html lang="de">
 <head>
-<title><const TITLE> &raquo; <var $error_page></title>
-<meta charset="<const CHARSET>" />
-<link rel="shortcut icon" href="/img/favicon.ico" />
-<link rel="stylesheet" type="text/css" href="/css/style.css" />
+	<title><const TITLE> &raquo; <var $error_page></title>
+	<meta charset="<const CHARSET>" />
+	<link rel="shortcut icon" href="/img/favicon.ico" />
+	<link rel="stylesheet" type="text/css" href="/css/style.css" />
 </head>
 
 <body>
@@ -468,10 +450,12 @@ use constant ERROR_TEMPLATE => compile_template(
 <p><var $error></p>
 </if>
 <if $banned>
-<p>Deine IP <strong><var $ip></strong> wurde wegen <strong><var $reason></strong> auf unbestimmte Zeit gesperrt. Bitte kontaktiere uns im IRC wenn du wieder posten willst!</p>
+<p>Deine IP <strong><var $ip></strong> wurde wegen <strong><var $reason></strong> auf unbestimmte Zeit gesperrt.
+ Bitte kontaktiere uns im IRC wenn du wieder posten willst!</p>
 </if>
 <if $dnsbl>
-<p>Deine IP <strong><var $ip></strong> wurde in der Blacklist <strong><var $dnsbl></strong> gelistet. Aufgrund dieser Tatsache ist es dir nicht gestattet zu posten! Bitte kontaktiere uns im IRC wenn du wieder posten willst!</p>
+<p>Deine IP <strong><var $ip></strong> wurde in der Blacklist <strong><var $dnsbl></strong> gelistet.
+ Aufgrund dieser Tatsache ist es dir nicht gestattet zu posten. Bitte kontaktiere uns im IRC wenn du wieder posten willst!</p>
 </if>
 
 } . ERROR_FOOT_INCLUDE

@@ -41,7 +41,7 @@ use constant S_ABBRIMG2 => 'und %d Dateien ';
 use constant S_ABBR_END => 'ausgeblendet.'; 
 
 use constant S_ABBRTEXT =>
-  '<p class="tldr">[<a href="%s">Post gek&uuml;rzt. Vollst&auml;ndigen Post anzeigen.</a>]</p>';
+  '<p class="tldr">[<a href="%s">Post gek&uuml;rzt - Vollst&auml;ndig anzeigen</a>]</p>';
 
 use constant S_REPDEL => ' ';    # Prints text next to S_DELPICONLY (left)
 use constant S_DELPICONLY =>
@@ -65,7 +65,7 @@ use constant S_LOCKEDTITLE => 'Thread ist geschlossen'
 
 use constant S_MANARET => 'Zur&uuml;ck'
   ;    # Returns to HTML file instead of PHP--thus no log/SQLDB update occurs
-use constant S_MANAMODE => 'Admin';   # Prints heading on top of Manager page
+use constant S_MANAMODE => 'Administration';   # Prints heading on top of Manager page
 
 use constant S_MANALOGIN => 'Login'
   ; # Defines Management Panel radio button--allows the user to view the management panel (overview of all posts)

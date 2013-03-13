@@ -12,13 +12,22 @@ ErrorDocument 404 /errors/404.shtml
 RewriteEngine on
 RewriteBase /
 
+# if the request does not exist as a directory, pass it to the template system
+RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^([A-Za-z]+)$ index.pl?p=$1 [L,NS,DPI]
 
-RewriteRule ^([^/]+)/src/([^/]+)/([^/]+)$ $1/src/$2 [L,NS,DPI]
-RewriteRule ^([^/]+)/seite/(\d+)$ $1/wakaba.pl?task=show&page=$2 [L]
-RewriteRule ^([^/]+)/page/(\d+)$ $1/wakaba.pl?task=show&page=$2 [L]
-RewriteRule ^([^/]+)/faden/(\d*)$ $1/wakaba.pl?task=show&thread=$2 [L]
-RewriteRule ^([^/]+)/thread/(\d*)$ $1/wakaba.pl?task=show&thread=$2 [L]
+# if a directory is requested, always try to use wakaba.pl as index-document
+RewriteCond %{REQUEST_FILENAME} -d
 RewriteRule ^([^/]+)/$ $1/wakaba.pl [L]
 
+# requests to banner/[board] are directed to the rotate script
 RewriteRule ^banner/([^/]+)$ banner-redir.pl?board=$1 [L]
+
+# paths for pages and threads
+RewriteRule ^([^/]+)/seite/(\d+)$ $1/wakaba.pl?task=show&page=$2 [L]
+RewriteRule ^([^/]+)/page/(\d+)$ $1/wakaba.pl?task=show&page=$2 [L]
+RewriteRule ^([^/]+)/faden/(\d+)$ $1/wakaba.pl?task=show&thread=$2 [L]
+RewriteRule ^([^/]+)/thread/(\d+)$ $1/wakaba.pl?task=show&thread=$2 [L]
+
+# allow download of original filenames
+RewriteRule ^([^/]+)/src/([^/]+)/([^/]+)$ $1/src/$2 [L,NS,DPI]

@@ -68,7 +68,7 @@ function file_input_change(max)
 	for (i = 0; i < inputs.length; i++) {
 		if (inputs[i].type != 'file') continue;
 
-		// the initial first file input is empty and does not have a span containing the filename
+		// the initial first file input does not have a span for the filename
 		if (spans.length == 0) {
 			var spacer = document.createTextNode("\n ");
 			var span = document.createElement("span");
@@ -81,28 +81,27 @@ function file_input_change(max)
 		if (filename.length == 0) {
 			empty++;
 			spans[i].innerHTML = "";
-		}
-		else
-		{
+		} else {
 			var lastIndex = filename.lastIndexOf("\\");
 			if (lastIndex >= 0) {
 				filename = filename.substring(lastIndex + 1);
 			}
 			inputs[i].style.display = "none";
-			spans[i].innerHTML = ' <a class="hide" href="javascript:void(0)" onclick="del_file_input(this,'+max+')"><img src="/img/icons/cancel.png" /></a> ' +filename+ '\n';
+			spans[i].innerHTML = ' <a class="hide" href="javascript:void(0)" onclick="del_file_input(this,' + max + ')">'
+				+ '<img src="/img/icons/cancel.png" title="Datei entfernen" /></a> ' + filename + '\n';
 		}
 
 	}
 
-	// add a new file input if there are less than "max" AND none of them is empty
+	// if there are less than "max" file inputs AND none of them is empty: add a new file input with empty span for the filename
 	if (total < max && empty == 0) {
 		var div = document.createElement("div");
 		var input = document.createElement("input");
 		var spacer = document.createTextNode("\n ");
 		var span = document.createElement("span");
 
-		input.type="file";
-		input.name="file";
+		input.type = "file";
+		input.name = "file";
 		input.setAttribute('size', '35');
 		input.onchange=function() {
 			file_input_change(max)

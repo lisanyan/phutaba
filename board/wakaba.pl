@@ -630,18 +630,17 @@ sub show_post {
         print encode_json( { "error_code" => 400 } );
     }
 	
-    print(
-            SINGLE_POST_TEMPLATE->(
-            	thread	     => $id,
+    my $output =
+		SINGLE_POST_TEMPLATE->(
+		thread	     => $id,
 		posts        => \@thread,
 		single	     => 1,
-                isAdmin      => $isAdmin,
-                admin        => $admin,
-		locked       => $thread[0]{locked},
-		
-            )
-    );
-
+		isAdmin      => $isAdmin,
+		admin        => $admin,
+		locked       => $thread[0]{locked}
+		);
+	$output =~ s/^\s+\n//mg;
+	print($output);
 }
 
 sub show_page {
@@ -829,22 +828,25 @@ sub output_page {
     $nextpage = $pages[ $page     ]{filename} if ( $page != $total );
 
     make_http_header();
-    print(
-        encode_string(
+
+	my $output =
+		encode_string(
             PAGE_TEMPLATE->(
-                postform => ( ALLOW_TEXTONLY or ALLOW_IMAGES ),
-                image_inp    => ALLOW_IMAGES,
-                textonly_inp => ( ALLOW_IMAGES and ALLOW_TEXTONLY ),
-                prevpage     => $prevpage,
-                nextpage     => $nextpage,
-                pages        => \@pages,
-                loc          => $loc,
-                threads      => \@threads,
-		        isAdmin      => $isAdmin,
-		        admin        => $adminPass
+				postform => ( ALLOW_TEXTONLY or ALLOW_IMAGES ),
+				image_inp    => ALLOW_IMAGES,
+				textonly_inp => ( ALLOW_IMAGES and ALLOW_TEXTONLY ),
+				prevpage     => $prevpage,
+				nextpage     => $nextpage,
+				pages        => \@pages,
+				loc          => $loc,
+				threads      => \@threads,
+				isAdmin      => $isAdmin,
+				admin        => $adminPass
             )
-        )
-    );
+		);
+
+	$output =~ s/^\s+\n//mg;
+	print($output);
 }
 
 # TODO: hack to support >>1 references in admin mode.
@@ -906,27 +908,27 @@ sub show_thread {
     make_error(S_NOTHREADERR) if ( !$thread[0] or $thread[0]{parent} );
 
     make_http_header();
-    print(
+	my $output = 
         encode_string(
             PAGE_TEMPLATE->(
-                thread       => $thread,
-                title        => $thread[0]{subject},
-                postform     => ( ALLOW_TEXT_REPLIES or ALLOW_IMAGE_REPLIES ),
-                image_inp    => ALLOW_IMAGE_REPLIES,
-                textonly_inp => 0,
-                dummy        => $thread[$#thread]{num},
-                loc          => $loc,
-                threads      => [ { posts => \@thread } ],
-                isAdmin      => $isAdmin, 
-                admin        => $admin,
-		        locked	     => $thread[0]{locked},
+				thread       => $thread,
+				title        => $thread[0]{subject},
+				postform     => ( ALLOW_TEXT_REPLIES or ALLOW_IMAGE_REPLIES ),
+				image_inp    => ALLOW_IMAGE_REPLIES,
+				textonly_inp => 0,
+				dummy        => $thread[$#thread]{num},
+				loc          => $loc,
+				threads      => [ { posts => \@thread } ],
+				isAdmin      => $isAdmin, 
+				admin        => $admin,
+				locked       => $thread[0]{locked}
             )
-        )
-    );
+        );
+	$output =~ s/^\s+\n//mg;
+	print($output);
 }
 
 sub add_secondary_images_to_row {
-
     #NOTE: this sub will also add a special field to the row
     # which will denote if the row contains more than 2 images.
     # this is used to determine the post style in the template # not anymore it's not
@@ -934,11 +936,28 @@ sub add_secondary_images_to_row {
     my $extImageCount      = 0;
     my $secondaryImageSize = 0;
 
-	if ( $$row{uploadname} )
-	{
+
+my @files; # this array holds all files of one post for loop-processing in the template
+@files=();
+
+	if ($$row{uploadname}) {
 		$$row{uploadname} = clean_string($$row{uploadname});
 	}
+	# temporary hack until the database has been cleaned up
+	$$row{thumbnail} = undef if ($$row{thumbnail} =~ m|^\.\./img/|);
 
+if ($$row{image}) {
+	@files[0] = {
+		'image' 		=> $$row{image},
+		'uploadname' 	=> $$row{uploadname},
+		'width' 		=> $$row{width},
+		'height' 		=> $$row{height},
+		'thumbnail' 	=> $$row{thumbnail},
+		'tn_width' 		=> $$row{tn_width},
+		'tn_height' 	=> $$row{tn_height},
+		'size' 			=> $$row{size}
+	};
+}
 
     if ( $$row{imageid_1} != 0 ) {
         my $sth2 = $dbh->prepare(
@@ -946,9 +965,12 @@ sub add_secondary_images_to_row {
           or make_error(S_SQLFAIL);
         $sth2->execute( $$row{imageid_1} );
         my $res2 = get_decoded_hashref($sth2);    #$sth2->fetchrow_hashref();
+$$res2{uploadname}=clean_string($$res2{uploadname});
+$$res2{thumbnail} = undef if ($$res2{thumbnail} =~ m|^\.\./img/|); # temporary
+push(@files, $res2);
         $$row{image1}       = $$res2{image};
-        $$row{uploadname1}  = clean_string($$res2{uploadname});
-        $$row{displaysize1} = $$res2{displaysize};
+        $$row{uploadname1}  = $$res2{uploadname};
+#        $$row{displaysize1} = $$res2{displaysize};
         $$row{width1}       = $$res2{width};
         $$row{height1}      = $$res2{height};
         $$row{thumbnail1}   = $$res2{thumbnail};
@@ -965,9 +987,12 @@ sub add_secondary_images_to_row {
           or make_error(S_SQLFAIL);
         $sth2->execute( $$row{imageid_2} );
         my $res2 = get_decoded_hashref($sth2);    #$sth2->fetchrow_hashref();
+$$res2{uploadname}=clean_string($$res2{uploadname});
+$$res2{thumbnail} = undef if ($$res2{thumbnail} =~ m|^\.\./img/|); # temporary
+push(@files, $res2);
         $$row{image2}       = $$res2{image};
-        $$row{uploadname2}  = clean_string($$res2{uploadname});
-        $$row{displaysize2} = $$res2{displaysize};
+        $$row{uploadname2}  = $$res2{uploadname};
+#        $$row{displaysize2} = $$res2{displaysize};
         $$row{width2}       = $$res2{width};
         $$row{height2}      = $$res2{height};
         $$row{thumbnail2}   = $$res2{thumbnail};
@@ -977,15 +1002,19 @@ sub add_secondary_images_to_row {
         $secondaryImageSize += $$res2{size};
         $extImageCount++;
     }
+
     if ( $$row{imageid_3} != 0 ) {
         my $sth2 = $dbh->prepare(
             "SELECT * FROM " . SQL_TABLE_IMG . " WHERE timestamp=?" )
           or make_error(S_SQLFAIL);
         $sth2->execute( $$row{imageid_3} );
         my $res2 = get_decoded_hashref($sth2);    # $sth2->fetchrow_hashref();
+$$res2{uploadname}=clean_string($$res2{uploadname});
+$$res2{thumbnail} = undef if ($$res2{thumbnail} =~ m|^\.\./img/|); # temporary
+push(@files, $res2);
         $$row{image3}       = $$res2{image};
-        $$row{uploadname3}  = clean_string($$res2{uploadname});
-        $$row{displaysize3} = $$res2{displaysize};
+        $$row{uploadname3}  = $$res2{uploadname};
+#        $$row{displaysize3} = $$res2{displaysize};
         $$row{width3}       = $$res2{width};
         $$row{height3}      = $$res2{height};
         $$row{thumbnail3}   = $$res2{thumbnail};
@@ -995,20 +1024,30 @@ sub add_secondary_images_to_row {
         $secondaryImageSize += $$res2{size};
         $extImageCount++;
     }
-    if ( $extImageCount >= 2 ) {
-        $$row{threeimages} = 1;
-    }
-    else {
-        $$row{threeimages} = 0;
-    }
-    if ( $extImageCount == 1 ) {
-        $$row{twoimages} = 1;
-    }
-    else {
-        $$row{twoimages} = 0;
-    }
+#    if ( $extImageCount >= 2 ) {
+#        $$row{threeimages} = 1;
+#    }
+#    else {
+#        $$row{threeimages} = 0;
+#    }
+#    if ( $extImageCount == 1 ) {
+#        $$row{twoimages} = 1;
+#    }
+#    else {
+#        $$row{twoimages} = 0;
+#    }
     $$row{imagecount} = $extImageCount + ( $$row{image} ? 1 : 0 );
     $$row{secondaryimagesize} = $secondaryImageSize;
+
+$row->{'files'}=[@files] if @files; # add the hashref with files to the post	
+
+if (0) {
+$Data::Dumper::Sortkeys = 1;	
+print "\n\n";
+print Dumper($row);
+print "\n-----------------------------\n";
+}
+
 }
 
 sub print_page {
@@ -1854,12 +1893,13 @@ sub process_file {
     #my ($known,$ext,$width,$height) = analyze_file($file, $uploadname);
 
     my $known = ( $width or $filetypes{$ext} );
+	my $errfname = clean_string(decode_string($uploadname, CHARSET));
 
-    make_error(S_BADFORMAT) unless ( ALLOW_UNKNOWN or $known );
-    make_error(S_BADFORMAT) if ( grep { $_ eq $ext } FORBIDDEN_EXTENSIONS );
-    make_error(S_TOOBIG) if ( MAX_IMAGE_WIDTH  and $width > MAX_IMAGE_WIDTH );
-    make_error(S_TOOBIG) if ( MAX_IMAGE_HEIGHT and $height > MAX_IMAGE_HEIGHT );
-    make_error(S_TOOBIG)
+    make_error(S_BADFORMAT . ' ('.$errfname.')') unless ( ALLOW_UNKNOWN or $known );
+    make_error(S_BADFORMAT . ' ('.$errfname.')') if ( grep { $_ eq $ext } FORBIDDEN_EXTENSIONS );
+    make_error(S_TOOBIG . ' ('.$errfname.')') if ( MAX_IMAGE_WIDTH  and $width > MAX_IMAGE_WIDTH );
+    make_error(S_TOOBIG . ' ('.$errfname.')') if ( MAX_IMAGE_HEIGHT and $height > MAX_IMAGE_HEIGHT );
+    make_error(S_TOOBIG . ' ('.$errfname.')')
       if ( MAX_IMAGE_PIXELS and $width * $height > MAX_IMAGE_PIXELS );
 
     # generate random filename - fudges the microseconds
