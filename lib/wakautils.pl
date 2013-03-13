@@ -39,16 +39,17 @@ sub get_meta {
 	@tagList = qw(-FilePermissions -ExifToolVersion -Directory -FileName -Warning -FileModifyDate) unless @tagList;	
 	$exifData = $exifTool->ImageInfo($file, @tagList) if $file;
 	foreach (keys %$exifData) {
-	    my $val = $$exifData{$_};
-	    if (ref $val eq 'ARRAY') {
-		$val = join(', ', @$val);
-	    } elsif (ref $val eq 'SCALAR') {
-		my $len = length($$val);
-		$val = "(Binary data; $len bytes)";
-	    }
-	    $data{$_} = encode_entities(decode('utf8', $val));
+		my $val = $$exifData{$_};
+			if (ref $val eq 'ARRAY') {
+				$val = join(', ', @$val);
+			} elsif (ref $val eq 'SCALAR') {
+				my $len = length($$val);
+				$val = "(Binary data; $len bytes)";
+			}
+			#$data{$_} = encode_entities(decode('utf8', $val));
+			$data{$_} = clean_string(decode('utf8', $val));
 	}
-		
+
 	return \%data;
 }
 
@@ -81,12 +82,12 @@ sub get_meta_markup {
 			"Vendor" => "Library-Hersteller",
 			"Album" => "Album",
 			"Composer" => "Komponist",
-                        "Model" => "Modell",
-                        "Maker" => "Hersteller",
-                        "OwnerName" => "Besitzer",
-                        "CanonModelID" => "Canon-eigene Modellnummer",
-                        "UserComment" => "Kommentar",
-                        "GPSPosition" => "Position",
+			"Model" => "Modell",
+			"Maker" => "Hersteller",
+			"OwnerName" => "Besitzer",
+			"CanonModelID" => "Canon-eigene Modellnummer",
+			"UserComment" => "Kommentar",
+			"GPSPosition" => "Position",
 	);
 	foreach (keys %options) {
 		push(@metaOptions, $_);
@@ -295,26 +296,28 @@ sub describe_allowed {
 }
 
 sub do_bbcode {
-	my ( $text, $handler ) = @_;
-	my ( $output, @opentags );
+	my ($text, $handler) = @_;
+	my ($output, @opentags);
 
-	my %html = (	'i'			=> ['<em>', '</em>'],
-					'b'			=> ['<strong>', '</strong>'],
-					'u'			=> ['<u>', '</u>'],
-					's'			=> ['<s>', '</s>'],
-					'code'		=> ['<code>', '</code>'],
-					'spoiler'	=> ['<span class="spoiler">', '</span>'],
-					'quote'		=> ['<span class="quote">', '</span>']	);
+	my %html = (
+		'i'         => ['<em>', '</em>'],
+		'b'         => ['<strong>', '</strong>'],
+		'u'         => ['<u>', '</u>'],
+		's'         => ['<s>', '</s>'],
+		'code'      => ['<code>', '</code>'],
+		'spoiler'   => ['<span class="spoiler">', '</span>'],
+		'quote'     => ['<span class="quote">', '</span>']
+	);
 
 	my @bbtags = keys %html;
 
-	# this check can be moved to wakaba.pl: sub format_comment()
-	return do_wakabamark( $text, $handler ) if ( !detect_bbcode( $text, @bbtags ) );
+	# what if wakabamark was disabled in the config?
+	return do_wakabamark($text, $handler) if (!detect_bbcode($text, @bbtags));
 
 	my @lines = split /(?:\r\n|\n|\r)/,$text;
 	my $findtags = join '|',@bbtags;
 
-	while ( @lines )
+	while (@lines)
 	{
 
 		# do not allow more than one consecutive empty line

@@ -23,7 +23,7 @@ RewriteRule ^([^/]+)/$ $1/wakaba.pl [L]
 # requests to banner/[board] are directed to the rotate script
 RewriteRule ^banner/([^/]+)$ banner-redir.pl?board=$1 [L]
 
-# paths for pages and threads
+# rest-paths for pages and threads
 RewriteRule ^([^/]+)/seite/(\d+)$ $1/wakaba.pl?task=show&page=$2 [L]
 RewriteRule ^([^/]+)/page/(\d+)$ $1/wakaba.pl?task=show&page=$2 [L]
 RewriteRule ^([^/]+)/faden/(\d+)$ $1/wakaba.pl?task=show&thread=$2 [L]

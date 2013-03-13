@@ -1662,13 +1662,15 @@ sub format_comment {
         return $line;
     };
 
-    if ( ENABLE_WAKABAMARK && ENABLE_BBCODE ) {
-        make_error("only activate either BBCODE or WAKABAMARK");
-    }
 
-    if (ENABLE_WAKABAMARK) { $comment = do_wakabamark( $comment, $handler ) }
-    elsif (ENABLE_BBCODE) { $comment = do_bbcode( $comment, $handler ) }
-    else { $comment = "<p>" . simple_format( $comment, $handler ) . "</p>" }
+	if (ENABLE_WAKABAMARK) {
+		$comment = do_wakabamark($comment, $handler);
+	} elsif (ENABLE_BBCODE) {
+		# do_bbcode() will always try to apply (at least some) wakabamark
+		$comment = do_bbcode($comment, $handler);
+	} else {
+		$comment = "<p>" . simple_format($comment, $handler) . "</p>";
+	}
 
     # fix <blockquote> styles for old stylesheets
     $comment =~ s/<blockquote>/<blockquote class="unkfunc">/g;
