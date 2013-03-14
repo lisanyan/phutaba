@@ -73,6 +73,7 @@ a:active {
 ul.menu {
 	position: absolute;
 	top: 4px;
+	margin-left: 0;
 	list-style-type: none;
 }
 
@@ -308,7 +309,7 @@ ul.rules {
 	margin-left: 1.6em;
 }
 
-blockquote.unkfunc {
+blockquote.unkfunc, span.quote {
 	color: #B55636;
 	margin: 0;
 }
@@ -331,7 +332,7 @@ blockquote.unkfunc {
 	margin-top: 0.8em;
 }
 
-.ban {
+.ban, .user_banned {
 	color: #B20000;
 	text-transform: uppercase;
 }
@@ -429,64 +430,6 @@ input[type='password'] {
 	border: 1px solid #706B5E;
 	padding: 5px;
 }
-
-
-/*
-
-.boards {
-	float: left;
-	width: 50%;
-}
-
-.boardlist {
-	background-color: #D7CFC0;
-	padding: 1em;
-	border-right: 1px solid #BFB5A1;
-	border-bottom: 1px solid #BFB5A1;
-}
-
-.boardlist ul {
-	list-style-type: none;
-}
-
-.boardlist ul li {
-	text-align: center;
-	margin-bottom: 1em;
-}
-
-.boardlist ul li:last-child {
-	margin-bottom: 0;
-}
-
-.boardlist ul li a {
-	background-color: #BFB5A1;
-	color: #000000;
-	font-size: 2em;
-	text-decoration: none;
-	padding: 0.5em;
-	border: 1px solid #706B5E;
-	display: block;
-}
-
-.boardlist ul li a:hover {
-	background-color: #706B5E;
-	color: #FFFFFF;
-}
-
-.boardlist ul li .boardfolder {
-	float: left;
-}
-
-.boardlist ul li .boardtitle {
-	float: right;
-}
-
-.news {
-	float: right;
-	width: 49%;
-}
-
-*/
 
 .error {
 	color: #B20000;
