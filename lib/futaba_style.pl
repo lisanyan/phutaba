@@ -203,6 +203,7 @@ use constant NORMAL_FOOT_INCLUDE => q{
 	<p>Powered by <img src="/img/phutaba_icon.png" alt="" /> <strong>Phutaba</strong>.</p>
 	<p><em>Report illegal material to <a href="mailto:post-abuse@ernstchan.com">post-abuse@ernstchan.com</a>.</em></p>
 </footer>
+} . include("../tpl/content/boardnav_bottom.html") . q{
 </div>
 </body>
 </html>
@@ -250,7 +251,7 @@ use constant PAGE_TEMPLATE => compile_template(
 
 	<if $thread>
 	<tr><td class="postblock">Kontra</td>
-	<td><label><input type="checkbox" name="field2" value="sage" /> Thread ausklingen lassen</label></td>
+	<td><label><input type="checkbox" name="field2" value="sage" /> Thread nicht sto&szlig;en</label></td>
 	</tr>
 	</if>
 

@@ -1464,16 +1464,16 @@ sub post_stuff {
 	if(!$admin)
 	{
 	    # forward back to the main page
-	    make_http_forward( "/" . encode('utf-8', BOARD_IDENT) . "/" ) if ( $parent eq '0' );
-	    make_http_forward( "/" . encode('utf-8', BOARD_IDENT) . "/thread/" . $parent) if ( $c_gb2 =~ /thread/i );
-	    make_http_forward( "/" . encode('utf-8', BOARD_IDENT) . "/" );
+	    make_http_forward("/" . BOARD_IDENT . "/") if ($parent eq '0');
+	    make_http_forward("/" . BOARD_IDENT . "/thread/" . $parent) if ($c_gb2 =~ /thread/i);
+	    make_http_forward("/" . BOARD_IDENT . "/");
 	}
 	else
 	{
 		# forward back to moderation page
-	    make_http_forward( encode('utf-8', HTML_SELF) . "?task=show&amp;page=1&amp;admin=$admin") if ( $parent eq '0' );
-	    make_http_forward( encode('utf-8', HTML_SELF) . "?task=show&amp;thread=" . $parent . "&amp;admin=$admin") if ( $c_gb2 =~ /thread/i );
-	    make_http_forward( encode('utf-8', HTML_SELF) . "?task=show&amp;page=1&amp;admin=$admin");
+	    make_http_forward( encode('utf-8', HTML_SELF) . "?task=show&page=1&admin=$admin") if ( $parent eq '0' );
+	    make_http_forward( encode('utf-8', HTML_SELF) . "?task=show&thread=" . $parent . "&admin=$admin") if ( $c_gb2 =~ /thread/i );
+	    make_http_forward( encode('utf-8', HTML_SELF) . "?task=show&page=1&admin=$admin");
 	}
 }
 
@@ -2090,8 +2090,8 @@ sub delete_stuff {
     if ($admin) {
         make_http_forward( get_script_name() . "?admin=$admin&task=mpanel");
     } elsif ( $noko == 1 and $parent ) {
-		make_http_forward( "/" . encode('utf-8', BOARD_IDENT ) . "/thread/" . $parent);
-	} else { make_http_forward( "/" . encode('utf-8', BOARD_IDENT) . "/"); }
+		make_http_forward("/" . BOARD_IDENT . "/thread/" . $parent);
+	} else { make_http_forward("/" . BOARD_IDENT "/"); }
 }
 
 sub make_locked {
