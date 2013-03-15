@@ -306,7 +306,7 @@ sub do_bbcode {
 		's'         => ['<s>', '</s>'],
 		'code'      => ['<code>', '</code>'],
 		'spoiler'   => ['<span class="spoiler">', '</span>'],
-		'quote'     => ['<span class="quote">', '</span>']
+		'quote'     => ['<blockquote class="unkfunc">', '</blockquote>']
 	);
 
 	my @bbtags = keys %html;
@@ -478,7 +478,7 @@ sub do_wakabamark($;$$) {
                 shift @lines;
             }
             $res .=
-              '<span class="quote">' . do_spans( $handler, @quote ) . "</span><br />";
+              '<blockquote class="unkfunc">' . do_spans( $handler, @quote ) . "</blockquote><br />";
 
             #while($lines[0]=~/^&gt;(.*)/) { push @quote,$1; shift @lines; }
             #$res.="<blockquote>".do_blocks($handler,@quote)."</blockquote>";

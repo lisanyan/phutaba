@@ -153,13 +153,13 @@ use constant FILETYPES => (
 	png => '.',
 	bmp => '.',
 	psd => '.',
-	svg => '../img/svg.png',
-	rar => '../img/rar.png',
-	zip => '../img/zip.png',
-  mp3 => '../img/mp3.png',
-  ogg => '../img/ogg.png',
-  wma => '../img/wma.png',
-  '7z' => '../img/7z.png',
+	svg => '.',
+	rar => '.',
+	zip => '.',
+	mp3 => '.',
+	ogg => '.',
+	wma => '.',
+	'7z' => '.',
 );
 use constant FILESIZES => ();
 

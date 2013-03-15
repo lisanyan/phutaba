@@ -1655,8 +1655,8 @@ sub format_comment {
 
         $line =~ s!&gtgt;([0-9]+)!
 			my $res=get_post($1);
-			if($res) { '<a href="'.decode("utf-8", get_reply_link($$res{num},$$res{parent})).'" onclick="highlight('.$1.')">&gt;&gt;'.$1.'</a>' }
-			else { "<del>&gt;&gt;$1</del>"; }
+			if($res) { '<span class="backreflink"><a href="'.decode("utf-8", get_reply_link($$res{num},$$res{parent})).'" onclick="highlight('.$1.')">&gt;&gt;'.$1.'</a></span>' }
+			else { '<span class="backreflink"><del>&gt;&gt;$1</del></span>'; }
 		!ge;
 
         return $line;
