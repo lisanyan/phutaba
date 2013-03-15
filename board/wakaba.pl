@@ -2091,7 +2091,7 @@ sub delete_stuff {
         make_http_forward( get_script_name() . "?admin=$admin&task=mpanel");
     } elsif ( $noko == 1 and $parent ) {
 		make_http_forward("/" . BOARD_IDENT . "/thread/" . $parent);
-	} else { make_http_forward("/" . BOARD_IDENT "/"); }
+	} else { make_http_forward("/" . BOARD_IDENT . "/"); }
 }
 
 sub make_locked {

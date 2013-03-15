@@ -213,6 +213,15 @@ ul.rules {
 	color: #000000;
 }
 
+.thread {
+	overflow: hidden;
+}
+
+.thread_reply {
+	float: left;
+	clear: both;
+}
+
 .post {
 	background-color: #D7CFC0;
 	border-right: 1px solid #BFB5A1;
