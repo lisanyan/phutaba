@@ -14,7 +14,7 @@ html, body, div, span, applet, object, iframe, h1, h2, h3, h4, h5, h6, p, blockq
 	outline: 0;
 }
 
-strong, b, ul.menu a, .boardname, .caption, .subject, .postblock, .postername, .teampost, .sage, .ban, .title, .info th, .dellist {
+strong, b, ul.menu a, ul.menu_bottom a, .boardname, .caption, .subject, .postblock, .postername, .teampost, .sage, .ban, .user_banned, .title, .info th, .dellist {
 	font-weight: bold;
 }
 
@@ -77,11 +77,17 @@ ul.menu {
 	list-style-type: none;
 }
 
+ul.menu_bottom {
+	float: left;
+	margin-left: 0;
+	list-style-type: none;
+}
+
 ul.right {
 	right: 1em;
 }
 
-ul.menu li, ul.pagelist li {
+ul.menu li, ul.menu_bottom li, ul.pagelist li {
 	display: inline;
 }
 
@@ -91,21 +97,35 @@ ul.menu a {
 	text-decoration: none;
 	border: 1px solid #706B5E;
 	padding: 5px;
-	border-bottom-right-radius: 3px;
-	border-bottom-left-radius: 3px;
-	-moz-border-radius-bottomright: 3px;
-	-moz-border-radius-bottomleft: 3px;
 	-webkit-border-bottom-right-radius: 3px;
 	-webkit-border-bottom-left-radius: 3px;
+	-moz-border-radius-bottomright: 3px;
+	-moz-border-radius-bottomleft: 3px;
+	border-bottom-right-radius: 3px;
+	border-bottom-left-radius: 3px;
 }
 
-ul.menu a:hover {
+ul.menu_bottom a {
+	background-color: #D7CFC0;
+	color: #000000;
+	text-decoration: none;
+	border: 1px solid #706B5E;
+	padding: 5px;
+	-webkit-border-top-left-radius: 3px;
+	-webkit-border-top-right-radius: 3px;
+	-moz-border-radius-topleft: 3px;
+	-moz-border-radius-topright: 3px;
+	border-top-left-radius: 3px;
+	border-top-right-radius: 3px;
+}
+
+ul.menu a:hover, ul.menu_bottom a:hover {
 	box-shadow: 1px 1px 2px #999999;
 	-moz-box-shadow: 1px 1px 2px #999999;
 	-webkit-box-shadow: 1px 1px 2px #999999;
 }
 
-ul.menu a:active {
+ul.menu a:active, ul.menu_bottom a:active {
 	top: 0;
 }
 
@@ -193,11 +213,20 @@ ul.rules {
 	color: #000000;
 }
 
+.thread {
+	overflow: hidden;
+}
+
+.thread_reply {
+	float: left;
+	clear: both;
+}
+
 .post {
 	background-color: #D7CFC0;
 	border-right: 1px solid #BFB5A1;
 	border-bottom: 1px solid #BFB5A1;
-	padding: 0.5em 1em 1em 0.5em;
+	padding: 0.5em;
 	margin: 0 0 0.5em 2em;
 	overflow: hidden;
 }
@@ -238,7 +267,7 @@ ul.rules {
 }
 
 .post_head {
-	margin-bottom: 0.5em;
+	margin-bottom: 1em;
 }
 
 .postername {
@@ -270,7 +299,7 @@ ul.rules {
 .file {
 	background-color: #BFB5A1;
 	text-align: center;
-	margin: 0 0 0.5em 0.5em;
+	margin: 0.5em;
 	float: left;
 	display: block;
 	vertical-align: top;
@@ -299,7 +328,7 @@ ul.rules {
 }
 
 .text {
-	margin-left: 2em;
+	margin: 0 0 0.5em 2em;
 	word-wrap: break-word;
 	display: inline-block;
 	vertical-align: top;
@@ -328,8 +357,8 @@ blockquote.unkfunc, span.quote {
 	color: #FFFFFF;
 }
 
-.ban, .tldr {
-	margin-top: 0.8em;
+.ban, .tldr, .user_banned {
+	margin-top: 1em;
 }
 
 .ban, .user_banned {
