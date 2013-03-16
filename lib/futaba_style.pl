@@ -34,6 +34,14 @@ use constant NORMAL_HEAD_INCLUDE => q{
 	});
 	setTimeout($j.unblockUI, 5000);
     });
+    <if $thread>
+    $j('span.reflink a').click(function (ev) {
+      var a = ev.target,
+          sel = window.getSelection().toString();
+      ev.preventDefault();
+      insert('>>' + a.href.match(/#i(\d+)$/)[1] + '\n' + (sel ? '>' + sel.replace(/\n/g, '\n>') + '\n' : ''));
+    });
+    </if>
     <if ENABLE_HIDE_THREADS><if !$thread>hideThreads();</if></if>
   });
 
