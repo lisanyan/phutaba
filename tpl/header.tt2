@@ -11,7 +11,15 @@
 <body>
 <div class="content">
 
-[% INCLUDE content/boardnav.html %]
+<nav>
+	<ul class="menu">
+[% INCLUDE nav_boards.html %]
+	</ul>
+
+	<ul class="menu right">
+[% INCLUDE nav_pages.html %]
+	</ul>
+</nav>
 
 <header>
 	<div class="header">

@@ -47,7 +47,7 @@ sub get_meta {
 				$val = "(Binary data; $len bytes)";
 			}
 			#$data{$_} = encode_entities(decode('utf8', $val));
-			$data{$_} = clean_string(decode('utf8', $val));
+			$data{$_} = clean_string($val);
 	}
 
 	return \%data;
@@ -402,7 +402,9 @@ sub do_bbcode {
 		}
 
 		# processing of the current line is done. insert a break if not at the beginning or end of the comment.
-		$output .= '<br />' if ( $output and @lines );
+		# and if not at the end of a </blockquote> because it already breaks the line.
+		$output .= '<br />' if ($output and @lines and $output !~ /<\/blockquote>$/);
+		$output .= ' ' if ($output =~ /<\/blockquote>$/);
 	}
 
 	# close any open tags
@@ -478,7 +480,7 @@ sub do_wakabamark($;$$) {
                 shift @lines;
             }
             $res .=
-              '<blockquote class="unkfunc">' . do_spans( $handler, @quote ) . "</blockquote><br />";
+              '<blockquote class="unkfunc">' . do_spans( $handler, @quote ) . "</blockquote>";
 
             #while($lines[0]=~/^&gt;(.*)/) { push @quote,$1; shift @lines; }
             #$res.="<blockquote>".do_blocks($handler,@quote)."</blockquote>";
