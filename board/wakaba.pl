@@ -1338,6 +1338,7 @@ sub post_stuff {
         ) or make_error(S_SQLFAIL);
     }
 
+    $numip = "0" if (ANONYMIZE_IP_ADDRESSES);
     # finally, write to the database
     my $sth = $dbh->prepare(
         "INSERT INTO " . SQL_TABLE . "

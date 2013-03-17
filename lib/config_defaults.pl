@@ -30,6 +30,8 @@ BEGIN {
     eval "use constant HOME => '../'"           unless ( defined &HOME );
     eval "use constant IMAGES_PER_PAGE => 10"
       unless ( defined &IMAGES_PER_PAGE );
+    eval "use constant ANONYMIZE_IP_ADDRESSES => 0"
+      unless ( defined &ANONYMIZE_IP_ADDRESSES );
     eval "use constant REPLIES_PER_THREAD => 10"
       unless ( defined &REPLIES_PER_THREAD );
     eval "use constant IMAGE_REPLIES_PER_THREAD => 0"
