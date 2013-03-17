@@ -53,6 +53,7 @@ use constant S_PREV    => 'Zur&uuml;ck';    # Defines previous button
 use constant S_FIRSTPG => 'Zur&uuml;ck';    # Defines previous button
 use constant S_NEXT    => 'Vor';            # Defines next button
 use constant S_LASTPG  => 'Vor';            # Defines next button
+use constant S_TOP     => 'Nach oben';
 
 use constant S_WEEKDAYS => ( 'So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa' )
   ;                                         # Defines abbreviated weekday names.

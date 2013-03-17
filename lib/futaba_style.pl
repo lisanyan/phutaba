@@ -346,8 +346,8 @@ use constant PAGE_TEMPLATE => compile_template(
 	<nav>
 		<ul class="pagelist">
 			<li>
-				<if $prevpage><a href="<var $prevpage>"><const S_PREV></a></if>
-				<if !$prevpage><const S_PREV></if>
+				<if $prevpage>[<a href="<var $prevpage>"><const S_PREV></a>]</if>
+				<if !$prevpage>[<const S_PREV>]</if>
 			</li>
 		<loop $pages>
 			<li>
@@ -356,9 +356,19 @@ use constant PAGE_TEMPLATE => compile_template(
 			</li>
 		</loop>
 			<li>
-				<if $nextpage><a href="<var $nextpage>"><const S_NEXT></a></if>
-				<if !$nextpage><const S_NEXT></if>
+				<if $nextpage>[<a href="<var $nextpage>"><const S_NEXT></a>]</if>
+				<if !$nextpage>[<const S_NEXT>]</if>
 			</li>
+		</ul>
+		<ul class="pagelist">
+			<li>[<a href="#top"><const S_TOP></a>]</li>
+		</ul>
+	</nav>
+</if>
+<if $thread>
+	<nav>
+		<ul class="pagelist">
+			<li>[<a href="#top"><const S_TOP></a>]</li>
 		</ul>
 	</nav>
 </if>
