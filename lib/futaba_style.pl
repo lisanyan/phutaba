@@ -320,13 +320,19 @@ use constant PAGE_TEMPLATE => compile_template(
 
 <loop $threads>
 	<hr />
-	<div<if !$thread> id="thread_<var $num>"</if>>
+	<if !$thread>
+		<div id="thread_<var $num>">
+	</if>
+
+	<if $thread>
+		<div id="thread_<var $thread>">
+	</if>
 
 		<loop $posts>
 			} . include("../lib/templates/post_view.inc") . q{
 		</loop>
 
-	</div>
+		</div>
 	<p style="clear: both;"></p>
 </loop>
 
