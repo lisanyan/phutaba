@@ -36,7 +36,7 @@ use constant NORMAL_HEAD_INCLUDE => q{
     });
 
 	<if $thread>
-	$j('span.reflink a').click(function (ev) {
+	$j('#delform').delegate('span.reflink a', 'click', function (ev) {
 		var a = ev.target,
 			sel = window.getSelection().toString();
 		ev.preventDefault();
