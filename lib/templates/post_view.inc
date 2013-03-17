@@ -55,18 +55,18 @@
 	<span class="reflink">
                 <if !$parent>
                         <if $isAdmin> 
-                                <a href="<var decode('utf-8', get_reply_link($num,0,$admin))>#i<var $num>">Nr. <var $num></a>
+                                <a href="<var get_reply_link($num,0,$admin)>#i<var $num>">Nr. <var $num></a>
                         </if>
                         <if !$isAdmin>
-                                <a href="<var decode('utf-8', get_reply_link($num,0))>#i<var $num>">Nr. <var $num></a>
+                                <a href="<var get_reply_link($num,0)>#i<var $num>">Nr. <var $num></a>
                         </if>
                 </if>			
                 <if $parent>
                         <if $isAdmin>
-                                <a href="<var decode('utf-8', get_reply_link($parent,0,$admin))>#i<var $num>">Nr. <var $num></a>
+                                <a href="<var get_reply_link($parent,0,$admin)>#i<var $num>">Nr. <var $num></a>
                         </if>
                         <if !$isAdmin>
-                                <a href="<var decode('utf-8', get_reply_link($parent,0))>#i<var $num>">Nr. <var $num></a>
+                                <a href="<var get_reply_link($parent,0)>#i<var $num>">Nr. <var $num></a>
                         </if>
                 </if>
 	</span>

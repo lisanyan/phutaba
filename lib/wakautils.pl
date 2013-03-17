@@ -623,7 +623,7 @@ sub compile_template {
     my $sub =
         eval 'no strict; sub { '
       . 'my $port=$ENV{SERVER_PORT}==80?"":":$ENV{SERVER_PORT}";'
-      . 'my $self=$ENV{SCRIPT_NAME};'
+      . 'my $self=decode("utf-8", $ENV{SCRIPT_NAME});'
       . 'my $absolute_self="http://$ENV{SERVER_NAME}$port$ENV{SCRIPT_NAME}";'
       . 'my ($path)=$ENV{SCRIPT_NAME}=~m!^(.*/)[^/]+$!;'
       . 'my $absolute_path="http://$ENV{SERVER_NAME}$port$path";'
@@ -972,7 +972,7 @@ sub expand_filename {
     return $filename if ( $filename =~ m!^\w+:! );
 
     my ($self_path) = $ENV{SCRIPT_NAME} =~ m!^(.*/)[^/]+$!;
-    return $self_path . $filename;
+    return decode('utf-8', $self_path) . $filename;
 }
 
 #
