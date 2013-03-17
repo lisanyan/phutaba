@@ -226,7 +226,6 @@ ul.rules {
 	background-color: #D7CFC0;
 	border-right: 1px solid #BFB5A1;
 	border-bottom: 1px solid #BFB5A1;
-	padding: 0.5em;
 	margin: 0 0 0.5em 2em;
 	overflow: hidden;
 }
@@ -267,7 +266,12 @@ ul.rules {
 }
 
 .post_head {
-	margin-bottom: 1em;
+	padding: 0.4em 0.4em 0.1em 0.4em;
+}
+
+.subject {
+	color: #B20000;
+	font-size: 1.2em;
 }
 
 .postername {
@@ -296,10 +300,14 @@ ul.rules {
 	color: #B20000;
 }
 
+.post_body {
+	padding: 1.2em 0 0 1.2em;
+}
+
 .file {
 	background-color: #BFB5A1;
 	text-align: center;
-	margin: 0.5em;
+	margin: 0 1.2em 1.2em 0;
 	float: left;
 	display: block;
 	vertical-align: top;
@@ -328,7 +336,7 @@ ul.rules {
 }
 
 .text {
-	margin: 0 0 0.5em 2em;
+	margin: 0 2em 1.2em 1.2em;
 	word-wrap: break-word;
 	display: inline-block;
 	vertical-align: top;

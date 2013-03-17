@@ -29,10 +29,7 @@ use constant S_REPLY   => 'Antworten';    # Prints text for reply link
 use constant S_OLD => 'Dieses Thema ist kurz vor der L&ouml;schung.'
   ; # Prints text to be displayed before post is marked for deletion, see: retention
 
-use constant S_ABBR =>
-  '%d Post(s) ausgeblendet.';  # Prints text to be shown when replies are hidden
-use constant S_ABBRIMG => '%d Post(s) und %d Datei(en) ausgeblendet.'
-  ;    # Prints text to be shown when replies and images are hidden
+use constant S_HIDE => 'Thread %d ausblenden';
 
 use constant S_ABBR1 => '1 Post ';				# Prints text to be shown when replies are hidden
 use constant S_ABBR2 => '%d Posts ';
@@ -41,7 +38,9 @@ use constant S_ABBRIMG2 => 'und %d Dateien ';
 use constant S_ABBR_END => 'ausgeblendet.'; 
 
 use constant S_ABBRTEXT =>
-  '<p class="tldr">[<a href="%s">Post gek&uuml;rzt - Vollst&auml;ndig anzeigen</a>]</p>';
+  '<p class="tldr">[<a href="%s">Post gek&uuml;rzt; Vollst&auml;ndig anzeigen</a>]</p>';
+
+use constant S_BANNED  => '<p class="ban">(User wurde f&uuml;r diesen Post gesperrt)</p>';
 
 use constant S_REPDEL => ' ';    # Prints text next to S_DELPICONLY (left)
 use constant S_DELPICONLY =>
@@ -91,6 +90,25 @@ use constant S_MANASUB =>
 use constant S_NOTAGS => '<p>HTML-Tags sind m&ouml;glich. Kein WakabaMark.</p>'
   ;               # Prints message on Management Board
 
+use constant S_POSTASADMIN => 'Administrationskennung am Post anzeigen';
+use constant S_NOTAGS2 => 'Kommentar nicht durch den Parser verarbeiten';
+use constant S_MPSETSAGE => 'Setze Systemkontra';
+use constant S_MPUNSETSAGE => 'L&ouml;se Systemkontra';
+
+use constant S_BTNEWTHREAD => 'Neuen Thread erstellen';
+use constant S_BTREPLY => 'Antworten auf';
+use constant S_SAGE => 'Kontra';
+use constant S_SAGEDESC => 'Thread nicht sto&szlig;en';
+use constant S_IMGEXPAND => 'Textfeld vergr&ouml;&szlig;ern';
+use constant S_NOKO => 'Gehe zur&uuml;ck';
+use constant S_NOKOOFF => 'Zum Board';
+use constant S_NOKOON => 'Zum Thread';
+
+use constant S_THREADLOCKED => '<strong>Thread %s</strong> ist geschlossen. Es kann nicht geantwortet werden.';
+use constant S_FILEINFO => 'Dateiinformationen';
+use constant S_FILE_DELETED => 'Datei gel&ouml;scht';
+
+
 use constant S_MPDELETEIP => 'Alle l&ouml;schen';
 use constant S_MPDELETE =>
   'L&ouml;schen';    # Defines for deletion button in Management Panel
@@ -98,8 +116,8 @@ use constant S_MPDELFILE  => 'Datei(en) l&ouml;schen';
 use constant S_MPARCHIVE  => 'Archiv';
 use constant S_MPSTICKY   => 'Sticky setzen';
 use constant S_MPUNSTICKY => 'Sticky entfernen';
-use constant S_MPLOCK     => 'Schlie&szlig;en';
-use constant S_MPUNLOCK   => '&Ouml;ffnen';
+use constant S_MPLOCK     => 'Thread schlie&szlig;en';
+use constant S_MPUNLOCK   => 'Thread &ouml;ffnen';
 use constant S_MPRESET =>
   'Resetten';        # Defines name for field reset button in Management Panel
 use constant S_MPONLYPIC =>
@@ -179,7 +197,9 @@ use constant S_NOTEXT => 'Fehler: Keinen Text eingegeben.'
 use constant S_TOOLONG => 'Fehler: Zu viele Zeichen im Kommentar.'
   ;    # Returns error for too many characters in a given field
 use constant S_NOTALLOWED =>
-  'Fehler: 403 Forbidden.';    # Returns error for non-allowed post types
+  'Fehler: Das Post-Formular wurde falsch ausgef&uuml;llt.';    # Returns error for non-allowed post types
+use constant S_NONEWTHREADS =>
+  'Fehler: Neue Threads d&uuml;rfen nicht er&ouml;ffnet werden.';
 use constant S_UNUSUAL => 'Fehler: WAS GEHT DENN MIT DIR AB?'
   ;    # Returns error for abnormal reply? (this is a mystery!)
 use constant S_BADHOST => 'Fehler: IP-Adresse ist gesperrt.'
@@ -187,11 +207,11 @@ use constant S_BADHOST => 'Fehler: IP-Adresse ist gesperrt.'
 use constant S_BADHOSTPROXY => 'Fehler: Proxy ist gesperrt.'
   ;    # Returns error for banned proxy ($badip string)
 use constant S_RENZOKU =>
-  'Fehler: Flood detektiert.';    # Returns error for $sec/post spam filter
+  'Fehler: Zu viele Posts abgesetzt.';    # Returns error for $sec/post spam filter
 use constant S_RENZOKU2 =>
-  'Fehler: Flood detektiert.';    # Returns error for $sec/upload spam filter
-use constant S_RENZOKU3 => 'Fehler: Flood detektiert.'
-  ;    # Returns error for $sec/similar posts spam filter.
+  'Fehler: Zu viele Posts abgesetzt.';    # Returns error for $sec/upload spam filter
+use constant S_RENZOKU3 =>
+  'Fehler: Zu viele Posts abgesetzt.';    # Returns error for $sec/similar posts spam filter.
 use constant S_PROXY =>
   'Fehler: Ich mag keine Proxys.';    # Returns error for proxy detection.
 use constant S_DUPE =>

@@ -1039,15 +1039,7 @@ push(@files, $res2);
     $$row{imagecount} = $extImageCount + ( $$row{image} ? 1 : 0 );
     $$row{secondaryimagesize} = $secondaryImageSize;
 
-$row->{'files'}=[@files] if @files; # add the hashref with files to the post	
-
-if (0) {
-$Data::Dumper::Sortkeys = 1;	
-print "\n\n";
-print Dumper($row);
-print "\n-----------------------------\n";
-}
-
+	$row->{'files'}=[@files] if @files; # add the hashref with files to the post	
 }
 
 sub print_page {
@@ -1176,7 +1168,7 @@ sub post_stuff {
         else {
             make_error(S_NOTALLOWED) if ( $file  and !ALLOW_IMAGES );
             make_error(S_NOTALLOWED) if ( !$file and !ALLOW_TEXTONLY );
-            make_error(S_NOTALLOWED) if (DISABLE_NEW_THREADS);
+            make_error(S_NONEWTHREADS) if (DISABLE_NEW_THREADS);
         }
     }
 
@@ -1464,9 +1456,9 @@ sub post_stuff {
 	if(!$admin)
 	{
 	    # forward back to the main page
-	    make_http_forward("/" . BOARD_IDENT . "/") if ($parent eq '0');
-	    make_http_forward("/" . BOARD_IDENT . "/thread/" . $parent) if ($c_gb2 =~ /thread/i);
-	    make_http_forward("/" . BOARD_IDENT . "/");
+	    make_http_forward("/" . encode('utf-8', BOARD_IDENT) . "/") if ($parent eq '0');
+	    make_http_forward("thread/" . $parent) if ($c_gb2 =~ /thread/i);
+	    make_http_forward("/" . encode('utf-8', BOARD_IDENT) . "/");
 	}
 	else
 	{
@@ -1655,7 +1647,7 @@ sub format_comment {
 
         $line =~ s!&gtgt;([0-9]+)!
 			my $res=get_post($1);
-			if($res) { '<span class="backreflink"><a href="'.decode("utf-8", get_reply_link($$res{num},$$res{parent})).'" onclick="highlight('.$1.')">&gt;&gt;'.$1.'</a></span>' }
+			if($res) { '<span class="backreflink"><a href="'.get_reply_link($$res{num},$$res{parent}).'" onclick="highlight('.$1.')">&gt;&gt;'.$1.'</a></span>' }
 			else { '<span class="backreflink"><del>&gt;&gt;$1</del></span>'; }
 		!ge;
 
@@ -2090,8 +2082,8 @@ sub delete_stuff {
     if ($admin) {
         make_http_forward( get_script_name() . "?admin=$admin&task=mpanel");
     } elsif ( $noko == 1 and $parent ) {
-		make_http_forward("/" . BOARD_IDENT . "/thread/" . $parent);
-	} else { make_http_forward("/" . BOARD_IDENT . "/"); }
+		make_http_forward("thread/" . $parent);
+	} else { make_http_forward("/" . encode('utf-8', BOARD_IDENT) . "/"); }
 }
 
 sub make_locked {
@@ -2460,9 +2452,9 @@ sub do_logout {
 }
 
 sub add_admin_entry {
-    my ($blame) = "<p class=\"ban\">(User wurde f&uuml;r diesen Post gesperrt)</p>";
-    my ( $admin, $type, $comment, $ival1, $ival2, $sval1, $postid ) = @_;
-    my ( $sth, $row, $oldcomment, $newcomment, $threadid, $utf8_encoded_json_text);
+    my ($blame) = S_BANNED;
+    my ($admin, $type, $comment, $ival1, $ival2, $sval1, $postid) = @_;
+    my ($sth, $row, $oldcomment, $newcomment, $threadid, $utf8_encoded_json_text);
     my ($time) = time();
     check_password( $admin, ADMIN_PASS );
 
@@ -2647,7 +2639,7 @@ sub make_ban {
 }
 
 sub get_script_name {
-    return $ENV{SCRIPT_NAME};
+    return encode('utf-8', $ENV{SCRIPT_NAME});
 }
 
 sub get_secure_script_name {

@@ -163,8 +163,17 @@ use constant NORMAL_HEAD_INCLUDE => q{
 <div class="content">
 
 <script type="text/javascript" src="/js/wz_tooltip.js"></script>
-<if $thread && ENABLE_WEBSOCKET_NOTIFY><script type="text/javascript" src="/js/websock.js"></script></if>
-} . include("../tpl/content/boardnav.html") . q{
+<if ENABLE_WEBSOCKET_NOTIFY && $thread && !$locked><script type="text/javascript" src="/js/websock.js"></script></if>
+
+<nav>
+	<ul class="menu">
+} . include("../tpl/nav_boards.html") . q{
+	</ul>
+
+	<ul class="menu right">
+} . include("../tpl/nav_pages.html") . q{
+	</ul>
+</nav>
 
 <header>
 	<div class="header">
@@ -176,7 +185,6 @@ use constant NORMAL_HEAD_INCLUDE => q{
 		<div class="boardname" <if BOARD_DESC>style="margin-bottom: 5px;"</if>>/<const BOARD_IDENT>/ &ndash; <const BOARD_NAME></div>
 		<if BOARD_DESC><div class="slogan">&bdquo;<const BOARD_DESC>&ldquo;</div></if>
 	</div>
-
 </header>
 
 <if !DISABLE_NEW_THREADS or $isAdmin or $thread or $admin><hr /></if>
@@ -188,10 +196,10 @@ use constant MANAGER_HEAD_INCLUDE => NORMAL_HEAD_INCLUDE . q{
 
 <if $admin>
 	[<a href="<var expand_filename(HTML_SELF)>"><const S_MANARET></a>]
-	[<a href="<var decode('utf-8', $self)>?task=mpanel&amp;admin=<var $admin>"><const S_MANAPANEL></a>]
-	[<a href="<var decode('utf-8', $self)>?task=bans&amp;admin=<var $admin>"><const S_MANABANS></a>]
-	[<a href="<var decode('utf-8', $self)>?task=mpost&amp;admin=<var $admin>"><const S_MANAPOST></a>]
-	[<a href="<var decode('utf-8', $self)>?task=logout"><const S_MANALOGOUT></a>]
+	[<a href="<var $self>?task=mpanel&amp;admin=<var $admin>"><const S_MANAPANEL></a>]
+	[<a href="<var $self>?task=bans&amp;admin=<var $admin>"><const S_MANABANS></a>]
+	[<a href="<var $self>?task=mpost&amp;admin=<var $admin>"><const S_MANAPOST></a>]
+	[<a href="<var $self>?task=logout"><const S_MANALOGOUT></a>]
 	<div class="passvalid"><const S_MANAMODE></div>
 </if>
 };
@@ -203,7 +211,11 @@ use constant NORMAL_FOOT_INCLUDE => q{
 	<p>Powered by <img src="/img/phutaba_icon.png" alt="" /> <strong>Phutaba</strong>.</p>
 	<p><em>Report illegal material to <a href="mailto:post-abuse@ernstchan.com">post-abuse@ernstchan.com</a>.</em></p>
 </footer>
-} . include("../tpl/content/boardnav_bottom.html") . q{
+<nav>
+	<ul class="menu_bottom">
+} . include("../tpl/nav_boards.html") . q{
+	</ul>
+</nav>
 </div>
 </body>
 </html>
@@ -217,7 +229,7 @@ use constant PAGE_TEMPLATE => compile_template(
 <if !DISABLE_NEW_THREADS or $thread or $isAdmin>
 <if $postform>
 	<section class="postarea">
-	<form id="postform" action="<var decode('utf-8', $self)>" method="post" enctype="multipart/form-data">
+	<form id="postform" action="<var $self>" method="post" enctype="multipart/form-data">
 
 	<input type="hidden" name="task" value="post" />
 	<if $isAdmin>
@@ -229,34 +241,34 @@ use constant PAGE_TEMPLATE => compile_template(
 	</if>
 
 	<div class="trap">
-		<input type="text" name="name" size="28" />
-		<input type="text" name="link" size="28" />
+		<input type="text" name="name" size="31" />
+		<input type="text" name="link" size="36" />
 	</div>	
 
 	<table>
 	<tbody id="postTableBody">
 		<if $isAdmin>
 			<tr><td class="postblock">## Team ##</td>
-			<td><label><input type="checkbox" name="as_admin" value="1" /> Administrationskennung am Post anzeigen</label></td></tr>
+			<td><label><input type="checkbox" name="as_admin" value="1" />  <const S_POSTASADMIN></label></td></tr>
 		</if>
 		<if $isAdmin>
 			<tr><td class="postblock">HTML</td>
-			<td><label><input type="checkbox" name="no_format" value="1" /> Kommentar nicht durch den Parser verarbeiten</label></td></tr>
+			<td><label><input type="checkbox" name="no_format" value="1" /> <const S_NOTAGS2></label></td></tr>
 		</if>
 	<if !FORCED_ANON or $isAdmin><tr><td class="postblock"><const S_NAME></td><td><input type="text" name="field1" size="28" /></td></tr></if>
 
 	<tr><td class="postblock"><const S_SUBJECT></td><td><input type="text" name="field3" size="35" />
-	<input type="submit" id="postform_submit" value="<if $thread>Antworten auf /<var BOARD_IDENT>/<var $thread></if><if !$thread>Neuen Thread erstellen</if>" /></td>
+	<input type="submit" id="postform_submit" value="<if $thread><const S_BTREPLY> /<var BOARD_IDENT>/<var $thread></if><if !$thread><const S_BTNEWTHREAD></if>" /></td>
 	</tr>
 
 	<if $thread>
-	<tr><td class="postblock">Kontra</td>
-	<td><label><input type="checkbox" name="field2" value="sage" /> Thread nicht sto&szlig;en</label></td>
+	<tr><td class="postblock"><const S_SAGE></td>
+	<td><label><input type="checkbox" name="field2" value="sage" /> <const S_SAGEDESC></label></td>
 	</tr>
 	</if>
 
 	<tr><td class="postblock"><const S_COMMENT></td>
-	<td><textarea id="field4" name="field4" cols="48" rows="6"></textarea> <img onclick="resizeCommentfield('field4', this)" src="/img/icons/expand.png" alt="Textfeld vergr&ouml;&szlig;ern" title="Textfeld vergr&ouml;&szlig;ern" />
+	<td><textarea id="field4" name="field4" cols="48" rows="6"></textarea> <img onclick="resizeCommentfield('field4', this)" src="/img/icons/expand.png" alt="<const S_IMGEXPAND>" title="<const S_IMGEXPAND>" />
 	</td></tr>
 
 	<if $image_inp>
@@ -266,10 +278,10 @@ use constant PAGE_TEMPLATE => compile_template(
 		</td></tr>
 	</if>
 
-	<if $thread><tr id="trgetback"><td class="postblock">Gehe zur&uuml;ck</td>
+	<if $thread><tr id="trgetback"><td class="postblock"><const S_NOKO></td>
 	<td>
-	<label><input name="gb2" value="board" checked="checked" type="radio" /> Zum Board</label>
-	<label><input name="gb2" value="thread" type="radio" /> Zum Thread</label>
+	<label><input name="gb2" value="board" checked="checked" type="radio" /> <const S_NOKOOFF></label>
+	<label><input name="gb2" value="thread" type="radio" /> <const S_NOKOON></label>
 	</td></tr>
 	</if>
 
@@ -291,28 +303,21 @@ use constant PAGE_TEMPLATE => compile_template(
 </if>
 
 <if $locked>
-<p class="locked"><strong>Thread <var $thread></strong> ist geschlossen. Es kann nicht geantwortet werden.</p>
+<p class="locked"><var sprintf S_THREADLOCKED, $thread></p>
 </if>
 
-<form id="delform" action="<var decode('utf-8', $self)>" method="post">
+<form id="delform" action="<var $self>" method="post">
 
 <loop $threads>
-  <hr />
-  <article class="thread">
-
-<if $thread>
-	<div id="thread_<var $thread>">
-</if>
-<if !$thread>
-	<div id="thread_<var $num>">
-</if>
+	<hr />
+	<div<if !$thread> id="thread_<var $num>"</if>>
 
 		<loop $posts>
 			} . include("../lib/templates/post_view.inc") . q{
 		</loop>
 
 	</div>
-  </article>
+	<p style="clear: both;"></p>
 </loop>
 
 <if $thread>
@@ -325,18 +330,18 @@ use constant PAGE_TEMPLATE => compile_template(
 	<nav>
 		<ul class="pagelist">
 			<li>
-			<if $prevpage><a href="<var decode('utf-8', $prevpage)>"><const S_PREV></a></if>
-			<if !$prevpage><const S_PREV></if>
+				<if $prevpage><a href="<var $prevpage>"><const S_PREV></a></if>
+				<if !$prevpage><const S_PREV></if>
 			</li>
 		<loop $pages>
 			<li>
-			<if !$current>[<a href="<var decode('utf-8', $filename)>"><var $page></a>]</if>
-			<if $current>[<strong><var $page></strong>]</if>
+				<if !$current>[<a href="<var $filename>"><var $page></a>]</if>
+				<if $current>[<strong><var $page></strong>]</if>
 			</li>
 		</loop>
 			<li>
-			<if $nextpage><a href="<var decode('utf-8', $nextpage)>"><const S_NEXT></a></if>
-			<if !$nextpage><const S_NEXT></if>
+				<if $nextpage><a href="<var $nextpage>"><const S_NEXT></a></if>
+				<if !$nextpage><const S_NEXT></if>
 			</li>
 		</ul>
 	</nav>
@@ -392,8 +397,8 @@ body {
 <param name="undo" value="30">
 <param name="MAYSCRIPT" value="true">
 <param name="scriptable" value="true">
-<param name="url_exit" value="<var decode('utf-8', $self)>?task=paint&do=proceed&id=<var $tmpid>" />
-<param name="url_save" value="<var decode('utf-8', $self)>?task=paint&do=save&id=<var $tmpid>" />
+<param name="url_exit" value="<var $self>?task=paint&do=proceed&id=<var $tmpid>" />
+<param name="url_save" value="<var $self>?task=paint&do=save&id=<var $tmpid>" />
 <param name="url_target" value="_self" />
 
 </applet>
@@ -419,7 +424,15 @@ use constant ERROR_HEAD_INCLUDE => q{
 <body>
 <div class="content">
 
-} . include("../tpl/content/boardnav.html") . q{
+<nav>
+	<ul class="menu">
+} . include("../tpl/nav_boards.html") . q{
+	</ul>
+
+	<ul class="menu right">
+} . include("../tpl/nav_pages.html") . q{
+	</ul>
+</nav>
 
 <header>
 	<div class="header">
@@ -470,7 +483,7 @@ use constant ERROR_TEMPLATE => compile_template(
 use constant ADMIN_LOGIN_TEMPLATE => compile_template(
     MANAGER_HEAD_INCLUDE . q{
 
-<div align="center"><form action="<var decode('utf-8', $self)>" method="post">
+<div align="center"><form action="<var $self>" method="post">
 <input type="hidden" name="task" value="admin" />
 <const S_ADMINPASS>
 <input type="password" name="berra" size="8" value="" />
@@ -493,7 +506,7 @@ use constant POST_PANEL_TEMPLATE => compile_template(
 
 <div class="dellist"><const S_MANAPANEL></div>
 
-<form action="<var decode('utf-8', $self)>" method="post">
+<form action="<var $self>" method="post">
 <input type="hidden" name="task" value="delete" />
 <input type="hidden" name="admin" value="<var $admin>" />
 
@@ -520,23 +533,23 @@ use constant POST_PANEL_TEMPLATE => compile_template(
 	<if !$parent>
 		<label><input type="checkbox" name="delete" value="<var $num>" /><big><b><var $num></b></big>&nbsp;&nbsp;</label>
 		<if $sticky_isnull>
-			[<a href="<var decode('utf-8', $self)>?admin=<var $admin>&amp;task=sticky&amp;threadid=<var $num>"><const S_MPSTICKY></a>]
+			[<a href="<var $self>?admin=<var $admin>&amp;task=sticky&amp;threadid=<var $num>"><const S_MPSTICKY></a>]
 		</if>
 		<if !$sticky_isnull>
-			[<a href="<var decode('utf-8', $self)>?admin=<var $admin>&amp;task=sticky&amp;threadid=<var $num>"><const S_MPUNSTICKY></a>]
+			[<a href="<var $self>?admin=<var $admin>&amp;task=sticky&amp;threadid=<var $num>"><const S_MPUNSTICKY></a>]
 		</if>
 		<if $locked>
-			[<a href="<var decode('utf-8', $self)>?admin=<var $admin>&amp;task=lock&amp;threadid=<var $num>"><const S_MPUNLOCK></a>]
+			[<a href="<var $self>?admin=<var $admin>&amp;task=lock&amp;threadid=<var $num>"><const S_MPUNLOCK></a>]
 		</if>
 		<if !$locked>
-			[<a href="<var decode('utf-8', $self)>?admin=<var $admin>&amp;task=lock&amp;threadid=<var $num>"><const S_MPLOCK></a>]
+			[<a href="<var $self>?admin=<var $admin>&amp;task=lock&amp;threadid=<var $num>"><const S_MPLOCK></a>]
 		</if>
-                <if $autosage>
-                    [<a href="<var decode('utf-8', $self)>?admin=<var $admin>&amp;task=kontra&amp;threadid=<var $num>">L&ouml;se Systemkontra</a>]
-                    </if>
-                <if !$autosage>
-                 [<a href="<var decode('utf-8', $self)>?admin=<var $admin>&amp;task=kontra&amp;threadid=<var $num>">Setze Systemkontra</a>]
-                 </if>
+		<if $autosage>
+			[<a href="<var $self>?admin=<var $admin>&amp;task=kontra&amp;threadid=<var $num>"><const S_MPUNSETSAGE></a>]
+		</if>
+		<if !$autosage>
+			[<a href="<var $self>?admin=<var $admin>&amp;task=kontra&amp;threadid=<var $num>"><const S_MPSETSAGE></a>]
+		</if>
 
 		</td>
 	</if>
@@ -546,7 +559,7 @@ use constant POST_PANEL_TEMPLATE => compile_template(
 	<td><b><var clean_string(substr $name,0,30)><var $trip></b></td>
 	<td><var clean_string(substr $comment,0,30)></td>
 	<td><var dec_to_dot($ip)>
-		[<a href="<var decode('utf-8', $self)>?admin=<var $admin>&amp;task=deleteall&amp;ip=<var $ip>"><const S_MPDELETEALL></a>]
+		[<a href="<var $self>?admin=<var $admin>&amp;task=deleteall&amp;ip=<var $ip>"><const S_MPDELETEALL></a>]
 		[<a onclick="do_ban('<var dec_to_dot($ip)>', <var $num>, '<const BOARD_IDENT>', '<var $admin>')"><const S_MPBAN></a>]
 	</td>
 
@@ -611,7 +624,7 @@ use constant POST_PANEL_TEMPLATE => compile_template(
 
 <br /><div class="postarea">
 
-<form action="<var decode('utf-8', $self)>" method="post">
+<form action="<var $self>" method="post">
 <input type="hidden" name="task" value="deleteall" />
 <input type="hidden" name="admin" value="<var $admin>" />
 <table><tbody>
@@ -635,7 +648,7 @@ use constant BAN_PANEL_TEMPLATE => compile_template(
 <div class="postarea">
 <table><tbody><tr><td valign="bottom">
 
-<form action="<var decode('utf-8', $self)>" method="post">
+<form action="<var $self>" method="post">
 <input type="hidden" name="task" value="addip" />
 <input type="hidden" name="type" value="ipban" />
 <input type="hidden" name="admin" value="<var $admin>" />
@@ -648,7 +661,7 @@ use constant BAN_PANEL_TEMPLATE => compile_template(
 
 </td><td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td><td valign="bottom">
 
-<form action="<var decode('utf-8', $self)>" method="post">
+<form action="<var $self>" method="post">
 <input type="hidden" name="task" value="addip" />
 <input type="hidden" name="type" value="whitelist" />
 <input type="hidden" name="admin" value="<var $admin>" />
@@ -661,7 +674,7 @@ use constant BAN_PANEL_TEMPLATE => compile_template(
 
 </td><td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td></tr><tr><td valign="bottom">
 
-<form action="<var decode('utf-8', $self)>" method="post">
+<form action="<var $self>" method="post">
 <input type="hidden" name="task" value="addstring" />
 <input type="hidden" name="type" value="wordban" />
 <input type="hidden" name="admin" value="<var $admin>" />
@@ -673,7 +686,7 @@ use constant BAN_PANEL_TEMPLATE => compile_template(
 
 </td><td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td><td valign="bottom">
 
-<form action="<var decode('utf-8', $self)>" method="post">
+<form action="<var $self>" method="post">
 <input type="hidden" name="task" value="addstring" />
 <input type="hidden" name="type" value="trust" />
 <input type="hidden" name="admin" value="<var $admin>" />
@@ -734,7 +747,7 @@ use constant BAN_PANEL_TEMPLATE => compile_template(
 	<td>
   <em>wird erneuert</em>
 	</td>
-	<td><a href="<var decode('utf-8', $self)>?admin=<var $admin>&amp;task=removeban&amp;num=<var $num>"><const S_BANREMOVE></a></td>
+	<td><a href="<var $self>?admin=<var $admin>&amp;task=removeban&amp;num=<var $num>"><const S_BANREMOVE></a></td>
 	</tr>
 </loop>
 
@@ -762,7 +775,7 @@ use constant ADMIN_POST_TEMPLATE => compile_template(
 <div align="center"><em><const S_NOTAGS></em></div>
 
 <div class="postarea">
-<form id="postform" action="<var decode('utf-8', $self)>" method="post" enctype="multipart/form-data">
+<form id="postform" action="<var $self>" method="post" enctype="multipart/form-data">
 <input type="hidden" name="task" value="post" />
 <input type="hidden" name="admin" value="<var $admin>" />
 <input type="hidden" name="no_captcha" value="1" />
@@ -771,7 +784,7 @@ use constant ADMIN_POST_TEMPLATE => compile_template(
 <table><tbody>
 <tr><td class="postblock"><const S_SUBJECT></td><td><input type="text" name="field3" size="35" />
 <input type="submit" value="<const S_SUBMIT>" /></td></tr>
-<tr><td class="postblock">Kontra</td><td><input type="checkbox" name="field2" value="sage" /></td></tr>
+<tr><td class="postblock"><const S_SAGE></td><td><input type="checkbox" name="field2" value="sage" /></td></tr>
 <tr><td class="postblock"><const S_COMMENT></td><td><textarea name="field4" cols="48" rows="4"></textarea></td></tr>
 <tr><td class="postblock"><const S_UPLOADFILE></td><td><input type="file" name="file" size="35" />
 [<label><input type="checkbox" name="nofile" value="on" /><const S_NOFILE> ]</label>
