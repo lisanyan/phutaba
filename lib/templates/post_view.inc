@@ -32,12 +32,10 @@
 	<section class="post_head">
 </if>
 
-	<if ENABLE_HIDE_THREADS>
-		<if !$thread and !$parent>
-			<span class="togglethread">
-			<img src="/img/icons/hide.png" title="<var sprintf S_HIDE, $num>" alt="Hide" onclick="hideThread('<var $num>');" />
-			</span>
-		</if>
+	<if ENABLE_HIDE_THREADS && !$thread && !$parent>
+		<span class="togglethread">
+		<img src="/img/icons/hide.png" title="<var sprintf S_HIDE, $num>" alt="Hide" onclick="hideThread('<var $num>', '<const BOARD_IDENT>', $j);" />
+		</span>
 	</if>
 
 	<label>
