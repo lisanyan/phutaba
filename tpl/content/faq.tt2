@@ -70,7 +70,7 @@
 	<header class="title">Woher bekomme ich euer Logo?</header>
 	<section class="info">
 		<p>Bitte einmal hier klicken:</p>
-		<p><a href="img/logo_gross.png"><img src="img/logo_klein.png" /></a></p>
+		<p><a href="img/logo_gross.png"><img src="img/logo_klein.png" alt="Phutaba-Logo" /></a></p>
 	</section>
 
 	<header class="title">Darf ich Moderator werden?</header>
