@@ -1,0 +1,491 @@
+html, body, div, span, applet, object, iframe, h1, h2, h3, h4, h5, h6, p, blockquote, pre, a, abbr, acronym, address, big, cite, code, del, dfn, em, font, img, ins, kbd, q, s, samp, small, strike, strong, sub, sup, tt, var, dl, dt, dd, ol, ul, li, fieldset, form, label, legend, table, caption, tbody, tfoot, thead, tr, th, td {
+  font-size: 100%;
+	font-weight: inherit;
+	font-style: inherit;
+	font-family: inherit;
+	vertical-align: baseline;
+	margin: 0;
+	padding: 0;
+	border: 0;
+	outline: 0;
+}
+
+*:focus {
+	outline: 0;
+}
+
+strong, b, ul.menu a, ul.menu_bottom a, .boardname, .caption, .subject, .postblock, .postername, .teampost, .sage, .ban, .user_banned, .title, .info th, .dellist {
+	font-weight: bold;
+}
+
+em, i, .omittedposts, .notice {
+	font-style: italic;
+}
+
+hr {
+	border: none;
+	border-top: 1px solid #00FF00;
+	margin: 1em 0 1em 0;
+	clear: both;
+}
+
+ul, ol {
+	margin-left: 1.6em;
+}
+
+ul {
+	list-style-type: square;
+}
+
+td, th {
+	display: table-cell;
+	vertical-align: middle;
+}
+
+body {
+	background-color: #000000;
+	color: #00FF00;
+	font: normal 1em monospace;
+}
+
+a:link, a:visited, a:hover {
+	color: #00FF00;
+	text-decoration: none;
+	border-bottom: 1px solid #00FF00;
+}
+
+a:hover {
+	background-color: #00FF00;
+	color: #000000;
+}
+
+.content {
+	margin: 3em 1em 0 1em;
+}
+
+ul.menu {
+	position: absolute;
+	top: 4px;
+	margin-left: 0;
+	list-style-type: none;
+}
+
+ul.menu_bottom {
+	float: left;
+	margin-left: 0;
+	list-style-type: none;
+}
+
+ul.right {
+	right: 1em;
+}
+
+ul.menu li, ul.menu_bottom li, ul.pagelist li {
+	display: inline;
+}
+
+ul.menu a, ul.menu_bottom a {
+	background-color: #000000;
+	color: #00FF00;
+	text-decoration: none;
+	border: 1px solid #00FF00;
+	padding: 5px;
+}
+
+ul.menu a:hover, ul.menu_bottom a:hover {
+	background-color: #00FF00;
+	color: #000000;
+}
+
+ul.menu a:active, ul.menu_bottom a:active {
+	top: 0;
+}
+
+.header {
+	text-align: center;
+}
+
+.banner {
+	background-image: linear-gradient(bottom, rgb(0,255,0) 0%, rgb(0,0,0) 100%);
+	background-image: -o-linear-gradient(bottom, rgb(0,255,0) 0%, rgb(0,0,0) 100%);
+	background-image: -moz-linear-gradient(bottom, rgb(0,255,0) 0%, rgb(0,0,0) 100%);
+	background-image: -webkit-linear-gradient(bottom, rgb(0,255,0) 0%, rgb(0,0,0) 100%);
+	background-image: -ms-linear-gradient(bottom, rgb(0,255,0) 0%, rgb(0,0,0) 100%);
+	background-image: -webkit-gradient(linear,left bottom,left top,color-stop(0, rgb(0,255,0)),color-stop(1, rgb(0,0,0)));
+	width: 300px;
+	height: 100px;
+	border: 1px solid #00FF00;
+	margin: 0 auto;
+}
+
+.banner img {
+	display: none;
+}
+
+.banner:after {
+	content: 'Ernstchan';
+	font: bold 3em monospace;
+	text-shadow: 2px 2px 0px #000000;
+}
+
+.banner a:link, .banner a:hover {
+	background-color: #000000;
+	border: none;
+}
+
+.teampost img, .sticky img, .locked img { 
+	width: 16px; 
+	height: 16px; 
+}
+
+.boardname, .caption {
+	color: #00FF00;
+	font-size: 2em;
+	margin-top: 0.5em;
+}
+
+.postarea {
+	text-align: center;
+}
+
+.postarea table {
+	text-align: left;
+	margin: 0 auto;
+}
+
+.postarea img:hover {
+	cursor: pointer;
+}
+
+.postblock {
+	background-color: #00FF00;
+	color: #000000;
+	padding: 0 5px;
+}
+
+.postarea input[type='checkbox'], .postarea input[type='radio'] {
+	margin: 5px;
+}
+
+.comment img {
+
+}
+
+input[type='text'], input[type='password'], textarea {
+	background-color: #000000;
+	color: #00FF00;
+	font-family: monospace;
+	border: 1px solid #00FF00;
+	padding: 2px 4px;
+}
+
+input[type='submit'] {
+	background-color: #000000;
+	color: #00FF00;
+	font-family: monospace;
+	border: 1px solid #00FF00;
+	padding: 2px 4px;
+}
+
+input[type='submit']:hover {
+	background-color: #00FF00;
+	color: #000000;
+	cursor: pointer;
+}
+
+.trap {
+	display: none;
+}
+
+ul.rules {
+	margin-top: 1em;
+}
+
+.doubledash {
+	float: left;
+	vertical-align: top;
+	margin-top: 0.5em;
+}
+
+.doubledash a:link, .doubledash a:visited {
+	border: none;
+}
+
+.post {
+	background-color: #000000;
+	border: 1px solid #00FF00;
+	margin: 0 0 0.5em 2em;
+	overflow: hidden;
+}
+
+.thread_OP .post {
+	margin-left: 0;
+}
+
+.post_new {
+	border: 1px dashed #00FF00;
+}
+
+.post.highlight, :target .post {
+	background-color: #00FF00;
+	color: #000000;
+}
+
+.post.highlight .file, :target .post .file {
+	background-color: #000000;
+}
+
+:target .reflink a, :target .backreflink a, :target .text a {
+	color: #000000;
+	border-bottom: 1px solid #000000;
+}
+
+:target .reflink a:hover, :target .backreflink a:hover, :target .text a:hover {
+	background-color: #000000;
+	color: #00FF00;
+}
+
+:target .thread_head a {
+	color: #00FF00;
+	border-bottom: 1px solid #00FF00
+}
+
+:target .thread_head a:hover {
+	background-color: #00FF00;
+	color: #000000;
+}
+
+:target .spoiler {
+	background-color: #000000;
+	color: #000000;
+}
+
+:target .spoiler:hover {
+	color: #00FF00
+}
+
+:target .filedeleted {
+	color: #00FF00;
+}
+
+.thread_head {
+	background-color: #000000;
+	padding: 5px;
+	border-top: 1px solid #00FF00;
+	border-right: 1px solid #00FF00;
+	border-left: 1px solid #00FF00;
+}
+
+.post_head {
+	padding: 0.4em 0.4em 0.1em 0.4em;
+}
+
+.postername .tripcode {
+	font-weight: normal;
+}
+
+.teampost {
+}
+
+.ssl img {
+	display: none;
+}
+
+.ssl:after {
+	content: 'SSL';
+}
+
+.backreflink del {
+	color: #00FF00;
+}
+
+.sticky img {
+	display: none;
+}
+
+.sticky:after {
+	content: 'Angeheftet';
+}
+
+.locked img {
+	display: none;
+}
+
+.locked:after {
+	content: 'Geschlossen';
+}
+
+.post_body {
+	padding: 1.2em 0 0 1.2em;
+}
+
+.file {
+	background-color: #00FF00;
+	text-align: center;
+	margin: 0 1.2em 1.2em 0;
+	float: left;
+	display: block;
+	vertical-align: top;
+}
+
+.filesize {
+	font-size: 0.85em;
+}
+
+.filelink {
+	line-height: 0;
+}
+
+.filelink a:active {
+	top: 0;
+}
+
+.filetype, .filedeleted {
+	font: bold 2em monospace;
+	width: 200px;
+	padding: 0.5em 0 0.5em 0;
+}
+
+.filedeleted {
+	color: #000000;
+}
+
+.text {
+	margin: 0 2em 1.2em 1.2em;
+	word-wrap: break-word;
+	display: inline-block;
+	vertical-align: top;
+	display: block;
+}
+
+.text ul, .text ol {
+	margin-left: 1.6em;
+}
+
+blockquote.unkfunc, span.quote {
+	margin: 0;
+}
+
+.spoiler {
+	background-color: #00FF00;
+	color: #00FF00;
+	text-shadow: none;
+}
+
+.spoiler a {
+	color: #000000;
+}
+
+.spoiler:hover, .spoiler a:hover {
+	color: #000000;
+}
+
+.ban, .tldr, .user_banned {
+	margin-top: 1em;
+}
+
+.ban, .user_banned {
+	text-transform: uppercase;
+}
+
+.omittedposts, .notice {
+	margin-left: 2em;
+}
+
+.omittedposts {
+	margin-bottom: 0.5em;
+}
+
+.notice img {
+	display: none;
+}
+
+.notice span {
+	padding: 0 0.5em;
+	border: 1px dashed #00FF00;
+}
+
+.togglethread a:hover, .togglethread img:hover {
+	cursor: pointer;
+}
+
+ul.pagelist {
+	border: 1px solid #00FF00;
+	padding: 0.5em;
+	margin: 0 1em 0 0;
+	float: left;
+}
+
+.delete {
+	float: right;
+}
+
+input[type='password'] {
+	width: 8em;
+}
+
+.passvalid {
+	background-color: #00FF00;
+	color: #000000;
+	font-weight: bold;
+	text-align: center;
+	padding: 5px;
+	margin: 5px 0;
+}
+
+.managehead th, .row1 td, .row2 td {
+	padding: 5px;
+}
+
+.managehead {
+	font-weight: bold;
+	text-align: center;
+}
+
+.row1 {
+	background-color: #00FF00;
+	color: #000000;
+}
+
+.row2 {
+	background-color: #000000;
+	color: #00FF00;
+}
+
+.title, .info th {
+	background-color: #00FF00;
+	color: #000000;
+	font-weight: bold;
+	padding: 5px;
+}
+
+.info {
+	border: 1px solid #00FF00;
+	padding: 1em;
+	margin: 0 0 0.5em 0;
+}
+
+.info table {
+	margin-top: 1em;
+}
+
+.info td {
+	text-align: center;
+	border: 1px solid #00FF00;
+	padding: 5px;
+}
+
+.error {
+	font-size: 2em;
+	text-align: center;
+}
+
+footer {
+	text-align: center;
+	padding: 1em 0 1em 0;
+	clear: both;
+}
+
+footer img {
+	display: none;
+}
