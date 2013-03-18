@@ -360,6 +360,10 @@ ul.rules {
 	margin-left: 1.6em;
 }
 
+.text ul li, .text ol li {
+	list-style-position: inside;
+}
+
 blockquote.unkfunc, span.quote {
 	margin: 0;
 }
