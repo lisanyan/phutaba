@@ -57,7 +57,7 @@
 		<p>Um Spam vorzubeugen, müssen Nutzer aus nicht deutschsprachigen Ländern vor jedem Beitrag ein Captcha bestätigen. Falls deine IP also nicht aus Deutschland, Österreich, der Schweiz, Liechtenstein, Belgien, Dänemark, Luxemburg (oder der Niederlande) stammt, wirst du dich wohl oder übel damit abfinden müssen.</p>
 	</section>
 
-	<header class="title">Wie kann ich die Administratoren konktaktieren?</header>
+	<header class="title">Wie kann ich die Administratoren kontaktieren?</header>
 	<section class="info">
 		<p>Für allgemeine Fragen kann man uns jederzeit per E-Mail an <a href="mailto:admin@ernstchan.com">admin@ernstchan.com</a> erreichen. Zudem sind wir im <a href="/irc">IRC-Channel</a> anzutreffen.<br />Falls du unangebrachte/illegale Inhalte melden möchtest, benutze bitte <a href="mailto:post-abuse@ernstchan.com">post-abuse@ernstchan.com</a>.</p>
 	</section>
@@ -70,7 +70,7 @@
 	<header class="title">Woher bekomme ich euer Logo?</header>
 	<section class="info">
 		<p>Bitte einmal hier klicken:</p>
-		<p><a href="https://ernstchan.com/img/logo_gross.png"><img src="https://ernstchan.com/img/logo_klein.png" /></a></p>
+		<p><a href="img/logo_gross.png"><img src="img/logo_klein.png" alt="Phutaba-Logo" /></a></p>
 	</section>
 
 	<header class="title">Darf ich Moderator werden?</header>
