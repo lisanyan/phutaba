@@ -340,6 +340,7 @@ ul.rules {
 	word-wrap: break-word;
 	display: inline-block;
 	vertical-align: top;
+	display: block;
 }
 
 .text ul, .text ol {
