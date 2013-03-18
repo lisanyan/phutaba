@@ -20,6 +20,7 @@ use constant NORMAL_HEAD_INCLUDE => q{
 <script type="text/javascript" src="/js/jquery/jquery.ui.js"></script>
 <script type="text/javascript" src="/js/wakaba3.js"></script>
 <if $isAdmin><script type="text/javascript" src="/js/admin.js"></script></if>
+<if ENABLE_HIDE_THREADS && !$thread><script type="text/javascript" src="/js/hidethreads.js"></script></if>
 <script type="text/javascript">
 /* <![CDATA[ */
   $j = jQuery.noConflict();
@@ -44,86 +45,8 @@ use constant NORMAL_HEAD_INCLUDE => q{
 	});
 	</if>
 
-    <if ENABLE_HIDE_THREADS><if !$thread>hideThreads();</if></if>
+	<if ENABLE_HIDE_THREADS && !$thread>hideThreads('<const BOARD_IDENT>', $j);</if>
   });
-
-<if ENABLE_HIDE_THREADS>
-  function hideThreads() {
-    hidThreads = $j.cookie('hidden_<const BOARD_IDENT>');
-    if(hidThreads != null)
-        hidThreads = jQuery.parseJSON(hidThreads);
-    if(hidThreads == null)
-        return;
-    for(i = 0; i < hidThreads.length; i++) {
-        thread = $j('thread_' + hidThreads[i]);
-        if (thread == null)
-            continue;
-        $j("#thread_"+hidThreads[i]).hide();
-        $j("#thread_"+hidThreads[i]).after(getHiddenHTML(hidThreads[i]));
-
-    }
-  }
-
-  function addHideThread(tid) {
-    hidThreads = $j.cookie('hidden_<const BOARD_IDENT>');
-    if(hidThreads != null)
-        hidThreads = jQuery.parseJSON(hidThreads);
-    if(hidThreads == null)
-        hidThreads = [];
-
-
-    for(i = 0; i < hidThreads.length; i++)
-        if(hidThreads[i] == tid)
-            return;
-    hidThreads[hidThreads.length] = tid;
-    $j.cookie('hidden_<const BOARD_IDENT>', hidThreads.toJSON(), { expires: 7 });
-  }
-
-  function removeHideThread(tid) {
-    hidThreads = $j.cookie('hidden_<const BOARD_IDENT>');
-
-    if(hidThreads == null)
-        return;
-    hidThreads = jQuery.parseJSON(hidThreads);
-
-    for(i = 0; i < hidThreads.length; i++)
-        if(hidThreads[i] == tid)
-        {
-            hidThreads.splice(i,1);
-            i--;
-        }
-    $j.cookie('hidden_<const BOARD_IDENT>', hidThreads.toJSON(), { expires: 7 });
-  }
-
-  function hideThread(tid) {
-    hidThreads = $j.cookie('hidden_<const BOARD_IDENT>');
-    if(hidThreads != null) {
-        hidThreads = jQuery.parseJSON(hidThreads);
-        for(i = 0; i < hidThreads.length; i++)
-            if(hidThreads[i] == tid)
-                return;
-    }
-    $j("#thread_"+tid).hide();
-    $j("#thread_"+tid).after(getHiddenHTML(tid));
-    addHideThread(tid);
-
-  };
-
-  function showThread(tid) {
-    $j('.show_'+tid).hide();
-    $j('.show_'+tid).remove();
-    $j("#thread_"+tid).show();
-    removeHideThread(tid);
-  };
-
-  function getHiddenHTML(tid) {
-	return '<div class="show_' + tid + ' togglethread">'
-		+ '<a class="hide" onclick="showThread(' + tid + ');">'
-		+ '<img src="/img/icons/show.png" alt="Thread ' + tid + ' einblenden" />'
-		+ ' <strong>Thread ' + tid + '</strong> einblenden</a></div>';
-  };
-
-</if>
 /* ]]> */
 </script>
 
