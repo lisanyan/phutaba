@@ -4,7 +4,7 @@
 function hideThreads(bid, $j) {
 	hidThreads = $j.cookie('hidden_' + bid);
 	if (hidThreads != null)
-		hidThreads = jQuery.parseJSON(hidThreads);
+		hidThreads = JSON.parse(hidThreads);
 	if (hidThreads == null)
 		return;
 	for (i = 0; i < hidThreads.length; i++) {
@@ -20,14 +20,14 @@ function hideThreads(bid, $j) {
 function addHideThread(tid, bid, $j) {
 	hidThreads = $j.cookie('hidden_' + bid);
 	if (hidThreads != null)
-		hidThreads = jQuery.parseJSON(hidThreads);
+		hidThreads = JSON.parse(hidThreads);
 	if (hidThreads == null)
 		hidThreads = [];
 	for (i = 0; i < hidThreads.length; i++)
 		if (hidThreads[i] == tid)
 			return;
 	hidThreads[hidThreads.length] = tid;
-	$j.cookie('hidden_' + bid, hidThreads.toJSON(), { expires: 7 });
+	$j.cookie('hidden_' + bid, JSON.stringify(hidThreads), { expires: 7 });
 }
 
 /* deletes a thread id from the cookie */
@@ -36,20 +36,20 @@ function removeHideThread(tid, bid, $j) {
 	if (hidThreads == null)
 		return;
 
-	hidThreads = jQuery.parseJSON(hidThreads);
+	hidThreads = JSON.parse(hidThreads);
 	for (i = 0; i < hidThreads.length; i++)
 		if (hidThreads[i] == tid) {
 			hidThreads.splice(i, 1);
 			i--;
 		}
-	$j.cookie('hidden_' + bid, hidThreads.toJSON(), { expires: 7 });
+	$j.cookie('hidden_' + bid, JSON.stringify(hidThreads), { expires: 7 });
 }
 
 /* hides a single thread from the board page and adds HTML to display it again */
 function hideThread(tid, bid, $j) {
 	hidThreads = $j.cookie('hidden_' + bid);
 	if (hidThreads != null) {
-		hidThreads = jQuery.parseJSON(hidThreads);
+		hidThreads = JSON.parse(hidThreads);
 		for (i = 0; i < hidThreads.length; i++)
 			if (hidThreads[i] == tid)
 				return;
