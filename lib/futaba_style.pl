@@ -12,7 +12,6 @@ use constant NORMAL_HEAD_INCLUDE => q{
 <link rel="shortcut icon" href="/img/favicon.ico" />
 <link rel="stylesheet" type="text/css" href="<const STYLESHEET>" />
 <link rel="stylesheet" type="text/css" href="/css/jquery.ui.css" />
-<script type="text/javascript" src="/js/prototype.js"></script>
 <script type="text/javascript" src="/js/jquery.js"></script>
 <script type="text/javascript" src="/js/jquery/jquery.blockUI.js"></script>
 <script type="text/javascript" src="/js/jquery/jquery.elastic.js"></script>
