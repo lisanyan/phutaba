@@ -18,6 +18,7 @@ use constant NORMAL_HEAD_INCLUDE => q{
 <script type="text/javascript" src="/js/jquery/jquery.cookie.js"></script>
 <script type="text/javascript" src="/js/jquery/jquery.ui.js"></script>
 <script type="text/javascript" src="/js/wakaba3.js"></script>
+<script type="text/javascript" src="/js/context.js"></script>
 <if $isAdmin><script type="text/javascript" src="/js/admin.js"></script></if>
 <if ENABLE_HIDE_THREADS && !$thread><script type="text/javascript" src="/js/hidethreads.js"></script></if>
 <script type="text/javascript">
