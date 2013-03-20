@@ -1,7 +1,7 @@
 function do_ban(ip, postid, board, session) {
 	buttons = {
 		"Ok": function () {
-			if (disable) {
+			if (window.disable) {
 				$j("#infobox").hide('normal');
 				$j("#error").hide('normal');
 				$j("#info").hide('normal');
@@ -57,14 +57,14 @@ function do_ban(ip, postid, board, session) {
 				dataType: 'json',
 				success: function (data) {
 					if (data['results'] == 0) {
-						disable = 0;
+						window.disable = 0;
 						$j("#ip").attr('disabled', false).val(ip);
 						$j("#netmask").attr('disabled', false).val("255.255.255.255");
 						$j("#postid").attr('disabled', true).val(postid);
 						$j("#reason").attr('disabled', false).val("no reason").focus();
 					}
 					if (data['results'] >= 1) {
-						disable = 1;
+						window.disable = 1;
 						$j("#ip").attr('disabled', true).val(ip);
 						$j("#netmask").attr('disabled', true).val("unknown");
 						$j("#postid").attr('disabled', true).val("none");

@@ -11,12 +11,11 @@ use constant NORMAL_HEAD_INCLUDE => q{
 <meta charset="<const CHARSET>" />
 <link rel="shortcut icon" href="/img/favicon.ico" />
 <link rel="stylesheet" type="text/css" href="<const STYLESHEET>" />
-<link rel="stylesheet" type="text/css" href="/css/jquery.ui.css" />
-<script type="text/javascript" src="/js/jquery.js"></script>
+<link rel="stylesheet" type="text/css" href="/css/ui-lightness/jquery-ui-1.10.2.custom.css" />
+<script type="text/javascript" src="/js/jquery-1.9.1.min.js"></script>
+<script type="text/javascript" src="/js/jquery/jquery-ui-1.10.2.custom.min.js"></script>
 <script type="text/javascript" src="/js/jquery/jquery.blockUI.js"></script>
-<script type="text/javascript" src="/js/jquery/jquery.elastic.js"></script>
 <script type="text/javascript" src="/js/jquery/jquery.cookie.js"></script>
-<script type="text/javascript" src="/js/jquery/jquery.ui.js"></script>
 <script type="text/javascript" src="/js/wakaba3.js"></script>
 <script type="text/javascript" src="/js/context.js"></script>
 <if $isAdmin><script type="text/javascript" src="/js/admin.js"></script></if>
