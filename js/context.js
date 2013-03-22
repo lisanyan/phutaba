@@ -78,19 +78,6 @@ DAG.prototype.ancestors = function (id) {
 }
 
 
-$j(['<style type="text/css">',
-//  , '#context { position: fixed; top: 2em; right: 2em; bottom: 2em; left: 10em; overflow-y: auto; }'
-//  , '#context td { display: block; float: none; }'
-//  , '.popup { background: #aaaacc; border: 2px solid #444488; padding: 3px; }'
-  , '#ancbox { bottom: 0.25em; }'
-  , '#desbox { top: -0.25em; }'
-  , '.context { position: relative; clear: left }'
-  , '.context > div { border: 1px solid rgb(99, 85, 55); background-color: rgb(236, 233, 226); position: absolute; left: 10em; }'
-  , '.context .thread_reply { margin-right: 0.5em; }'
-  , '.context .thread_reply:first-of-type { margin-top: 0.5em; }'
-  , '.thread_head { clear: left; }' // TODO integrate into main stylesheet
-  , '</style>' // TODO .doubledash
-].join('\n')).appendTo('head');
 
 function createPostGraph(OP) {
   var graph = new DAG(OP);
@@ -99,10 +86,9 @@ function createPostGraph(OP) {
       , refs = post.find('span.backreflink a')
       , num = +post.attr('id')
     ;
-    graph.append(
-       refs.length ? refs.map(function () {
-          return +this.getAttribute('href').match(/\d+/g).pop();
-       }).toArray() : [OP],
+    graph.append(refs.map(function () {
+          return +getTarget(this);
+       }).toArray(),
      num);
   }
   return graph;
@@ -131,38 +117,55 @@ function showContext (num, highlight) {
   posts.each(postgraph.addPost);
   
   descendants = exclude(postgraph.descendants(num).flatten(), [num]);
-  ancestors = exclude(postgraph.ancestors(num).flatten(), [num, highlight]).concat(highlight);
+  ancestors = exclude(postgraph.ancestors(num).flatten(), [num]);
   
   ancestors.forEach(function (i) {
-      ancbox.append($j('#' + i).clone().removeAttr('id'));
+      ancbox.append(clonePost(i));
   });
   descendants.forEach(function (i) {
-      desbox.append($j('#' + i).clone().removeAttr('id'));
+      desbox.append(clonePost(i));
   });
 
   if (ancestors.length) $j('#'+num).before(ancwrap);
   if (descendants.length) $j('#'+num).after(deswrap);
 }
 
-function getPost (num) {
-  var post = $('post-' + num);
-  return post ? post.up('table') : document.createElement('table');
+function clonePost (num) {
+  var post = $j('#' + num).clone();
+  post.attr('id', 'c' + num);
+  post.find('span.backreflink a').attr('href', function (i, href) {
+    return href.replace('#', '#c');
+  });
+  return post
+}
+
+function getTarget (a) {
+  return (a.attr ? a.attr('href') : a.getAttribute('href')).match(/c?\d+/g).pop();
 }
 
 function hideContext() {
   $j('#ancwrap, #deswrap').detach();
 }
 
-window.highlight = function (){};
+function highlight() {
+  // dummy
+  // to be here until the board doesn't hardcode it into posts anymore
+}
+
 
 $j(document).ready(function() {
+  $j('body').on('mouseenter', 'span.backreflink a', function (ev) {
+    $j('#' + getTarget(ev.target)).addClass('highlight');
+  });
+  $j('body').on('mouseleave', 'span.backreflink a', function (ev) {
+    $j('#' + getTarget(ev.target)).removeClass('highlight');
+  });
   $j('body').on('click', 'span.backreflink a', function (ev) {
     var el = $j(ev.target);
     ev.preventDefault();
     if (!el.is('.context *')) {
       hideContext();
-      showContext(+el.closest('.thread_reply').attr('id'),
-        +el.attr('href').match(/\d+/g).pop());
+      showContext(+el.closest('.thread_reply').attr('id'), +getTarget(el));
     }
   });
   $j('body').on('click', function (ev) {

@@ -141,7 +141,7 @@ ul.menu a:active, ul.menu_bottom a:active {
 	height: 100px;
 }
 
-.teampost img, .sticky img, .locked img { 
+.teampost img, .sticky img, .locked img {
 	width: 16px; 
 	height: 16px; 
 }
@@ -237,14 +237,6 @@ ul.rules {
 .post_new {
 	border-right: 1px solid #B20000;
 	border-bottom: 1px solid #B20000;
-}
-
-.post.highlight, :target .post {
-	background-color: #BFB5A1;
-}
-
-.post.highlight .file, :target .post .file {
-	background-color: #D7CFC0;
 }
 
 :target .filedeleted {
@@ -485,4 +477,42 @@ footer {
 
 footer img {
 	vertical-align: middle;
+}
+
+
+/* stuff for context.js */
+/* TODO .doubledash */
+#ancbox {
+  bottom: 0.25em;
+}
+#desbox {
+  top: -0.25em;
+}
+.context {
+  position: relative;
+  clear: left;
+}
+.context > div {
+  border: 1px solid rgb(99, 85, 55);
+  background-color: rgb(236, 233, 226);
+  position: absolute;
+  left: 10em;
+  box-shadow: 1px 2px 2px #706B5E;
+}
+.context .thread_reply {
+  margin-right: 0.5em;
+}
+.context .thread_reply:first-of-type {
+  margin-top: 0.5em;
+}
+.thread_head {
+  clear: left;
+}
+
+.highlight .post, :target .post {
+	background-color: #BFB5A1;
+}
+
+.highlight .post .file, :target .post .file {
+	background-color: #D7CFC0;
 }

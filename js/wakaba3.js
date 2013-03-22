@@ -138,21 +138,6 @@ function insert(text) {
 	}
 }
 
-function highlight(post) {
-	var cells = document.getElementsByTagName("td");
-	for (var i = 0; i < cells.length; i++) if (cells[i].className == "highlight") cells[i].className = "reply";
-
-	var reply = document.getElementById("reply" + post);
-	if (reply) {
-		reply.className = "highlight";
-/*		var match=/^([^#]*)/.exec(document.location.toString());
-		document.location=match[1]+"#"+post;*/
-		return false;
-	}
-
-	return true;
-}
-
 function set_inputs(id) {
 	with (document.getElementById(id)) {
 		if ((typeof field1 == "object") && (!field1.value)) field1.value = get_cookie("name");
