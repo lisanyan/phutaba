@@ -78,6 +78,66 @@ DAG.prototype.ancestors = function (id) {
 }
 
 
+// works in threads only. TODO
+var context = {
+  show : function showContext (num, highlight) {
+    var posts = $j('.thread_reply')
+      , OPid = +$j('.thread_OP').attr('id')
+      , postgraph = createPostGraph(OPid)
+      , ancwrap = $j('#ancwrap').length ? $j('#ancwrap') : $j('<div id=ancwrap class=context><div id=ancbox>')
+      , deswrap = $j('#deswrap').length ? $j('#deswrap') : $j('<div id=deswrap class=context><div id=desbox>')
+      , ancbox = ancwrap.find(':first-child').empty()
+      , desbox = deswrap.find(':first-child').empty()
+      , dummy = $j('<div id=dummy class=dummy>')
+      , ancestors
+      , descendants
+    ;
+    // generate the graph every time - we can optimize this later
+    posts.each(postgraph.addPost);
+    
+    descendants = exclude(postgraph.descendants(num).flatten(), [num]);
+    ancestors = exclude(postgraph.ancestors(num).flatten(), [num]);
+    
+    ancestors.forEach(function (i) {
+        ancbox.append(clonePost(i));
+    });
+    descendants.forEach(function (i) {
+        desbox.append(clonePost(i));
+    });
+
+    if (ancestors.length) $j('#'+num).before(ancwrap);
+    if (descendants.length) $j('#'+num).after(deswrap);
+  },
+  hide : function hideContext() {
+    $j('#ancwrap, #deswrap').detach();
+  }
+}, preview = {
+  show : function showPreview(num, pos) {
+    var p = $j('#ancbox').length ? $j('#c' + num) : $j('#' + num)
+      , isVisible = p.position().top + p.outerHeight() > window.scrollY &&
+        window.scrollY + $j(window).height() > p.position().top
+      , isEntirelyVisible = p.position().top > window.scrollY &&
+        window.scrollY + $j(window).height() > p.position().top + p.outerHeight()
+    ;
+    console.log(pos);
+    if (isVisible)
+      p.addClass('highlight');
+    if (!isEntirelyVisible) {
+      ($j('#preview').length ?
+        $j('#preview') :
+        $j('<div id=preview>').append(clonePost(p.attr('id'))))
+        .css({left: pos.X + 'px', top: pos.Y + 'px'})
+        .appendTo(document.body);
+    }
+
+  },
+  hide : function hidePreview(num) {
+    var posts = $j('#' + num + ',#c' + num);
+    $j('#preview').detach();
+    posts.removeClass('highlight');
+  }
+};
+
 
 function createPostGraph(OP) {
   var graph = new DAG(OP);
@@ -100,39 +160,9 @@ function exclude (arr, without) {
   })
 }
 
-// works in threads only. TODO
-function showContext (num, highlight) {
-  var posts = $j('.thread_reply')
-    , OPid = +$j('.thread_OP').attr('id')
-    , postgraph = createPostGraph(OPid)
-    , ancwrap = $j('#ancwrap').length ? $j('#ancwrap') : $j('<div id=ancwrap class=context><div id=ancbox>')
-    , deswrap = $j('#deswrap').length ? $j('#deswrap') : $j('<div id=deswrap class=context><div id=desbox>')
-    , ancbox = ancwrap.find(':first-child').empty()
-    , desbox = deswrap.find(':first-child').empty()
-    , dummy = $j('<div id=dummy class=dummy>')
-    , ancestors
-    , descendants
-  ;
-  // generate the graph every time - we can optimize this later
-  posts.each(postgraph.addPost);
-  
-  descendants = exclude(postgraph.descendants(num).flatten(), [num]);
-  ancestors = exclude(postgraph.ancestors(num).flatten(), [num]);
-  
-  ancestors.forEach(function (i) {
-      ancbox.append(clonePost(i));
-  });
-  descendants.forEach(function (i) {
-      desbox.append(clonePost(i));
-  });
-
-  if (ancestors.length) $j('#'+num).before(ancwrap);
-  if (descendants.length) $j('#'+num).after(deswrap);
-}
-
-function clonePost (num) {
-  var post = $j('#' + num).clone();
-  post.attr('id', 'c' + num);
+function clonePost (id) {
+  var post = $j('#' + id).clone();
+  post.attr('id', 'c' + id);
   post.find('span.backreflink a').attr('href', function (i, href) {
     return href.replace('#', '#c');
   });
@@ -143,10 +173,6 @@ function getTarget (a) {
   return (a.attr ? a.attr('href') : a.getAttribute('href')).match(/c?\d+/g).pop();
 }
 
-function hideContext() {
-  $j('#ancwrap, #deswrap').detach();
-}
-
 function highlight() {
   // dummy
   // to be here until the board doesn't hardcode it into posts anymore
@@ -155,23 +181,23 @@ function highlight() {
 
 $j(document).ready(function() {
   $j('body').on('mouseenter', 'span.backreflink a', function (ev) {
-    $j('#' + getTarget(ev.target)).addClass('highlight');
+    preview.show(getTarget(ev.target), {X: ev.pageX, Y: ev.pageY});
   });
   $j('body').on('mouseleave', 'span.backreflink a', function (ev) {
-    $j('#' + getTarget(ev.target)).removeClass('highlight');
+    preview.hide(getTarget(ev.target));
   });
   $j('body').on('click', 'span.backreflink a', function (ev) {
     var el = $j(ev.target);
     ev.preventDefault();
     if (!el.is('.context *')) {
-      hideContext();
-      showContext(+el.closest('.thread_reply').attr('id'), +getTarget(el));
+      context.hide();
+      context.show(+el.closest('.thread_reply').attr('id'), +getTarget(el));
     }
   });
   $j('body').on('click', function (ev) {
     var el = $j(ev.target);
     if (!el.is('.context, .context *, span.backreflink a')) {
-      hideContext();
+      context.hide();
     }
   });
 });

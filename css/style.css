@@ -492,12 +492,15 @@ footer img {
   position: relative;
   clear: left;
 }
-.context > div {
+.context > div, #preview {
   border: 1px solid rgb(99, 85, 55);
   background-color: rgb(236, 233, 226);
   position: absolute;
   left: 10em;
   box-shadow: 1px 2px 2px #706B5E;
+}
+#preview {
+  left: 0;
 }
 .context .thread_reply {
   margin-right: 0.5em;
