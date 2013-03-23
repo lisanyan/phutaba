@@ -123,7 +123,9 @@ var context = {
     if (!isEntirelyVisible) {
       ($j('#preview').length ?
         $j('#preview') :
-        $j('<div id=preview>').append(clonePost(p.attr('id'))))
+        $j('<div id=preview>').append( p.hasClass('thread_OP') ?
+          clonePost(p.attr('id')) :
+          p.find('.post').clone() ))
         .css({left: pos.X + 5 + 'px', top: pos.Y - p.outerHeight()/2 + 'px'})
         .appendTo(document.body);
     }
