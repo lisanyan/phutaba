@@ -12,7 +12,6 @@ use constant NORMAL_HEAD_INCLUDE => q{
 <link rel="shortcut icon" href="/img/favicon.ico" />
 <link rel="stylesheet" type="text/css" href="/css/phutaba.css" />
 <if STYLESHEET><link rel="stylesheet" type="text/css" href="<const STYLESHEET>" /></if>
-<link rel="stylesheet" type="text/css" href="/css/jquery.ui.css" />
 <link rel="stylesheet" type="text/css" href="/css/ui-lightness/jquery-ui-1.10.2.custom.css" />
 <script type="text/javascript" src="/js/jquery-1.9.1.min.js"></script>
 <script type="text/javascript" src="/js/jquery/jquery-ui-1.10.2.custom.min.js"></script>
