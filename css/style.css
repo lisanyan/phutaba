@@ -505,7 +505,7 @@ footer img {
 .context .thread_reply {
   margin-right: 0.5em;
 }
-.context .thread_reply:first-of-type {
+.context .thread_reply:first-of-type, #preview .thread_reply {
   margin-top: 0.5em;
 }
 .thread_head {

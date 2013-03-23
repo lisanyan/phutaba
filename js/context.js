@@ -113,21 +113,22 @@ var context = {
   }
 }, preview = {
   show : function showPreview(num, pos) {
-    var p = $j('#ancbox').length ? $j('#c' + num) : $j('#' + num)
-      , isVisible = p.position().top + p.outerHeight() > window.scrollY &&
-        window.scrollY + $j(window).height() > p.position().top
-      , isEntirelyVisible = p.position().top > window.scrollY &&
-        window.scrollY + $j(window).height() > p.position().top + p.outerHeight()
+    var p = $j('#c' + num).length ? $j('#c' + num) : $j('#' + num)
+      , isVisible = p.offset().top + p.outerHeight() > window.scrollY &&
+        window.scrollY + $j(window).height() > p.offset().top
+      , isEntirelyVisible = p.offset().top > window.scrollY &&
+        window.scrollY + $j(window).height() > p.offset().top + p.outerHeight()
     ;
-    console.log(pos);
-    if (isVisible)
-      p.addClass('highlight');
+
     if (!isEntirelyVisible) {
       ($j('#preview').length ?
         $j('#preview') :
         $j('<div id=preview>').append(clonePost(p.attr('id'))))
-        .css({left: pos.X + 'px', top: pos.Y + 'px'})
+        .css({left: pos.X + 5 + 'px', top: pos.Y - p.outerHeight()/2 + 'px'})
         .appendTo(document.body);
+    }
+    if (isVisible) {
+      p.addClass('highlight');
     }
 
   },
@@ -170,7 +171,7 @@ function clonePost (id) {
 }
 
 function getTarget (a) {
-  return (a.attr ? a.attr('href') : a.getAttribute('href')).match(/c?\d+/g).pop();
+  return (a.attr ? a.attr('href') : a.getAttribute('href')).match(/\d+/g).pop();
 }
 
 function highlight() {
@@ -181,7 +182,10 @@ function highlight() {
 
 $j(document).ready(function() {
   $j('body').on('mouseenter', 'span.backreflink a', function (ev) {
-    preview.show(getTarget(ev.target), {X: ev.pageX, Y: ev.pageY});
+    var el = $j(ev.target)
+      , pos = el.offset()
+    ;
+    preview.show(getTarget(ev.target), {X: pos.left + el.outerWidth(), Y: pos.top + el.outerHeight()/2});
   });
   $j('body').on('mouseleave', 'span.backreflink a', function (ev) {
     preview.hide(getTarget(ev.target));
