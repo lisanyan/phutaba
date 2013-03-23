@@ -10,7 +10,8 @@ use constant NORMAL_HEAD_INCLUDE => q{
 <title><var strip_html(TITLE)> &raquo; <if $title><var strip_html($title)></if><if !$title>/<var strip_html(BOARD_IDENT)>/ - <var strip_html(BOARD_NAME)></if></title>
 <meta charset="<const CHARSET>" />
 <link rel="shortcut icon" href="/img/favicon.ico" />
-<link rel="stylesheet" type="text/css" href="<const STYLESHEET>" />
+<link rel="stylesheet" type="text/css" href="/css/phutaba.css" />
+<if STYLESHEET><link rel="stylesheet" type="text/css" href="<const STYLESHEET>" /></if>
 <link rel="stylesheet" type="text/css" href="/css/jquery.ui.css" />
 <script type="text/javascript" src="/js/prototype.js"></script>
 <script type="text/javascript" src="/js/jquery.js"></script>

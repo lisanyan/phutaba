@@ -1,45 +1,17 @@
-html, body, div, span, applet, object, iframe, h1, h2, h3, h4, h5, h6, p, blockquote, pre, a, abbr, acronym, address, big, cite, code, del, dfn, em, font, img, ins, kbd, q, s, samp, small, strike, strong, sub, sup, tt, var, dl, dt, dd, ol, ul, li, fieldset, form, label, legend, table, caption, tbody, tfoot, thead, tr, th, td {
-  font-size: 100%;
-	font-weight: inherit;
-	font-style: inherit;
-	font-family: inherit;
-	vertical-align: baseline;
-	margin: 0;
-	padding: 0;
-	border: 0;
-	outline: 0;
-}
-
-*:focus {
-	outline: 0;
-}
-
-strong, b, ul.menu a, ul.menu_bottom a, .boardname, .caption, .subject, .postblock, .postername, .teampost, .sage, .ban, .user_banned, .title, .info th, .dellist {
-	font-weight: bold;
-}
-
-em, i, .omittedposts, .notice {
-	font-style: italic;
-}
-
 hr {
-	border: none;
 	border-top: 1px solid #00FF00;
-	margin: 1em 0 1em 0;
-	clear: both;
 }
 
-ul, ol {
-	margin-left: 1.6em;
+::-webkit-input-placeholder {
+	color: #00FF00;
 }
 
-ul {
-	list-style-type: square;
+::-moz-placeholder {
+	color: #00FF00;
 }
 
-td, th {
-	display: table-cell;
-	vertical-align: middle;
+:-ms-input-placeholder {
+	color: #00FF00;
 }
 
 body {
@@ -59,50 +31,16 @@ a:hover {
 	color: #000000;
 }
 
-.content {
-	margin: 3em 1em 0 1em;
-}
-
-ul.menu {
-	position: absolute;
-	top: 4px;
-	margin-left: 0;
-	list-style-type: none;
-}
-
-ul.menu_bottom {
-	float: left;
-	margin-left: 0;
-	list-style-type: none;
-}
-
-ul.right {
-	right: 1em;
-}
-
-ul.menu li, ul.menu_bottom li, ul.pagelist li {
-	display: inline;
-}
-
 ul.menu a, ul.menu_bottom a {
 	background-color: #000000;
 	color: #00FF00;
-	text-decoration: none;
 	border: 1px solid #00FF00;
-	padding: 5px;
+	border-radius: none;
 }
 
 ul.menu a:hover, ul.menu_bottom a:hover {
 	background-color: #00FF00;
 	color: #000000;
-}
-
-ul.menu a:active, ul.menu_bottom a:active {
-	top: 0;
-}
-
-.header {
-	text-align: center;
 }
 
 .banner {
@@ -133,50 +71,19 @@ ul.menu a:active, ul.menu_bottom a:active {
 	border: none;
 }
 
-.teampost img, .sticky img, .locked img { 
-	width: 16px; 
-	height: 16px; 
-}
-
-.boardname, .caption {
+.boardname, .caption, .subject, .postername, .omittedposts, .sage, .notice {
 	color: #00FF00;
-	font-size: 2em;
-	margin-top: 0.5em;
-}
-
-.postarea {
-	text-align: center;
-}
-
-.postarea table {
-	text-align: left;
-	margin: 0 auto;
-}
-
-.postarea img:hover {
-	cursor: pointer;
 }
 
 .postblock {
 	background-color: #00FF00;
 	color: #000000;
-	padding: 0 5px;
-}
-
-.postarea input[type='checkbox'], .postarea input[type='radio'] {
-	margin: 5px;
-}
-
-.comment img {
-
 }
 
 input[type='text'], input[type='password'], textarea {
 	background-color: #000000;
 	color: #00FF00;
-	font-family: monospace;
 	border: 1px solid #00FF00;
-	padding: 2px 4px;
 }
 
 input[type='submit'] {
@@ -184,42 +91,25 @@ input[type='submit'] {
 	color: #00FF00;
 	font-family: monospace;
 	border: 1px solid #00FF00;
-	padding: 2px 4px;
 }
 
 input[type='submit']:hover {
 	background-color: #00FF00;
 	color: #000000;
-	cursor: pointer;
 }
 
-.trap {
-	display: none;
+.doubledash a {
+	color: #00FF00 !important;
+	border-bottom: none;
 }
 
-ul.rules {
-	margin-top: 1em;
-}
-
-.doubledash {
-	float: left;
-	vertical-align: top;
-	margin-top: 0.5em;
-}
-
-.doubledash a:link, .doubledash a:visited {
-	border: none;
+.doubledash a:hover {
+	color: #000000 !important;
 }
 
 .post {
 	background-color: #000000;
 	border: 1px solid #00FF00;
-	margin: 0 0 0.5em 2em;
-	overflow: hidden;
-}
-
-.thread_OP .post {
-	margin-left: 0;
 }
 
 .post_new {
@@ -270,21 +160,9 @@ ul.rules {
 
 .thread_head {
 	background-color: #000000;
-	padding: 5px;
 	border-top: 1px solid #00FF00;
 	border-right: 1px solid #00FF00;
 	border-left: 1px solid #00FF00;
-}
-
-.post_head {
-	padding: 0.4em 0.4em 0.1em 0.4em;
-}
-
-.postername .tripcode {
-	font-weight: normal;
-}
-
-.teampost {
 }
 
 .ssl img {
@@ -315,63 +193,17 @@ ul.rules {
 	content: 'Geschlossen';
 }
 
-.post_body {
-	padding: 1.2em 0 0 1.2em;
-}
-
 .file {
 	background-color: #00FF00;
-	text-align: center;
-	margin: 0 1.2em 1.2em 0;
-	float: left;
-	display: block;
-	vertical-align: top;
-}
-
-.filesize {
-	font-size: 0.85em;
-}
-
-.filelink {
-	line-height: 0;
-}
-
-.filelink a:active {
-	top: 0;
 }
 
 .filetype, .filedeleted {
 	font: bold 2em monospace;
-	width: 200px;
-	padding: 0.5em 0 0.5em 0;
-}
-
-.filedeleted {
-	color: #000000;
-}
-
-.text {
-	margin: 0 2em 1.2em 1.2em;
-	word-wrap: break-word;
-	vertical-align: top;
-}
-
-.text ul, .text ol {
-	margin-left: 0;
-}
-
-.text ul li, .text ol li {
-	list-style-position: inside;
-}
-
-blockquote.unkfunc, span.quote {
-	margin: 0;
 }
 
 .spoiler {
 	background-color: #00FF00;
 	color: #00FF00;
-	text-shadow: none;
 }
 
 .spoiler a {
@@ -382,66 +214,22 @@ blockquote.unkfunc, span.quote {
 	color: #000000;
 }
 
-.ban, .tldr, .user_banned {
-	margin-top: 1em;
-}
-
-.ban, .user_banned {
-	text-transform: uppercase;
-}
-
-.omittedposts, .notice {
-	margin-left: 2em;
-}
-
-.omittedposts {
-	margin-bottom: 0.5em;
-}
-
 .notice img {
 	display: none;
 }
 
 .notice span {
-	padding: 0 0.5em;
 	border: 1px dashed #00FF00;
 }
 
-.togglethread a:hover, .togglethread img:hover {
-	cursor: pointer;
-}
-
 ul.pagelist {
+	background-color: #000000;
 	border: 1px solid #00FF00;
-	padding: 0.5em;
-	margin: 0 1em 0 0;
-	float: left;
-}
-
-.delete {
-	float: right;
-}
-
-input[type='password'] {
-	width: 8em;
 }
 
 .passvalid {
 	background-color: #00FF00;
 	color: #000000;
-	font-weight: bold;
-	text-align: center;
-	padding: 5px;
-	margin: 5px 0;
-}
-
-.managehead th, .row1 td, .row2 td {
-	padding: 5px;
-}
-
-.managehead {
-	font-weight: bold;
-	text-align: center;
 }
 
 .row1 {
@@ -457,35 +245,18 @@ input[type='password'] {
 .title, .info th {
 	background-color: #00FF00;
 	color: #000000;
-	font-weight: bold;
-	padding: 5px;
 }
 
 .info {
 	border: 1px solid #00FF00;
-	padding: 1em;
-	margin: 0 0 0.5em 0;
-}
-
-.info table {
-	margin-top: 1em;
 }
 
 .info td {
-	text-align: center;
 	border: 1px solid #00FF00;
-	padding: 5px;
 }
 
 .error {
-	font-size: 2em;
-	text-align: center;
-}
-
-footer {
-	text-align: center;
-	padding: 1em 0 1em 0;
-	clear: both;
+	color: #00FF00;
 }
 
 footer img {
