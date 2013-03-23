@@ -512,6 +512,7 @@ footer img {
   clear: left;
 }
 
+/* TODO integrate colours into specific stylesheets */
 .highlight .post, :target .post {
 	background-color: #BFB5A1;
 }

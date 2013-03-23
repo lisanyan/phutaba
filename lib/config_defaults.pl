@@ -154,7 +154,7 @@ eval "use constant SQL_PREFIX => 'ernstchan_';" unless ( defined &SQL_PREFIX );
     eval "use constant COOKIE_PATH => 'root'" unless ( defined &COOKIE_PATH );
     eval "use constant STYLE_COOKIE => 'wakabastyle'"
       unless ( defined &STYLE_COOKIE );
-	eval "use constant STYLESHEET => '/css/style.css'" unless (defined &STYLESHEET);
+	eval "use constant STYLESHEET => ''" unless (defined &STYLESHEET);
     eval "use constant FORCED_ANON => 0" unless ( defined &FORCED_ANON );
     eval "use constant USE_XHTML => 1"   unless ( defined &USE_XHTML );
 
