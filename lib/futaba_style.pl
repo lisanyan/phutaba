@@ -12,6 +12,7 @@ use constant NORMAL_HEAD_INCLUDE => q{
 <link rel="shortcut icon" href="/img/favicon.ico" />
 <link rel="stylesheet" type="text/css" href="/css/phutaba.css" />
 <if STYLESHEET><link rel="stylesheet" type="text/css" href="<const STYLESHEET>" /></if>
+<if test_afmod()><link rel="stylesheet" type="text/css" href="/css/af.css" /></if>
 <link rel="stylesheet" type="text/css" href="/css/jquery.ui.css" />
 <script type="text/javascript" src="/js/prototype.js"></script>
 <script type="text/javascript" src="/js/jquery.js"></script>
