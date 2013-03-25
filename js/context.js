@@ -176,7 +176,7 @@ var context = {
     hide : function (num) {
       var posts = $j('#' + num + ',#c' + num);
       status[num] = "aborted";
-      previewBox.hide();
+      previewBox.hide().empty();
       posts.removeClass('highlight');
     }
   };
