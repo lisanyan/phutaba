@@ -516,7 +516,7 @@ footer img {
 #post_cache {
 	visibility: hidden;
 	position: absolute;
-	bottom: 0;
+	top: -100000px;
 }
 
 /* TODO integrate colours into specific stylesheets */
