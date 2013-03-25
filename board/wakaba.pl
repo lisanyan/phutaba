@@ -957,6 +957,15 @@ if ($$row{image}) {
 		'tn_height' 	=> $$row{tn_height},
 		'size' 			=> $$row{size}
 	};
+	#delete $$row{image};
+	delete $$row{uploadname};
+	delete $$row{width};
+	delete $$row{height};
+	delete $$row{thumbnail};
+	delete $$row{tn_width};
+	delete $$row{tn_height};
+	#delete $$row{size} = undef;
+	delete $$row{displaysize};
 }
 
     if ( $$row{imageid_1} != 0 ) {
@@ -967,16 +976,17 @@ if ($$row{image}) {
         my $res2 = get_decoded_hashref($sth2);    #$sth2->fetchrow_hashref();
 $$res2{uploadname}=clean_string($$res2{uploadname});
 $$res2{thumbnail} = undef if ($$res2{thumbnail} =~ m|^\.\./img/|); # temporary
+delete $$res2{displaysize};
 push(@files, $res2);
-        $$row{image1}       = $$res2{image};
-        $$row{uploadname1}  = $$res2{uploadname};
+#        $$row{image1}       = $$res2{image};
+#        $$row{uploadname1}  = $$res2{uploadname};
 #        $$row{displaysize1} = $$res2{displaysize};
-        $$row{width1}       = $$res2{width};
-        $$row{height1}      = $$res2{height};
-        $$row{thumbnail1}   = $$res2{thumbnail};
-        $$row{tn_width1}    = $$res2{tn_width};
-        $$row{tn_height1}   = $$res2{tn_height};
-        $$row{size1}        = $$res2{size};
+#        $$row{width1}       = $$res2{width};
+#        $$row{height1}      = $$res2{height};
+#        $$row{thumbnail1}   = $$res2{thumbnail};
+#        $$row{tn_width1}    = $$res2{tn_width};
+#        $$row{tn_height1}   = $$res2{tn_height};
+#        $$row{size1}        = $$res2{size};
         $secondaryImageSize += $$res2{size};
         $extImageCount++;
     }
@@ -989,16 +999,17 @@ push(@files, $res2);
         my $res2 = get_decoded_hashref($sth2);    #$sth2->fetchrow_hashref();
 $$res2{uploadname}=clean_string($$res2{uploadname});
 $$res2{thumbnail} = undef if ($$res2{thumbnail} =~ m|^\.\./img/|); # temporary
+delete $$res2{displaysize};
 push(@files, $res2);
-        $$row{image2}       = $$res2{image};
-        $$row{uploadname2}  = $$res2{uploadname};
+#        $$row{image2}       = $$res2{image};
+#        $$row{uploadname2}  = $$res2{uploadname};
 #        $$row{displaysize2} = $$res2{displaysize};
-        $$row{width2}       = $$res2{width};
-        $$row{height2}      = $$res2{height};
-        $$row{thumbnail2}   = $$res2{thumbnail};
-        $$row{tn_width2}    = $$res2{tn_width};
-        $$row{tn_height2}   = $$res2{tn_height};
-        $$row{size2}        = $$res2{size};
+#        $$row{width2}       = $$res2{width};
+#        $$row{height2}      = $$res2{height};
+#        $$row{thumbnail2}   = $$res2{thumbnail};
+#        $$row{tn_width2}    = $$res2{tn_width};
+#        $$row{tn_height2}   = $$res2{tn_height};
+#        $$row{size2}        = $$res2{size};
         $secondaryImageSize += $$res2{size};
         $extImageCount++;
     }
@@ -1011,16 +1022,17 @@ push(@files, $res2);
         my $res2 = get_decoded_hashref($sth2);    # $sth2->fetchrow_hashref();
 $$res2{uploadname}=clean_string($$res2{uploadname});
 $$res2{thumbnail} = undef if ($$res2{thumbnail} =~ m|^\.\./img/|); # temporary
+delete $$res2{displaysize};
 push(@files, $res2);
-        $$row{image3}       = $$res2{image};
-        $$row{uploadname3}  = $$res2{uploadname};
+#        $$row{image3}       = $$res2{image};
+#        $$row{uploadname3}  = $$res2{uploadname};
 #        $$row{displaysize3} = $$res2{displaysize};
-        $$row{width3}       = $$res2{width};
-        $$row{height3}      = $$res2{height};
-        $$row{thumbnail3}   = $$res2{thumbnail};
-        $$row{tn_width3}    = $$res2{tn_width};
-        $$row{tn_height3}   = $$res2{tn_height};
-        $$row{size3}        = $$res2{size};
+#        $$row{width3}       = $$res2{width};
+#        $$row{height3}      = $$res2{height};
+#        $$row{thumbnail3}   = $$res2{thumbnail};
+#        $$row{tn_width3}    = $$res2{tn_width};
+#        $$row{tn_height3}   = $$res2{tn_height};
+#        $$row{size3}        = $$res2{size};
         $secondaryImageSize += $$res2{size};
         $extImageCount++;
     }
@@ -1648,7 +1660,7 @@ sub format_comment {
 
         $line =~ s!&gtgt;([0-9]+)!
 			my $res=get_post($1);
-			if($res) { '<span class="backreflink"><a href="'.get_reply_link($$res{num},$$res{parent}).'" onclick="highlight('.$1.')">&gt;&gt;'.$1.'</a></span>' }
+			if($res) { '<span class="backreflink"><a href="'.get_reply_link($$res{num},$$res{parent}).'">&gt;&gt;'.$1.'</a></span>' }
 			else { '<span class="backreflink"><del>&gt;&gt;$1</del></span>'; }
 		!ge;
 
