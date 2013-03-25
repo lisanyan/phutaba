@@ -110,11 +110,15 @@ var context = {
         desbox.append(clonePost(i));
     });
 
+    ancbox.find('#c' + highlight).addClass('highlight');
     if (ancestors.length) $j('#'+num).before(ancwrap);
     if (descendants.length) $j('#'+num).after(deswrap);
   },
   hide : function () {
-    $j('#ancwrap, #deswrap').detach();
+    $j('#ancwrap, #deswrap')
+      .detach()
+      .find('article')
+      .removeClass('highlight');
   }
 }, postCache, preview = (function () {
   var previewBox = $j('<div id=preview>')
@@ -167,6 +171,7 @@ var context = {
             if (status[num] !== "aborted") {
               showPost(post, pos, previewBox);
               callback();
+              status[num] = "loaded";
             }
           });
         }
@@ -247,6 +252,7 @@ $j(document).ready(function() {
     if ($j('.content #' + id).length && window.thread_id) {
       ev.preventDefault();
       if (!el.is('.context *')) {
+        preview.hide(getTarget(el));
         context.hide();
         context.show(+el.closest('.thread_reply').attr('id'), id);
       }
