@@ -1482,6 +1482,14 @@ sub analyze_pdf($) {
 	return (1, 1);
 }
 
+sub test_afmod {
+	my $day = localtime->mday;
+	my $month = localtime->mon + 1;
+
+	return 1 if (ENABLE_AFMOD && $month == 4 && $day == 1);
+	return 0;
+}
+
 sub make_thumbnail {
     my ( $filename, $thumbnail, $width, $height, $quality, $convert ) = @_;
 
@@ -1498,8 +1506,22 @@ sub make_thumbnail {
 	# pdf files have no physical resolution - let ImageMagick figure out the thumbnail-ratio
 	$ignore_ar = "" if ($filename =~ /\.pdf$/);
 
+	
+	my $param = "";
+
+	if (test_afmod())
+	{
+		my @params = ('-flip', '-flop', '-transpose', '-transverse',
+			'-rotate 75', '-roll +60-45', '-quality 5', '-negate', '-monochrome',
+			'-gravity NorthEast -stroke "#000C" -strokewidth 2 -annotate 90x90+5+135 "Unregistered Hypercam" '
+			. '-stroke none -fill white -annotate 90x90+5+135 "Unregistered Hypercam"'
+		);
+		$param = $params[rand @params];
+		$background = "#BFB5A1" if ($thumbnail =~ /\.jpg$/ && $filename !~ /\.pdf$/);
+	}
+
     $convert = "convert" unless ($convert);
-`$convert -background $background -flatten -size ${width}x${height} -geometry ${width}x${height}${ignore_ar} -quality $quality $magickname $thumbnail`;
+`$convert -background $background -flatten -size ${width}x${height} -geometry ${width}x${height}${ignore_ar} -quality $quality $param $magickname $thumbnail`;
 
     return 1 unless ($?);
 

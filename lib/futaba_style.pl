@@ -9,10 +9,13 @@ use constant NORMAL_HEAD_INCLUDE => q{
 <head>
 <title><var strip_html(TITLE)> &raquo; <if $title><var strip_html($title)></if><if !$title>/<var strip_html(BOARD_IDENT)>/ - <var strip_html(BOARD_NAME)></if></title>
 <meta charset="<const CHARSET>" />
+
 <link rel="shortcut icon" href="/img/favicon.ico" />
 <link rel="stylesheet" type="text/css" href="/css/phutaba.css" />
 <if STYLESHEET><link rel="stylesheet" type="text/css" href="<const STYLESHEET>" /></if>
+<if test_afmod()><link rel="stylesheet" type="text/css" href="/css/af.css" /></if>
 <link rel="stylesheet" type="text/css" href="/css/ui-lightness/jquery-ui-1.10.2.custom.css" />
+
 <script type="text/javascript" src="/js/jquery-1.9.1.min.js"></script>
 <script type="text/javascript" src="/js/jquery/jquery-ui-1.10.2.custom.min.js"></script>
 <script type="text/javascript" src="/js/jquery/jquery.blockUI.js"></script>

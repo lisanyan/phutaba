@@ -55,6 +55,8 @@ BEGIN {
       unless ( defined &PREVENT_GHOST_BUMPING );
     eval "use constant ENABLE_HIDE_THREADS => 1"
       unless ( defined &ENABLE_HIDE_THREADS );
+    eval "use constant ENABLE_AFMOD => 0"
+      unless ( defined &ENABLE_AFMOD );
     eval "use constant ENABLE_IRC_NOTIFY => 1"
       unless ( defined &ENABLE_IRC_NOTIFY );
     eval "use constant ENABLE_WEBSOCKET_NOTIFY => 1"
