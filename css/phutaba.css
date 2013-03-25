@@ -376,11 +376,7 @@ blockquote.unkfunc, span.quote {
 
 .omittedposts, .notice {
 	color: #707070;
-	margin-left: 2em;
-}
-
-.omittedposts {
-	margin-top: 0.5em;
+	margin: 0.5em 0 0 2em;
 }
 
 .notice img {
