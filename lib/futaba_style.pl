@@ -9,17 +9,17 @@ use constant NORMAL_HEAD_INCLUDE => q{
 <head>
 <title><var strip_html(TITLE)> &raquo; <if $title><var strip_html($title)></if><if !$title>/<var strip_html(BOARD_IDENT)>/ - <var strip_html(BOARD_NAME)></if></title>
 <meta charset="<const CHARSET>" />
+
 <link rel="shortcut icon" href="/img/favicon.ico" />
 <link rel="stylesheet" type="text/css" href="/css/phutaba.css" />
 <if STYLESHEET><link rel="stylesheet" type="text/css" href="<const STYLESHEET>" /></if>
 <if test_afmod()><link rel="stylesheet" type="text/css" href="/css/af.css" /></if>
-<link rel="stylesheet" type="text/css" href="/css/jquery.ui.css" />
-<script type="text/javascript" src="/js/prototype.js"></script>
-<script type="text/javascript" src="/js/jquery.js"></script>
+<link rel="stylesheet" type="text/css" href="/css/ui-lightness/jquery-ui-1.10.2.custom.css" />
+
+<script type="text/javascript" src="/js/jquery-1.9.1.min.js"></script>
+<script type="text/javascript" src="/js/jquery/jquery-ui-1.10.2.custom.min.js"></script>
 <script type="text/javascript" src="/js/jquery/jquery.blockUI.js"></script>
-<script type="text/javascript" src="/js/jquery/jquery.elastic.js"></script>
 <script type="text/javascript" src="/js/jquery/jquery.cookie.js"></script>
-<script type="text/javascript" src="/js/jquery/jquery.ui.js"></script>
 <script type="text/javascript" src="/js/wakaba3.js"></script>
 <if $isAdmin><script type="text/javascript" src="/js/admin.js"></script></if>
 <if ENABLE_HIDE_THREADS && !$thread><script type="text/javascript" src="/js/hidethreads.js"></script></if>
@@ -52,12 +52,12 @@ use constant NORMAL_HEAD_INCLUDE => q{
 /* ]]> */
 </script>
 
-<if $thread && ENABLE_WEBSOCKET_NOTIFY>
-	<script type="text/javascript">
-		var thread_id = <var $thread>;
-		var board = "<const BOARD_IDENT>";
-	</script>
-</if>
+<script type="text/javascript">
+var board = '<const BOARD_IDENT>'
+  , thread_id = <if $thread><var $thread></if><if !$thread>null</if>
+;
+</script>
+<script type="text/javascript" src="/js/context.js"></script>
 
 <style type="text/css">
 <const ADDITIONAL_CSS>

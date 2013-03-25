@@ -17,16 +17,13 @@
 		
 	<if $thread>
 		<if $isAdmin>
-			<a onclick="javascript:highlight('<var $num>');" href="<var get_reply_link($parent,0,$admin)>#<var $num>">&gt;&gt;</a>
+			<a href="<var get_reply_link($parent,0,$admin)>#<var $num>">&gt;&gt;</a>
 		</if>
 		<if !$isAdmin>
-			<a onclick="javascript:highlight('<var $num>');" href="<var get_reply_link($parent,0)>#<var $num>">&gt;&gt;</a>
+			<a href="<var get_reply_link($parent,0)>#<var $num>">&gt;&gt;</a>
 		</if>
 	</if>
 	</div>
-
- 				<if !$single><!--td class="reply" id="reply<var $num>"--></if>
- 				<if $single><!--td class="reply_new" id="reply<var $num>"--></if>
 
 	<section class="post<if $single> post_new</if>">
 	<section class="post_head">
