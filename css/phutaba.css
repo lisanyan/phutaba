@@ -380,7 +380,7 @@ blockquote.unkfunc, span.quote {
 }
 
 .omittedposts {
-	margin-bottom: 0.5em;
+	margin-top: 0.5em;
 }
 
 .notice img {
@@ -511,6 +511,12 @@ footer img {
 }
 #preview .post {
 	margin-left: 0;
+	border-color: #BFB5A1;
+}
+#post_cache {
+	visibility: hidden;
+	position: absolute;
+	bottom: 0;
 }
 
 /* TODO integrate colours into specific stylesheets */

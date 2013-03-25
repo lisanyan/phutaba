@@ -78,14 +78,14 @@ DAG.prototype.ancestors = function (id) {
 }
 
 
-// works in threads only. TODO
 var context = {
-  show : function showContext (num, highlight) {
-    var posts = $j('.thread_reply')
+  // works in threads only. TODO
+  show : function (num, highlight) {
+    var posts = $j('.content .thread_reply')
       , OPid = +$j('.thread_OP').attr('id')
       , postgraph = createPostGraph(OPid)
-      , ancwrap = $j('#ancwrap').length ? $j('#ancwrap') : $j('<div id=ancwrap class=context><div id=ancbox>')
-      , deswrap = $j('#deswrap').length ? $j('#deswrap') : $j('<div id=deswrap class=context><div id=desbox>')
+      , ancwrap = exists('#ancwrap') ? $j('#ancwrap') : $j('<div id=ancwrap class=context><div id=ancbox>')
+      , deswrap = exists('#deswrap') ? $j('#deswrap') : $j('<div id=deswrap class=context><div id=desbox>')
       , ancbox = ancwrap.find(':first-child').empty()
       , desbox = deswrap.find(':first-child').empty()
       , dummy = $j('<div id=dummy class=dummy>')
@@ -108,38 +108,74 @@ var context = {
     if (ancestors.length) $j('#'+num).before(ancwrap);
     if (descendants.length) $j('#'+num).after(deswrap);
   },
-  hide : function hideContext() {
+  hide : function () {
     $j('#ancwrap, #deswrap').detach();
   }
-}, preview = {
-  show : function showPreview(num, pos) {
-    var p = $j('#c' + num).length ? $j('#c' + num) : $j('#' + num)
-      , isVisible = p.offset().top + p.outerHeight() > window.scrollY &&
-        window.scrollY + $j(window).height() > p.offset().top
-      , isEntirelyVisible = p.offset().top > window.scrollY &&
-        window.scrollY + $j(window).height() > p.offset().top + p.outerHeight()
-    ;
+}, postCache, preview = (function () {
+  var previewBox = $j('<div id=preview>')
+    , status = []
+  ;
 
-    if (!isEntirelyVisible) {
-      ($j('#preview').length ?
-        $j('#preview') :
-        $j('<div id=preview>').append( p.hasClass('thread_OP') ?
-          clonePost(p.attr('id')) :
-          p.find('.post').clone() ))
-        .css({left: pos.X + 5 + 'px', top: pos.Y - p.outerHeight()/2 + 'px'})
-        .appendTo(document.body);
-    }
-    if (isVisible) {
-      p.addClass('highlight');
-    }
-
-  },
-  hide : function hidePreview(num) {
-    var posts = $j('#' + num + ',#c' + num);
-    $j('#preview').detach();
-    posts.removeClass('highlight');
+  function loadPost(num, callback) {
+    $j.get('/' + window.board + '/wakaba.pl?task=show&post=' + num,
+      function (data) {
+        var post = $j(data.trim());
+        if (!exists(+num)) {
+          postCache.append(post);
+        }
+        callback(post);
+      });
   }
-};
+
+  function showPost(p, pos) {
+    previewBox.empty()
+      .append( p.hasClass('thread_OP') ?
+        clonePost(p.attr('id')) :
+        p.find('.post').clone() )
+      .css({left: pos.X + 5 + 'px', top: pos.Y - p.outerHeight()/2 + 'px'})
+      .show()
+      .appendTo(document.body);
+  }
+
+  return {
+    show : function (num, pos, callback) {
+      var p = exists('#c' + num) ? $j('#c' + num) :
+          exists(+num) ? $j('#' + num) :
+          undefined
+        , isVisible = p && p.offset().top + p.outerHeight() > window.scrollY &&
+          window.scrollY + $j(window).height() > p.offset().top
+        , isEntirelyVisible = p && p.offset().top > window.scrollY &&
+          window.scrollY + $j(window).height() > p.offset().top + p.outerHeight()
+      ;
+
+      if (p) {
+        if (!isEntirelyVisible) {
+          showPost(p, pos);
+        }
+        if (isVisible) {
+          p.addClass('highlight');
+        }
+        callback();
+      } else {
+        if (!status[num]) {
+          loadPost(num, function (post) {
+            if (status[num] !== "aborted") {
+              showPost(post, pos, previewBox);
+              callback();
+            }
+          });
+        }
+        status[num] = "loading";
+      }
+    },
+    hide : function (num) {
+      var posts = $j('#' + num + ',#c' + num);
+      status[num] = "aborted";
+      previewBox.hide();
+      posts.removeClass('highlight');
+    }
+  };
+})();
 
 
 function createPostGraph(OP) {
@@ -150,9 +186,10 @@ function createPostGraph(OP) {
       , num = +post.attr('id')
     ;
     graph.append(refs.map(function () {
-          return +getTarget(this);
-       }).toArray(),
-     num);
+      return +getTarget(this);
+    }).toArray().filter(function (x) {
+      return exists('.content #' + x);
+    }), num);
   }
   return graph;
 }
@@ -176,6 +213,10 @@ function getTarget (a) {
   return (a.attr ? a.attr('href') : a.getAttribute('href')).match(/\d+/g).pop();
 }
 
+function exists (query) {
+  return !!(typeof query === 'number' ? document.getElementById(query) : $j(query).length);
+}
+
 function highlight() {
   // dummy
   // to be here until the board doesn't hardcode it into posts anymore
@@ -183,21 +224,32 @@ function highlight() {
 
 
 $j(document).ready(function() {
+  postCache = $j('<div id=post_cache>').appendTo($j('body'));
   $j('body').on('mouseenter', 'span.backreflink a', function (ev) {
     var el = $j(ev.target)
       , pos = el.offset()
     ;
-    preview.show(getTarget(ev.target), {X: pos.left + el.outerWidth(), Y: pos.top + el.outerHeight()/2});
+    el.css({cursor: 'progress'});
+    preview.show(getTarget(ev.target),
+      {X: pos.left + el.outerWidth(), Y: pos.top + el.outerHeight()/2},
+      function () { el.css({cursor: ''}); });
   });
   $j('body').on('mouseleave', 'span.backreflink a', function (ev) {
-    preview.hide(getTarget(ev.target));
+    var el = $j(ev.target);
+    el.css({cursor: ''});
+    preview.hide(getTarget(el));
   });
   $j('body').on('click', 'span.backreflink a', function (ev) {
-    var el = $j(ev.target);
-    ev.preventDefault();
-    if (!el.is('.context *')) {
-      context.hide();
-      context.show(+el.closest('.thread_reply').attr('id'), +getTarget(el));
+    var el = $j(ev.target)
+      , id = +getTarget(el)
+    ;
+
+    if ($j('.content #' + id).length && window.thread_id) {
+      ev.preventDefault();
+      if (!el.is('.context *')) {
+        context.hide();
+        context.show(+el.closest('.thread_reply').attr('id'), id);
+      }
     }
   });
   $j('body').on('click', function (ev) {

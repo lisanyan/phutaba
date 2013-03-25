@@ -48,14 +48,13 @@ use constant NORMAL_HEAD_INCLUDE => q{
   });
 /* ]]> */
 </script>
-<script type="text/javascript" src="/js/context.js"></script>
 
-<if $thread && ENABLE_WEBSOCKET_NOTIFY>
-	<script type="text/javascript">
-		var thread_id = <var $thread>;
-		var board = "<const BOARD_IDENT>";
-	</script>
-</if>
+<script type="text/javascript">
+var board = '<const BOARD_IDENT>'
+  , thread_id = <if $thread><var $thread></if><if !$thread>null</if>
+;
+</script>
+<script type="text/javascript" src="/js/context.js"></script>
 
 <style type="text/css">
 <const ADDITIONAL_CSS>
