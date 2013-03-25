@@ -1,3 +1,8 @@
+function highlight() {
+  // dummy
+  // to be here until the board doesn't hardcode it into posts anymore
+}
+
 function DAG(id) {
   this.nodes = [];
   if (id !== undefined) {
@@ -22,7 +27,7 @@ DAG.prototype.append = function (parents, id) {
     });
     return true;
   }
-}
+};
 DAG.prototype.attach = function (parents, sub) {
   var nodes = this.nodes;
   if (sub.nodes.filter(function (el) {
@@ -39,7 +44,7 @@ DAG.prototype.attach = function (parents, sub) {
     });
     return true;
   }
-}
+};
 DAG.prototype.flatten = function () {
   // this is not a toposort!
   return this.nodes.map(function (node, i) {
@@ -47,7 +52,7 @@ DAG.prototype.flatten = function () {
   }).filter(function (node, i) {
     return i !== undefined;
   });
-}
+};
 DAG.prototype.reverse = function () {
   var out = new DAG();
   this.nodes.forEach(function (node, i) {
@@ -60,7 +65,7 @@ DAG.prototype.reverse = function () {
     };
   });
   return out;
-}
+};
 DAG.prototype.descendants = function (id) {
   var out = new DAG(id),
     self = this;
@@ -72,12 +77,12 @@ DAG.prototype.descendants = function (id) {
     }
   });
   return out;
-}
+};
 DAG.prototype.ancestors = function (id) {
   return this.reverse().descendants(id);
-}
+};
 
-
+(function () {
 var context = {
   // works in threads only. TODO
   show : function (num, highlight) {
@@ -217,11 +222,6 @@ function exists (query) {
   return !!(typeof query === 'number' ? document.getElementById(query) : $j(query).length);
 }
 
-function highlight() {
-  // dummy
-  // to be here until the board doesn't hardcode it into posts anymore
-}
-
 
 $j(document).ready(function() {
   postCache = $j('<div id=post_cache>').appendTo($j('body'));
@@ -259,4 +259,4 @@ $j(document).ready(function() {
     }
   });
 });
-
+})();
