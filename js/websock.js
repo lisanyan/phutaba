@@ -72,7 +72,7 @@ loadpost = function(thread, post) {
   if (__indexOf.call(updated_ids, post) < 0) {
     updated_ids.push(post);
     return jQuery(document).load("/" + board + "/?task=show&post=" + post, "", function(response, status, xmlobj) {
-      return jQuery(response).hide().appendTo("#thread_" + thread).show('normal');
+      return jQuery(response.trim()).hide().appendTo("#thread_" + thread).show('normal');
     });
   }
 };
