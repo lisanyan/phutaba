@@ -125,9 +125,14 @@ input[type='submit']:hover {
 	background-color: #000000;
 }
 
+.reflink a:hover {
+	text-decoration: none;
+}
+
 :target .reflink a, :target .backreflink a, :target .text a {
 	color: #000000;
 	border-bottom: 1px solid #000000;
+	text-decoration: none;
 }
 
 :target .reflink a:hover, :target .backreflink a:hover, :target .text a:hover {
@@ -145,6 +150,9 @@ input[type='submit']:hover {
 	color: #000000;
 }
 
+:target .postername {color: #000000;
+}
+
 :target .spoiler {
 	background-color: #000000;
 	color: #000000;
@@ -155,6 +163,14 @@ input[type='submit']:hover {
 }
 
 :target .filedeleted {
+	color: #00FF00;
+}
+
+:target blockquote.unkfunc, :target span.quote {
+	color: #000000;
+}
+
+blockquote.unkfunc, span.quote {
 	color: #00FF00;
 }
 
@@ -257,7 +273,7 @@ ul.pagelist {
 
 .error {
 	color: #00FF00;
-}
+}blockquote.unkfunc, span.quote {
 
 footer img {
 	display: none;
