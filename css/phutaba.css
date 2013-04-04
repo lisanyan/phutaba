@@ -67,20 +67,11 @@ a:active {
 }
 
 .content {
-	margin: 1em;
+	margin: 0 1em;
 }
 
-ul.menu, ul.pagelist, ul.menu_bottom {
-	background-color: #D7CFC0;
-	border-right: 1px solid #BFB5A1;
-	border-bottom: 1px solid #BFB5A1;
-	padding: 0.5em;
-	margin: 0 1em 0 0;
-	float: left;
-}
-
-ul.menu_bottom {
-	margin-bottom: 1em;
+ul.menu, ul.menu_bottom {
+	margin-left: 0;
 }
 
 ul.right {
@@ -90,6 +81,40 @@ ul.right {
 
 ul.menu li, ul.menu_bottom li, ul.pagelist li {
 	display: inline;
+}
+
+ul.menu li a, ul.menu_bottom li a {
+	background-color: #D7CFC0;
+	color: #000000;
+	font-weight: bold;
+	text-decoration: none;
+	padding: 0.5em;
+	margin-right: 0.5em;
+	float: left;
+}
+
+ul.menu li a {
+	border-right: 1px solid #706B6E;
+	border-bottom: 1px solid #706B5E;
+	border-left: 1px solid #706B5E;
+	border-bottom-right-radius: 0.5em;
+	border-bottom-left-radius: 0.5em;
+}
+
+ul.menu_bottom li a {
+	border-top: 1px solid #706B5E;
+	border-right: 1px solid #706B6E;
+	border-left: 1px solid #706B5E;
+	border-top-right-radius: 0.5em;
+	border-top-left-radius: 0.5em;
+}
+
+ul.menu li a:hover, ul.menu_bottom li a:hover {
+	box-shadow: 1px 1px 2px #999999;
+}
+
+ul.menu li a:active, ul.menu_bottom li a:active {
+	top: 0;
 }
 
 .header {
@@ -141,14 +166,13 @@ ul.menu li, ul.menu_bottom li, ul.pagelist li {
 }
 
 .comment img {
-
 }
 
 input[type='text'], input[type='password'], textarea {
 	background-color: #FFFFFF;
 	font-family: monospace;
 	border: 1px solid #706B5E;
-	padding: 2px 4px;
+	padding: 0.25em;
 }
 
 input[type='submit']:hover {
@@ -288,10 +312,10 @@ ul.rules {
 }
 
 .filetype, .filedeleted {
+	background: url("../img/erna-klein.png") no-repeat;
 	font: bold 2em sans-serif;
 	width: 200px;
 	padding: 0.5em 0 0.5em 0;
-	background: url("../img/erna-klein.png") no-repeat;
 }
 
 .filedeleted {
@@ -361,6 +385,15 @@ blockquote.unkfunc, span.quote {
 
 .togglethread a:hover, .togglethread img:hover {
 	cursor: pointer;
+}
+
+ul.pagelist {
+	background-color: #D7CFC0;
+	border-right: 1px solid #BFB5A1;
+	border-bottom: 1px solid #BFB5A1;
+	padding: 0.5em;
+	margin: 0 1em 0 0;
+	float: left;
 }
 
 .delete {
@@ -440,7 +473,6 @@ footer {
 footer img {
 	vertical-align: middle;
 }
-
 
 /* stuff for context.js */
 #ancbox {
