@@ -4,7 +4,7 @@
 <head>
 	<title>Ernstchan [% IF template.title %]&raquo; [% template.title %][% END %]</title>
 	<!--meta charset="utf-8" /-->
-	<link rel="stylesheet" type="text/css" href="/css/style.css" />
+	<link rel="stylesheet" type="text/css" href="/css/phutaba.css" />
 	<link rel="shortcut icon" href="/img/favicon.ico" />
 </head>
 
