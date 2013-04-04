@@ -1661,7 +1661,7 @@ sub format_comment {
         $line =~ s!&gtgt;([0-9]+)!
 			my $res=get_post($1);
 			if($res) { '<span class="backreflink"><a href="'.get_reply_link($$res{num},$$res{parent}).'">&gt;&gt;'.$1.'</a></span>' }
-			else { '<span class="backreflink"><del>&gt;&gt;$1</del></span>'; }
+			else { '<span class="backreflink"><del>&gt;&gt;'.$1.'</del></span>'; }
 		!ge;
 
         return $line;
