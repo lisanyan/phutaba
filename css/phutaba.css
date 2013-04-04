@@ -219,7 +219,7 @@ ul.rules {
 .thread_reply {
 	float: left;
 	clear: both;
-	margin: 0.5em;
+	margin: 0.5em 0;
 	margin-left: 0;
 }
 .thread_reply + .thread_reply {
