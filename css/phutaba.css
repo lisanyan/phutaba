@@ -158,11 +158,15 @@ ul.menu li a:active, ul.menu_bottom li a:active {
 .postblock {
 	background-color: #706B5E;
 	color: #FFFFFF;
-	padding: 0 5px;
+	padding: 0.5em;
 }
 
 .postarea input[type='checkbox'], .postarea input[type='radio'] {
 	margin: 5px;
+}
+
+.postarea input#name, .postarea input#subject {
+	width: 250px;
 }
 
 .comment img {
