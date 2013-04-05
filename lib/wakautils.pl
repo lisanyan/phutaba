@@ -47,7 +47,7 @@ sub get_meta {
 				$val = "(Binary data; $len bytes)";
 			}
 			#$data{$_} = encode_entities(decode('utf8', $val));
-			$data{$_} = clean_string($val);
+			$data{$_} = clean_string(decode_string($val, CHARSET));
 	}
 
 	return \%data;
@@ -1763,10 +1763,10 @@ sub get_displayname($) {
 	$filename = $1;
 
 	# (.{12})    - first X characters of the file(base)name
-	# .....+     - has the basename X+5 or more characters?
+	# .{5,}      - has the basename X+Y or more characters?
 	# (\.[^.]+)$ - Match a dot, followed by any number of non-dots until the end
 	# output is: the first match ()->$1 a fixed string "[...]" and the extension ()->$2
-	$filename =~ s/(.{12}).....+(\.[^.]+)$/$1\[...\]$2/;
+	$filename =~ s/(.{12}).{5,}(\.[^.]+)$/$1\[...\]$2/;
 
 	#return clean_string($filename);
 	return $filename;
@@ -1794,7 +1794,7 @@ sub get_date {
     DateTime->DefaultLocale("de_DE");
     my $dt = DateTime->from_epoch( epoch => $date, time_zone => 'Europe/Berlin' );
     # $day, $fullmonths[$month], $year, $days[$wday], $hour, $min, $sec
-    return $dt->strftime("%d. %B %Y (%a) %H:%M:%S %Z");
+    return $dt->strftime("%e. %B %Y (%a) %H:%M:%S %Z");
 }
 
 1;

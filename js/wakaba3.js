@@ -88,7 +88,7 @@ function file_input_change(max)
 			}
 			inputs[i].style.display = "none";
 			spans[i].innerHTML = ' <a class="hide" href="javascript:void(0)" onclick="del_file_input(this,' + max + ')">'
-				+ '<img src="/img/icons/cancel.png" title="Datei entfernen" /></a> ' + filename + '\n';
+				+ '<img src="/img/icons/cancel.png" width="16" height="16" title="Datei entfernen" /></a> ' + filename + '\n';
 		}
 
 	}
@@ -102,8 +102,7 @@ function file_input_change(max)
 
 		input.type = "file";
 		input.name = "file";
-		input.setAttribute('size', '35');
-		input.onchange=function() {
+		input.onchange = function() {
 			file_input_change(max)
 		}
 

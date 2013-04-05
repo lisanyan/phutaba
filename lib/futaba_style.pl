@@ -190,25 +190,25 @@ use constant PAGE_TEMPLATE => compile_template(
 			<tr><td class="postblock">HTML</td>
 			<td><label><input type="checkbox" name="no_format" value="1" /> <const S_NOTAGS2></label></td></tr>
 		</if>
-	<if !FORCED_ANON or $isAdmin><tr><td class="postblock"><const S_NAME></td><td><input type="text" name="field1" size="28" /></td></tr></if>
+	<if !FORCED_ANON or $isAdmin><tr><td class="postblock"><label for="name"><const S_NAME></label></td><td><input type="text" name="field1" id="name" /></td></tr></if>
 
-	<tr><td class="postblock"><const S_SUBJECT></td><td><input type="text" name="field3" size="35" />
+	<tr><td class="postblock"><label for="subject"><const S_SUBJECT></label></td><td><input type="text" name="field3" id="subject" />
 	<input type="submit" id="postform_submit" value="<if $thread><const S_BTREPLY> /<var BOARD_IDENT>/<var $thread></if><if !$thread><const S_BTNEWTHREAD></if>" /></td>
 	</tr>
 
 	<if $thread>
-	<tr><td class="postblock"><const S_SAGE></td>
-	<td><label><input type="checkbox" name="field2" value="sage" /> <const S_SAGEDESC></label></td>
+	<tr><td class="postblock"><label for="sage"><const S_SAGE></label></td>
+	<td><label><input type="checkbox" name="field2" value="sage" id="sage" /> <const S_SAGEDESC></label></td>
 	</tr>
 	</if>
 
-	<tr><td class="postblock"><const S_COMMENT></td>
-	<td><textarea id="field4" name="field4" cols="48" rows="6"></textarea> <img onclick="resizeCommentfield('field4', this)" src="/img/icons/expand.png" alt="<const S_IMGEXPAND>" title="<const S_IMGEXPAND>" />
+	<tr><td class="postblock"><label for="field4"><const S_COMMENT></label></td>
+	<td><textarea id="field4" name="field4" cols="48" rows="6" autofocus></textarea> <img onclick="resizeCommentfield('field4', this)" src="/img/icons/expand.png" alt="<const S_IMGEXPAND>" title="<const S_IMGEXPAND>" />
 	</td></tr>
 
 	<if $image_inp>
 		<tr id="fileUploadField"><td class="postblock"><const S_UPLOADFILE> (max. 4)</td>
-		<td id="fileInput"><div><input type="file" name="file" size="35" onchange="file_input_change(4)" /></div>
+		<td id="fileInput"><div><input type="file" name="file" onchange="file_input_change(4)" /></div>
 		<if $textonly_inp>[<label><input type="checkbox" name="nofile" value="on" /><const S_NOFILE> ]</label></if>
 		</td></tr>
 	</if>
@@ -224,7 +224,7 @@ use constant PAGE_TEMPLATE => compile_template(
 		<tr><td class="postblock"><const S_CAPTCHA> (<a href="/faq">?</a>) (<var $loc>)</td><td><input type="text" name="captcha" size="10" /> <img alt="" src="/lib/captcha.pl?key=<var get_captcha_key($thread)>&amp;dummy=<var $dummy>&amp;board=<var BOARD_IDENT>" /></td></tr>
 	</if>
 
-	<tr id="passwordField"><td class="postblock"><const S_DELPASS></td><td><input type="password" name="password" size="8" /> <const S_DELEXPL></td></tr>
+	<tr id="passwordField"><td class="postblock"><label for="password"><const S_DELPASS></label></td><td><input type="password" name="password" id="password" /> <const S_DELEXPL></td></tr>
 	<tr><td colspan="2">
 	<div class="rules">} . include("rules.html") . q{</div></td></tr>
 	</tbody>
