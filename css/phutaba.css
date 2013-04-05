@@ -166,7 +166,7 @@ ul.menu li a:active, ul.menu_bottom li a:active {
 }
 
 .postarea input#name, .postarea input#subject {
-	width: 250px;
+	width: 20em;
 }
 
 .comment img {
