@@ -639,7 +639,8 @@ sub show_post {
 		admin        => $admin,
 		locked       => $thread[0]{locked}
 		);
-	$output =~ s/^\s+\n//mg;
+	$output =~ s/^\s+//; # remove whitespace at the beginning
+	$output =~ s/^\s+\n//mg; # remove empty lines
 	print($output);
 }
 
