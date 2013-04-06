@@ -473,6 +473,7 @@ sub output_json_meta {
 	if($row ne undef) {
 		$code = 200;
 		add_secondary_images_to_row($row);
+		# fixme: filenames are in stored in @files->{'image'}
 		$data{'file'} = [get_meta($$row{'image'}), get_meta($$row{'image1'}), get_meta($$row{'image2'}), get_meta($$row{'image3'})];
 	} elsif($sth->rows eq 0) {
 		$code = 404;
@@ -543,6 +544,7 @@ sub output_json_post {
 	$row = $sth->fetchrow_hashref();
 	if($row ne undef) {
 		$code = 200;
+		$$row{'comment'} = resolve_reflinks($$row{'comment'});
 		$$row{'comment'} = encode_entities(decode('utf8', $$row{'comment'}));
 		$$row{'ip'} = "[REDACTED]";
 		$$row{'password'} = "[REDACTED]";
@@ -624,6 +626,7 @@ sub show_post {
 
     if ( $row = $sth->fetchrow_hashref() ) {
         add_secondary_images_to_row($row);
+		$$row{comment} = resolve_reflinks($$row{comment});
         push( @thread, $row );
     }
     else {
