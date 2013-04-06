@@ -782,6 +782,9 @@ sub output_page {
 
         # abbreviate the remaining posts
         foreach my $post ( @{ $$thread{posts} } ) {
+			# create ref-links
+			$$post{comment} = resolve_reflinks($$post{comment});
+
             my $abbreviation =
               abbreviate_html( $$post{comment}, MAX_LINES_SHOWN,
                 APPROX_LINE_LENGTH );
@@ -899,6 +902,7 @@ sub show_thread {
 
     while ( $row = get_decoded_hashref($sth) ) {
         add_secondary_images_to_row($row);
+		$$row{comment} = resolve_reflinks($$row{comment});
 		if($isAdmin) {
    			fixup_admin_reference_links($row, $admin);
 		}
@@ -1052,6 +1056,18 @@ push(@files, $res2);
     $$row{secondaryimagesize} = $secondaryImageSize;
 
 	$row->{'files'}=[@files] if @files; # add the hashref with files to the post	
+}
+
+sub resolve_reflinks($) {
+	my ($comment) = @_;
+
+	$comment =~ s|<!--reflink-->&gt;&gt;([0-9]+)|
+		my $res = get_post($1);
+		if ($res) { '<span class="backreflink"><a href="'.get_reply_link($$res{num},$$res{parent}).'">&gt;&gt;'.$1.'</a></span>' }
+		else { '<span class="backreflink"><del>&gt;&gt;'.$1.'</del></span>'; }
+	|ge;
+
+	return $comment;
 }
 
 sub print_page {
@@ -1654,15 +1670,13 @@ sub format_comment {
     # hide >>1 references from the quoting code
     $comment =~ s/&gt;&gt;([0-9\-]+)/&gtgt;$1/g;
 
-    my $handler = sub    # fix up >>1 references
+    my $handler = sub    # mark >>1 references
     {
         my $line = shift;
 
-        $line =~ s!&gtgt;([0-9]+)!
-			my $res=get_post($1);
-			if($res) { '<span class="backreflink"><a href="'.get_reply_link($$res{num},$$res{parent}).'">&gt;&gt;'.$1.'</a></span>' }
-			else { '<span class="backreflink"><del>&gt;&gt;'.$1.'</del></span>'; }
-		!ge;
+		# ref-links will be resolved on every page creation to support links to deleted (and also future) posts.
+		# ref-links are marked with a html-comment and checked/generated on every page output.
+		$line =~ s/&gtgt;([0-9]+)/<!--reflink-->&gt;&gt;$1/g;
 
         return $line;
     };
