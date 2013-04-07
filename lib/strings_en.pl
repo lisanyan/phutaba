@@ -101,9 +101,9 @@ use constant S_BTREPLY => 'Antworten auf';
 use constant S_SAGE => 'Kontra';
 use constant S_SAGEDESC => 'Thread nicht sto&szlig;en';
 use constant S_IMGEXPAND => 'Textfeld vergr&ouml;&szlig;ern';
-use constant S_NOKO => 'Gehe zur&uuml;ck';
-use constant S_NOKOOFF => 'zum Board';
-use constant S_NOKOON => 'zum Thread';
+use constant S_NOKO => 'Zur&uuml;ck zum';
+use constant S_NOKOOFF => 'Board';
+use constant S_NOKOON => 'Thread';
 
 use constant S_THREADLOCKED => '<strong>Thread %s</strong> ist geschlossen. Es kann nicht geantwortet werden.';
 use constant S_FILEINFO => 'Dateiinformationen';
