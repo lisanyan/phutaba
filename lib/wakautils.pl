@@ -304,7 +304,7 @@ sub do_bbcode {
 		'b'         => ['<strong>', '</strong>'],
 		'u'         => ['<u>', '</u>'],
 		's'         => ['<s>', '</s>'],
-		'code'      => ['<code>', '</code>'],
+		'code'      => ['<pre>', '</pre>'],
 		'spoiler'   => ['<span class="spoiler">', '</span>'],
 		'quote'     => ['<blockquote class="unkfunc">', '</blockquote>']
 	);

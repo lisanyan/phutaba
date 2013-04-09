@@ -47,7 +47,7 @@
 			</tr>
 			<tr>
 				<td>[code]Code[/code]</td>
-				<td><code>Code</code></td>
+				<td><pre>Code</pre></td>
 			</tr>
 		</table>
 	</section>
