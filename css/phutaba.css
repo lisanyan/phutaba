@@ -29,8 +29,8 @@ hr {
 	clear: both;
 }
 
-code {
-	font: normal 1.2em monospace;
+code, pre {
+	font-family: monospace;
 }
 
 ul, ol {
