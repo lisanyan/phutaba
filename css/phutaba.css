@@ -30,7 +30,7 @@ hr {
 }
 
 code, pre {
-	font-family: monospace;
+	font: normal 10pt monospace;
 }
 
 ul, ol {
