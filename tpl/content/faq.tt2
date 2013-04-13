@@ -14,7 +14,7 @@
 
 	<header class="title">Über welche Domains kann ich Ernstchan erreichen?</header>
 	<section class="info">
-		<p>Ernstchan kann unter <a href="//ernstchan.com">ernstchan.com</a>, <a href="//ernstchan.net">ernstchan.net</a> und <a href="//22chan.net">22chan.net</a> erreicht werden.</p>
+		<p>Ernstchan kann unter <a href="//ernstchan.com">ernstchan.com</a>, <del><a href="//ernstchan.net">ernstchan.net</a></del> und <a href="//22chan.net">22chan.net</a> erreicht werden.</p>
 	</section>
 
 	<header class="title">Wie kann ich in Beiträgen die Schrift formatieren?</header>
@@ -64,7 +64,7 @@
 
 	<header class="title">Was steckt unter der Haube von Ernstchan?</header>
 	<section class="info">
-		<p>Ernstchan wird mit Phutaba, einer Modifikation von <a href="http://wakaba.c3.cx/s/web/wakaba_kareha">Wakaba</a>, auf einem niderländischen Server betrieben. Die aktuelle Version von Phutaba kann frei von <a href="https://github.com/ernstchan/phutaba1">GitHub</a> geladen werden, sie steht unter keiner bestimmten Lizenz. Einige Icons stammen von <a href="http://p.yusukekamiyamane.com/">Yusuke Kamiyamane</a> (CC BY 3.0).</p>
+		<p>Ernstchan wird mit Phutaba, einer Modifikation von <a href="http://wakaba.c3.cx/s/web/wakaba_kareha">Wakaba</a>, auf einem niederländischen Server betrieben. Die aktuelle Version von Phutaba kann frei von <a href="https://github.com/ernstchan/phutaba1">GitHub</a> geladen werden, sie steht unter keiner bestimmten Lizenz. Einige Icons stammen von <a href="http://p.yusukekamiyamane.com/">Yusuke Kamiyamane</a> (CC BY 3.0).</p>
 	</section>
 
 	<header class="title">Woher bekomme ich euer Logo?</header>
