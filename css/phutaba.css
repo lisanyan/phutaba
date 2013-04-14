@@ -482,6 +482,7 @@ footer img {
 /* stuff for context.js */
 #ancbox {
 	bottom: 0.25em;
+	box-shadow: 0 0 0 100000px rgba(112, 107, 94, 0.5);
 }
 #desbox {
 	top: -0.25em;
