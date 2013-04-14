@@ -487,12 +487,6 @@ footer img {
 #desbox {
 	top: -0.25em;
 }
-.context + .thread_reply {
-	margin-top: 0;
-}
-.context .thread_reply {
-	margin-left: 0.5em;
-}
 .context {
 	position: relative;
 	clear: left;
@@ -502,7 +496,15 @@ footer img {
 	background-color: rgb(236, 233, 226);
 	position: absolute;
 	left: 10em;
+}
+#preview {
 	box-shadow: 1px 2px 2px #706B5E;
+}
+.context + .thread_reply {
+	margin-top: 0;
+}
+.context .thread_reply {
+	margin-left: 0.5em;
 }
 #preview .post {
 	margin-left: 0;
