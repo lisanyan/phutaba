@@ -249,6 +249,10 @@ ul.rules {
 	background-color: #BFB5A1;
 }
 
+#ancbox .thread_OP .thread_head {
+	padding: 0.4em 0.4em 0.1em 0.4em;
+}
+
 .post_new {
 	border-right: 1px solid #B20000;
 	border-bottom: 1px solid #B20000;
