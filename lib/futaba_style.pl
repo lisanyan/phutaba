@@ -203,7 +203,7 @@ use constant PAGE_TEMPLATE => compile_template(
 	</if>
 
 	<tr><td class="postblock"><label for="field4"><const S_COMMENT></label></td>
-	<td><textarea id="field4" name="field4" cols="48" rows="6" autofocus></textarea> <img onclick="resizeCommentfield('field4', this)" src="/img/icons/expand.png" alt="<const S_IMGEXPAND>" title="<const S_IMGEXPAND>" />
+	<td><textarea id="field4" name="field4" cols="48" rows="6"></textarea> <img onclick="resizeCommentfield('field4', this)" src="/img/icons/expand.png" alt="<const S_IMGEXPAND>" title="<const S_IMGEXPAND>" />
 	</td></tr>
 
 	<if $image_inp>
