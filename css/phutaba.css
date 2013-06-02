@@ -317,10 +317,15 @@ ul.rules {
 }
 
 .filetype, .filedeleted {
-	background: url("../img/erna-klein.png") no-repeat;
 	font: bold 2em sans-serif;
 	width: 200px;
 	padding: 0.5em 0 0.5em 0;
+}
+
+.filebg {
+	background-image: url("../img/erna-klein.png");
+	background-position: bottom left;
+	background-repeat: no-repeat;
 }
 
 .filedeleted {

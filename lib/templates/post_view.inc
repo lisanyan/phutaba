@@ -137,7 +137,8 @@
 
 <loop $files>
 
-<section class="file">
+<if $thumbnail><section class="file"></if>
+<if !$thumbnail><section class="file filebg"></if>
 	<div style="display: none; min-width: 250px;" id="imageinfo_<var md5_hex($image)>">
 		<strong>Dateiname:</strong> <var $uploadname><br />
 		<hr />
