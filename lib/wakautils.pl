@@ -1742,6 +1742,14 @@ sub mul {
           ( $b & 65535 ) ) % 4294967296;
 }
 
+sub remove_path($) {
+	my ($filename) = @_;
+	# match one or more characters at the end of the string after / or \
+	$filename =~ m!([^/\\]+)$!;
+	$filename = $1;
+	return $filename;	
+}
+
 sub get_urlstring($) {
     my ($filename) = @_;
 	$filename =~ s/ /%20/g;
@@ -1757,10 +1765,6 @@ sub get_extension($) {
 
 sub get_displayname($) {
 	my ($filename) = @_;
-
-	# match one or more characters at the end of the string after / or \
-	$filename =~ m!([^/\\]+)$!;
-	$filename = $1;
 
 	# (.{12})    - first X characters of the file(base)name
 	# .{5,}      - has the basename X+Y or more characters?

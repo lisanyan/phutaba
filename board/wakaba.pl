@@ -949,7 +949,7 @@ my @files; # this array holds all files of one post for loop-processing in the t
 @files=();
 
 	if ($$row{uploadname}) {
-		$$row{uploadname} = clean_string($$row{uploadname});
+		$$row{uploadname} = clean_string(remove_path($$row{uploadname}));
 	}
 	# temporary hack until the database has been cleaned up
 	$$row{thumbnail} = undef if ($$row{thumbnail} =~ m|^\.\./img/|);
@@ -982,7 +982,7 @@ if ($$row{image}) {
           or make_error(S_SQLFAIL);
         $sth2->execute( $$row{imageid_1} );
         my $res2 = get_decoded_hashref($sth2);    #$sth2->fetchrow_hashref();
-$$res2{uploadname}=clean_string($$res2{uploadname});
+$$res2{uploadname} = clean_string(remove_path($$res2{uploadname}));
 $$res2{thumbnail} = undef if ($$res2{thumbnail} =~ m|^\.\./img/|); # temporary
 delete $$res2{displaysize};
 push(@files, $res2);
@@ -1005,7 +1005,7 @@ push(@files, $res2);
           or make_error(S_SQLFAIL);
         $sth2->execute( $$row{imageid_2} );
         my $res2 = get_decoded_hashref($sth2);    #$sth2->fetchrow_hashref();
-$$res2{uploadname}=clean_string($$res2{uploadname});
+$$res2{uploadname} = clean_string(remove_path($$res2{uploadname}));
 $$res2{thumbnail} = undef if ($$res2{thumbnail} =~ m|^\.\./img/|); # temporary
 delete $$res2{displaysize};
 push(@files, $res2);
@@ -1028,7 +1028,7 @@ push(@files, $res2);
           or make_error(S_SQLFAIL);
         $sth2->execute( $$row{imageid_3} );
         my $res2 = get_decoded_hashref($sth2);    # $sth2->fetchrow_hashref();
-$$res2{uploadname}=clean_string($$res2{uploadname});
+$$res2{uploadname} = clean_string(remove_path($$res2{uploadname}));
 $$res2{thumbnail} = undef if ($$res2{thumbnail} =~ m|^\.\./img/|); # temporary
 delete $$res2{displaysize};
 push(@files, $res2);
