@@ -949,6 +949,7 @@ my @files; # this array holds all files of one post for loop-processing in the t
 @files=();
 
 	if ($$row{uploadname}) {
+		$$row{displayname} = clean_string(get_displayname(remove_path($$row{uploadname})));
 		$$row{uploadname} = clean_string(remove_path($$row{uploadname}));
 	}
 	# temporary hack until the database has been cleaned up
@@ -958,6 +959,7 @@ if ($$row{image}) {
 	@files[0] = {
 		'image' 		=> $$row{image},
 		'uploadname' 	=> $$row{uploadname},
+		'displayname'	=> $$row{displayname},
 		'width' 		=> $$row{width},
 		'height' 		=> $$row{height},
 		'thumbnail' 	=> $$row{thumbnail},
@@ -967,6 +969,7 @@ if ($$row{image}) {
 	};
 	#delete $$row{image};
 	delete $$row{uploadname};
+	delete $$row{displayname};
 	delete $$row{width};
 	delete $$row{height};
 	delete $$row{thumbnail};
@@ -982,6 +985,7 @@ if ($$row{image}) {
           or make_error(S_SQLFAIL);
         $sth2->execute( $$row{imageid_1} );
         my $res2 = get_decoded_hashref($sth2);    #$sth2->fetchrow_hashref();
+$$res2{displayname} = clean_string(get_displayname(remove_path($$res2{uploadname})));
 $$res2{uploadname} = clean_string(remove_path($$res2{uploadname}));
 $$res2{thumbnail} = undef if ($$res2{thumbnail} =~ m|^\.\./img/|); # temporary
 delete $$res2{displaysize};
@@ -1005,6 +1009,7 @@ push(@files, $res2);
           or make_error(S_SQLFAIL);
         $sth2->execute( $$row{imageid_2} );
         my $res2 = get_decoded_hashref($sth2);    #$sth2->fetchrow_hashref();
+$$res2{displayname} = clean_string(get_displayname(remove_path($$res2{uploadname})));
 $$res2{uploadname} = clean_string(remove_path($$res2{uploadname}));
 $$res2{thumbnail} = undef if ($$res2{thumbnail} =~ m|^\.\./img/|); # temporary
 delete $$res2{displaysize};
@@ -1028,6 +1033,7 @@ push(@files, $res2);
           or make_error(S_SQLFAIL);
         $sth2->execute( $$row{imageid_3} );
         my $res2 = get_decoded_hashref($sth2);    # $sth2->fetchrow_hashref();
+$$res2{displayname} = clean_string(get_displayname(remove_path($$res2{uploadname})));
 $$res2{uploadname} = clean_string(remove_path($$res2{uploadname}));
 $$res2{thumbnail} = undef if ($$res2{thumbnail} =~ m|^\.\./img/|); # temporary
 delete $$res2{displaysize};
