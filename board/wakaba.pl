@@ -936,30 +936,52 @@ sub show_thread {
 	print($output);
 }
 
+sub add_image_to_array($@) {
+	my ($imageid, $files) = @_;
+	my ($sth, $res, $uploadname);
+
+	$sth = $dbh->prepare("SELECT * FROM " . SQL_TABLE_IMG . " WHERE timestamp=?")
+		or make_error(S_SQLFAIL);
+	$sth->execute($imageid);
+	$res = get_decoded_hashref($sth);  # $sth->fetchrow_hashref();
+
+	$uploadname = remove_path($$res{uploadname});
+	$$res{uploadname} = clean_string($uploadname);
+	$$res{displayname} = clean_string(get_displayname($uploadname));
+
+	$$res{thumbnail} = undef if ($$res{thumbnail} =~ m|^\.\./img/|); # temporary, static thumbs are not used anymore
+	delete $$res{displaysize}; # this field is not used anymore, but still in the database
+	delete $$res{timestamp};
+
+	push(@$files, $res); # @$ dereferences the array to modfiy it in the calling sub
+
+	return $$res{size};
+}
+
 sub add_secondary_images_to_row {
-    #NOTE: this sub will also add a special field to the row
-    # which will denote if the row contains more than 2 images.
-    # this is used to determine the post style in the template # not anymore it's not
-    my ($row)              = @_;
-    my $extImageCount      = 0;
+    my ($row) = @_;
+    my $extImageCount = 0;
     my $secondaryImageSize = 0;
+	my $uploadname = '';
+	my $displayname = '';
 
-
-my @files; # this array holds all files of one post for loop-processing in the template
-@files=();
+	my @files; # this array holds all files of one post for loop-processing in the template
+	@files = ();
 
 	if ($$row{uploadname}) {
-		$$row{displayname} = clean_string(get_displayname(remove_path($$row{uploadname})));
-		$$row{uploadname} = clean_string(remove_path($$row{uploadname}));
+		$uploadname = remove_path($$row{uploadname});
+		$displayname = clean_string(get_displayname($uploadname));
+		$uploadname = clean_string($uploadname);
 	}
+
 	# temporary hack until the database has been cleaned up
 	$$row{thumbnail} = undef if ($$row{thumbnail} =~ m|^\.\./img/|);
 
 if ($$row{image}) {
 	@files[0] = {
 		'image' 		=> $$row{image},
-		'uploadname' 	=> $$row{uploadname},
-		'displayname'	=> $$row{displayname},
+		'uploadname' 	=> $uploadname,
+		'displayname'	=> $displayname,
 		'width' 		=> $$row{width},
 		'height' 		=> $$row{height},
 		'thumbnail' 	=> $$row{thumbnail},
@@ -969,99 +991,30 @@ if ($$row{image}) {
 	};
 	#delete $$row{image};
 	delete $$row{uploadname};
-	delete $$row{displayname};
 	delete $$row{width};
 	delete $$row{height};
 	delete $$row{thumbnail};
 	delete $$row{tn_width};
 	delete $$row{tn_height};
-	#delete $$row{size} = undef;
+	#delete $$row{size};
 	delete $$row{displaysize};
 }
 
-    if ( $$row{imageid_1} != 0 ) {
-        my $sth2 = $dbh->prepare(
-            "SELECT * FROM " . SQL_TABLE_IMG . " WHERE timestamp=?" )
-          or make_error(S_SQLFAIL);
-        $sth2->execute( $$row{imageid_1} );
-        my $res2 = get_decoded_hashref($sth2);    #$sth2->fetchrow_hashref();
-$$res2{displayname} = clean_string(get_displayname(remove_path($$res2{uploadname})));
-$$res2{uploadname} = clean_string(remove_path($$res2{uploadname}));
-$$res2{thumbnail} = undef if ($$res2{thumbnail} =~ m|^\.\./img/|); # temporary
-delete $$res2{displaysize};
-push(@files, $res2);
-#        $$row{image1}       = $$res2{image};
-#        $$row{uploadname1}  = $$res2{uploadname};
-#        $$row{displaysize1} = $$res2{displaysize};
-#        $$row{width1}       = $$res2{width};
-#        $$row{height1}      = $$res2{height};
-#        $$row{thumbnail1}   = $$res2{thumbnail};
-#        $$row{tn_width1}    = $$res2{tn_width};
-#        $$row{tn_height1}   = $$res2{tn_height};
-#        $$row{size1}        = $$res2{size};
-        $secondaryImageSize += $$res2{size};
+    if ($$row{imageid_1} != 0) {
+        $secondaryImageSize += add_image_to_array($$row{imageid_1}, \@files);
         $extImageCount++;
     }
 
-    if ( $$row{imageid_2} != 0 ) {
-        my $sth2 = $dbh->prepare(
-            "SELECT * FROM " . SQL_TABLE_IMG . " WHERE timestamp=?" )
-          or make_error(S_SQLFAIL);
-        $sth2->execute( $$row{imageid_2} );
-        my $res2 = get_decoded_hashref($sth2);    #$sth2->fetchrow_hashref();
-$$res2{displayname} = clean_string(get_displayname(remove_path($$res2{uploadname})));
-$$res2{uploadname} = clean_string(remove_path($$res2{uploadname}));
-$$res2{thumbnail} = undef if ($$res2{thumbnail} =~ m|^\.\./img/|); # temporary
-delete $$res2{displaysize};
-push(@files, $res2);
-#        $$row{image2}       = $$res2{image};
-#        $$row{uploadname2}  = $$res2{uploadname};
-#        $$row{displaysize2} = $$res2{displaysize};
-#        $$row{width2}       = $$res2{width};
-#        $$row{height2}      = $$res2{height};
-#        $$row{thumbnail2}   = $$res2{thumbnail};
-#        $$row{tn_width2}    = $$res2{tn_width};
-#        $$row{tn_height2}   = $$res2{tn_height};
-#        $$row{size2}        = $$res2{size};
-        $secondaryImageSize += $$res2{size};
+    if ($$row{imageid_2} != 0) {
+		$secondaryImageSize += add_image_to_array($$row{imageid_2}, \@files);
         $extImageCount++;
     }
 
-    if ( $$row{imageid_3} != 0 ) {
-        my $sth2 = $dbh->prepare(
-            "SELECT * FROM " . SQL_TABLE_IMG . " WHERE timestamp=?" )
-          or make_error(S_SQLFAIL);
-        $sth2->execute( $$row{imageid_3} );
-        my $res2 = get_decoded_hashref($sth2);    # $sth2->fetchrow_hashref();
-$$res2{displayname} = clean_string(get_displayname(remove_path($$res2{uploadname})));
-$$res2{uploadname} = clean_string(remove_path($$res2{uploadname}));
-$$res2{thumbnail} = undef if ($$res2{thumbnail} =~ m|^\.\./img/|); # temporary
-delete $$res2{displaysize};
-push(@files, $res2);
-#        $$row{image3}       = $$res2{image};
-#        $$row{uploadname3}  = $$res2{uploadname};
-#        $$row{displaysize3} = $$res2{displaysize};
-#        $$row{width3}       = $$res2{width};
-#        $$row{height3}      = $$res2{height};
-#        $$row{thumbnail3}   = $$res2{thumbnail};
-#        $$row{tn_width3}    = $$res2{tn_width};
-#        $$row{tn_height3}   = $$res2{tn_height};
-#        $$row{size3}        = $$res2{size};
-        $secondaryImageSize += $$res2{size};
+    if ($$row{imageid_3} != 0) {
+        $secondaryImageSize += add_image_to_array($$row{imageid_3}, \@files);
         $extImageCount++;
     }
-#    if ( $extImageCount >= 2 ) {
-#        $$row{threeimages} = 1;
-#    }
-#    else {
-#        $$row{threeimages} = 0;
-#    }
-#    if ( $extImageCount == 1 ) {
-#        $$row{twoimages} = 1;
-#    }
-#    else {
-#        $$row{twoimages} = 0;
-#    }
+
     $$row{imagecount} = $extImageCount + ( $$row{image} ? 1 : 0 );
     $$row{secondaryimagesize} = $secondaryImageSize;
 
@@ -1418,7 +1371,7 @@ sub post_stuff {
                       . S_IRC_BASE_THREADURL
                       . $parent . "#"
                       . $$row{num} . " ["
-		      . get_preview($original_comment) . "]\n";
+                      . get_preview($original_comment) . "]\n";
                 }
                 elsif ( !$parent and IRC_NOTIFY_ON_NEW_THREAD ) {
                     print $socket S_IRC_NEW_THREAD_PREPEND . "/"
@@ -1901,12 +1854,14 @@ sub get_preview {
     $comment =~ s/\r?\n|\r\n|\r|\n/ /g;
 # remove control chars
     $comment =~ s/[\000-\037]/ /g;
+# remove smiley expressions
+	$comment =~ s/\:[A-Za-z]+\:/ /g;
 # shorten string
     $preview = substr($comment, 0, 70);
-# append ... if length above 50
-    if(length($preview) >= 70) {
-	$preview = $preview . "...";
-    }
+# append ... if too long
+	if (length($comment) > 70) {
+		$preview .= "...";
+	}
     return $preview;
 }
 

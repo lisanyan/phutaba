@@ -1,11 +1,11 @@
 
-ErrorDocument 502 /errors/50x.shtml
-ErrorDocument 503 /errors/50x.shtml
-ErrorDocument 504 /errors/50x.shtml
+ErrorDocument 502 /errors/50x.html
+ErrorDocument 503 /errors/50x.html
+ErrorDocument 504 /errors/50x.html
 
-ErrorDocument 500 /errors/50x.shtml
-ErrorDocument 403 /errors/403.shtml
-ErrorDocument 404 /errors/404.shtml
+ErrorDocument 500 /errors/50x.html
+ErrorDocument 403 /errors/403.html
+ErrorDocument 404 /errors/404.html
 
 
 # Enable Rewrite Engine

@@ -507,6 +507,18 @@ sub do_spans {
     return join "<br />", map {
         my $line = $_;
         my @hidden;
+		my %smilies = (
+			'trollface'   => '/img/trollface.png',
+			'zahngrinsen' => '/img/zahngrinsen.png',
+			'eisfee'      => '/img/eisfee.gif',
+			'fffuuuuu'    => '/img/fu.png',
+			'fu'          => '/img/fu.png',
+			'awesome'     => '/img/awesome.png',
+			'kuhlgesicht' => '/img/schreikopf.png',
+			'PENIS'       => '/img/blau.png',
+			'VAGINA'      => '/img/rot.png',			
+			'hexe'        => '/img/marisa.png'
+		);
 
         # do h1
         $line =~
@@ -532,39 +544,11 @@ s{ (?<![0-9a-zA-Z\*_\x80-\x9f\xe0-\xfc]) (\*|_) (?![<>\s\*_]) ([^<>]+?) (?<![<>\
         $line =~
 s{ (?<![0-9a-zA-Z\*_\x80-\x9f\xe0-\xfc]) (~~) (?![<>\s\*_]) ([^<>]+?) (?<![<>\s\*_\x80-\x9f\xe0-\xfc]) \1 (?![0-9a-zA-Z\*_]) }{<span class="spoiler">$2</span>}gx;
 
-        # do some smilies
-
-        # o trollface
-        $line =~
-s{ (?<![0-9a-zA-Z\*_\x80-\x9f\xe0-\xfc]) (\:trollface\:) (?![0-9a-zA-Z\*_]) }{<img src="/img/trollface.png" alt="Trollgesicht" style="vertical-align: bottom;" />}gx;
-
-        # o zahngrinsen
-        $line =~
-s{ (?<![0-9a-zA-Z\*_\x80-\x9f\xe0-\xfc]) (\:zahngrinsen\:) (?![0-9a-zA-Z\*_]) }{<img src="/img/zahngrinsen.png" alt="Zahngrinsen" style="vertical-align: bottom;" />}gx;
-
-        # o eisfee
-        $line =~
-s{ (?<![0-9a-zA-Z\*_\x80-\x9f\xe0-\xfc]) (\:eisfee\:) (?![0-9a-zA-Z\*_]) }{<img src="/img/eisfee.gif" alt="Eisfee" style="vertical-align: bottom;" />}gx;
-
-        # o fffuuuuu
-        $line =~
-s{ (?<![0-9a-zA-Z\*_\x80-\x9f\xe0-\xfc]) (\:fffuuuuu\:) (?![0-9a-zA-Z\*_]) }{<img src="/img/fu.png" alt="FFFUUUUU" style="vertical-align: bottom;" />}gx;
-
-        # o fffuuuuu as fu for ppl who cannot count
-        $line =~
-s{ (?<![0-9a-zA-Z\*_\x80-\x9f\xe0-\xfc]) (\:fu\:) (?![0-9a-zA-Z\*_]) }{<img src="/img/fu.png" alt="FFFUUUUU" style="vertical-align: bottom;" />}gx;
-
-        # o the awesome graphic
-        $line =~
-s{ (?<![0-9a-zA-Z\*_\x80-\x9f\xe0-\xfc]) (\:awesome\:) (?![0-9a-zA-Z\*_]) }{<img src="/img/awesome.png" alt="Awesome" style="vertical-align: bottom;" />}gx;
-
-        # o schreikopf..
-        $line =~
-s{ (?<![0-9a-zA-Z\*_\x80-\x9f\xe0-\xfc]) (\:kuhlgesicht\:) (?![0-9a-zA-Z\*_]) }{<img src="/img/schreikopf.png" alt="Schreikopf" style="vertical-align: bottom;" />}gx;
-
-        # o blau
-        $line =~
-s{ (?<![0-9a-zA-Z\*_\x80-\x9f\xe0-\xfc]) (\:PENIS\:) (?![0-9a-zA-Z\*_]) }{<img src="/img/blau.png" alt="Blauball" style="vertical-align: bottom;" />}gx;
+        # do the smilies
+		foreach my $smiley (keys %smilies) {
+			$line =~
+s{ (?<![0-9a-zA-Z\*_\x80-\x9f\xe0-\xfc]) (\:$smiley\:) (?![0-9a-zA-Z\*_]) }{<img src="$smilies{$smiley}" alt="" style="vertical-align: bottom;" />}gx;
+		}
 
    # do ^H
    #if($]>5.007)
