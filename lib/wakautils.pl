@@ -514,10 +514,10 @@ sub do_spans {
 			'fffuuuuu'    => '/img/fu.png',
 			'fu'          => '/img/fu.png',
 			'awesome'     => '/img/awesome.png',
-			'kuhlgesicht' => '/img/schreikopf.png',
-			'PENIS'       => '/img/blau.png',
-			'VAGINA'      => '/img/rot.png',			
-			'hexe'        => '/img/marisa.png'
+			'\153\165\150\154\147\145\163\151\143\150\164' => '/img/schreikopf.png',
+			'\120\105\116\111\123'     => '/img/blau.png',
+			'\126\101\107\111\116\101' => '/img/rot.png',			
+			'\150\145\170\145'         => '/img/marisa.png'
 		);
 
         # do h1

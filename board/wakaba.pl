@@ -634,13 +634,15 @@ sub show_post {
     }
 	
     my $output =
-		SINGLE_POST_TEMPLATE->(
-		thread	     => $id,
-		posts        => \@thread,
-		single	     => 1,
-		isAdmin      => $isAdmin,
-		admin        => $admin,
-		locked       => $thread[0]{locked}
+		encode_string(
+			SINGLE_POST_TEMPLATE->(
+				thread	     => $id,
+				posts        => \@thread,
+				single	     => 1,
+				isAdmin      => $isAdmin,
+				admin        => $admin,
+				locked       => $thread[0]{locked}
+			)
 		);
 	$output =~ s/^\s+//; # remove whitespace at the beginning
 	$output =~ s/^\s+\n//mg; # remove empty lines
