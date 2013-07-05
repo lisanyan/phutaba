@@ -623,30 +623,30 @@ sub show_post {
       or make_error(S_SQLFAIL);
     $sth->execute( $id ) or make_error(S_SQLFAIL);
     make_http_header();
+	$row = get_decoded_hashref($sth);
 
-    if ( $row = $sth->fetchrow_hashref() ) {
+    if ($row) {
         add_secondary_images_to_row($row);
 		$$row{comment} = resolve_reflinks($$row{comment});
-        push( @thread, $row );
+        push(@thread, $row);
+		my $output =
+			encode_string(
+				SINGLE_POST_TEMPLATE->(
+					thread	     => $id,
+					posts        => \@thread,
+					single	     => 1,
+					isAdmin      => $isAdmin,
+					admin        => $admin,
+					locked       => $thread[0]{locked}
+				)
+			);
+		$output =~ s/^\s+//; # remove whitespace at the beginning
+		$output =~ s/^\s+\n//mg; # remove empty lines
+		print($output);
     }
     else {
         print encode_json( { "error_code" => 400 } );
     }
-	
-    my $output =
-		encode_string(
-			SINGLE_POST_TEMPLATE->(
-				thread	     => $id,
-				posts        => \@thread,
-				single	     => 1,
-				isAdmin      => $isAdmin,
-				admin        => $admin,
-				locked       => $thread[0]{locked}
-			)
-		);
-	$output =~ s/^\s+//; # remove whitespace at the beginning
-	$output =~ s/^\s+\n//mg; # remove empty lines
-	print($output);
 }
 
 sub show_page {
