@@ -36,7 +36,7 @@ use constant HANDLER_ERROR_PAGE_HEAD => q{
 <title>Ernstchan &raquo; Serverfehler</title>
 <meta charset="utf-8" />
 <link rel="shortcut icon" href="/img/favicon.ico" />
-<link rel="stylesheet" type="text/css" href="/css/style.css" />
+<link rel="stylesheet" type="text/css" href="/css/phutaba.css" />
 </head>
 <body>
 <div class="content">
@@ -2138,7 +2138,7 @@ sub delete_post {
 
     my $thumb   = THUMB_DIR;
     my $src     = IMG_DIR;
-    my $ip      = dot_to_dec( $ENV{REMOTE_ADDR} );
+    my $numip   = dot_to_dec($ip); # do not use $ENV{REMOTE_ADDR}
     $sth = $dbh->prepare( "SELECT * FROM " . SQL_TABLE . " WHERE num=?;" )
       or make_error(S_SQLFAIL);
     $sth->execute($post) or make_error(S_SQLFAIL);
@@ -2147,7 +2147,7 @@ sub delete_post {
         make_error(S_BADDELPASS)
           if ( $password and $$row{password} ne $password );
         make_error(S_BADDELIP)
-          if ( $deletebyip and ( $ip and $$row{ip} ne $ip ) );
+          if ( $deletebyip and ( $numip and $$row{ip} ne $numip ) );
 
         unless ($fileonly) {
 
