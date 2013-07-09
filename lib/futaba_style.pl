@@ -369,7 +369,7 @@ use constant ERROR_HEAD_INCLUDE => q{
 	<title><const TITLE> &raquo; <var $error_page></title>
 	<meta charset="<const CHARSET>" />
 	<link rel="shortcut icon" href="/img/favicon.ico" />
-	<link rel="stylesheet" type="text/css" href="/css/style.css" />
+	<link rel="stylesheet" type="text/css" href="/css/phutaba.css" />
 </head>
 
 <body>
