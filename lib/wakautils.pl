@@ -8,7 +8,7 @@ use Socket;
 use Locale::Country;
 use Locale::Codes::Country;
 use DateTime;
-
+use Geo::IP;
 use Net::Abuse::Utils qw( :all );
 
 
@@ -108,18 +108,36 @@ sub get_meta_markup {
 sub protocol_regexp { return $protocol_re }
 
 sub url_regexp { return $url_re }
-sub use_captcha {
-    my ($always_on, $location) = @_;
-    if($always_on eq 1) {
-        return 1;
-    } else {
-        if ($location eq "DE" or $location eq "NO" or $location eq "CH" or $location eq "AT" or $location eq "LI" or $location eq "BE" or $location eq "LU" or $location eq "DK" or $location eq "NL" or $location eq "v6") {
-            return 0;
-        } else {
-            return 1;
-        }
-    }
+
+sub get_geolocation($) {
+	my ($ip) = @_;
+
+	# testing in a local network never requires a captcha
+	return "DE" if ($ip =~ /^192\.168\.\d{1,3}\.\d{1,3}$/);
+
+	# check for IPv6 address
+	return "v6" if ($ip =~ /:/);
+
+	my $gi = Geo::IP->new(GEOIP_MEMORY_CACHE);
+	my $loc = $gi->country_code_by_addr($ip);
+
+	return "unk" if ($loc eq "");
+	return $loc;
 }
+
+sub use_captcha($$) {
+	my ($always_on, $location) = @_;
+	my @allowed = qw(DE NO CH AT LI BE LU DK NL v6);
+
+	return 1 if ($always_on eq 1);
+
+	foreach my $country (@allowed) {
+		return 0 if ($country eq $location);
+	}
+
+	return 1;
+}
+
 sub get_ip_info {
 	# 1 = ASN
 	# 2 = Countrycode

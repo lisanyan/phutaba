@@ -7,21 +7,21 @@ umask 0022;    # Fix some problems
 use strict;
 use CGI;
 use DBI;
-use File::stat;
 use Net::DNS;
-use HTML::Entities;
 use Net::IP qw(:PROC);
+use HTML::Entities;
+use HTML::Strip;
 use Math::BigInt;
 use JSON::XS;
 use JSON;
 use Digest::MD5 qw(md5 md5_hex md5_base64);
 use Image::ExifTool qw(:Public);
-use IO::Socket;
+use File::stat;
 use File::MimeInfo::Magic;
+use IO::Socket;
 use IO::Scalar;
 use Data::Dumper;
-use HTML::Strip;
-use Geo::IP;
+
 
 my $sth;
 my $JSON = JSON->new->utf8;
@@ -121,21 +121,7 @@ $sth->execute() or make_error(S_SQLFAIL);
 return 1 if (caller);    # stop here if we're being called externally
 
 my $query = CGI->new;
-my $loc;
-my $ip;
-$ip = $ENV{HTTP_X_REAL_IP};
-$ip = $ENV{REMOTE_ADDR} if ($ip eq undef); # for crazy people who expose their server to the internet
-my $gi = Geo::IP->new(GEOIP_MEMORY_CACHE);
-if (($loc = $gi->country_code_by_addr($ip)) eq "") {
-     $loc = "unk";
-}
-if ($ip =~ /:/) {
-     $loc = "v6";
-}
-# testing in a local network never requires a captcha
-if ($ip =~ /^192\.168\.\d{1,3}\.\d{1,3}$/) {
-     $loc = "DE";
-}
+
 my $task  = ( $query->param("task") or $query->param("action")) unless $query->param("POSTDATA");
 $task = ( $query->url_param("task") ) unless $task;
 my $json  = ( $query->param("json") or "" );
@@ -837,7 +823,7 @@ sub output_page {
     $nextpage = $pages[ $page     ]{filename} if ( $page != $total );
 
     make_http_header();
-
+	my $loc = get_geolocation(get_remote_addr());
 	my $output =
 		encode_string(
             PAGE_TEMPLATE->(
@@ -918,6 +904,7 @@ sub show_thread {
     make_error(S_NOTHREADERR) if ( !$thread[0] or $thread[0]{parent} );
 
     make_http_header();
+	my $loc = get_geolocation(get_remote_addr());
 	my $output = 
         encode_string(
             PAGE_TEMPLATE->(
@@ -1193,6 +1180,7 @@ sub post_stuff {
     # find IP
     #my $ip  = $ENV{REMOTE_ADDR};
     #my $ip  = substr($ENV{HTTP_X_FORWARDED_FOR}, 6); # :ffff:1.2.3.4
+	my $ip = get_remote_addr();	
     my $ssl = $ENV{HTTP_X_ALUHUT};
     undef($ssl) unless $ssl;
 
@@ -1218,6 +1206,7 @@ sub post_stuff {
     ban_check( $numip, $c_name, $subject, $comment ) unless $whitelisted;
     
     # check captcha
+	my $loc = get_geolocation($ip);
     check_captcha( $dbh, $captcha, $ip, $parent, BOARD_IDENT )
       if ( (use_captcha(ENABLE_CAPTCHA, $loc) and !$admin) or (ENABLE_CAPTCHA and !$admin and !$no_captcha and !is_trusted($trip)) );
 
@@ -1777,15 +1766,15 @@ sub make_id_code {
     return EMAIL_ID if ( $link and DISPLAY_ID =~ /link/i );
     return EMAIL_ID if ( $link =~ /sage/i and DISPLAY_ID =~ /sage/i );
 
-    return resolve_host( $ENV{REMOTE_ADDR} ) if ( DISPLAY_ID =~ /host/i );
-    return $ENV{REMOTE_ADDR} if ( DISPLAY_ID =~ /ip/i );
+	# replaced $ENV{REMOTE_ADDR} by get_remote_addr()
+    return resolve_host( get_remote_addr() ) if ( DISPLAY_ID =~ /host/i );
+    return get_remote_addr() if ( DISPLAY_ID =~ /ip/i );
 
     my $string = "";
     $string .= "," . int( $time / 86400 ) if ( DISPLAY_ID =~ /day/i );
     $string .= "," . $ENV{SCRIPT_NAME} if ( DISPLAY_ID =~ /board/i );
 
-    return mask_ip( $ENV{REMOTE_ADDR},
-        make_key( "mask", SECRET, 32 ) . $string )
+    return mask_ip( get_remote_addr(), make_key( "mask", SECRET, 32 ) . $string )
       if ( DISPLAY_ID =~ /mask/i );
 
     return hide_data( $ip . $string, 6, "id", SECRET, 1 );
@@ -2138,7 +2127,7 @@ sub delete_post {
 
     my $thumb   = THUMB_DIR;
     my $src     = IMG_DIR;
-    my $numip   = dot_to_dec($ip); # do not use $ENV{REMOTE_ADDR}
+    my $numip   = dot_to_dec(get_remote_addr()); # do not use $ENV{REMOTE_ADDR}
     $sth = $dbh->prepare( "SELECT * FROM " . SQL_TABLE . " WHERE num=?;" )
       or make_error(S_SQLFAIL);
     $sth->execute($post) or make_error(S_SQLFAIL);
@@ -2542,7 +2531,7 @@ sub check_password {
 }
 
 sub crypt_password {
-    my $crypt = hide_data( (shift) . $ENV{REMOTE_ADDR}, 9, "admin", SECRET, 1 );
+    my $crypt = hide_data( (shift) . get_remote_addr(), 9, "admin", SECRET, 1 ); # do not use $ENV{REMOTE_ADDR}
     $crypt =~ tr/+/./;    # for web shit
     return $crypt;
 }
@@ -2703,6 +2692,15 @@ sub parse_range {
     else                       { $mask = 0xffffffff; }
 
     return ( $ip, $mask );
+}
+
+sub get_remote_addr {
+	my $ip;
+
+	$ip = $ENV{HTTP_X_REAL_IP};
+	$ip = $ENV{REMOTE_ADDR} if ($ip eq undef);
+
+	return $ip;
 }
 
 #
@@ -2924,12 +2922,12 @@ sub get_decoded_hashref {
             defined && /[^\000-\177]/ && Encode::_utf8_on($_) for $row->{$k};
         }
 
-        if ( SQL_DBI_SOURCE =~ /^DBI:mysql:/i )    # OMGWTFBBQ
-        {
-            for my $k ( keys %$row ) {
-                $$row{$k} =~ s/chr\(([0-9]+)\)/chr($1)/ge if defined;
-            }
-        }
+#        if ( SQL_DBI_SOURCE =~ /^DBI:mysql:/i )    # OMGWTFBBQ
+#        {
+#            for my $k ( keys %$row ) {
+#                $$row{$k} =~ s/chr\(([0-9]+)\)/chr($1)/ge if defined;
+#            }
+#        }
     }
 
     return $row;
@@ -2945,10 +2943,10 @@ sub get_decoded_arrayref {
         # don't blame me for this shit, I got this from perlunicode.
         defined && /[^\000-\177]/ && Encode::_utf8_on($_) for @$row;
 
-        if ( SQL_DBI_SOURCE =~ /^DBI:mysql:/i )    # OMGWTFBBQ
-        {
-            s/chr\(([0-9]+)\)/chr($1)/ge for @$row;
-        }
+#        if ( SQL_DBI_SOURCE =~ /^DBI:mysql:/i )    # OMGWTFBBQ
+#        {
+#            s/chr\(([0-9]+)\)/chr($1)/ge for @$row;
+#        }
     }
 
     return $row;
