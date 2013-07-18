@@ -666,7 +666,7 @@ sub show_page {
     else {
         my $threadcount = 0;
         my @threads;
-        add_secondary_images_to_row($row);
+        #add_secondary_images_to_row($row);
 		if($isAdmin) {
 			fixup_admin_reference_links($row, $admin);
 		}
@@ -687,7 +687,7 @@ sub show_page {
         while ( $row = get_decoded_hashref($sth)
             and $threadcount <= ( IMAGES_PER_PAGE * ( $pageToShow ) ) )
         {
-            add_secondary_images_to_row($row);
+			#add_secondary_images_to_row($row);
 			if($isAdmin) {
 				fixup_admin_reference_links($row, $admin);
 			}
@@ -737,9 +737,9 @@ sub output_page {
         my $replies = @replies;
 
         my $images = grep { $$_{image} } @replies;
-        $images += grep { $$_{image1} } @replies;
-        $images += grep { $$_{image2} } @replies;
-        $images += grep { $$_{image3} } @replies;
+        $images += grep { $$_{imageid_1} } @replies;
+        $images += grep { $$_{imageid_2} } @replies;
+        $images += grep { $$_{imageid_3} } @replies;
 
         my $curr_replies = $replies;
         my $curr_images  = $images;
@@ -762,7 +762,10 @@ sub output_page {
         # drop replies until we have few enough replies and images
         while ( $curr_replies > $max_replies or $curr_images > $max_images ) {
             my $post = shift @replies;
-            $curr_images -= $$post{imagecount};
+			$curr_images-- if $$post{image};
+			$curr_images-- if $$post{imageid_1};
+			$curr_images-- if $$post{imageid_2};
+			$curr_images-- if $$post{imageid_3};
             $curr_replies--;
         }
         # write the shortened list of replies back
@@ -774,6 +777,9 @@ sub output_page {
 
         # abbreviate the remaining posts
         foreach my $post ( @{ $$thread{posts} } ) {
+			# add images to visible posts
+			add_secondary_images_to_row($post);
+
 			# create ref-links
 			$$post{comment} = resolve_reflinks($$post{comment});
 
