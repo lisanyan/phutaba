@@ -55,6 +55,16 @@ use constant S_NEXT    => 'Vor';            # Defines next button
 use constant S_LASTPG  => 'Vor';            # Defines next button
 use constant S_TOP     => 'Nach oben';
 
+use constant S_SEARCHTITLE		=> 'Suche';
+use constant S_SEARCH			=> 'Suchen nach';
+use constant S_SEARCHCOMMENT	=> 'Kommentar durchsuchen';
+use constant S_SEARCHSUBJECT	=> 'Betreff durchsuchen';
+use constant S_SEARCHFILES		=> 'Dateinamen durchsuchen';
+use constant S_SEARCHOP			=> 'Nur im OP eines Threads suchen';
+use constant S_SEARCHSUBMIT		=> 'Suchen';
+use constant S_SEARCHFOUND		=> 'Ergebnisse:';
+use constant S_OPTIONS			=> 'Optionen';
+
 use constant S_WEEKDAYS => ( 'So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa' )
   ;                                         # Defines abbreviated weekday names.
 
