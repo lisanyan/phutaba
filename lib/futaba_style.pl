@@ -53,9 +53,7 @@ use constant NORMAL_HEAD_INCLUDE => q{
 </script>
 
 <script type="text/javascript">
-var board = '<const BOARD_IDENT>'
-  , thread_id = <if $thread><var $thread></if><if !$thread>null</if>
-;
+	var board = '<const BOARD_IDENT>', thread_id = <if $thread><var $thread></if><if !$thread>null</if>;
 </script>
 <script type="text/javascript" src="/js/context.js"></script>
 
@@ -307,6 +305,50 @@ use constant PAGE_TEMPLATE => compile_template(
 
 </form>
 <script type="text/javascript">set_delpass("delform")</script>
+
+} . NORMAL_FOOT_INCLUDE);
+
+
+use constant SEARCH_TEMPLATE => compile_template(
+    MANAGER_HEAD_INCLUDE . q{
+
+	<section class="postarea">
+	<form id="searchform" action="<var $self>" method="post" enctype="multipart/form-data">
+	<input type="hidden" name="task" value="search" />
+
+	<table>
+	<tbody>
+
+		<tr><td class="postblock"><label for="search"><const S_SEARCH></label></td>
+		<td><input type="text" name="find" id="search" value="<var $find>" />
+		<input value="<const S_SEARCHSUBMIT>" type="submit" />
+		</td></tr>
+
+		<tr><td class="postblock"><const S_OPTIONS></label></td>
+		<td>
+		<label><input type="checkbox" name="op"      value="1" <if $oponly>checked="checked"</if> /> <const S_SEARCHOP></label><br />
+		<label><input type="checkbox" name="subject" value="1" <if $insubject>checked="checked"</if> /> <const S_SEARCHSUBJECT></label><br />
+		<!--<label><input type="checkbox" name="files"   value="1" <if $filenames>checked="checked"</if> /> <const S_SEARCHFILES></label><br />-->
+		<label><input type="checkbox" name="comment" value="1" <if $comment>checked="checked"</if> /> <const S_SEARCHCOMMENT></label>
+		</td></tr>
+
+	</tbody>
+	</table>
+
+	</form>
+	</section>
+
+	<hr />
+	<if $find><var S_SEARCHFOUND> <var $count>
+	<if $count><br /><br /></if>
+	</if>
+
+	<loop $posts>
+		} . include("../lib/templates/post_view.inc") . q{
+	</loop>
+
+	<p style="clear: both;"></p>
+	<hr />
 
 } . NORMAL_FOOT_INCLUDE);
 

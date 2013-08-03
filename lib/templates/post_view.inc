@@ -6,22 +6,11 @@
 <if $parent>
 	<article class="thread_reply" id="<var $num>">
 	<div class="doubledash">
-	<if !$thread>
-		<if $isAdmin>
-			<a href="<var get_reply_link($parent,0,$admin)>#<var $num>">&gt;&gt;</a>
-		</if>
-		<if !$isAdmin>
-			<a href="<var get_reply_link($parent,0)>#<var $num>">&gt;&gt;</a>
-		</if>
+	<if $isAdmin>
+		<a href="<var get_reply_link($parent,0,$admin)>#<var $num>">&gt;&gt;</a>
 	</if>
-		
-	<if $thread>
-		<if $isAdmin>
-			<a href="<var get_reply_link($parent,0,$admin)>#<var $num>">&gt;&gt;</a>
-		</if>
-		<if !$isAdmin>
-			<a href="<var get_reply_link($parent,0)>#<var $num>">&gt;&gt;</a>
-		</if>
+	<if !$isAdmin>
+		<a href="<var get_reply_link($parent,0)>#<var $num>">&gt;&gt;</a>
 	</if>
 	</div>
 
@@ -77,16 +66,12 @@
 		<if $email><span class="sage"><const S_SAGE></span></if>
 	</if>
 
-	<if !$parent>	
+	<if !$parent && !$thread>	
 		<if $isAdmin>
-			<if !$thread>
 			<span class="replylink">[<a href="<var get_reply_link($num,0,$admin)>"><const S_REPLY></a>]</span>
-			</if>
 		</if>
 		<if !$isAdmin>
-			<if !$thread>
 			<span class="replylink">[<a href="<var get_reply_link($num,0)>"><const S_REPLY></a>]</span>
-			</if>
 		</if>
 	</if>
 

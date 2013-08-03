@@ -215,6 +215,15 @@ elsif ( $task eq "show" ) {
         }
     }
 }
+elsif ($task eq "search") {
+	my $find			= $query->param("find");
+	my $op_only			= $query->param("op");
+	my $in_subject		= $query->param("subject");
+	my $in_filenames	= $query->param("files");
+	my $in_comment		= $query->param("comment");
+
+	find_posts($find, $op_only, $in_subject, $in_filenames, $in_comment);
+}
 elsif ( $task eq "post" ) {
     my $parent     = $query->param("parent");
     my $gb2        = $query->param("gb2");
@@ -1092,6 +1101,80 @@ sub dnsbl_check {
         }
     }
 }
+
+
+sub find_posts($$$$) {
+	my ($find, $op_only, $in_subject, $in_filenames, $in_comment) = @_;
+	# TODO: define minimum search word length
+	# TODO: limit total number of search results?
+	# TODO: add $admin / admin-reflinks?
+	# TODO: limit search to the threads on the first 10 pages
+
+	#todo: search in filenames
+	#todo: remove hide thread button, remove checkboxes in front of postername
+
+	my ($sth, $row);
+
+	$in_comment = 1 unless $find; # make the box checked for the first call.
+
+	$find = clean_string(decode_string($find, CHARSET));
+
+	# grab all posts, in thread order (ugh, ugly kludge)
+	$sth = $dbh->prepare(
+		"SELECT * FROM " . SQL_TABLE . " ORDER BY sticky DESC,lasthit DESC,CASE parent WHEN 0 THEN num ELSE parent END ASC,num ASC"
+	) or make_error(S_SQLFAIL);
+	$sth->execute() or make_error(S_SQLFAIL);
+
+	my ($search, $subject, $count);
+	my @results = ();
+
+	while ($row = get_decoded_hashref($sth)) {
+		$search = $$row{comment};
+		$search =~ s/<.+?>//mg; # must not search inside html-tags. remove them.
+		$subject = $$row{subject};
+
+		if (($search =~ /$find/i and $in_comment) or ($subject =~ /$find/i and $in_subject)) {
+
+# highlight found words - this can break HTML tags
+# TODO: select or define CSS style
+#$$row{comment} =~ s/($find)/<span style="background-color: #706B5E; color: #FFFFFF; font-weight: bold;">$1<\/span>/ig;
+
+			add_secondary_images_to_row($row);
+			#if($isAdmin) {
+			#	fixup_admin_reference_links($row, $admin);
+			#}
+			if (!$$row{parent}) { # OP post
+				$$row{sticky_isnull} = 1; # hack, until this field is removed.
+				push @results, $row;
+			} else { # reply post
+				push @results, $row unless ($op_only);
+			}
+		}
+	}
+
+	$count = @results;
+
+	make_http_header();
+	my $output =
+		encode_string(
+			SEARCH_TEMPLATE->(
+				title		=> S_SEARCHTITLE,
+				posts		=> \@results,
+				find		=> $find,
+				oponly		=> $op_only,
+				insubject	=> $in_subject,
+				filenames	=> $in_filenames,
+				comment		=> $in_comment,
+				count		=> $count,
+				isAdmin		=> 0,
+				admin		=> ''
+			)
+		);
+
+	$output =~ s/^\s+\n//mg;
+	print($output);
+}
+
 
 #
 # Posting
@@ -2107,16 +2190,12 @@ sub make_sticky {
     $sth->execute($threadid) or make_error(S_SQLFAIL);
 
     if ( $row = $sth->fetchrow_hashref() ) {
-        my $sticky = $$row{sticky} eq 1 ? 0 : 1;
+        my $sticky = $$row{sticky} eq 1 ? undef : 1;
         my $sth2;
         $sth2 =
-          $dbh->prepare( "UPDATE " . SQL_TABLE . " SET sticky=? WHERE num=?;" )
+          $dbh->prepare( "UPDATE " . SQL_TABLE . " SET sticky=? WHERE num=? OR parent=?;" )
           or make_error(S_SQLFAIL);
-        $sth2->execute( $sticky, $threadid ) or make_error(S_SQLFAIL);
-        my $threadchilds = $dbh->prepare(
-            "UPDATE " . SQL_TABLE . " SET sticky=? WHERE parent=?;" )
-          or make_error(S_SQLFAIL);
-        $threadchilds->execute( $sticky, $threadid ) or make_error(S_SQLFAIL);
+        $sth2->execute( $sticky, $threadid, $threadid) or make_error(S_SQLFAIL);
     }
 
     make_http_forward( get_script_name() . "?admin=$admin&task=mpanel");
