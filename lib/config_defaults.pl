@@ -80,6 +80,7 @@ eval "use constant SQL_PREFIX => 'ernstchan_';" unless ( defined &SQL_PREFIX );
     eval "use constant MAX_RES => 20"      unless ( defined &MAX_RES );
     eval "use constant MAX_POSTS => 500"   unless ( defined &MAX_POSTS );
     eval "use constant MAX_THREADS => 0"   unless ( defined &MAX_THREADS );
+    eval "use constant MAX_SHOWN_THREADS => 100" unless (defined &MAX_SHOWN_THREADS);
     eval "use constant MAX_AGE => 0"       unless ( defined &MAX_AGE );
     eval "use constant MAX_MEGABYTES => 0" unless ( defined &MAX_MEGABYTES );
     eval "use constant MAX_FIELD_LENGTH => 100"
@@ -94,6 +95,7 @@ eval "use constant SQL_PREFIX => 'ernstchan_';" unless ( defined &SQL_PREFIX );
       unless ( defined &MAX_IMAGE_HEIGHT );
     eval "use constant MAX_IMAGE_PIXELS => 50000000"
       unless ( defined &MAX_IMAGE_PIXELS );
+	eval "use constant MAX_SEARCH_RESULTS => 200" unless (defined &MAX_SEARCH_RESULTS);
 
     eval "use constant ENABLE_CAPTCHA => 1" unless ( defined &ENABLE_CAPTCHA );
     eval "use constant SQL_CAPTCHA_TABLE => 'captcha'"
