@@ -1106,9 +1106,7 @@ sub dnsbl_check {
 sub find_posts($$$$) {
 	my ($find, $op_only, $in_subject, $in_filenames, $in_comment) = @_;
 	# TODO: define minimum search word length
-	# TODO: limit total number of search results?
 	# TODO: add $admin / admin-reflinks?
-	# TODO: limit search to the threads on the first 10 pages
 
 	#todo: search in filenames
 	#todo: remove hide thread button, remove checkboxes in front of postername
@@ -1125,21 +1123,27 @@ sub find_posts($$$$) {
 	) or make_error(S_SQLFAIL);
 	$sth->execute() or make_error(S_SQLFAIL);
 
-	my ($search, $subject, $count);
+	my ($search, $subject);
+	my $lfind = lc($find);
 	my @results = ();
+	my $count = 0;
+	my $threads = 0;
 
-	while ($row = get_decoded_hashref($sth)) {
+	while (($row = get_decoded_hashref($sth)) and ($count < MAX_SEARCH_RESULTS) and ($threads <= MAX_SHOWN_THREADS)) {
+		$threads++ if !$$row{parent};
 		$search = $$row{comment};
 		$search =~ s/<.+?>//mg; # must not search inside html-tags. remove them.
+		$search = lc($search);
 		$subject = $$row{subject};
 
-		if (($search =~ /$find/i and $in_comment) or ($subject =~ /$find/i and $in_subject)) {
+		if (($in_comment and (index($search, $lfind) > -1)) or ($in_subject and (index($subject, $lfind) > -1))) {
 
 # highlight found words - this can break HTML tags
 # TODO: select or define CSS style
 #$$row{comment} =~ s/($find)/<span style="background-color: #706B5E; color: #FFFFFF; font-weight: bold;">$1<\/span>/ig;
 
 			add_secondary_images_to_row($row);
+			$$row{comment} = resolve_reflinks($$row{comment});
 			#if($isAdmin) {
 			#	fixup_admin_reference_links($row, $admin);
 			#}
@@ -1149,10 +1153,9 @@ sub find_posts($$$$) {
 			} else { # reply post
 				push @results, $row unless ($op_only);
 			}
+			$count = @results;
 		}
 	}
-
-	$count = @results;
 
 	make_http_header();
 	my $output =

@@ -324,7 +324,7 @@ use constant SEARCH_TEMPLATE => compile_template(
 		<input value="<const S_SEARCHSUBMIT>" type="submit" />
 		</td></tr>
 
-		<tr><td class="postblock"><const S_OPTIONS></label></td>
+		<tr><td class="postblock"><const S_OPTIONS></td>
 		<td>
 		<label><input type="checkbox" name="op"      value="1" <if $oponly>checked="checked"</if> /> <const S_SEARCHOP></label><br />
 		<label><input type="checkbox" name="subject" value="1" <if $insubject>checked="checked"</if> /> <const S_SEARCHSUBJECT></label><br />
