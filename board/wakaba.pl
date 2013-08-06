@@ -1105,56 +1105,57 @@ sub dnsbl_check {
 
 sub find_posts($$$$) {
 	my ($find, $op_only, $in_subject, $in_filenames, $in_comment) = @_;
-	# TODO: define minimum search word length
 	# TODO: add $admin / admin-reflinks?
 
 	#todo: search in filenames
 	#todo: remove hide thread button, remove checkboxes in front of postername
 
-	my ($sth, $row);
-
-	$in_comment = 1 unless $find; # make the box checked for the first call.
-
 	$find = clean_string(decode_string($find, CHARSET));
+	$find =~ s/^\s+|\s+$//g; # trim
+	$in_comment = 1 unless $find; # make the box checked for the first call.	
 
-	# grab all posts, in thread order (ugh, ugly kludge)
-	$sth = $dbh->prepare(
-		"SELECT * FROM " . SQL_TABLE . " ORDER BY sticky DESC,lasthit DESC,CASE parent WHEN 0 THEN num ELSE parent END ASC,num ASC"
-	) or make_error(S_SQLFAIL);
-	$sth->execute() or make_error(S_SQLFAIL);
-
+	my ($sth, $row);
 	my ($search, $subject);
-	my $lfind = lc($find);
-	my @results = ();
+	my $lfind = lc($find); # ignore case
 	my $count = 0;
 	my $threads = 0;
+	my @results = ();
 
-	while (($row = get_decoded_hashref($sth)) and ($count < MAX_SEARCH_RESULTS) and ($threads <= MAX_SHOWN_THREADS)) {
-		$threads++ if !$$row{parent};
-		$search = $$row{comment};
-		$search =~ s/<.+?>//mg; # must not search inside html-tags. remove them.
-		$search = lc($search);
-		$subject = $$row{subject};
+	if (length($lfind) >= 3) {
+		# grab all posts, in thread order (ugh, ugly kludge)
+		$sth = $dbh->prepare(
+			"SELECT * FROM " . SQL_TABLE . " ORDER BY sticky DESC,lasthit DESC,CASE parent WHEN 0 THEN num ELSE parent END ASC,num ASC"
+		) or make_error(S_SQLFAIL);
+		$sth->execute() or make_error(S_SQLFAIL);
 
-		if (($in_comment and (index($search, $lfind) > -1)) or ($in_subject and (index($subject, $lfind) > -1))) {
+		while (($row = get_decoded_hashref($sth)) and ($count < MAX_SEARCH_RESULTS) and ($threads <= MAX_SHOWN_THREADS)) {
+			$threads++ if !$$row{parent};
+			$search = $$row{comment};
+			$search =~ s/<.+?>//mg; # must not search inside html-tags. remove them.
+			$search = lc($search);
+			$subject = lc($$row{subject});
+
+			if (($in_comment and (index($search, $lfind) > -1)) or ($in_subject and (index($subject, $lfind) > -1))) {
 
 # highlight found words - this can break HTML tags
 # TODO: select or define CSS style
 #$$row{comment} =~ s/($find)/<span style="background-color: #706B5E; color: #FFFFFF; font-weight: bold;">$1<\/span>/ig;
 
-			add_secondary_images_to_row($row);
-			$$row{comment} = resolve_reflinks($$row{comment});
-			#if($isAdmin) {
-			#	fixup_admin_reference_links($row, $admin);
-			#}
-			if (!$$row{parent}) { # OP post
-				$$row{sticky_isnull} = 1; # hack, until this field is removed.
-				push @results, $row;
-			} else { # reply post
-				push @results, $row unless ($op_only);
+				add_secondary_images_to_row($row);
+				$$row{comment} = resolve_reflinks($$row{comment});
+				#if($isAdmin) {
+				#	fixup_admin_reference_links($row, $admin);
+				#}
+				if (!$$row{parent}) { # OP post
+					$$row{sticky_isnull} = 1; # hack, until this field is removed.
+					push @results, $row;
+				} else { # reply post
+					push @results, $row unless ($op_only);
+				}
+				$count = @results;
 			}
-			$count = @results;
 		}
+		$sth->finish(); # Clean up the record set
 	}
 
 	make_http_header();
