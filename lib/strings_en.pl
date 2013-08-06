@@ -64,6 +64,7 @@ use constant S_SEARCHOP			=> 'Nur im OP eines Threads suchen';
 use constant S_SEARCHSUBMIT		=> 'Suchen';
 use constant S_SEARCHFOUND		=> 'Ergebnisse:';
 use constant S_OPTIONS			=> 'Optionen';
+use constant S_MINLENGTH		=> '(min. 3 Zeichen)';
 
 use constant S_WEEKDAYS => ( 'So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa' )
   ;                                         # Defines abbreviated weekday names.

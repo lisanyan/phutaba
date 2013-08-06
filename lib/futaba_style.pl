@@ -319,7 +319,8 @@ use constant SEARCH_TEMPLATE => compile_template(
 	<table>
 	<tbody>
 
-		<tr><td class="postblock"><label for="search"><const S_SEARCH></label></td>
+		<tr><td class="postblock"><label for="search"><const S_SEARCH><br />
+		<const S_MINLENGTH></label></td>
 		<td><input type="text" name="find" id="search" value="<var $find>" />
 		<input value="<const S_SEARCHSUBMIT>" type="submit" />
 		</td></tr>
@@ -338,9 +339,10 @@ use constant SEARCH_TEMPLATE => compile_template(
 	</form>
 	</section>
 
-	<hr />
-	<if $find><var S_SEARCHFOUND> <var $count>
-	<if $count><br /><br /></if>
+	<if $find>
+		<hr />
+		<var S_SEARCHFOUND> <var $count>
+		<if $count><br /><br /></if>
 	</if>
 
 	<loop $posts>
