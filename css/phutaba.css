@@ -335,7 +335,6 @@ ul.rules {
 .text {
 	margin: 0 2em 1.2em 1.2em;
 	word-wrap: break-word;
-	vertical-align: top;
 }
 
 .text ul, .text ol {
