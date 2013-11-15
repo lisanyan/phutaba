@@ -1379,7 +1379,8 @@ sub analyze_image {
     return ( "png", @res ) if ( @res = analyze_png($file) );
     return ( "gif", @res ) if ( @res = analyze_gif($file) );
 	return ( "pdf", @res ) if ( @res = analyze_pdf($file) );
-	
+	return ( "svg", @res ) if ( @res = analyze_svg($file) );
+
     # find file extension for unknown files
     my ($ext) = $name =~ /\.([^\.]+)$/;
     return ( lc($ext), 0, 0 );
@@ -1484,6 +1485,24 @@ sub analyze_pdf($) {
 	return (1, 1);
 }
 
+# find some characteristic strings at the beginning of the XML.
+# can break on slightly different syntax. 
+sub analyze_svg($) {
+	my ($file) = @_;
+	my ($buffer, $header);
+
+	read($file, $buffer, 500);
+	seek($file, 0, 0);
+
+	$header = unpack("A500", $buffer);
+
+    if ($header =~ /<svg version=/i or $header =~ /<!DOCTYPE svg/i) {
+        return (1, 1);
+    }
+
+	return ();
+}
+
 sub test_afmod {
 	my $day = localtime->mday;
 	my $month = localtime->mon + 1;
@@ -1505,10 +1524,9 @@ sub make_thumbnail {
     $magickname .= "[0]" if ($magickname =~ /\.gif$/ or $magickname =~ /\.pdf$/);
 
 	my $ignore_ar = "!"; # flag to force ImageMagick to ignore the aspect ratio of the image
-	# pdf files have no physical resolution - let ImageMagick figure out the thumbnail-ratio
-	$ignore_ar = "" if ($filename =~ /\.pdf$/);
+	# let ImageMagick figure out the thumbnail-ratio
+	$ignore_ar = "" if ($filename =~ /\.pdf$/ or $filename =~ /\.svg$/);
 
-	
 	my $param = "";
 
 	if (test_afmod())

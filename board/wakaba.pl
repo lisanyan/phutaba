@@ -1976,7 +1976,7 @@ sub process_file {
     my $filebase  = $time . sprintf( "%03d", int( rand(1000) ) );
     my $filename  = IMG_DIR . $filebase . '.' . $ext;
     my $thumbnail = THUMB_DIR . $filebase;
-	if ( $ext eq "png" )
+	if ( $ext eq "png" or $ext eq "svg" )
 	{
 		$thumbnail .= "s.png";
 	}
@@ -2071,8 +2071,8 @@ sub process_file {
                 $tn_height = MAX_H;
             }
         }
-		
-		if ($ext eq 'pdf') { # pdf support - we cannot know the thumbnail-dimensions yet
+
+		if ($ext eq 'pdf' or $ext eq 'svg') { # thumbnail-dimensions not yet known
 			$width = undef;
 			$height = undef;
 			$tn_width = MAX_W;
@@ -2081,7 +2081,7 @@ sub process_file {
 
         if (STUPID_THUMBNAILING) {
 			$thumbnail = $filename;
-			$thumbnail = undef if($ext eq 'pdf');
+			$thumbnail = undef if($ext eq 'pdf' or $ext eq 'svg');
 		}
         else {
             $thumbnail = undef
@@ -2093,7 +2093,7 @@ sub process_file {
                 )
               );
 
-			if ($thumbnail and $ext eq 'pdf') { # get the thumbnail size created by ImageMagick
+			if ($thumbnail and (($ext eq 'pdf') or ($ext eq 'svg'))) { # get the thumbnail size created by ImageMagick
 				open THUMBNAIL,$thumbnail;
 				binmode THUMBNAIL;
 				($tn_ext, $tn_width, $tn_height) = analyze_image(\*THUMBNAIL, $thumbnail);
@@ -2757,7 +2757,7 @@ sub get_page_count {
 
 sub get_filetypes {
     my %filetypes = FILETYPES;
-    $filetypes{gif} = $filetypes{jpg} = $filetypes{png} = $filetypes{pdf} = 1;
+    $filetypes{gif} = $filetypes{jpg} = $filetypes{png} = $filetypes{pdf} = $filetypes{svg} = 1;
     return join ", ", map { uc } sort keys %filetypes;
 }
 
