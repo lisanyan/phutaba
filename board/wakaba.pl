@@ -2055,8 +2055,9 @@ sub process_file {
     elsif ($width > MAX_W
         or $height > MAX_H
         or THUMBNAIL_SMALL
-        or $filename =~ /\.svg$/
-		or $ext eq 'pdf')
+        or $filename =~ /\.svg$/ # why not check $ext?
+		or $ext eq 'pdf'
+		or $ext eq 'webm')
     {
         if ( $width <= MAX_W and $height <= MAX_H ) {
             $tn_width  = $width;
@@ -2072,7 +2073,7 @@ sub process_file {
             }
         }
 
-		if ($ext eq 'pdf' or $ext eq 'svg') { # thumbnail-dimensions not yet known
+		if ($ext eq 'pdf' or $ext eq 'svg' or $ext eq 'webm') { # thumbnail-dimensions not yet known
 			$width = undef;
 			$height = undef;
 			$tn_width = MAX_W;
@@ -2081,19 +2082,32 @@ sub process_file {
 
         if (STUPID_THUMBNAILING) {
 			$thumbnail = $filename;
-			$thumbnail = undef if($ext eq 'pdf' or $ext eq 'svg');
+			$thumbnail = undef if($ext eq 'pdf' or $ext eq 'svg' or $ext eq 'webm');
 		}
         else {
-            $thumbnail = undef
-              unless (
-                make_thumbnail(
-                    $filename,         $thumbnail,
-                    $tn_width,         $tn_height,
-                    THUMBNAIL_QUALITY, CONVERT_COMMAND
-                )
-              );
+			if ($ext eq 'webm') {
+				$thumbnail = undef
+				  unless (
+					make_video_thumbnail(
+						$filename,         $thumbnail,
+						$tn_width,         $tn_height,
+						FFMPEG_COMMAND
+					)
+				  );
+			}
+			else {
+				$thumbnail = undef
+				  unless (
+					make_thumbnail(
+						$filename,         $thumbnail,
+						$tn_width,         $tn_height,
+						THUMBNAIL_QUALITY, CONVERT_COMMAND
+					)
+				  );
+			}
 
-			if ($thumbnail and (($ext eq 'pdf') or ($ext eq 'svg'))) { # get the thumbnail size created by ImageMagick
+			# get the thumbnail size created by ImageMagick/ffmpeg
+			if ($thumbnail and ($ext eq 'pdf' or $ext eq 'svg' or $ext eq 'webm')) {
 				open THUMBNAIL,$thumbnail;
 				binmode THUMBNAIL;
 				($tn_ext, $tn_width, $tn_height) = analyze_image(\*THUMBNAIL, $thumbnail);
@@ -2757,7 +2771,7 @@ sub get_page_count {
 
 sub get_filetypes {
     my %filetypes = FILETYPES;
-    $filetypes{gif} = $filetypes{jpg} = $filetypes{png} = $filetypes{pdf} = $filetypes{svg} = 1;
+    $filetypes{gif} = $filetypes{jpg} = $filetypes{png} = $filetypes{pdf} = $filetypes{svg} = $filetypes{webm} = 1;
     return join ", ", map { uc } sort keys %filetypes;
 }
 
