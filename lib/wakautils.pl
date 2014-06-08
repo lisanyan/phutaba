@@ -1380,6 +1380,7 @@ sub analyze_image {
     return ( "gif", @res ) if ( @res = analyze_gif($file) );
 	return ( "pdf", @res ) if ( @res = analyze_pdf($file) );
 	return ( "svg", @res ) if ( @res = analyze_svg($file) );
+	return ( "webm", @res ) if ( @res = analyze_webm($file) );
 
     # find file extension for unknown files
     my ($ext) = $name =~ /\.([^\.]+)$/;
@@ -1503,11 +1504,37 @@ sub analyze_svg($) {
 	return ();
 }
 
+sub analyze_webm($) {
+    my ($file) = @_;
+    my ($buffer);
+
+    read($file, $buffer, 4);
+    seek($file, 0, 0);
+
+    if ($buffer eq "\x1A\x45\xDF\xA3") {
+# TODO: call "ffprobe -v quiet -show_streams -show_format -print_format json INPUTFILE.webm"
+# parse output to get width, height, length
+		return(1, 1);
+	}
+
+	return();
+}
+
 sub test_afmod {
 	my $day = localtime->mday;
 	my $month = localtime->mon + 1;
 
 	return 1 if (ENABLE_AFMOD && $month == 4 && $day == 1);
+	return 0;
+}
+
+sub make_video_thumbnail {
+	my ($filename, $thumbnail, $width, $height, $command) = @_;
+
+	$command = "ffmpeg" unless ($command);
+`$command -i $filename -y -vframes 1 -vf scale="'if(gte(iw,ih),min(${width},iw),-1)':'if(gte(ih,iw),min(${height},ih),-1)'" $thumbnail`;
+
+	return 1 unless ($?);
 	return 0;
 }
 

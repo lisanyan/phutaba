@@ -31,3 +31,6 @@ RewriteRule ^([^/]+)/thread/(\d+)$ $1/wakaba.pl?task=show&thread=$2 [L]
 
 # allow download of original filenames
 RewriteRule ^([^/]+)/src/([^/]+)/([^/]+)$ $1/src/$2 [L,NS,DPI]
+
+# send content header for browser video playback
+AddType video/webm .webm
