@@ -2091,7 +2091,7 @@ sub process_file {
 					make_video_thumbnail(
 						$filename,         $thumbnail,
 						$tn_width,         $tn_height,
-						FFMPEG_COMMAND
+						VIDEO_CONVERT_COMMAND
 					)
 				  );
 			}
@@ -2106,7 +2106,7 @@ sub process_file {
 				  );
 			}
 
-			# get the thumbnail size created by ImageMagick/ffmpeg
+			# get the thumbnail size created by ImageMagick/libav
 			if ($thumbnail and ($ext eq 'pdf' or $ext eq 'svg' or $ext eq 'webm')) {
 				open THUMBNAIL,$thumbnail;
 				binmode THUMBNAIL;
