@@ -1531,8 +1531,10 @@ sub test_afmod {
 sub make_video_thumbnail {
 	my ($filename, $thumbnail, $width, $height, $command) = @_;
 
-	$command = "ffmpeg" unless ($command);
-`$command -i $filename -y -vframes 1 -vf scale="'if(gte(iw,ih),min(${width},iw),-1)':'if(gte(ih,iw),min(${height},ih),-1)'" $thumbnail`;
+	$command = "avconv" unless ($command);
+	my $filter = "scale='gte(iw,ih)*min(${width},iw)+not(gte(iw,ih))*-1':'gte(ih,iw)*min(${height},ih)+not(gte(ih,iw))*-1'";
+
+	`$command -i $filename -vframes 1 -vf $filter $thumbnail`;
 
 	return 1 unless ($?);
 	return 0;
