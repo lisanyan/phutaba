@@ -1497,7 +1497,8 @@ sub analyze_svg($) {
 
 	$header = unpack("A500", $buffer);
 
-    if ($header =~ /<svg version=/i or $header =~ /<!DOCTYPE svg/i) {
+    if ($header =~ /<svg version=/i or $header =~ /<!DOCTYPE svg/i or
+		$header =~ m!<svg\s(?:.*\n)*\s*xmlns="http://www\.w3\.org/2000/svg"!i) {
         return (1, 1);
     }
 
