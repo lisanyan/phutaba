@@ -117,7 +117,7 @@ use constant S_NOKOOFF => 'Board';
 use constant S_NOKOON => 'Thread';
 
 use constant S_THREADLOCKED => '<strong>Thread %s</strong> ist geschlossen. Es kann nicht geantwortet werden.';
-use constant S_FILEINFO => 'Dateiinformationen';
+use constant S_FILEINFO => 'Informationen';
 use constant S_FILEDELETED => 'Datei gel&ouml;scht';
 
 

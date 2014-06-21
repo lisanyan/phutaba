@@ -55,7 +55,7 @@ sub get_meta {
 
 sub get_meta_markup {
 	my ($file) = @_;
-	my ($markup, $exifData, @metaOptions);
+	my ($markup, $info, $exifData, @metaOptions);
 	my %options = (	"FileSize" => "Dateigr&ouml;&szlig;e",
 			"FileType" => "Dateityp",
 			"ImageSize" => "Aufl&ouml;sung", 
@@ -96,13 +96,34 @@ sub get_meta_markup {
 	foreach (keys %$exifData) {
 		if(!$options{$_} eq undef) {
 			if(!$$exifData{$_} eq "") {
-				$markup = $markup . "<strong>$options{$_}</strong>: $$exifData{$_}<br />\n\t\t";
-			}				
-			
+				$markup = $markup . "<strong>$options{$_}</strong>: $$exifData{$_}<br />";
+				if ($_ eq "PageCount") {
+					if ($$exifData{$_} eq 1) {
+						$info = "1 Seite";
+					} else {
+						$info = $$exifData{$_} . " Seiten";
+					}
+				}
+				if ($_ eq "Duration") {
+					$info = $$exifData{$_};
+					$info =~ s/ \(approx\)$//;
+					$info =~ s/^0:0?//; # 0:01:45 -> 1:45 / 0:12:37 -> 12:37
+
+					# round and format seconds to mm:ss for files < 60 s
+					if ($info =~ /(\d+)\.(\d\d) s/) {
+						my $min = 0;
+						my $sec = $1;
+						if ($2 >= 50) { $sec++ }
+						if ($sec == 60) { $sec = 0; $min++; }
+						$sec = sprintf("%02d", $sec);
+						$info = $min . ':' . $sec;
+					}
+				}
+			}
 		}
 	}
 
-	return $markup;
+	return ($info, $markup);
 }	
 
 sub protocol_regexp { return $protocol_re }
@@ -1513,9 +1534,12 @@ sub analyze_webm($) {
     seek($file, 0, 0);
 
     if ($buffer eq "\x1A\x45\xDF\xA3") {
-# TODO: call "ffprobe -v quiet -show_streams -show_format -print_format json INPUTFILE.webm"
-# parse output to get width, height, length
-		return(1, 1);
+		my $exifTool = new Image::ExifTool;
+		my $exifData = $exifTool->ImageInfo($file, 'ImageSize');
+		seek($file, 0, 0);
+		if ($$exifData{ImageSize} =~ /(\d+)x(\d+)/) {
+			return($1, $2);
+		}
 	}
 
 	return();
@@ -1841,6 +1865,12 @@ sub get_displaysize($;$) {
 
 	$out =~ s/\./$dec_mark/e if ($dec_mark);
 	return $out;
+}
+
+sub get_pretty_html($$) {
+	my ($text, $add) = @_;
+	$text =~ s!<br />!<br />$add!g;
+	return $text;
 }
 
 sub get_date {
