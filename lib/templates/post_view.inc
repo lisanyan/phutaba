@@ -32,8 +32,8 @@
 		<span class="date"><var encode_entities(get_date($timestamp))></span>
 	</label>
 
-	<if $ssl>
-		<span class="ssl" onmouseover="Tip('<var $ssl>')" onmouseout="UnTip()"><img src="<var SSL_ICON>" alt="SSL" /></span>
+	<if $secure>
+		<span class="ssl" onmouseover="Tip('<var $secure>')" onmouseout="UnTip()"><img src="<var SSL_ICON>" alt="SSL" /></span>
 	</if>
 
 	<span class="reflink">
@@ -127,10 +127,10 @@
 	<div style="display: none; min-width: 250px;" id="imageinfo_<var md5_hex($image)>">
 		<strong>Dateiname:</strong> <var $uploadname><br />
 		<hr />
-		<var get_meta_markup($image)>
+		<var get_pretty_html($info_all, "\n\t\t")>
 	</div>
 	<div class="filename"><const S_PICNAME><a target="_blank" title="<var $uploadname>" href="<var expand_image_filename($image)>/<var get_urlstring($uploadname)>"><var $displayname></a></div>
-	<div class="filesize"><var get_displaysize($size, DECIMAL_MARK)><if $width && $height>, <var $width>&nbsp;&times;&nbsp;<var $height></if></div>
+	<div class="filesize"><var get_displaysize($size, DECIMAL_MARK)><if $width && $height>, <var $width>&nbsp;&times;&nbsp;<var $height></if><if $info>, <var $info></if></div>
 	<if $thumbnail>
 		<div class="filelink">
 		<a target="_blank" href="<var expand_image_filename($image)>">

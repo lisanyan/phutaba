@@ -4,8 +4,8 @@ dependencies:
 * mysql
 * perl
 * libfile-mimeinfo-perl
-* libimage-exiftool-perl
-* libhtml-strip-perl
+* Image::ExifTool / libimage-exiftool-perl
+* HTML::Strip / libhtml-strip-perl
 * Locale::Codes
 * Net::Abuse::Utils
 * DateTime

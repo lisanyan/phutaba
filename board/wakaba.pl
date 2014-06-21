@@ -126,6 +126,13 @@ my $task  = ( $query->param("task") or $query->param("action")) unless $query->p
 $task = ( $query->url_param("task") ) unless $task;
 my $json  = ( $query->param("json") or "" );
 
+# fill meta-data fields of all existing board files. this will run only once after schema migration.
+# placed before migration to prevent both functions running in the same script call which could cause a timeout.
+update_files_meta();
+
+# schema migration.
+update_db_schema();
+
 # check for admin table
 init_admin_database() if ( !table_exists(SQL_ADMIN_TABLE) );
 
@@ -352,7 +359,7 @@ elsif ( $task eq "paint" ) {
         my $time = time();
 	make_error("Keine Daten empfangen.") unless $file;
 	
-	my ( $filename, $md5, $width, $height, $thumbnail, $tn_width, $tn_height ) = process_file( $file, $uploadname, $time );
+	my ( $filename, $md5, $width, $height, $thumbnail, $tn_width, $tn_height, $ignore1, $ignore2 ) = process_file( $file, $uploadname, $time );
       	# board, tmpid, filename, time, width, height, thumbnail, tn_width, tn_height
 	$sth = $dbh->prepare("INSERT INTO `oekaki` VALUES(?,?,?,?,?,?,?,?,?);") or make_error($dbh->errstr);
 	$sth->execute(BOARD_IDENT, $tmpid, $filename, $time, $width, $height, $thumbnail, $tn_width, $tn_height) or make_error($dbh->errstr);
@@ -467,9 +474,13 @@ sub output_json_meta {
 	$row = $sth->fetchrow_hashref();
 	if($row ne undef) {
 		$code = 200;
-		add_secondary_images_to_row($row);
-		# fixme: filenames are in stored in @files->{'image'}
-		$data{'file'} = [get_meta($$row{'image'}), get_meta($$row{'image1'}), get_meta($$row{'image2'}), get_meta($$row{'image3'})];
+		add_images_to_row($row);
+		$data{'file'} = [
+			get_meta($$row{'files'}[0]{'image'}),
+			get_meta($$row{'files'}[1]{'image'}),
+			get_meta($$row{'files'}[2]{'image'}),
+			get_meta($$row{'files'}[3]{'image'})
+		];
 	} elsif($sth->rows eq 0) {
 		$code = 404;
 		$error = 'Element not found.';
@@ -543,7 +554,7 @@ sub output_json_post {
 		$$row{'comment'} = encode_entities(decode('utf8', $$row{'comment'}));
 		$$row{'ip'} = "[REDACTED]";
 		$$row{'password'} = "[REDACTED]";
-		add_secondary_images_to_row($row);
+		add_images_to_row($row);
 		$data{'post'} = $row;
 	} elsif($sth->rows eq 0) {
 		$code = 404;
@@ -621,7 +632,7 @@ sub show_post {
 	$row = get_decoded_hashref($sth);
 
     if ($row) {
-        add_secondary_images_to_row($row);
+        add_images_to_row($row);
 		$$row{comment} = resolve_reflinks($$row{comment});
         push(@thread, $row);
 		my $output =
@@ -675,7 +686,7 @@ sub show_page {
     else {
         my $threadcount = 0;
         my @threads;
-        #add_secondary_images_to_row($row);
+
 		if($isAdmin) {
 			fixup_admin_reference_links($row, $admin);
 		}
@@ -696,7 +707,6 @@ sub show_page {
         while ( $row = get_decoded_hashref($sth)
             and $threadcount <= ( IMAGES_PER_PAGE * ( $pageToShow ) ) )
         {
-			#add_secondary_images_to_row($row);
 			if($isAdmin) {
 				fixup_admin_reference_links($row, $admin);
 			}
@@ -740,15 +750,18 @@ sub output_page {
     # do abbrevations and such
     foreach my $thread (@threads) {
 
+		add_images_to_thread(@{$$thread{posts}});
+
         # split off the parent post, and count the replies and images
 
         my ( $parent, @replies ) = @{ $$thread{posts} };
         my $replies = @replies;
 
-        my $images = grep { $$_{image} } @replies;
-        $images += grep { $$_{imageid_1} } @replies;
-        $images += grep { $$_{imageid_2} } @replies;
-        $images += grep { $$_{imageid_3} } @replies;
+		# count files in replies - TODO: check for size == 0 for ignoring deleted files
+		my $images = 0;
+		foreach my $post (@replies) {
+			$images += @{$$post{files}} if (exists $$post{files});
+		}
 
         my $curr_replies = $replies;
         my $curr_images  = $images;
@@ -771,10 +784,8 @@ sub output_page {
         # drop replies until we have few enough replies and images
         while ( $curr_replies > $max_replies or $curr_images > $max_images ) {
             my $post = shift @replies;
-			$curr_images-- if $$post{image};
-			$curr_images-- if $$post{imageid_1};
-			$curr_images-- if $$post{imageid_2};
-			$curr_images-- if $$post{imageid_3};
+			# TODO: ignore files with size == 0
+			$curr_images -= @{$$post{files}} if (exists $$post{files});
             $curr_replies--;
         }
         # write the shortened list of replies back
@@ -786,9 +797,6 @@ sub output_page {
 
         # abbreviate the remaining posts
         foreach my $post ( @{ $$thread{posts} } ) {
-			# add images to visible posts
-			add_secondary_images_to_row($post);
-
 			# create ref-links
 			$$post{comment} = resolve_reflinks($$post{comment});
 
@@ -908,15 +916,15 @@ sub show_thread {
     $sth->execute( $thread, $thread ) or make_error(S_SQLFAIL);
 
     while ( $row = get_decoded_hashref($sth) ) {
-        add_secondary_images_to_row($row);
 		$$row{comment} = resolve_reflinks($$row{comment});
 		if($isAdmin) {
    			fixup_admin_reference_links($row, $admin);
 		}
         push( @thread, $row );
     }
-
     make_error(S_NOTHREADERR) if ( !$thread[0] or $thread[0]{parent} );
+
+	add_images_to_thread(@thread);
 
     make_http_header();
 	my $loc = get_geolocation(get_remote_addr());
@@ -940,87 +948,69 @@ sub show_thread {
 	print($output);
 }
 
-sub add_image_to_array($@) {
-	my ($imageid, $files) = @_;
-	my ($sth, $res, $uploadname);
+sub add_images_to_thread(@) {
+	my (@posts) = @_;
+	my ($parent, $sthfiles, $res, @files, $uploadname, $post);
 
-	$sth = $dbh->prepare("SELECT * FROM " . SQL_TABLE_IMG . " WHERE timestamp=?")
+	$parent = $posts[0]{num};
+
+	@files = ();
+	# get all files of a thread with one query
+	$sthfiles = $dbh->prepare(
+		"SELECT * FROM " . SQL_TABLE_IMG . " WHERE thread=? OR post=? ORDER BY post ASC, num ASC;")
 		or make_error(S_SQLFAIL);
-	$sth->execute($imageid);
-	$res = get_decoded_hashref($sth);  # $sth->fetchrow_hashref();
+	$sthfiles->execute($parent, $parent) or make_error(S_SQLFAIL);
+	while ($res = get_decoded_hashref($sthfiles)) {
+		$uploadname = remove_path($$res{uploadname});
+		$$res{uploadname} = clean_string($uploadname);
+		$$res{displayname} = clean_string(get_displayname($uploadname));
 
-	$uploadname = remove_path($$res{uploadname});
-	$$res{uploadname} = clean_string($uploadname);
-	$$res{displayname} = clean_string(get_displayname($uploadname));
+		$$res{thumbnail} = undef if ($$res{thumbnail} =~ m|^\.\./img/|); # temporary, static thumbs are not used anymore
 
-	$$res{thumbnail} = undef if ($$res{thumbnail} =~ m|^\.\./img/|); # temporary, static thumbs are not used anymore
-	delete $$res{displaysize}; # this field is not used anymore, but still in the database
-	delete $$res{timestamp};
+		push(@files, $res);
+	}
 
-	push(@$files, $res); # @$ dereferences the array to modfiy it in the calling sub
+	return unless @files;
 
-	return $$res{size};
+	foreach $post (@posts) {
+		while (@files and $$post{num} == $files[0]{post}) {
+			push(@{$$post{files}}, shift(@files))
+		}
+	}
 }
 
-sub add_secondary_images_to_row {
+sub add_images_to_array($@) {
+	my ($postid, $files) = @_;
+	my ($sth, $res, $uploadname, $count, $size);
+	$count = 0;
+	$size = 0;
+
+	$sth = $dbh->prepare("SELECT * FROM " . SQL_TABLE_IMG . " WHERE post=? ORDER BY num ASC;")
+		or make_error(S_SQLFAIL);
+	$sth->execute($postid);
+	while ($res = get_decoded_hashref($sth)) {  # $sth->fetchrow_hashref();
+		$count++;
+		$size += $$res{size};
+
+		$uploadname = remove_path($$res{uploadname});
+		$$res{uploadname} = clean_string($uploadname);
+		$$res{displayname} = clean_string(get_displayname($uploadname));
+
+		$$res{thumbnail} = undef if ($$res{thumbnail} =~ m|^\.\./img/|); # temporary, static thumbs are not used anymore
+
+		push(@$files, $res); # @$ dereferences the array to modify it in the calling sub
+	}
+
+	return ($count, $size);
+}
+
+sub add_images_to_row {
     my ($row) = @_;
-    my $extImageCount = 0;
-    my $secondaryImageSize = 0;
-	my $uploadname = '';
-	my $displayname = '';
 
 	my @files; # this array holds all files of one post for loop-processing in the template
 	@files = ();
 
-	if ($$row{uploadname}) {
-		$uploadname = remove_path($$row{uploadname});
-		$displayname = clean_string(get_displayname($uploadname));
-		$uploadname = clean_string($uploadname);
-	}
-
-	# temporary hack until the database has been cleaned up
-	$$row{thumbnail} = undef if ($$row{thumbnail} =~ m|^\.\./img/|);
-
-if ($$row{image}) {
-	@files[0] = {
-		'image' 		=> $$row{image},
-		'uploadname' 	=> $uploadname,
-		'displayname'	=> $displayname,
-		'width' 		=> $$row{width},
-		'height' 		=> $$row{height},
-		'thumbnail' 	=> $$row{thumbnail},
-		'tn_width' 		=> $$row{tn_width},
-		'tn_height' 	=> $$row{tn_height},
-		'size' 			=> $$row{size}
-	};
-	#delete $$row{image};
-	delete $$row{uploadname};
-	delete $$row{width};
-	delete $$row{height};
-	delete $$row{thumbnail};
-	delete $$row{tn_width};
-	delete $$row{tn_height};
-	#delete $$row{size};
-	delete $$row{displaysize};
-}
-
-    if ($$row{imageid_1} != 0) {
-        $secondaryImageSize += add_image_to_array($$row{imageid_1}, \@files);
-        $extImageCount++;
-    }
-
-    if ($$row{imageid_2} != 0) {
-		$secondaryImageSize += add_image_to_array($$row{imageid_2}, \@files);
-        $extImageCount++;
-    }
-
-    if ($$row{imageid_3} != 0) {
-        $secondaryImageSize += add_image_to_array($$row{imageid_3}, \@files);
-        $extImageCount++;
-    }
-
-    $$row{imagecount} = $extImageCount + ( $$row{image} ? 1 : 0 );
-    $$row{secondaryimagesize} = $secondaryImageSize;
+	($$row{imagecount}, $$row{total_imagesize}) = add_images_to_array($$row{num}, \@files);
 
 	$row->{'files'}=[@files] if @files; # add the hashref with files to the post	
 }
@@ -1141,7 +1131,7 @@ sub find_posts($$$$) {
 # TODO: select or define CSS style
 #$$row{comment} =~ s/($find)/<span style="background-color: #706B5E; color: #FFFFFF; font-weight: bold;">$1<\/span>/ig;
 
-				add_secondary_images_to_row($row);
+				add_images_to_row($row);
 				$$row{comment} = resolve_reflinks($$row{comment});
 				#if($isAdmin) {
 				#	fixup_admin_reference_links($row, $admin);
@@ -1351,125 +1341,108 @@ sub post_stuff {
     # Manager and deletion stuff - duuuuuh?
 
     # copy file, do checksums, make thumbnail, etc
-    my ( $filename, $md5, $width, $height, $thumbnail, $tn_width, $tn_height ) =
-      process_file( $file, $uploadname, $time )
-      if ($file);
+    my (@filename, @md5, @width, @height, @thumbnail, @tn_width, @tn_height, @info, @info_all);
 
+	($filename[0], $md5[0], $width[0], $height[0], $thumbnail[0], $tn_width[0], $tn_height[0], $info[0], $info_all[0]) =
+		process_file($file, $uploadname, $time) if ($file);
 
     my $tsf1 = 0;
     my $tsf2 = 0;
     my $tsf3 = 0;
     if ($file1) {
         $tsf1 = time() . sprintf( "%03d", int( rand(1000) ) );
-        my (
-            $filename1,  $md51,      $width1, $height1,
-            $thumbnail1, $tn_width1, $tn_height1
-        ) = process_file( $file1, $file1, $tsf1 );
-        my $sth2 =
-          $dbh->prepare( "INSERT INTO "
-              . SQL_TABLE_IMG
-              . " VALUES(?,?,?,?,?,?,?,?,?,?,null);" )
-          or make_error(S_SQLFAIL);
-        $sth2->execute(
-            $tsf1,       $filename1, $size1,        $md51,
-            $width1,     $height1,   $thumbnail1,   $tn_width1,
-            $tn_height1, $file1
-        ) or make_error(S_SQLFAIL);
+		($filename[1], $md5[1], $width[1], $height[1], $thumbnail[1], $tn_width[1], $tn_height[1], $info[1], $info_all[1]) =
+			process_file($file1, $file1, $tsf1);
     }
 
     if ($file2) {
         $tsf2 = time() . sprintf( "%03d", int( rand(1000) ) );
-        my (
-            $filename1,  $md51,      $width1, $height1,
-            $thumbnail1, $tn_width1, $tn_height1
-        ) = process_file( $file2, $file2, $tsf2 );
-        my $sth2 =
-          $dbh->prepare( "INSERT INTO "
-              . SQL_TABLE_IMG
-              . " VALUES(?,?,?,?,?,?,?,?,?,?,null);" )
-          or make_error(S_SQLFAIL);
-        $sth2->execute(
-            $tsf2,       $filename1, $size2,        $md51,
-            $width1,     $height1,   $thumbnail1,   $tn_width1,
-            $tn_height1, $file2
-        ) or make_error(S_SQLFAIL);
+		($filename[2], $md5[2], $width[2], $height[2], $thumbnail[2], $tn_width[2], $tn_height[2], $info[2], $info_all[2]) =
+			process_file($file2, $file2, $tsf2);
     }
 
     if ($file3) {
         $tsf3 = time() . sprintf( "%03d", int( rand(1000) ) );
-        my (
-            $filename1,  $md51,      $width1, $height1,
-            $thumbnail1, $tn_width1, $tn_height1
-        ) = process_file( $file3, $file3, $tsf3 );
-        my $sth2 =
-          $dbh->prepare( "INSERT INTO "
-              . SQL_TABLE_IMG
-              . " VALUES(?,?,?,?,?,?,?,?,?,?,null);" )
-          or make_error(S_SQLFAIL);
-        $sth2->execute(
-            $tsf3,       $filename1, $size3,        $md51,
-            $width1,     $height1,   $thumbnail1,   $tn_width1,
-            $tn_height1, $file3
-        ) or make_error(S_SQLFAIL);
+		($filename[3], $md5[3], $width[3], $height[3], $thumbnail[3], $tn_width[3], $tn_height[3], $info[3], $info_all[3]) =
+			process_file($file3, $file3, $tsf3);
     }
 
     $numip = "0" if (ANONYMIZE_IP_ADDRESSES);
     # finally, write to the database
     my $sth = $dbh->prepare(
         "INSERT INTO " . SQL_TABLE . "
-		VALUES(null,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,null,?,?,null,null,?,?,?,?,?,?);"
+		VALUES(null,?,?,?,?,?,?,?,?,?,?,null,null,?,null,?,?,?);"
     ) or make_error(S_SQLFAIL);
     $sth->execute(
-        $parent,      $time,                $lasthit,
-        $numip,       $name,
-        $trip,        $email,               $subject,
-        $password,    $comment,             $filename,
-        $size,        $md5,                 $width,
-        $height,      $thumbnail,           $tn_width,
-        $tn_height,   $isAdminPost,  $uploadname,
-        $$parent_res{sticky}, $tsf1,
-        $tsf2,        $tsf3,                $loc,
-        $ssl
+		$parent,    $time,     $lasthit,      $numip,
+		$name,      $trip,     $email,        $subject,
+		$password,  $comment,  $isAdminPost,  $$parent_res{sticky},
+		$loc,       $ssl
     ) or make_error(S_SQLFAIL);
-    
-    my $new_post_id = 0;
+
+	# get the new post id
+	$sth = $dbh->prepare("SELECT " . get_sql_lastinsertid() . ";") or make_error(S_SQLFAIL);
+	$sth->execute() or make_error(S_SQLFAIL);
+	my $new_post_id = ($sth->fetchrow_array())[0];
+
+	# insert file information into database
+	if ($file) {
+		$sth = $dbh->prepare("INSERT INTO " . SQL_TABLE_IMG . " VALUES(null,?,?,?,?,?,?,?,?,?,?,?,?,?);" )
+			or make_error(S_SQLFAIL);
+
+		my $thread_id = $parent;
+		$thread_id = $new_post_id if (!$parent);
+
+		$sth->execute(
+			$thread_id, $new_post_id, $filename[0], $size, $md5[0], $width[0], $height[0],
+			$thumbnail[0], $tn_width[0], $tn_height[0], $file, $info[0], $info_all[0]
+		) or make_error(S_SQLFAIL);
+
+		($sth->execute(
+			$thread_id, $new_post_id, $filename[1], $size1, $md5[1], $width[1], $height[1],
+			$thumbnail[1], $tn_width[1], $tn_height[1], $file1, $info[1], $info_all[1]
+		) or make_error(S_SQLFAIL)) if ($file1);
+
+		($sth->execute(
+			$thread_id, $new_post_id, $filename[2], $size2, $md5[2], $width[2], $height[2],
+			$thumbnail[2], $tn_width[2], $tn_height[2], $file2, $info[2], $info_all[2]
+		) or make_error(S_SQLFAIL)) if ($file2);
+
+		($sth->execute(
+			$thread_id, $new_post_id, $filename[3], $size3, $md5[3], $width[3], $height[3],
+			$thumbnail[3], $tn_width[3], $tn_height[3], $file3, $info[3], $info_all[3]
+		) or make_error(S_SQLFAIL)) if ($file3);
+	}
+
 
     if (ENABLE_IRC_NOTIFY) {
-        my $sth = $dbh->prepare(
-            "SELECT num FROM " . SQL_TABLE . " WHERE timestamp=? LIMIT 1;" )
-          or make_error(S_SQLFAIL);
-        $sth->execute($time) or make_error(S_SQLFAIL);
-        my $row;
-        if ( $row = $sth->fetchrow_hashref() ) {
-            my $socket = new IO::Socket::INET(
-                PeerAddr => IRC_NOTIFY_HOST,
-                PeerPort => IRC_NOTIFY_PORT,
-                Proto    => "tcp"
-            );
-            if ($socket) {
-                if ( $parent and IRC_NOTIFY_ON_NEW_POST ) {
-                    print $socket S_IRC_NEW_POST_PREPEND . "/"
-                      . encode('utf-8', decode_entities(BOARD_IDENT)) . "/: "
-                      . S_IRC_BASE_BOARDURL
-                      . encode('utf-8', decode_entities(BOARD_IDENT))
-                      . S_IRC_BASE_THREADURL
-                      . $parent . "#"
-                      . $$row{num} . " ["
-                      . get_preview($original_comment) . "]\n";
-                }
-                elsif ( !$parent and IRC_NOTIFY_ON_NEW_THREAD ) {
-                    print $socket S_IRC_NEW_THREAD_PREPEND . "/"
-                      . encode('utf-8', decode_entities(BOARD_IDENT)) . "/: "
-                      . S_IRC_BASE_BOARDURL
-                      . encode('utf-8', decode_entities(BOARD_IDENT))
-                      . S_IRC_BASE_THREADURL
-                      . $$row{num} . " ["
-                      . get_preview($original_comment) . "]\n";
-                }
-                close($socket);
-            }
-            $new_post_id = $$row{num};
-        }
+		my $socket = new IO::Socket::INET(
+			PeerAddr => IRC_NOTIFY_HOST,
+			PeerPort => IRC_NOTIFY_PORT,
+			Proto    => "tcp"
+		);
+		if ($socket) {
+			if ( $parent and IRC_NOTIFY_ON_NEW_POST ) {
+				print $socket S_IRC_NEW_POST_PREPEND . "/"
+				  . encode('utf-8', decode_entities(BOARD_IDENT)) . "/: "
+				  . S_IRC_BASE_BOARDURL
+				  . encode('utf-8', decode_entities(BOARD_IDENT))
+				  . S_IRC_BASE_THREADURL
+				  . $parent . "#"
+				  . $new_post_id . " ["
+				  . get_preview($original_comment) . "]\n";
+			}
+			elsif ( !$parent and IRC_NOTIFY_ON_NEW_THREAD ) {
+				print $socket S_IRC_NEW_THREAD_PREPEND . "/"
+				  . encode('utf-8', decode_entities(BOARD_IDENT)) . "/: "
+				  . S_IRC_BASE_BOARDURL
+				  . encode('utf-8', decode_entities(BOARD_IDENT))
+				  . S_IRC_BASE_THREADURL
+				  . $new_post_id . " ["
+				  . get_preview($original_comment) . "]\n";
+			}
+			close($socket);
+		}
     }
 
     if (ENABLE_WEBSOCKET_NOTIFY) {
@@ -2073,7 +2046,7 @@ sub process_file {
             }
         }
 
-		if ($ext eq 'pdf' or $ext eq 'svg' or $ext eq 'webm') { # thumbnail-dimensions not yet known
+		if ($ext eq 'pdf' or $ext eq 'svg') { # cannot determine dimensions for these files
 			$width = undef;
 			$height = undef;
 			$tn_width = MAX_W;
@@ -2106,8 +2079,8 @@ sub process_file {
 				  );
 			}
 
-			# get the thumbnail size created by ImageMagick/libav
-			if ($thumbnail and ($ext eq 'pdf' or $ext eq 'svg' or $ext eq 'webm')) {
+			# get the thumbnail size created by external program
+			if ($thumbnail and ($ext eq 'pdf' or $ext eq 'svg')) {
 				open THUMBNAIL,$thumbnail;
 				binmode THUMBNAIL;
 				($tn_ext, $tn_width, $tn_height) = analyze_image(\*THUMBNAIL, $thumbnail);
@@ -2140,8 +2113,8 @@ sub process_file {
     #		}
     #	}
 
-    return ( clean_string( decode_string( $filename, CHARSET ) ), $md5, $width, $height, $thumbnail, $tn_width,
-        $tn_height );
+	my ($info, $info_all) = get_meta_markup($filename);
+    return ($filename, $md5, $width, $height, $thumbnail, $tn_width, $tn_height, $info, $info_all);
 }
 
 #
@@ -2245,40 +2218,24 @@ sub delete_post {
 
             # remove files from comment and possible replies
             $sth = $dbh->prepare(
-                    "SELECT image,thumbnail,imageid_1,imageid_2,imageid_3 FROM "
-                  . SQL_TABLE
-                  . " WHERE num=? OR parent=?" )
+                    "SELECT image,thumbnail FROM " . SQL_TABLE_IMG . " WHERE post=? OR thread=?" )
               or make_error(S_SQLFAIL);
             $sth->execute( $post, $post ) or make_error(S_SQLFAIL);
 
             while ( $res = $sth->fetchrow_hashref() ) {
-                my @secondaryImages =
-                  ( $$res{imageid_1}, $$res{imageid_2}, $$res{imageid_3} );
-                foreach my $secImgID (@secondaryImages) {
-                    my $sth2 =
-                      $dbh->prepare( "SELECT image,thumbnail FROM "
-                          . SQL_TABLE_IMG
-                          . " WHERE timestamp=?" )
-                      or make_error(S_SQLFAIL);
-                    $sth2->execute($secImgID);
-                    my $res2 = $sth2->fetchrow_hashref();
-                    unlink $$res2{image};
-                    unlink $$res2{thumbnail} if ( $$res2{thumbnail} =~ /^$thumb/ );
-                    # remove the row in image table
-                    $sth2 = $dbh->prepare(
-                        "DELETE FROM " . SQL_TABLE_IMG . " WHERE timestamp=?;" )
-                      or make_error(S_SQLFAIL);
-                    $sth2->execute($secImgID) or make_error(S_SQLFAIL);
-                }
-
-                    # delete images if they exist
-                    unlink $$res{image};
-                    unlink $$res{thumbnail} if ( $$res{thumbnail} =~ /^$thumb/ );
+				# delete images if they exist
+				unlink $$res{image};
+				unlink $$res{thumbnail} if ( $$res{thumbnail} =~ /^$thumb/ );
             }
 
             # remove post and possible replies
             $sth = $dbh->prepare(
                 "DELETE FROM " . SQL_TABLE . " WHERE num=? OR parent=?;" )
+              or make_error(S_SQLFAIL);
+            $sth->execute( $post, $post ) or make_error(S_SQLFAIL);
+
+            $sth = $dbh->prepare(
+                "DELETE FROM " . SQL_TABLE_IMG . " WHERE post=? OR thread=?;" )
               or make_error(S_SQLFAIL);
             $sth->execute( $post, $post ) or make_error(S_SQLFAIL);
 
@@ -2335,48 +2292,24 @@ sub delete_post {
             }
 
         }
-        else    # remove just the image and update the database
+        else    # remove just the image(s) and update the database
         {
-            if ( $$row{image} ) {
-
-                # remove images
-                unlink $$row{image};
-                unlink $$row{thumbnail} if ( $$row{thumbnail} =~ /^$thumb/ );
-
-                $sth =
-                  $dbh->prepare( "UPDATE "
-                      . SQL_TABLE
-                      . " SET size=0,md5=null,thumbnail=null WHERE num=?;" )
-                  or make_error(S_SQLFAIL);
-                $sth->execute($post) or make_error(S_SQLFAIL);
-            }
-
-            my @secondaryImages =
-              ( $$row{imageid_1}, $$row{imageid_2}, $$row{imageid_3} );
-            foreach my $secImgID (@secondaryImages) {
-                my $sth2 =
-                  $dbh->prepare( "SELECT image,thumbnail FROM "
-                      . SQL_TABLE_IMG
-                      . " WHERE timestamp=?" )
-                  or make_error(S_SQLFAIL);
-                $sth2->execute($secImgID);
-                my $res2 = $sth2->fetchrow_hashref();
-                unlink $$res2{image};
-                unlink $$res2{thumbnail} if ( $$res2{thumbnail} =~ /^$thumb/ );
-
-                # remove the row in image table
-                $sth2 = $dbh->prepare(
-                    "DELETE FROM " . SQL_TABLE_IMG . " WHERE timestamp=?;" )
-                  or make_error(S_SQLFAIL);
-                $sth2->execute($secImgID) or make_error(S_SQLFAIL);
-            }
-            $sth =
-              $dbh->prepare( "UPDATE "
-                  . SQL_TABLE
-                  . " SET imageid_1=0,imageid_2=0,imageid_3=0 WHERE num=?;" )
+            $sth = $dbh->prepare(
+                    "SELECT image,thumbnail FROM " . SQL_TABLE_IMG . " WHERE post=? OR thread=?" )
               or make_error(S_SQLFAIL);
-            $sth->execute($post) or make_error(S_SQLFAIL);
+            $sth->execute( $post, $post ) or make_error(S_SQLFAIL);
 
+            while ( $res = $sth->fetchrow_hashref() ) {
+				# delete images if they exist
+				unlink $$res{image};
+				unlink $$res{thumbnail} if ( $$res{thumbnail} =~ /^$thumb/ );
+            }
+
+			$sth = $dbh->prepare( "UPDATE "
+				  . SQL_TABLE_IMG
+				  . " SET size=0,md5=null,thumbnail=null,info=null,info_all=null WHERE post=? OR thread=?;" )
+				or make_error(S_SQLFAIL);
+			$sth->execute($post, $post) or make_error(S_SQLFAIL);
         }
     }
 }
@@ -2417,7 +2350,7 @@ sub make_admin_post_panel {
     while ( $row = get_decoded_hashref($sth)
         and $threadcount < ( IMAGES_PER_PAGE * ( $pageToShow + 1 ) ) )
     {
-        add_secondary_images_to_row($row);
+        add_images_to_row($row);
 		if($admin) {
 			fixup_admin_reference_links($row, $admin);
 		}
@@ -2432,7 +2365,7 @@ sub make_admin_post_panel {
 
         if ($displayPage) {
             $$row{rowtype} = $rowtype;
-            $size += $$row{size} + $$row{secondaryimagesize};
+            $size += $$row{total_imagesize};
             push @posts, $row;
         }
     }
@@ -2913,6 +2846,15 @@ sub get_sql_autoincrement {
     make_error(S_SQLCONF);  # maybe there should be a sane default case instead?
 }
 
+sub get_sql_lastinsertid()
+{
+	return 'LAST_INSERT_ID()' if(SQL_DBI_SOURCE=~/^DBI:mysql:/i);
+	return 'last_insert_rowid()' if(SQL_DBI_SOURCE=~/^DBI:SQLite:/i);
+	return 'last_insert_rowid()' if(SQL_DBI_SOURCE=~/^DBI:SQLite2:/i);
+
+	make_error(S_SQLCONF);
+}
+
 sub trim_database {
     my ( $sth, $row, $order );
 
@@ -2989,15 +2931,23 @@ sub count_threads {
 
 sub count_posts {
     my ($parent) = @_;
-    my ( $sth, $where );
+    my ($sth, $where, $count, $size);
 
     $where = "WHERE parent=$parent or num=$parent" if ($parent);
     $sth = $dbh->prepare(
-        "SELECT count(*),sum(size) FROM " . SQL_TABLE . " $where;" )
+        "SELECT count(*) FROM " . SQL_TABLE . " $where;" )
       or make_error(S_SQLFAIL);
     $sth->execute() or make_error(S_SQLFAIL);
+	$count = ($sth->fetchrow_array())[0];
 
-    return $sth->fetchrow_array();
+    $where = "WHERE thread=$parent" if ($parent);
+    $sth = $dbh->prepare(
+        "SELECT sum(size) FROM " . SQL_TABLE_IMG . " $where;" )
+      or make_error(S_SQLFAIL);
+    $sth->execute() or make_error(S_SQLFAIL);
+	$size = ($sth->fetchrow_array())[0];
+
+    return ($count, $size);
 }
 
 sub thread_exists {
@@ -3054,4 +3004,95 @@ sub get_decoded_arrayref {
 
     return $row;
 
+}
+
+sub update_db_schema {  # mysql-specific. will be removed after migration is done.
+
+# try to select a field that only exists if migration was already done
+# exit if no error occurs
+    $sth = $dbh->prepare("SELECT banned FROM " . SQL_TABLE . " LIMIT 1;");
+	return if ($sth->execute());
+
+# remove primary key constraint from image table, remove unneeded column, add new columns
+   $sth = $dbh->prepare(
+		"ALTER TABLE " . SQL_TABLE_IMG . " DROP PRIMARY KEY, DROP displaysize,
+		ADD thread INT NULL AFTER timestamp, ADD post INT NULL AFTER thread,
+		ADD info TEXT, ADD info_all TEXT;"
+   ) or make_error($dbh->errstr);
+   $sth->execute() or make_error($dbh->errstr);
+
+# link images 1-3 to posts and threads
+   $sth = $dbh->prepare(
+		"UPDATE " . SQL_TABLE_IMG . " JOIN " . SQL_TABLE . " ON imageid_1=" . SQL_TABLE_IMG . ".timestamp
+		SET thread=parent, post=num;"
+   ) or make_error($dbh->errstr);
+   $sth->execute() or make_error($dbh->errstr);
+
+   $sth = $dbh->prepare(
+		"UPDATE " . SQL_TABLE_IMG . " JOIN " . SQL_TABLE . " ON imageid_2=" . SQL_TABLE_IMG . ".timestamp
+		SET thread=parent, post=num;"
+   ) or make_error($dbh->errstr);
+   $sth->execute() or make_error($dbh->errstr);
+
+   $sth = $dbh->prepare(
+		"UPDATE " . SQL_TABLE_IMG . " JOIN " . SQL_TABLE . " ON imageid_3=" . SQL_TABLE_IMG . ".timestamp
+		SET thread=parent, post=num;"
+   ) or make_error($dbh->errstr);
+   $sth->execute() or make_error($dbh->errstr);
+
+# copy image 0 from comment table to image table
+   $sth = $dbh->prepare(
+		"INSERT " . SQL_TABLE_IMG . " (timestamp, thread, post, image, size, md5, width, height,
+		thumbnail, tn_width, tn_height, uploadname)
+		SELECT 1, parent, num, image, size, md5, width, height, thumbnail, tn_width, tn_height, uploadname
+		FROM " . SQL_TABLE . " WHERE image IS NOT NULL;"
+   ) or make_error($dbh->errstr);
+   $sth->execute() or make_error($dbh->errstr);
+
+# replace thread=0 with post-id for OP images
+   $sth = $dbh->prepare(
+		"UPDATE " . SQL_TABLE_IMG . " SET thread=post WHERE thread=0;"
+   ) or make_error($dbh->errstr);
+   $sth->execute() or make_error($dbh->errstr);
+
+# add new primary key to image table, order records to make sure image 0 is still the first in each post, remove unneeded column
+   $sth = $dbh->prepare(
+		"ALTER TABLE " . SQL_TABLE_IMG . " ADD num INT PRIMARY KEY AUTO_INCREMENT FIRST,
+		DROP timestamp, ORDER BY timestamp;"
+   ) or make_error($dbh->errstr);
+   $sth->execute() or make_error($dbh->errstr);
+
+# remove unneeded columns from comments table, rename column, add banned column
+   $sth = $dbh->prepare(
+		"ALTER TABLE " . SQL_TABLE . " DROP image, DROP size, DROP md5, DROP width, DROP height, DROP thumbnail,
+		DROP tn_width, DROP tn_height, DROP uploadname, DROP displaysize, DROP imageid_1, DROP imageid_2, DROP imageid_3,
+		CHANGE `ssl` secure TEXT, ADD banned INT AFTER comment;"
+   ) or make_error($dbh->errstr);
+   $sth->execute() or make_error($dbh->errstr);
+}
+
+sub update_files_meta {
+	my ($row, $sth2, $info, $info_all);
+
+    return unless ($sth = $dbh->prepare("SELECT 1 FROM " . SQL_TABLE_IMG . " WHERE info_all IS NOT NULL LIMIT 1;"));
+	return unless ($sth->execute()); # exit if schema was not yet updated
+	return if (($sth->fetchrow_array())[0]); # at least one info_all field was filled. update already done, exit.
+
+    $sth = $dbh->prepare(
+		"SELECT num, image FROM " . SQL_TABLE_IMG . " WHERE image IS NOT NULL AND size>0 AND info_all IS NULL;"
+	) or make_error($dbh->errstr);
+    $sth->execute() or make_error($dbh->errstr);
+
+	$sth2 = $dbh->prepare(
+		"UPDATE " . SQL_TABLE_IMG . " SET info=?, info_all=? WHERE num=?;"
+	) or make_error($dbh->errstr);
+    while ($row = get_decoded_hashref($sth)) {
+		if (-e $$row{image}) {
+			($info, $info_all) = get_meta_markup($$row{image});
+		} else {
+			$info = undef;
+			$info_all = "File not found";
+		}
+		$sth2->execute($info, $info_all, $$row{num}) or make_error($dbh->errstr);
+	}
 }
