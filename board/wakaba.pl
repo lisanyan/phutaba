@@ -17,7 +17,7 @@ use JSON;
 use Digest::MD5 qw(md5 md5_hex md5_base64);
 use Image::ExifTool qw(:Public);
 use File::stat;
-use File::MimeInfo::Magic;
+#use File::MimeInfo::Magic;
 use IO::Socket;
 use IO::Scalar;
 use Data::Dumper;
@@ -3010,8 +3010,15 @@ sub update_db_schema {  # mysql-specific. will be removed after migration is don
 
 # try to select a field that only exists if migration was already done
 # exit if no error occurs
+	my $done = 0;
+
     $sth = $dbh->prepare("SELECT banned FROM " . SQL_TABLE . " LIMIT 1;");
-	return if ($sth->execute());
+	if ($sth->execute()) {
+		$sth->finish;
+		$done = 1;
+	}
+
+	return if ($done);
 
 # remove primary key constraint from image table, remove unneeded column, add new columns
    $sth = $dbh->prepare(

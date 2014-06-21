@@ -1559,7 +1559,7 @@ sub make_video_thumbnail {
 	$command = "avconv" unless ($command);
 	my $filter = "scale='gte(iw,ih)*min(${width},iw)+not(gte(iw,ih))*-1':'gte(ih,iw)*min(${height},ih)+not(gte(ih,iw))*-1'";
 
-	`$command -i $filename -vframes 1 -vf $filter $thumbnail`;
+	`$command -v quiet -i $filename -vframes 1 -vf $filter $thumbnail`;
 
 	return 1 unless ($?);
 	return 0;
