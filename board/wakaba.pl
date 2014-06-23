@@ -3024,34 +3024,34 @@ sub update_db_schema {  # mysql-specific. will be removed after migration is don
    $sth = $dbh->prepare(
 		"ALTER TABLE " . SQL_TABLE_IMG . " DROP PRIMARY KEY, DROP displaysize,
 		ADD thread INT NULL AFTER timestamp, ADD post INT NULL AFTER thread,
-		ADD info TEXT, ADD info_all TEXT;"
+		ADD info TEXT NULL, ADD info_all TEXT NULL, ADD temp_sort INT NULL;"
    ) or make_error($dbh->errstr);
    $sth->execute() or make_error($dbh->errstr);
 
 # link images 1-3 to posts and threads
    $sth = $dbh->prepare(
 		"UPDATE " . SQL_TABLE_IMG . " JOIN " . SQL_TABLE . " ON imageid_1=" . SQL_TABLE_IMG . ".timestamp
-		SET thread=parent, post=num;"
+		SET thread=parent, post=num, temp_sort=1;"
    ) or make_error($dbh->errstr);
    $sth->execute() or make_error($dbh->errstr);
 
    $sth = $dbh->prepare(
 		"UPDATE " . SQL_TABLE_IMG . " JOIN " . SQL_TABLE . " ON imageid_2=" . SQL_TABLE_IMG . ".timestamp
-		SET thread=parent, post=num;"
+		SET thread=parent, post=num, temp_sort=2;"
    ) or make_error($dbh->errstr);
    $sth->execute() or make_error($dbh->errstr);
 
    $sth = $dbh->prepare(
 		"UPDATE " . SQL_TABLE_IMG . " JOIN " . SQL_TABLE . " ON imageid_3=" . SQL_TABLE_IMG . ".timestamp
-		SET thread=parent, post=num;"
+		SET thread=parent, post=num, temp_sort=3;"
    ) or make_error($dbh->errstr);
    $sth->execute() or make_error($dbh->errstr);
 
 # copy image 0 from comment table to image table
    $sth = $dbh->prepare(
 		"INSERT " . SQL_TABLE_IMG . " (timestamp, thread, post, image, size, md5, width, height,
-		thumbnail, tn_width, tn_height, uploadname)
-		SELECT 1, parent, num, image, size, md5, width, height, thumbnail, tn_width, tn_height, uploadname
+		thumbnail, tn_width, tn_height, uploadname, temp_sort)
+		SELECT 1, parent, num, image, size, md5, width, height, thumbnail, tn_width, tn_height, uploadname, 0
 		FROM " . SQL_TABLE . " WHERE image IS NOT NULL;"
    ) or make_error($dbh->errstr);
    $sth->execute() or make_error($dbh->errstr);
@@ -3062,10 +3062,10 @@ sub update_db_schema {  # mysql-specific. will be removed after migration is don
    ) or make_error($dbh->errstr);
    $sth->execute() or make_error($dbh->errstr);
 
-# add new primary key to image table, order records to make sure image 0 is still the first in each post, remove unneeded column
+# add new primary key to image table, order records to make sure images stay in the right order, remove unneeded columns
    $sth = $dbh->prepare(
 		"ALTER TABLE " . SQL_TABLE_IMG . " ADD num INT PRIMARY KEY AUTO_INCREMENT FIRST,
-		DROP timestamp, ORDER BY timestamp;"
+		DROP timestamp, DROP temp_sort, ORDER BY temp_sort ASC;"
    ) or make_error($dbh->errstr);
    $sth->execute() or make_error($dbh->errstr);
 
