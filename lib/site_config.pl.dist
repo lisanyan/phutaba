@@ -3,5 +3,6 @@ use constant SECRET => 'xxxxxxxx';				# Cryptographic secret. CHANGE THIS to som
 use constant SQL_DBI_SOURCE => 'DBI:mysql:database=xxxxx;host=localhost'; # DBI data source string (mysql version, put server and database name in here)
 use constant SQL_USERNAME => 'xxxx';		# MySQL login name
 use constant SQL_PASSWORD => 'xxxx';		# MySQL password
+use constant DEFAULT_BOARD => '/board/';	# default board to redirect to from /
 
 1;
