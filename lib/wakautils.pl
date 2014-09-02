@@ -81,6 +81,7 @@ sub get_meta_markup {
 			"FrameCount" => "Frames",
 			"Vendor" => "Library-Hersteller",
 			"Album" => "Album",
+			"Genre" => "Genre",
 			"Composer" => "Komponist",
 			"Model" => "Modell",
 			"Maker" => "Hersteller",
@@ -1513,13 +1514,14 @@ sub analyze_svg($) {
 	my ($file) = @_;
 	my ($buffer, $header);
 
-	read($file, $buffer, 500);
+	read($file, $buffer, 600);
 	seek($file, 0, 0);
 
-	$header = unpack("A500", $buffer);
+	$header = unpack("A600", $buffer);
 
     if ($header =~ /<svg version=/i or $header =~ /<!DOCTYPE svg/i or
-		$header =~ m!<svg\s(?:.*\n)*\s*xmlns="http://www\.w3\.org/2000/svg"!i) {
+		$header =~ m!<svg\s(?:.*\s)?xmlns="http://www\.w3\.org/2000/svg"\s!i or
+		$header =~ m!<svg\s(?:.*\n)*\s*xmlns="http://www\.w3\.org/2000/svg"\s!i) {
         return (1, 1);
     }
 
