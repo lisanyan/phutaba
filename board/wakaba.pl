@@ -2734,7 +2734,7 @@ sub get_remote_addr {
 	my $ip;
 
 	$ip = $ENV{HTTP_X_REAL_IP};
-	$ip = $ENV{REMOTE_ADDR} if ($ip eq undef);
+	$ip = $ENV{REMOTE_ADDR} if (!defined($ip));
 
 	return $ip;
 }

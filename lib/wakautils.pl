@@ -95,8 +95,8 @@ sub get_meta_markup {
 	}
 	$exifData = get_meta($file, @metaOptions);
 	foreach (keys %$exifData) {
-		if(!$options{$_} eq undef) {
-			if(!$$exifData{$_} eq "") {
+		if (defined($options{$_})) {
+			if (!$$exifData{$_} eq "") {
 				$markup = $markup . "<strong>$options{$_}</strong>: $$exifData{$_}<br />";
 				if ($_ eq "PageCount") {
 					if ($$exifData{$_} eq 1) {
