@@ -372,6 +372,11 @@ elsif ( $task eq "paint" ) {
         print "</pre>";
     }  
 }
+else {
+	make_http_header();
+	print "Unknown task parameter.\n";
+}
+
 
 $dbh->disconnect();
 
@@ -1887,11 +1892,11 @@ sub sage_count {
 
 sub get_file_size {
     my ($file) = @_;
-    my ($size);
+    my ($size) = 0;
     my ($ext) = $file =~ /\.([^\.]+)$/;
     my %sizehash = FILESIZES;
 
-    $size = stat($file)->size;
+    $size = stat($file)->size if (defined($file));
     if ( $sizehash{$ext} ) {
         make_error(S_TOOBIG) if ( $size > $sizehash{$ext} * 1024 );
     }

@@ -110,12 +110,12 @@ sub get_meta_markup {
 					$info =~ s/ \(approx\)$//;
 					$info =~ s/^0:0?//; # 0:01:45 -> 1:45 / 0:12:37 -> 12:37
 
-					# round and format seconds to mm:ss for files < 60 s
+					# round and format seconds to mm:ss if only seconds are returned
 					if ($info =~ /(\d+)\.(\d\d) s/) {
-						my $min = 0;
 						my $sec = $1;
 						if ($2 >= 50) { $sec++ }
-						if ($sec == 60) { $sec = 0; $min++; }
+						my $min = int($sec / 60);
+						$sec = $sec - $min * 60;
 						$sec = sprintf("%02d", $sec);
 						$info = $min . ':' . $sec;
 					}
