@@ -185,7 +185,7 @@ use constant S_SQLNUKE    => 'Nuke-Passwort:';
 use constant S_SQLEXECUTE => 'Execute';
 
 use constant S_TOOBIG       => 'Die Datei ist zu gro&szlig;.';
-use constant S_TOOBIGORNONE => 'Die Datei ist zu gro&szlig;.';
+use constant S_TOOBIGORNONE => 'Die Datei ist zu gro&szlig; oder leer.';
 use constant S_REPORTERR    => 'Fehler: Beitrag nicht gefunden.'
   ;    # Returns error when a reply (res) cannot be found
 use constant S_UPFAIL => 'Fehler: Upload fehlgeschlagen.'
