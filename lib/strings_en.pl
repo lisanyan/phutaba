@@ -143,6 +143,9 @@ use constant S_MPTABLE => '<th>Nr.</th><th>Zeit</th><th>Betreff</th>'
 use constant S_IMGSPACEUSAGE => '[ Benutzter Speicherplatz: %d KB ]'
   ;          # Prints space used KB by the board under Management Panel
 
+use constant S_DELALLMSG => 'Betroffen';
+use constant S_DELALLCOUNT => '%s Posts (%s Threads)';
+
 use constant S_BANTABLE =>
   '<th>Typ</th><th>Wert</th><th>Kommentar</th><th>Datum</th><th>ASN</th><th>AS Name</th><th>Land</th><th>Aktion</th>'
   ;          # Explains names for Ban Panel

@@ -635,6 +635,28 @@ use constant POST_PANEL_TEMPLATE => compile_template(
 } . NORMAL_FOOT_INCLUDE
 );
 
+use constant DELETE_PANEL_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
+
+<div class="dellist"><const S_MPDELETEIP></div>
+
+<div class="postarea">
+<form action="<var $self>" method="post">
+<input type="hidden" name="task" value="deleteall" />
+<input type="hidden" name="board" value="<const BOARD_NAME>" />
+<input type="hidden" name="admin" value="<var $admin>" />
+<input type="hidden" name="ip" value="<var $ip>" />
+<input type="hidden" name="mask" value="<var dec_to_dot($mask)>" />
+<input type="hidden" name="go" value="1" />
+<table><tbody>
+<tr><td class="postblock"><const S_BANIPLABEL></td><td><var dec_to_dot($ip)></td></tr>
+<tr><td class="postblock"><const S_BANMASKLABEL></td><td><var dec_to_dot($mask)></tr>
+<tr><td class="postblock"><const S_DELALLMSG></td><td><var sprintf S_DELALLCOUNT, $posts, $threads>
+<input type="submit" value="<const S_MPDELETEIP>" /></td></tr>
+</tbody></table></form>
+</div>
+
+}.NORMAL_FOOT_INCLUDE);
+
 use constant BAN_PANEL_TEMPLATE => compile_template(
     MANAGER_HEAD_INCLUDE . q{
 

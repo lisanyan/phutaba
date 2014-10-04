@@ -303,7 +303,8 @@ elsif ( $task eq "deleteall" ) {
     my $admin = $query->param("admin");
     my $ip    = $query->param("ip");
     my $mask  = $query->param("mask");
-    delete_all( $admin, parse_range( $ip, $mask ) );
+	my $go    = $query->param("go");
+    delete_all($admin, parse_range($ip, $mask), $go);
 }
 elsif ( $task eq "bans" ) {
     my $admin = $query->param("admin");
@@ -2548,18 +2549,36 @@ sub remove_admin_entry {
 }
 
 sub delete_all {
-    my ( $admin, $ip, $mask ) = @_;
-    my ( $sth, $row, @posts );
+    my ($admin, $ip, $mask, $go) = @_;
+    my ($sth, $row, @posts);
 
     check_password( $admin, ADMIN_PASS );
 
-    $sth =
-      $dbh->prepare( "SELECT num FROM " . SQL_TABLE . " WHERE ip & ? = ? & ?;" )
-      or make_error(S_SQLFAIL);
-    $sth->execute( $mask, $ip, $mask ) or make_error(S_SQLFAIL);
-    while ( $row = $sth->fetchrow_hashref() ) { push( @posts, $$row{num} ); }
+	unless($go and $ip) # do not allow empty IP (as it would delete anonymized (staff) posts)
+	{
+		my ($pcount, $tcount);
 
-    delete_stuff( '', 0, 0, $admin, 0, @posts );
+		$sth = $dbh->prepare("SELECT count(*) FROM ".SQL_TABLE." WHERE ip & ? = ? & ?;") or make_error(S_SQLFAIL);
+		$sth->execute($mask, $ip, $mask) or make_error(S_SQLFAIL);
+		$pcount = ($sth->fetchrow_array())[0];
+
+		$sth = $dbh->prepare("SELECT count(*) FROM ".SQL_TABLE." WHERE ip & ? = ? & ? AND parent=0;") or make_error(S_SQLFAIL);
+		$sth->execute($mask, $ip, $mask) or make_error(S_SQLFAIL);
+		$tcount = ($sth->fetchrow_array())[0];
+
+		make_http_header();
+		print encode_string(DELETE_PANEL_TEMPLATE->(admin=>$admin, ip=>$ip, mask=>$mask, posts=>$pcount, threads=>$tcount));
+	}
+	else
+	{
+		$sth =
+		  $dbh->prepare( "SELECT num FROM " . SQL_TABLE . " WHERE ip & ? = ? & ?;" )
+		  or make_error(S_SQLFAIL);
+		$sth->execute( $mask, $ip, $mask ) or make_error(S_SQLFAIL);
+		while ( $row = $sth->fetchrow_hashref() ) { push( @posts, $$row{num} ); }
+
+		delete_stuff('', 0, $admin, 0, @posts);
+	}
 }
 
 sub check_password {
