@@ -112,7 +112,7 @@ use constant NORMAL_HEAD_INCLUDE => q{
 	<div class="header">
 		<div class="banner">
 			<a href="/<const BOARD_IDENT>/">
-				<img src="/banner/<const BOARD_IDENT>" alt="<const BOARD_IDENT>" />
+				<img src="/banner.pl?board=<const BOARD_IDENT>" alt="<const BOARD_IDENT>" />
 			</a>
 		</div>
 		<div class="boardname" <if BOARD_DESC>style="margin-bottom: 5px;"</if>>/<const BOARD_IDENT>/ &ndash; <const BOARD_NAME></div>
@@ -431,7 +431,7 @@ use constant ERROR_HEAD_INCLUDE => q{
 
 <header>
 	<div class="header">
-		<div class="banner"><a href="/"><img src="/banner-redir.pl" alt="Ernstchan" /></a></div>
+		<div class="banner"><a href="/"><img src="/banner.pl" alt="Ernstchan" /></a></div>
 		<div class="boardname"><const TITLE></div>
 	</div>
 </header>

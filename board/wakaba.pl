@@ -11,7 +11,7 @@ use Net::DNS;
 use Net::IP qw(:PROC);
 use HTML::Entities;
 use HTML::Strip;
-use Math::BigInt;
+#use Math::BigInt;
 use JSON::XS;
 use JSON;
 use Digest::MD5 qw(md5 md5_hex md5_base64);
@@ -42,7 +42,7 @@ use constant HANDLER_ERROR_PAGE_HEAD => q{
 <div class="content">
 <header>
 	<div class="header">
-		<div class="banner"><a href="/"><img src="/banner-redir.pl" alt="Ernstchan" /></a></div>
+		<div class="banner"><a href="/"><img src="/banner.pl" alt="Ernstchan" /></a></div>
 		<div class="boardname">Serverfehler</div>
 	</div>
 </header>
@@ -1271,6 +1271,7 @@ sub post_stuff {
     #my $ip  = substr($ENV{HTTP_X_FORWARDED_FOR}, 6); # :ffff:1.2.3.4
 	my $ip = get_remote_addr();	
     my $ssl = $ENV{HTTP_X_ALUHUT};
+	$ssl =  $ENV{SSL_CIPHER} unless $ssl;
     undef($ssl) unless $ssl;
 
     #$host = gethostbyaddr($ip);

@@ -23,7 +23,7 @@
 
 <header>
 	<div class="header">
-		<div class="banner"><a href="/"><img src="/banner-redir.pl" alt="Ernstchan" /></a></div>
+		<div class="banner"><a href="/"><img src="/banner.pl" alt="Ernstchan" /></a></div>
 		<div class="boardname">[% template.title %]</div>
 	</div>
 </header>
