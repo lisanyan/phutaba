@@ -184,7 +184,7 @@ elsif ( !$task and !$json ) {
 }
 elsif ( $task eq "show" ) {
 
-    my $admin    = $query->param("admin");
+    my $admin    = $query->cookie("wakaadmin");
 
     # show the requested page
     my $page = $query->param("page");
@@ -241,7 +241,7 @@ elsif ( $task eq "post" ) {
     my $password   = $query->param("password");
     my $nofile     = $query->param("nofile");
     my $captcha    = $query->param("captcha");
-    my $admin      = $query->param("admin");
+    my $admin      = $query->cookie("wakaadmin");
     my $no_captcha = $query->param("no_captcha");
     my $no_format  = $query->param("no_format");
     my $postfix    = $query->param("postfix");
@@ -259,25 +259,25 @@ elsif ( $task eq "post" ) {
 elsif ( $task eq "delete" ) {
     my $password = $query->param("password");
     my $fileonly = $query->param("fileonly");
-    my $admin    = $query->param("admin");
+    my $admin    = $query->cookie("wakaadmin");
 	my $parent   = $query->param("parent");
     my @posts    = $query->param("delete");
 
     delete_stuff( $password, $fileonly, $admin, $parent, @posts );
 }
 elsif ( $task eq "sticky" ) {
-    my $admin    = $query->param("admin");
+    my $admin    = $query->cookie("wakaadmin");
     my $threadid = $query->param("threadid");
     make_sticky( $admin, $threadid );
 }
 elsif ( $task eq "kontra" ) {
-    my $admin    = $query->param("admin");
+    my $admin    = $query->cookie("wakaadmin");
     my $threadid = $query->param("threadid");
     make_kontra( $admin, $threadid );
 
 }
 elsif ( $task eq "lock" ) {
-    my $admin    = $query->param("admin");
+    my $admin    = $query->cookie("wakaadmin");
     my $threadid = $query->param("threadid");
     make_locked( $admin, $threadid );
 }
@@ -293,25 +293,25 @@ elsif ( $task eq "logout" ) {
     do_logout();
 }
 elsif ( $task eq "mpanel" ) {
-    my $admin = $query->param("admin");
+    my $admin = $query->cookie("wakaadmin");
     my $page  = $query->param("page");
     if ( !defined($page) ) { $page = 1; }
 	#make_admin_post_panel( $admin, $page );
 	show_page($page, $admin);
 }
 elsif ( $task eq "deleteall" ) {
-    my $admin = $query->param("admin");
+    my $admin = $query->cookie("wakaadmin");
     my $ip    = $query->param("ip");
     my $mask  = $query->param("mask");
 	my $go    = $query->param("go");
     delete_all($admin, parse_range($ip, $mask), $go);
 }
 elsif ( $task eq "bans" ) {
-    my $admin = $query->param("admin");
+    my $admin = $query->cookie("wakaadmin");
     make_admin_ban_panel($admin);
 }
 elsif ( $task eq "addip" ) {
-    my $admin   = $query->param("admin");
+    my $admin   = $query->cookie("wakaadmin");
     my $type    = $query->param("type");
     my $comment = $query->param("comment");
     my $ip      = $query->param("ip");
@@ -321,7 +321,7 @@ elsif ( $task eq "addip" ) {
         '', $postid );
 }
 elsif ( $task eq "addstring" ) {
-    my $admin   = $query->param("admin");
+    my $admin   = $query->cookie("wakaadmin");
     my $type    = $query->param("type");
     my $string  = $query->param("string");
     my $comment = $query->param("comment");
@@ -329,16 +329,16 @@ elsif ( $task eq "addstring" ) {
 }
 elsif ( $task eq "checkban" ) {
     my $ival1	= $query->param("ip");
-    my $admin   = $query->param("admin");
+    my $admin   = $query->cookie("wakaadmin");
     check_admin_entry($admin, $ival1);
 }
 elsif ( $task eq "removeban" ) {
-    my $admin = $query->param("admin");
+    my $admin = $query->cookie("wakaadmin");
     my $num   = $query->param("num");
     remove_admin_entry( $admin, $num );
 }
 elsif ( $task eq "mpost" ) {
-    my $admin = $query->param("admin");
+    my $admin = $query->cookie("wakaadmin");
     make_admin_post($admin);
 }
 elsif ( $task eq "paint" ) {
@@ -693,9 +693,6 @@ sub show_page {
         my $threadcount = 0;
         my @threads;
 
-		if($isAdmin) {
-			fixup_admin_reference_links($row, $admin);
-		}
         my @thread = ($row);
 
         my $totalThreadCount = count_threads();
@@ -713,9 +710,6 @@ sub show_page {
         while ( $row = get_decoded_hashref($sth)
             and $threadcount <= ( IMAGES_PER_PAGE * ( $pageToShow ) ) )
         {
-			if($isAdmin) {
-				fixup_admin_reference_links($row, $admin);
-			}
             if ( !$$row{parent} ) {
                 push @threads, { posts => [@thread] };
                 @thread = ($row);    # start new thread
@@ -873,18 +867,6 @@ sub output_page {
 	print($output);
 }
 
-# TODO: hack to support >>1 references in admin mode.
-# might want a much cleaner solution. as for example dynamically generated
-# reflinks.
-sub fixup_admin_reference_links
-{
-    my ($row, $admin) = @_;
-	$$row{comment} =~ s/\/faden\/([0-9]*)#([0-9]*)/\/wakaba.pl?task=show&amp;thread=$1&amp;admin=$admin#$2/ig;
-	$$row{comment} =~ s/\/faden\/([0-9]*)/\/wakaba.pl?task=show&amp;thread=$1&amp;admin=$admin/ig;
-	$$row{comment} =~ s/\/thread\/([0-9]*)#([0-9]*)/\/wakaba.pl?task=show&amp;thread=$1&amp;admin=$admin#$2/ig;
-	$$row{comment} =~ s/\/thread\/([0-9]*)/\/wakaba.pl?task=show&amp;thread=$1&amp;admin=$admin/ig;
-}
-
 sub get_omit_message($$) {
 	my ($posts, $files) = @_;
 	return "" if !$posts;
@@ -923,9 +905,6 @@ sub show_thread {
 
     while ( $row = get_decoded_hashref($sth) ) {
 		$$row{comment} = resolve_reflinks($$row{comment});
-		if($isAdmin) {
-   			fixup_admin_reference_links($row, $admin);
-		}
         push( @thread, $row );
     }
     make_error(S_NOTHREADERR) if ( !$thread[0] or $thread[0]{parent} );
@@ -1139,9 +1118,6 @@ sub find_posts($$$$) {
 
 				add_images_to_row($row);
 				$$row{comment} = resolve_reflinks($$row{comment});
-				#if($isAdmin) {
-				#	fixup_admin_reference_links($row, $admin);
-				#}
 				if (!$$row{parent}) { # OP post
 					$$row{sticky_isnull} = 1; # hack, until this field is removed.
 					push @results, $row;
@@ -1506,7 +1482,8 @@ sub post_stuff {
         gb2       => $c_gb2,
         password  => $c_password,
         -charset  => CHARSET,
-        -autopath => COOKIE_PATH
+        -autopath => COOKIE_PATH,
+		-expires  => time + 14 * 24 * 3600
     );    # yum!
 
 	if(!$admin)
@@ -1556,7 +1533,7 @@ sub make_kontra {
           or make_error(S_SQLFAIL);
         $sth2->execute( $kontra, $threadid ) or make_error(S_SQLFAIL);
     }
-    make_http_forward( get_script_name() . "?admin=$admin&task=mpanel");
+    make_http_forward( get_script_name() . "?task=mpanel");
 
 }
 
@@ -2150,7 +2127,7 @@ sub delete_stuff {
     }
 
     if ($admin) {
-        make_http_forward( get_script_name() . "?admin=$admin&task=mpanel");
+        make_http_forward( get_script_name() . "?task=mpanel");
     } elsif ( $noko == 1 and $parent ) {
 		make_http_forward("thread/" . $parent);
 	} else { make_http_forward("/" . encode('utf-8', BOARD_IDENT) . "/"); }
@@ -2174,7 +2151,7 @@ sub make_locked {
           or make_error(S_SQLFAIL);
         $sth2->execute( $locked, $threadid ) or make_error(S_SQLFAIL);
     }
-    make_http_forward( get_script_name() . "?admin=$admin&task=mpanel");
+    make_http_forward( get_script_name() . "?task=mpanel");
 }
 
 sub make_sticky {
@@ -2196,7 +2173,7 @@ sub make_sticky {
         $sth2->execute( $sticky, $threadid, $threadid) or make_error(S_SQLFAIL);
     }
 
-    make_http_forward( get_script_name() . "?admin=$admin&task=mpanel");
+    make_http_forward( get_script_name() . "?task=mpanel");
 }
 
 sub delete_post {
@@ -2358,9 +2335,6 @@ sub make_admin_post_panel {
         and $threadcount < ( IMAGES_PER_PAGE * ( $pageToShow + 1 ) ) )
     {
         add_images_to_row($row);
-		if($admin) {
-			fixup_admin_reference_links($row, $admin);
-		}
         if ( !$$row{parent} ) {
             $rowtype = 1;
             $threadcount++;
@@ -2458,16 +2432,20 @@ sub do_login {
     }
 
     if ($crypt) {
+		my $expires = 0;
         if ( $savelogin ) {
-            make_cookies(
-                wakaadmin => $crypt,
-                -charset  => CHARSET,
-                -autopath => COOKIE_PATH,
-                -expires  => time + 365 * 24 * 3600
-            );
+			$expires = time + 14 * 24 * 3600;		
         }
 
-        make_http_forward( get_script_name() . "?task=$nexttask&admin=$crypt");
+		make_cookies(
+			wakaadmin => $crypt,
+			-charset  => CHARSET,
+			-autopath => COOKIE_PATH,
+			-expires  => $expires,
+			-httponly => 1
+            );
+
+        make_http_forward( get_script_name() . "?task=$nexttask");
     }
     else { make_admin_login() }
 }
@@ -2546,7 +2524,7 @@ sub remove_admin_entry {
       or make_error(S_SQLFAIL);
     $sth->execute($num) or make_error(S_SQLFAIL);
 
-    make_http_forward( get_script_name() . "?admin=$admin&task=bans");
+    make_http_forward( get_script_name() . "?task=bans");
 }
 
 sub delete_all {
@@ -2592,7 +2570,7 @@ sub check_password {
 }
 
 sub crypt_password {
-    my $crypt = hide_data( (shift) . get_remote_addr(), 9, "admin", SECRET, 1 ); # do not use $ENV{REMOTE_ADDR}
+    my $crypt = hide_data( (shift) . get_remote_addr(), 18, "admin", SECRET, 1 ); # do not use $ENV{REMOTE_ADDR}
     $crypt =~ tr/+/./;    # for web shit
     return $crypt;
 }
@@ -2704,19 +2682,10 @@ sub expand_image_filename {
 }
 
 sub get_reply_link {
-    my ( $reply, $parent, $admin ) = @_;
+    my ($reply, $parent) = @_;
 
-	if(defined($admin))
-	{
-		# TODO: a bit hacky!
-		return expand_filename( encode('utf-8', HTML_SELF)."?task=show&amp;thread=$parent&amp;admin=$admin".'#'."$reply" ) if ($parent);
-		return expand_filename( encode('utf-8', HTML_SELF)."?task=show&amp;thread=$reply&amp;admin=$admin" );
-	}
-	else
-	{
-	 	return expand_filename( "thread/" . $parent ) . '#' . $reply if ($parent);
-   		return expand_filename( "thread/" . $reply );
-	}
+	return expand_filename( "thread/" . $parent ) . '#' . $reply if ($parent);
+   	return expand_filename( "thread/" . $reply );
 }
 
 sub get_page_count {

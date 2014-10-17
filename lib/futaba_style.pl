@@ -129,9 +129,9 @@ use constant MANAGER_HEAD_INCLUDE => NORMAL_HEAD_INCLUDE . q{
 
 <if $admin>
 	[<a href="<var expand_filename(HTML_SELF)>"><const S_MANARET></a>]
-	[<a href="<var $self>?task=mpanel&amp;admin=<var $admin>"><const S_MANAPANEL></a>]
-	[<a href="<var $self>?task=bans&amp;admin=<var $admin>"><const S_MANABANS></a>]
-	[<a href="<var $self>?task=mpost&amp;admin=<var $admin>"><const S_MANAPOST></a>]
+	[<a href="<var $self>?task=mpanel"><const S_MANAPANEL></a>]
+	[<a href="<var $self>?task=bans"><const S_MANABANS></a>]
+	[<a href="<var $self>?task=mpost"><const S_MANAPOST></a>]
 	[<a href="<var $self>?task=logout"><const S_MANALOGOUT></a>]
 	<div class="passvalid"><const S_MANAMODE></div>
 </if>
@@ -165,9 +165,6 @@ use constant PAGE_TEMPLATE => compile_template(
 	<form id="postform" action="<var $self>" method="post" enctype="multipart/form-data">
 
 	<input type="hidden" name="task" value="post" />
-	<if $isAdmin>
-		<input type="hidden" name="admin" value="<var $admin>" />
-	</if>
 	<if $thread><input type="hidden" name="parent" value="<var $thread>" /></if>
 	<if !$image_inp and !$thread and ALLOW_TEXTONLY>
 		<input type="hidden" name="nofile" value="1" />
@@ -503,7 +500,6 @@ use constant POST_PANEL_TEMPLATE => compile_template(
 
 <form action="<var $self>" method="post">
 <input type="hidden" name="task" value="delete" />
-<input type="hidden" name="admin" value="<var $admin>" />
 
 <div class="delbuttons">
 <input type="submit" value="<const S_MPDELETE>" />
@@ -528,22 +524,22 @@ use constant POST_PANEL_TEMPLATE => compile_template(
 	<if !$parent>
 		<label><input type="checkbox" name="delete" value="<var $num>" /><big><b><var $num></b></big>&nbsp;&nbsp;</label>
 		<if $sticky_isnull>
-			[<a href="<var $self>?admin=<var $admin>&amp;task=sticky&amp;threadid=<var $num>"><const S_MPSTICKY></a>]
+			[<a href="<var $self>?task=sticky&amp;threadid=<var $num>"><const S_MPSTICKY></a>]
 		</if>
 		<if !$sticky_isnull>
-			[<a href="<var $self>?admin=<var $admin>&amp;task=sticky&amp;threadid=<var $num>"><const S_MPUNSTICKY></a>]
+			[<a href="<var $self>?task=sticky&amp;threadid=<var $num>"><const S_MPUNSTICKY></a>]
 		</if>
 		<if $locked>
-			[<a href="<var $self>?admin=<var $admin>&amp;task=lock&amp;threadid=<var $num>"><const S_MPUNLOCK></a>]
+			[<a href="<var $self>?task=lock&amp;threadid=<var $num>"><const S_MPUNLOCK></a>]
 		</if>
 		<if !$locked>
-			[<a href="<var $self>?admin=<var $admin>&amp;task=lock&amp;threadid=<var $num>"><const S_MPLOCK></a>]
+			[<a href="<var $self>?task=lock&amp;threadid=<var $num>"><const S_MPLOCK></a>]
 		</if>
 		<if $autosage>
-			[<a href="<var $self>?admin=<var $admin>&amp;task=kontra&amp;threadid=<var $num>"><const S_MPUNSETSAGE></a>]
+			[<a href="<var $self>?task=kontra&amp;threadid=<var $num>"><const S_MPUNSETSAGE></a>]
 		</if>
 		<if !$autosage>
-			[<a href="<var $self>?admin=<var $admin>&amp;task=kontra&amp;threadid=<var $num>"><const S_MPSETSAGE></a>]
+			[<a href="<var $self>?task=kontra&amp;threadid=<var $num>"><const S_MPSETSAGE></a>]
 		</if>
 
 		</td>
@@ -554,7 +550,7 @@ use constant POST_PANEL_TEMPLATE => compile_template(
 	<td><b><var clean_string(substr $name,0,30)><var $trip></b></td>
 	<td><var clean_string(substr $comment,0,30)></td>
 	<td><var dec_to_dot($ip)>
-		[<a href="<var $self>?admin=<var $admin>&amp;task=deleteall&amp;ip=<var $ip>"><const S_MPDELETEALL></a>]
+		[<a href="<var $self>?task=deleteall&amp;ip=<var $ip>"><const S_MPDELETEALL></a>]
 		[<a onclick="do_ban('<var dec_to_dot($ip)>', <var $num>, '<const BOARD_IDENT>', '<var $admin>')"><const S_MPBAN></a>]
 	</td>
 
@@ -621,7 +617,6 @@ use constant POST_PANEL_TEMPLATE => compile_template(
 
 <form action="<var $self>" method="post">
 <input type="hidden" name="task" value="deleteall" />
-<input type="hidden" name="admin" value="<var $admin>" />
 <table><tbody>
 <tr><td class="postblock"><const S_BANIPLABEL></td><td><input type="text" name="ip" size="24" /></td></tr>
 <tr><td class="postblock"><const S_BANMASKLABEL></td><td><input type="text" name="mask" size="24" />
@@ -643,7 +638,6 @@ use constant DELETE_PANEL_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 <form action="<var $self>" method="post">
 <input type="hidden" name="task" value="deleteall" />
 <input type="hidden" name="board" value="<const BOARD_NAME>" />
-<input type="hidden" name="admin" value="<var $admin>" />
 <input type="hidden" name="ip" value="<var $ip>" />
 <input type="hidden" name="mask" value="<var dec_to_dot($mask)>" />
 <input type="hidden" name="go" value="1" />
@@ -668,7 +662,6 @@ use constant BAN_PANEL_TEMPLATE => compile_template(
 <form action="<var $self>" method="post">
 <input type="hidden" name="task" value="addip" />
 <input type="hidden" name="type" value="ipban" />
-<input type="hidden" name="admin" value="<var $admin>" />
 <table><tbody>
 <tr><td class="postblock"><const S_BANIPLABEL></td><td><input type="text" name="ip" size="24" /></td></tr>
 <tr><td class="postblock"><const S_BANMASKLABEL></td><td><input type="text" name="mask" size="24" /></td></tr>
@@ -681,7 +674,6 @@ use constant BAN_PANEL_TEMPLATE => compile_template(
 <form action="<var $self>" method="post">
 <input type="hidden" name="task" value="addip" />
 <input type="hidden" name="type" value="whitelist" />
-<input type="hidden" name="admin" value="<var $admin>" />
 <table><tbody>
 <tr><td class="postblock"><const S_BANIPLABEL></td><td><input type="text" name="ip" size="24" /></td></tr>
 <tr><td class="postblock"><const S_BANMASKLABEL></td><td><input type="text" name="mask" size="24" /></td></tr>
@@ -694,7 +686,6 @@ use constant BAN_PANEL_TEMPLATE => compile_template(
 <form action="<var $self>" method="post">
 <input type="hidden" name="task" value="addstring" />
 <input type="hidden" name="type" value="wordban" />
-<input type="hidden" name="admin" value="<var $admin>" />
 <table><tbody>
 <tr><td class="postblock"><const S_BANWORDLABEL></td><td><input type="text" name="string" size="24" /></td></tr>
 <tr><td class="postblock"><const S_BANCOMMENTLABEL></td><td><input type="text" name="comment" size="16" />
@@ -706,7 +697,6 @@ use constant BAN_PANEL_TEMPLATE => compile_template(
 <form action="<var $self>" method="post">
 <input type="hidden" name="task" value="addstring" />
 <input type="hidden" name="type" value="trust" />
-<input type="hidden" name="admin" value="<var $admin>" />
 <table><tbody>
 <tr><td class="postblock"><const S_BANTRUSTTRIP></td><td><input type="text" name="string" size="24" /></td></tr>
 <tr><td class="postblock"><const S_BANCOMMENTLABEL></td><td><input type="text" name="comment" size="16" />
@@ -764,7 +754,7 @@ use constant BAN_PANEL_TEMPLATE => compile_template(
 	<td>
   <em>wird erneuert</em>
 	</td>
-	<td><a href="<var $self>?admin=<var $admin>&amp;task=removeban&amp;num=<var $num>"><const S_BANREMOVE></a></td>
+	<td><a href="<var $self>?task=removeban&amp;num=<var $num>"><const S_BANREMOVE></a></td>
 	</tr>
 </loop>
 
@@ -794,7 +784,6 @@ use constant ADMIN_POST_TEMPLATE => compile_template(
 <div class="postarea">
 <form id="postform" action="<var $self>" method="post" enctype="multipart/form-data">
 <input type="hidden" name="task" value="post" />
-<input type="hidden" name="admin" value="<var $admin>" />
 <input type="hidden" name="no_captcha" value="1" />
 <input type="hidden" name="no_format" value="1" />
 

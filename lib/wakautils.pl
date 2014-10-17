@@ -166,7 +166,9 @@ sub get_ip_info {
 	my ($type, $ip) = @_;
 	my (@infos);
 	$ip = dec_to_dot($ip);
-	@infos = get_asn_info($ip);
+	# temporarily disabled
+	#@infos = get_asn_info($ip);
+	return 0;
 	if($type eq 1) {	
 		return $infos[0];
 	}
@@ -888,11 +890,19 @@ sub make_cookies {
     my (%cookies) = @_;
 
     my $charset  = $cookies{'-charset'};
-    my $expires  = ( $cookies{'-expires'} or time + 14 * 24 * 3600 );
+    my $expires  = $cookies{'-expires'};
     my $autopath = $cookies{'-autopath'};
     my $path     = $cookies{'-path'};
+    my $httponly = $cookies{'-httponly'};
 
-    my $date = make_date( $expires, "cookie" );
+	if ($expires) {
+		my $date = make_date( $expires, "cookie" );
+		$expires = " expires=$date;";
+	}
+	else
+	{
+		$expires = "";
+	}
 
     unless ($path) {
         if ( $autopath eq 'current' ) {
@@ -904,6 +914,14 @@ sub make_cookies {
         else { $path = '/'; }
     }
 
+	if ($httponly) {
+		$httponly = " HttpOnly";
+	}
+	else
+	{
+		$httponly = "";
+	}
+
     foreach my $name ( keys %cookies ) {
         next if ( $name =~ /^-/ );    # skip entries that start with a dash
 
@@ -912,7 +930,7 @@ sub make_cookies {
 
         $value = cookie_encode( $value, $charset );
 
-        print "Set-Cookie: $name=$value; path=$path; expires=$date;\n";
+        print "Set-Cookie: $name=$value; path=$path;$expires$httponly\n";
     }
 }
 
