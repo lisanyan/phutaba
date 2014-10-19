@@ -183,44 +183,31 @@ elsif ( !$task and !$json ) {
     show_page(1);
 }
 elsif ( $task eq "show" ) {
-
-    my $admin    = $query->cookie("wakaadmin");
+    my $page   = $query->param("page");
+    my $thread = $query->param("thread");
+    my $post   = $query->param("post");
+    my $admin  = $query->cookie("wakaadmin");
 
     # show the requested page
-    my $page = $query->param("page");
-    if ( $page ne undef ) {
-        if ( $page =~ /^[+-]?\d+$/ ) {
-            show_page($page, $admin);
-        }
-        else {
-            make_error(S_STOP_FOOLING);
-        }
+    if (defined($page) and $page =~ /^[+-]?\d+$/)
+    {
+        show_page($page, $admin);
     }
-
-    my $post = $query->param("post");
-    if ( $post ne undef ) {
-        if ( $post =~ /^[+-]?\d+$/ ) {
-            show_post($post, $admin);
-        }
-        else {
-            make_error(S_STOP_FOOLING);
-        }
+    # outputs a single post only
+    elsif (defined($post) and $post =~ /^[+-]?\d+$/)
+    {
+        show_post($post, $admin);
     }
-
     # show the requested thread
-    my $thread = $query->param("thread");
-    if ( $thread ne undef ) {
-        if ( $thread =~ /^[+-]?\d+$/ ) {
+    elsif (defined($thread) and $thread =~ /^[+-]?\d+$/)
+    {
 	    if($thread ne 0) {
 	        show_thread($thread, $admin);
 	    } else {
-		make_error(S_STOP_FOOLING);
+		    make_error(S_STOP_FOOLING);
 	    }
-        }
-        else {
-            make_error(S_STOP_FOOLING);
-        }
     }
+	else { make_error(S_STOP_FOOLING); }
 }
 elsif ($task eq "search") {
 	my $find			= $query->param("find");
@@ -292,7 +279,7 @@ elsif ( $task eq "admin" ) {
 elsif ( $task eq "logout" ) {
     do_logout();
 }
-elsif ( $task eq "mpanel" ) {
+elsif ( $task eq "mpanel" ) { # TODO: remove - now already handled by task=show
     my $admin = $query->cookie("wakaadmin");
     my $page  = $query->param("page");
     if ( !defined($page) ) { $page = 1; }
@@ -813,27 +800,12 @@ sub output_page {
     # make the list of pages
     my @pages = map +{ page => $_ }, ( 1 .. $total );
     foreach my $p (@pages) {
-        #if ( $$p{page} == 0 ) {
-		#	if($isAdmin)
-	    #    {
-		#		$$p{filename} = expand_filename("wakaba.pl?task=show&amp;page=0&amp;admin=$adminPass");
-		#	}
-		#	else
-		#	{
-		#		$$p{filename} = expand_filename("wakaba.pl?task=show&amp;page=0");			
-		#	}
+        #if ( $$p{page} == 1 ) {
+		#		$$p{filename} = expand_filename("wakaba.pl");			
         #}    # first page
         #else {
-            if($isAdmin)
-			{
-				$$p{filename} =
-	              expand_filename( "wakaba.pl?task=show&amp;page=" . $$p{page} . "&amp;admin=$adminPass" );
-			}
-			else
-			{
-				#$$p{filename} = expand_filename( "wakaba.pl?task=show&amp;page=" . $$p{page} );
-				$$p{filename} = expand_filename( "page/" . $$p{page} );
-			}
+			#$$p{filename} = expand_filename( "wakaba.pl?task=show&amp;page=" . $$p{page} );
+			$$p{filename} = expand_filename( "page/" . $$p{page} );
         #}
         if ( $$p{page} == $page ) { $$p{current} = 1 }   # current page, no link
     }
@@ -1486,20 +1458,10 @@ sub post_stuff {
 		-expires  => time + 14 * 24 * 3600
     );    # yum!
 
-	if(!$admin)
-	{
-	    # forward back to the main page
-	    make_http_forward("/" . encode('utf-8', BOARD_IDENT) . "/") if ($parent eq '0');
-	    make_http_forward("thread/" . $parent) if ($c_gb2 =~ /thread/i);
-	    make_http_forward("/" . encode('utf-8', BOARD_IDENT) . "/");
-	}
-	else
-	{
-		# forward back to moderation page
-	    make_http_forward( encode('utf-8', HTML_SELF) . "?task=show&page=1&admin=$admin") if ( $parent eq '0' );
-	    make_http_forward( encode('utf-8', HTML_SELF) . "?task=show&thread=" . $parent . "&admin=$admin") if ( $c_gb2 =~ /thread/i );
-	    make_http_forward( encode('utf-8', HTML_SELF) . "?task=show&page=1&admin=$admin");
-	}
+	# go back to thread or board page
+    make_http_forward("/" . encode('utf-8', BOARD_IDENT) . "/") if ($parent eq '0');
+    make_http_forward("thread/" . $parent) if ($c_gb2 =~ /thread/i);
+    make_http_forward("/" . encode('utf-8', BOARD_IDENT) . "/");
 }
 
 sub is_whitelisted {

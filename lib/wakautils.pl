@@ -8,6 +8,7 @@ use Socket;
 use Locale::Country;
 use Locale::Codes::Country;
 use DateTime;
+use Image::ExifTool;
 use Geo::IP;
 use Net::Abuse::Utils qw( :all );
 
