@@ -484,7 +484,8 @@ use constant ADMIN_LOGIN_TEMPLATE => compile_template(
 <label><input type="checkbox" name="savelogin" /> <const S_MANASAVE></label>
 <br />
 <select name="nexttask">
-<option value="mpanel"><const S_MANAPANEL></option>
+<option value="show&page=1"><const S_MANAPANEL></option>
+<option value="mpanel"><const S_MANATOOLS></option>
 <option value="bans"><const S_MANABANS></option>
 <option value="mpost"><const S_MANAPOST></option>
 </select>
@@ -503,7 +504,7 @@ use constant POST_PANEL_TEMPLATE => compile_template(
 
 <const S_MANAGEOINFO>
 <table><tbody>
-<tr><td class="postblock">API       </td><td><var $geoip_api>       </td></tr>
+<tr><td class="postblock">GeoIP API</td><td><var $geoip_api></td></tr>
 <loop $geoip_results>
 	<tr><td class="postblock"><var $file></td><td><var $result></td></tr>
 </loop>

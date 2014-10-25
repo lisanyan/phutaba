@@ -2292,9 +2292,9 @@ sub make_admin_post_panel {
 		foreach (@geo_dbs)
 		{
 			my $geo_db;
-			eval '$gi = Geo::IP->open($path . "$_")';
 			$$geo_db{file} = $_;
-			$$geo_db{result} = $@ ? 'n/a' : $gi->database_info;
+			eval '$gi = Geo::IP->open($path . "$_")';
+			$$geo_db{result} = $@ ? "$@" : "OK"; #$gi->database_info;
 			push(@results, $geo_db);
 		}
 	}
@@ -2368,7 +2368,7 @@ sub do_login {
     }
     elsif ( $admincookie eq crypt_password(ADMIN_PASS) ) {
         $crypt    = $admincookie;
-        $nexttask = "mpanel";
+        $nexttask = "show&page=1";
     }
 
     if ($crypt) {
