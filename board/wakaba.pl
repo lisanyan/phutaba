@@ -1495,7 +1495,7 @@ sub make_kontra {
           or make_error(S_SQLFAIL);
         $sth2->execute( $kontra, $threadid ) or make_error(S_SQLFAIL);
     }
-    make_http_forward( get_script_name() . "?task=mpanel");
+    make_http_forward( get_script_name() . "?task=show&page=1");
 
 }
 
@@ -2092,7 +2092,7 @@ sub delete_stuff {
     }
 
     if ($admin) {
-        make_http_forward( get_script_name() . "?task=mpanel");
+        make_http_forward( get_script_name() . "?task=show&page=1");
     } elsif ( $noko == 1 and $parent ) {
 		make_http_forward("thread/" . $parent);
 	} else { make_http_forward("/" . encode('utf-8', BOARD_IDENT) . "/"); }
@@ -2116,7 +2116,7 @@ sub make_locked {
           or make_error(S_SQLFAIL);
         $sth2->execute( $locked, $threadid ) or make_error(S_SQLFAIL);
     }
-    make_http_forward( get_script_name() . "?task=mpanel");
+    make_http_forward( get_script_name() . "?task=show&page=1");
 }
 
 sub make_sticky {
@@ -2138,7 +2138,7 @@ sub make_sticky {
         $sth2->execute( $sticky, $threadid, $threadid) or make_error(S_SQLFAIL);
     }
 
-    make_http_forward( get_script_name() . "?task=mpanel");
+    make_http_forward( get_script_name() . "?task=show&page=1");
 }
 
 sub delete_post {
@@ -2278,7 +2278,7 @@ sub make_admin_post_panel {
     check_password( $admin, ADMIN_PASS );
 
 	# geoip
-	my ($gi, $api, $country, $country_v6, $city, $city_v6, $asn, $asn_v6);
+	my ($api, $country, $country_v6, $city, $city_v6, $asn, $asn_v6);
 	my $path = "/usr/local/share/GeoIP/";
 	my @geo_dbs = qw(GeoIP.dat GeoIPv6.dat GeoLiteCity.dat GeoLiteCityv6.dat GeoIPASNum.dat GeoIPASNumv6.dat);
 	my @results = ();
@@ -2291,10 +2291,11 @@ sub make_admin_post_panel {
 
 		foreach (@geo_dbs)
 		{
-			my $geo_db;
+			my ($gi, $geo_db);
 			$$geo_db{file} = $_;
+			$$geo_db{result} = 'n/a';
 			eval '$gi = Geo::IP->open($path . "$_")';
-			$$geo_db{result} = $@ ? "$@" : "OK"; #$gi->database_info;
+			eval '$$geo_db{result} = $gi->database_info;' unless ($@);
 			push(@results, $geo_db);
 		}
 	}

@@ -504,7 +504,7 @@ use constant POST_PANEL_TEMPLATE => compile_template(
 
 <const S_MANAGEOINFO>
 <table><tbody>
-<tr><td class="postblock">GeoIP API</td><td><var $geoip_api></td></tr>
+<tr><td class="postblock">GeoIP-API</td><td><var $geoip_api></td></tr>
 <loop $geoip_results>
 	<tr><td class="postblock"><var $file></td><td><var $result></td></tr>
 </loop>
