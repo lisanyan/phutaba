@@ -143,7 +143,7 @@ use constant S_MPBAN =>
 use constant S_MPTABLE => '<th>Nr.</th><th>Zeit</th><th>Betreff</th>'
   . '<th>Name</th><th>Kommentar</th><th>IP</th>'
   ;          # Explains names for Management Panel
-use constant S_IMGSPACEUSAGE => '[ Benutzter Speicherplatz: %d KB, %s Dateien, %s Posts (%s Threads) ]'
+use constant S_IMGSPACEUSAGE => '[ Belegter Speicherplatz: %s, %s Dateien, %s Posts (%s Threads) ]'
   ;          # Prints space used KB by the board under Management Panel
 
 use constant S_DELALLMSG => 'Betroffen';

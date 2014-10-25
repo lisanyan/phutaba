@@ -129,7 +129,7 @@ use constant MANAGER_HEAD_INCLUDE => NORMAL_HEAD_INCLUDE . q{
 
 <if $admin>
 	[<a href="<var expand_filename(HTML_SELF)>"><const S_MANARET></a>]
-	[<a href="<var $self>?task=show&amp;page=1"><const S_MANAPANEL></a>]
+	[<a href="<var $self>?task=show"><const S_MANAPANEL></a>]
 	[<a href="<var $self>?task=mpanel"><const S_MANATOOLS></a>]
 	[<a href="<var $self>?task=bans"><const S_MANABANS></a>]
 	[<a href="<var $self>?task=mpost"><const S_MANAPOST></a>]
@@ -484,7 +484,7 @@ use constant ADMIN_LOGIN_TEMPLATE => compile_template(
 <label><input type="checkbox" name="savelogin" /> <const S_MANASAVE></label>
 <br />
 <select name="nexttask">
-<option value="show&page=1"><const S_MANAPANEL></option>
+<option value="show"><const S_MANAPANEL></option>
 <option value="mpanel"><const S_MANATOOLS></option>
 <option value="bans"><const S_MANABANS></option>
 <option value="mpost"><const S_MANAPOST></option>
@@ -525,7 +525,7 @@ use constant POST_PANEL_TEMPLATE => compile_template(
 
 </div><br />
 
-<var sprintf S_IMGSPACEUSAGE,int($size/1024), $files, $posts, $threads>
+<var sprintf S_IMGSPACEUSAGE, get_displaysize($size, DECIMAL_MARK), $files, $posts, $threads>
 
 } . NORMAL_FOOT_INCLUDE
 );

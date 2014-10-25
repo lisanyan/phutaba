@@ -188,13 +188,8 @@ elsif ( $task eq "show" ) {
     my $post   = $query->param("post");
     my $admin  = $query->cookie("wakaadmin");
 
-    # show the requested page
-    if (defined($page) and $page =~ /^[+-]?\d+$/)
-    {
-        show_page($page, $admin);
-    }
     # outputs a single post only
-    elsif (defined($post) and $post =~ /^[+-]?\d+$/)
+    if (defined($post) and $post =~ /^[+-]?\d+$/)
     {
         show_post($post, $admin);
     }
@@ -207,7 +202,13 @@ elsif ( $task eq "show" ) {
 		    make_error(S_STOP_FOOLING);
 	    }
     }
-	else { make_error(S_STOP_FOOLING); }
+    # show the requested page (if any)
+	else
+	{
+		# fallback to page 1 if parameter was empty or incorrect
+		$page = 1 unless (defined($page) and $page =~ /^[+-]?\d+$/);
+        show_page($page, $admin);
+	}
 }
 elsif ($task eq "search") {
 	my $find			= $query->param("find");
@@ -1495,7 +1496,7 @@ sub make_kontra {
           or make_error(S_SQLFAIL);
         $sth2->execute( $kontra, $threadid ) or make_error(S_SQLFAIL);
     }
-    make_http_forward( get_script_name() . "?task=show&page=1");
+    make_http_forward( get_script_name() . "?task=show");
 
 }
 
@@ -2092,7 +2093,7 @@ sub delete_stuff {
     }
 
     if ($admin) {
-        make_http_forward( get_script_name() . "?task=show&page=1");
+        make_http_forward( get_script_name() . "?task=show");
     } elsif ( $noko == 1 and $parent ) {
 		make_http_forward("thread/" . $parent);
 	} else { make_http_forward("/" . encode('utf-8', BOARD_IDENT) . "/"); }
@@ -2116,7 +2117,7 @@ sub make_locked {
           or make_error(S_SQLFAIL);
         $sth2->execute( $locked, $threadid ) or make_error(S_SQLFAIL);
     }
-    make_http_forward( get_script_name() . "?task=show&page=1");
+    make_http_forward( get_script_name() . "?task=show");
 }
 
 sub make_sticky {
@@ -2138,7 +2139,7 @@ sub make_sticky {
         $sth2->execute( $sticky, $threadid, $threadid) or make_error(S_SQLFAIL);
     }
 
-    make_http_forward( get_script_name() . "?task=show&page=1");
+    make_http_forward( get_script_name() . "?task=show");
 }
 
 sub delete_post {
@@ -2369,7 +2370,7 @@ sub do_login {
     }
     elsif ( $admincookie eq crypt_password(ADMIN_PASS) ) {
         $crypt    = $admincookie;
-        $nexttask = "show&page=1";
+        $nexttask = "show";
     }
 
     if ($crypt) {
