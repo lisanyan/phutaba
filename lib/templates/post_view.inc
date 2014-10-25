@@ -55,8 +55,11 @@
 		<span class="replylink">[<a href="<var get_reply_link($num,0)>"><const S_REPLY></a>]</span>
 	</if>
 
-	<if $isAdmin>  
-		[<var dec_to_dot($ip)>] 
+	<if $isAdmin>
+		<div style="display: none; min-width: 250px;" id="postinfo_<var $num>">
+			<strong>Standort:</strong> <img src="/img/flags/<var $location>.png"> <var $location><br />
+		</div>
+		<span onmouseover="TagToTip('postinfo_<var $num>', DELAY, 0)" onmouseout="UnTip()">[<var dec_to_dot($ip)>]</span>
 		<if !$parent>	
 			<if $sticky_isnull>
 				<span class="sticky" onmouseover="Tip('<const S_MPSTICKY>')" onmouseout="UnTip()"><a href="<var $self>?task=sticky&amp;threadid=<var $num>"><img src="/img/icons/sticky.png"></a></span>

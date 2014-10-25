@@ -129,7 +129,8 @@ use constant MANAGER_HEAD_INCLUDE => NORMAL_HEAD_INCLUDE . q{
 
 <if $admin>
 	[<a href="<var expand_filename(HTML_SELF)>"><const S_MANARET></a>]
-	[<a href="<var $self>?task=mpanel"><const S_MANAPANEL></a>]
+	[<a href="<var $self>?task=show&amp;page=1"><const S_MANAPANEL></a>]
+	[<a href="<var $self>?task=mpanel"><const S_MANATOOLS></a>]
 	[<a href="<var $self>?task=bans"><const S_MANABANS></a>]
 	[<a href="<var $self>?task=mpost"><const S_MANAPOST></a>]
 	[<a href="<var $self>?task=logout"><const S_MANALOGOUT></a>]
@@ -496,125 +497,23 @@ use constant ADMIN_LOGIN_TEMPLATE => compile_template(
 use constant POST_PANEL_TEMPLATE => compile_template(
     MANAGER_HEAD_INCLUDE . q{
 
-<div class="dellist"><const S_MANAPANEL></div>
+<div class="dellist"><const S_MANATOOLS></div>
 
-<form action="<var $self>" method="post">
-<input type="hidden" name="task" value="delete" />
+<div class="postarea">
 
-<div class="delbuttons">
-<input type="submit" value="<const S_MPDELETE>" />
-<input type="submit" name="archive" value="<const S_MPARCHIVE>" />
-<input type="reset" value="<const S_MPRESET>" />
-[<label><input type="checkbox" name="fileonly" value="on" /><const S_MPONLYPIC></label>]
-</div>
-
-<table align="center" style="white-space: nowrap"><tbody>
-<tr class="managehead"><const S_MPTABLE></tr>
-
-<loop $posts>
-	<if !$parent><tr class="managehead"><th colspan="6"></th> </tr></if>
-
-	<tr class="row<var $rowtype>">
-
-	<if !$image><td></if>
-	<if $image><td rowspan="<var $imagecount+1>"></if>
-	<if $parent>
-		<label><input type="checkbox" name="delete" value="<var $num>" /><big><b><var $num></b></big>&nbsp;&nbsp;</label></td>
-	</if>
-	<if !$parent>
-		<label><input type="checkbox" name="delete" value="<var $num>" /><big><b><var $num></b></big>&nbsp;&nbsp;</label>
-		<if $sticky_isnull>
-			[<a href="<var $self>?task=sticky&amp;threadid=<var $num>"><const S_MPSTICKY></a>]
-		</if>
-		<if !$sticky_isnull>
-			[<a href="<var $self>?task=sticky&amp;threadid=<var $num>"><const S_MPUNSTICKY></a>]
-		</if>
-		<if $locked>
-			[<a href="<var $self>?task=lock&amp;threadid=<var $num>"><const S_MPUNLOCK></a>]
-		</if>
-		<if !$locked>
-			[<a href="<var $self>?task=lock&amp;threadid=<var $num>"><const S_MPLOCK></a>]
-		</if>
-		<if $autosage>
-			[<a href="<var $self>?task=kontra&amp;threadid=<var $num>"><const S_MPUNSETSAGE></a>]
-		</if>
-		<if !$autosage>
-			[<a href="<var $self>?task=kontra&amp;threadid=<var $num>"><const S_MPSETSAGE></a>]
-		</if>
-
-		</td>
-	</if>
-
-	<td><var make_date($timestamp,"tiny")></td>
-	<td><var clean_string(substr $subject,0,20)></td>
-	<td><b><var clean_string(substr $name,0,30)><var $trip></b></td>
-	<td><var clean_string(substr $comment,0,30)></td>
-	<td><var dec_to_dot($ip)>
-		[<a href="<var $self>?task=deleteall&amp;ip=<var $ip>"><const S_MPDELETEALL></a>]
-		[<a onclick="do_ban('<var dec_to_dot($ip)>', <var $num>, '<const BOARD_IDENT>', '<var $admin>')"><const S_MPBAN></a>]
-	</td>
-
-	</tr>
-	<if $image>
-		<tr class="row<var $rowtype>">
-		<td colspan="5"><small>
-		<const S_PICNAME><a href="<var expand_filename(clean_path($image))>"><var clean_string($image)></a>
-		(<var $size> B, <var $width>x<var $height>)&nbsp; MD5: <var $md5>
-		</small></td></tr>
-	</if>
-	<if $image1>
-		<tr class="row<var $rowtype>">
-		<td colspan="5"><small>
-		<const S_PICNAME><a href="<var expand_filename(clean_path($image1))>"><var clean_string($image1)></a>
-		(<var $size1> B, <var $width1>x<var $height1>)&nbsp; MD5: <var $md51>
-		</small></td></tr>
-	</if>
-	<if $image2>
-		<tr class="row<var $rowtype>">
-		<td colspan="5"><small>
-		<const S_PICNAME><a href="<var expand_filename(clean_path($image2))>"><var clean_string($image2)></a>
-		(<var $size2> B, <var $width2>x<var $height2>)&nbsp; MD5: <var $md52>
-		</small></td></tr>
-	</if>
-	<if $image3>
-		<tr class="row<var $rowtype>">
-		<td colspan="5"><small>
-		<const S_PICNAME><a href="<var expand_filename(clean_path($image3))>"><var clean_string($image3)></a>
-		(<var $size3> B, <var $width3>x<var $height3>)&nbsp; MD5: <var $md53>
-		</small></td></tr>
-	</if>
+<const S_MANAGEOINFO>
+<table><tbody>
+<tr><td class="postblock">API       </td><td><var $geoip_api>       </td></tr>
+<loop $geoip_results>
+	<tr><td class="postblock"><var $file></td><td><var $result></td></tr>
 </loop>
-
 </tbody></table>
 
-	<table class="paginator" border="1"><tbody><tr><td>Seiten:</td><if $prevpage><td>
-
-	[<a href="<var $prevpage>"><const S_PREV></a>]
-	</td></if><td>
-
-	<loop $pages>
-		<if !$current><a href="<var $filename>"><var $page+1></a></if>
-		<if $current>[<b><var $page+1></b>]</if>
-	</loop>
-
-	</td><if $nextpage><td>
-
-	[<a href="<var $nextpage>"><const S_NEXT></a>]
-
-	</td></if></tr></tbody></table>
-
-
-<div class="delbuttons">
-<input type="submit" value="<const S_MPDELETE>" />
-<input type="submit" name="archive" value="<const S_MPARCHIVE>" />
-<input type="reset" value="<const S_MPRESET>" />
-[<label><input type="checkbox" name="fileonly" value="on" /><const S_MPONLYPIC></label>]
 </div>
-
-</form>
 
 <br /><div class="postarea">
 
+<const S_MANADELETE>
 <form action="<var $self>" method="post">
 <input type="hidden" name="task" value="deleteall" />
 <table><tbody>
@@ -625,7 +524,7 @@ use constant POST_PANEL_TEMPLATE => compile_template(
 
 </div><br />
 
-<var sprintf S_IMGSPACEUSAGE,int($size/1024)>
+<var sprintf S_IMGSPACEUSAGE,int($size/1024), $files, $posts, $threads>
 
 } . NORMAL_FOOT_INCLUDE
 );
@@ -786,6 +685,7 @@ use constant ADMIN_POST_TEMPLATE => compile_template(
 <input type="hidden" name="task" value="post" />
 <input type="hidden" name="no_captcha" value="1" />
 <input type="hidden" name="no_format" value="1" />
+<input type="hidden" name="as_admin" value="1" />
 
 <table><tbody>
 <tr><td class="postblock"><const S_SUBJECT></td><td><input type="text" name="field3" size="35" />

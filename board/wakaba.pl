@@ -279,12 +279,9 @@ elsif ( $task eq "admin" ) {
 elsif ( $task eq "logout" ) {
     do_logout();
 }
-elsif ( $task eq "mpanel" ) { # TODO: remove - now already handled by task=show
+elsif ( $task eq "mpanel" ) {
     my $admin = $query->cookie("wakaadmin");
-    my $page  = $query->param("page");
-    if ( !defined($page) ) { $page = 1; }
-	#make_admin_post_panel( $admin, $page );
-	show_page($page, $admin);
+	make_admin_post_panel($admin);
 }
 elsif ( $task eq "deleteall" ) {
     my $admin = $query->cookie("wakaadmin");
@@ -611,8 +608,8 @@ sub show_post {
     my $isAdmin = 0;
     if(defined($admin))
     {
-	check_password($admin, ADMIN_PASS);
-    	$isAdmin = 1;
+		#check_password($admin, ADMIN_PASS);
+		if ($admin eq crypt_password(ADMIN_PASS)) { $isAdmin = 1; } else { $admin = ""; }
     }
 
     $sth = $dbh->prepare(
@@ -658,8 +655,8 @@ sub show_page {
 	my $isAdmin = 0;
 	if(defined($admin))
 	{
-		check_password($admin, ADMIN_PASS);
-		$isAdmin = 1;
+		#check_password($admin, ADMIN_PASS);
+		if ($admin eq crypt_password(ADMIN_PASS)) { $isAdmin = 1; } else { $admin = ""; }
 	}
 
     # grab all posts, in thread order (ugh, ugly kludge)
@@ -856,7 +853,7 @@ sub get_omit_message($$) {
 sub show_thread {
     my ($thread, $admin) = @_;
     my ( $sth, $row, @thread );
-    my ( $filename, $tmpname );
+#    my ( $filename, $tmpname );
 	
 	# if we try to call show_thread with admin parameter
 	# the admin password will be checked and this
@@ -864,8 +861,8 @@ sub show_thread {
 	my $isAdmin = 0;
 	if(defined($admin))
 	{
-		check_password($admin, ADMIN_PASS);
-		$isAdmin = 1;
+		#check_password($admin, ADMIN_PASS);
+		if ($admin eq crypt_password(ADMIN_PASS)) { $isAdmin = 1; } else { $admin = ""; }
 	}
 
     $sth = $dbh->prepare(
@@ -1160,7 +1157,10 @@ sub post_stuff {
     make_error(S_UNJUST)
       if ( $ENV{REQUEST_METHOD} and $ENV{REQUEST_METHOD} ne "POST" );
 
-    if ($admin)  # check admin password - allow both encrypted and non-encrypted
+	# clean up invalid admin cookie/session or posting would fail
+	$admin = "" unless ($admin eq crypt_password(ADMIN_PASS));
+
+    if ($admin)  # check admin password
     {
         check_password( $admin, ADMIN_PASS );
 		if(defined($postAsAdmin) && $postAsAdmin)
@@ -2073,6 +2073,9 @@ sub delete_stuff {
     my $deletebyip = 0;
 	my $noko = 1; # try to stay in thread after deletion by default	
 
+	# clean up invalid admin cookie/session or deletion would always fail
+	$admin = "" unless ($admin eq crypt_password(ADMIN_PASS));
+
     check_password( $admin, ADMIN_PASS ) if ($admin);
     if ( !$password and !$admin ) { $deletebyip = 1; }
     make_error(S_BADDELPASS)
@@ -2142,7 +2145,7 @@ sub delete_post {
     my ( $post, $password, $fileonly, $deletebyip, $admin ) = @_;
     my ( $sth, $row, $res, $reply );
 
-	if(defined($admin))
+	if($admin)
 	{
 		check_password($admin, ADMIN_PASS);
 	}
@@ -2269,80 +2272,55 @@ sub make_admin_login {
     print encode_string( ADMIN_LOGIN_TEMPLATE->() );
 }
 
-# TODO: DEPRECATED - remove
 sub make_admin_post_panel {
-    my ( $admin, $pageToShow ) = @_;
-    my ( $sth, $row, @posts, $size, $rowtype );
+    my ($admin) = @_;
 
     check_password( $admin, ADMIN_PASS );
 
+	# geoip
+	my ($gi, $api, $country, $country_v6, $city, $city_v6, $asn, $asn_v6);
+	my $path = "/usr/local/share/GeoIP/";
+	my @geo_dbs = qw(GeoIP.dat GeoIPv6.dat GeoLiteCity.dat GeoLiteCityv6.dat GeoIPASNum.dat GeoIPASNumv6.dat);
+	my @results = ();
+	$api = 'n/a';
+
+	eval 'use Geo::IP';
+	unless ($@)
+	{
+		eval '$api = Geo::IP->api';
+
+		foreach (@geo_dbs)
+		{
+			my $geo_db;
+			eval '$gi = Geo::IP->open($path . "$_")';
+			$$geo_db{file} = $_;
+			$$geo_db{result} = $@ ? 'n/a' : $gi->database_info;
+			push(@results, $geo_db);
+		}
+	}
+
+	# statistics
+	my $sth;
+	my $threads = count_threads();
+	my ($posts, $size) = count_posts();
+
     $sth = $dbh->prepare(
-            "SELECT *, sticky IS NULL OR sticky=0 AS sticky_isnull FROM "
-          . SQL_TABLE
-          . " ORDER BY sticky_isnull ASC,lasthit DESC,CASE parent WHEN 0 THEN num ELSE parent END ASC,num ASC"
-    ) or make_error(S_SQLFAIL);
+		"SELECT count(*) FROM " . SQL_TABLE_IMG . " WHERE image IS NOT NULL AND size>0;"
+	) or make_error(S_SQLFAIL);
     $sth->execute() or make_error(S_SQLFAIL);
 
-    my $totalThreadCount = count_threads();
-    my $totalPages       = get_page_count_real($totalThreadCount);
-    if ( $pageToShow > ( $totalPages - 1 ) ) {
-        make_error(S_INVALID_PAGE);
-    }
-
-    $size    = 0;
-    $rowtype = 1;
-    my $displayPage = 0;
-    my $threadcount = 0;
-    while ( $row = get_decoded_hashref($sth)
-        and $threadcount < ( IMAGES_PER_PAGE * ( $pageToShow + 1 ) ) )
-    {
-        add_images_to_row($row);
-        if ( !$$row{parent} ) {
-            $rowtype = 1;
-            $threadcount++;
-            if ( $threadcount > IMAGES_PER_PAGE * $pageToShow ) {
-                $displayPage = 1;
-            }
-        }
-        else { $rowtype ^= 3; }
-
-        if ($displayPage) {
-            $$row{rowtype} = $rowtype;
-            $size += $$row{total_imagesize};
-            push @posts, $row;
-        }
-    }
-
-    # make the list of pages
-    my @pages = map +{ page => $_ }, ( 0 .. $totalPages - 1 );
-    foreach my $p (@pages) {
-        if ( $$p{page} == 0 ) {
-            $$p{filename} =
-              expand_filename("wakaba.pl?task=mpanel&amp;admin=$admin&amp;page=0");
-        }    # first page
-        else {
-            $$p{filename} = expand_filename(
-                "wakaba.pl?task=mpanel&amp;admin=$admin&amp;page=" . $$p{page} );
-        }
-        if ( $$p{page} == $pageToShow ) {
-            $$p{current} = 1;
-        }    # current page, no link
-    }
-
-    my ( $prevpage, $nextpage );
-    $prevpage = $pages[ $pageToShow - 1 ]{filename} if ( $pageToShow != 0 );
-    $nextpage = $pages[ $pageToShow + 1 ]{filename}
-      if ( $pageToShow != $totalPages - 1 );
+    my $files = ($sth->fetchrow_array())[0];
 
     make_http_header();
     print encode_string(
         POST_PANEL_TEMPLATE->(
             admin    => $admin,
-            posts    => \@posts,
+            posts    => $posts,
+            threads  => $threads,
+            files    => $files,
             size     => $size,
-            pages    => \@pages,
-            prevpage => $prevpage,
-            nextpage => $nextpage
+            geoip_api      => $api,
+            geoip_results  => \@results
         )
     );
 }
