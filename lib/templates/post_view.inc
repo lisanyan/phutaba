@@ -57,7 +57,7 @@
 
 	<if $isAdmin>
 		<div style="display: none; min-width: 250px;" id="postinfo_<var $num>">
-			<strong>Standort:</strong> <img src="/img/flags/<var $location>.png"> <var $location><br />
+			<strong>Standort:</strong> <img src="/img/flags/<var $location>.PNG"> <var $location><br />
 		</div>
 		<span onmouseover="TagToTip('postinfo_<var $num>', DELAY, 0)" onmouseout="UnTip()">[<var dec_to_dot($ip)>]</span>
 		<if !$parent>	
