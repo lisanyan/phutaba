@@ -86,7 +86,7 @@
 			</if>
 			
 		</if>
-		<span class="ban"         onmouseover="Tip('<const S_MPBAN>')"       onmouseout="UnTip()"><a onclick="do_ban('<var dec_to_dot($ip)>', <var $num>, '<const BOARD_IDENT>', '<var $admin>')"><img src="/img/icons/ban.png"></a></span>
+		<span class="ban"         onmouseover="Tip('<const S_MPBAN>')"       onmouseout="UnTip()"><a onclick="do_ban('<var dec_to_dot($ip)>', <var $num>, '<const BOARD_IDENT>')"><img src="/img/icons/ban.png"></a></span>
 		<span class="deleteall"   onmouseover="Tip('<const S_MPDELETEALL>')" onmouseout="UnTip()"><a href="<var $self>?task=deleteall&amp;ip=<var $ip>"><img src="/img/icons/delete_all.png"></a></span>
 		<span class="delete_file" onmouseover="Tip('<const S_MPDELFILE>')"   onmouseout="UnTip()"><a href="<var $self>?task=delete&amp;delete=<var $num>&amp;fileonly=on"><img src="/img/icons/delete_file.png"></a></span>
 		<span class="delete_post" onmouseover="Tip('<const S_MPDELETE>')"    onmouseout="UnTip()"><a href="<var $self>?task=delete&amp;delete=<var $num>"><img src="/img/icons/delete.png"></a></span>
@@ -149,6 +149,7 @@
 		<if $abbrev>
 			<var sprintf(S_ABBRTEXT,get_reply_link($num,$parent))>
 		</if>
+		<if $banned><const S_BANNED></if>
 	</section>
 
 </section>

@@ -1,4 +1,4 @@
-function do_ban(ip, postid, board, session) {
+function do_ban(ip, postid, board) {
 	buttons = {
 		"Ok": function () {
 			if (window.disable) {
@@ -12,7 +12,7 @@ function do_ban(ip, postid, board, session) {
 			reason = $j("#reason").val() ? $j("#reason").val() : "no reason";
 			mask = $j("#netmask").val() ? $j("#netmask").val() : "255.255.255.255";
 			ip = $j("#ip").val() ? $j("#ip").val() : ip;
-			url = "/" + board + "/?admin=" + session + "&amp;task=addip&amp;type=ipban&amp;ip=" + ip + "&amp;postid=" + postid + "&amp;mask=" + mask + "&amp;comment=" + reason;
+			url = "/" + board + "/?task=addip&type=ipban&ip=" + ip + "&postid=" + postid + "&mask=" + mask + "&comment=" + reason;
 			$j("#infobox").hide('normal');
 			$j.ajax({
 				url: url,
@@ -52,21 +52,32 @@ function do_ban(ip, postid, board, session) {
 		title: 'Moderation',
 		open: function (event, ui) {
 			$j(".ui-dialog-titlebar-close").hide();
+			$j("#ip").attr('disabled', true).val("");
+			$j("#netmask").attr('disabled', true);
+			$j("#postid").attr('disabled', true).val("");
+			$j("#reason").attr('disabled', true).val("");
+			$j("#infodetails").text("Daten abrufen ...");
+			$j("#info").show('normal');
 			$j.ajax({
-				url: "/" + board + "/?admin=" + session + "&amp;task=checkban&amp;ip=" + ip,
+				url: "/" + board + "/?task=checkban&ip=" + ip,
 				dataType: 'json',
 				success: function (data) {
 					if (data['results'] == 0) {
 						window.disable = 0;
+						$j("#info").hide('normal');
 						$j("#ip").attr('disabled', false).val(ip);
-						$j("#netmask").attr('disabled', false).val("255.255.255.255");
+						if (ip.indexOf(":") != -1) {
+							$j("#netmask").attr('disabled', true).val("255.255.255.255");
+						} else {
+							$j("#netmask").attr('disabled', false);
+						}
 						$j("#postid").attr('disabled', true).val(postid);
-						$j("#reason").attr('disabled', false).val("no reason").focus();
+						$j("#reason").attr('disabled', false).val("").focus();
 					}
 					if (data['results'] >= 1) {
 						window.disable = 1;
 						$j("#ip").attr('disabled', true).val(ip);
-						$j("#netmask").attr('disabled', true).val("unknown");
+						$j("#netmask").attr('disabled', true);
 						$j("#postid").attr('disabled', true).val("none");
 						$j("#reason").attr('disabled', true).val("unknown");
 						$j("#infodetails").text("User wurde bereits gesperrt");

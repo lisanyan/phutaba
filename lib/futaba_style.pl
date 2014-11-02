@@ -69,16 +69,30 @@ use constant NORMAL_HEAD_INCLUDE => q{
 <div id="modpanel" style="display: none">
 <table>
 <tr>
-<td><b>IP</b></td><td><input id="ip" type="text" name="ip" /></td>
+	<td><b>IP</b></td><td><input id="ip" type="text" name="ip" /></td>
+</tr>
+<tr><td><b>Netmask</b></td><td>
+<select id="netmask" name="netmask">
+  <option value="255.0.0.0">IPv4 Class A (255.0.0.0)</option>
+  <option value="255.255.0.0" selected="selected">IPv4 Class B (255.255.0.0)</option>
+  <option value="255.255.255.0">IPv4 Class C (255.255.255.0)</option>
+  <option value="255.255.255.255">IPv4 Host (255.255.255.255)</option>
+
+  <!--option value="8">/8 (IPv4 Class A)</option>
+  <option value="16" selected="selected">/16 (IPv4 Class B)</option>
+  <option value="24">/24 (IPv4 Class C)</option>
+  <option value="32">/32 (IPv4 Host)</option>
+  <option value="48">/48 (IPv6)</option>
+  <option value="56">/56 (IPv6)</option>
+  <option value="64">/64 (IPv6)</option>
+  <option value="128">/128 (IPv6 Host)</option-->
+</select>
+</td></tr>
+<tr>
+	<td><b>PostID</b></td><td><input id="postid" type="text" name="postid" /></td>
 </tr>
 <tr>
-<td><b>Netmask</b></td><td><input id="netmask" type="text" name="netmask" /></td>
-</tr>
-<tr>
-<td><b>PostID</b></td><td><input id="postid" type="text" name="postid" /></td>
-</tr>
-<tr>
-<td><b>Reason</b></td><td><input id="reason" type="text" name="reason" /></td>
+	<td><b>Reason</b></td><td><input id="reason" type="text" name="reason" /></td>
 </tr>
 </table>
 <div id="infobox" style="display: none">

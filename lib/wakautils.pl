@@ -10,7 +10,9 @@ use Locale::Codes::Country;
 use DateTime;
 use Image::ExifTool;
 use Geo::IP;
-use Net::Abuse::Utils qw( :all );
+use Net::IP qw(:PROC); # IPv6 conversions
+
+use Net::Abuse::Utils qw( :all ); #TODO: remove (get_rdns get_ipwi_contacts get_as_description get_asn_info)
 
 
 # add EU to the country code list
@@ -1231,17 +1233,32 @@ sub decode_base64    # stolen from MIME::Base64::Perl
 }
 
 sub dot_to_dec {
-    return unpack( 'N', pack( 'C4', split( /\./, $_[0] ) ) );    # wow, magic.
+	my $ip = $_[0];
+
+	if ($ip =~ /:/) # IPv6
+	{
+		my $iph = new Net::IP($ip) or return 0;
+		return $iph->intip();
+	}
+
+	# IPv4
+    return unpack( 'N', pack( 'C4', split( /\./, $ip ) ) );    # wow, magic.
 }
 
 sub dec_to_dot {
-    return join( '.', unpack( 'C4', pack( 'N', $_[0] ) ) );
+	my $ip = $_[0];
+
+	# IPv6
+	return ip_compress_address(ip_bintoip(ip_inttobin($ip, 6), 6), 6) if (length(pack('w', $ip)) > 5);
+
+	# IPv4
+    return join('.', unpack('C4', pack('N', $ip)));
 }
 
 sub mask_ip {
     my ( $ip, $key, $algorithm ) = @_;
 
-    $ip = dot_to_dec($ip) if $ip =~ /\./;
+    $ip = dot_to_dec($ip) if $ip =~ /\.|:/;
 
     my ( $block, $stir ) = setup_masking( $key, $algorithm );
     my $mask = 0x80000000;

@@ -15,7 +15,7 @@ use HTML::Strip;
 use JSON::XS;
 use JSON;
 use Digest::MD5 qw(md5 md5_hex md5_base64);
-use Image::ExifTool qw(:Public);
+#use Image::ExifTool qw(:Public);
 use File::stat;
 #use File::MimeInfo::Magic;
 use IO::Socket;
@@ -1224,8 +1224,7 @@ sub post_stuff {
     undef($ssl) unless $ssl;
 
     #$host = gethostbyaddr($ip);
-    my $iph   = new Net::IP($ip);
-    my $numip = $iph->intip();
+	my $numip = dot_to_dec($ip);
 
     # set up cookies
     my $c_name     = $name;
@@ -1527,15 +1526,10 @@ sub check_locked {
 sub ban_check {
     my ( $numip, $name, $subject, $comment ) = @_;
     my ($sth);
-
-    my $sth2;
-    my $row;
-    my ( $reason, $mask, $id );
-    my $iph = new Net::IP($numip);
-    my $ip  = $iph->ip() unless !$iph;
+    my ($sth2, $row, $reason, $mask, $_ip);
     my $ip  = dec_to_dot($numip);
-    my $_ip;
 
+	# this will check if the IP (ival1) belongs to a banned IP range
     $sth =
       $dbh->prepare( "SELECT count(*) FROM "
           . SQL_ADMIN_TABLE
@@ -1543,18 +1537,21 @@ sub ban_check {
       or make_error(S_SQLFAIL);
     $sth->execute($numip) or make_error(S_SQLFAIL);
 
+	# added for phutaba
+	# this will fetch the ban reason (comment) and IP range (ival2)
     $sth2 =
-      $dbh->prepare( "SELECT num,comment,ival2 FROM "
+      $dbh->prepare( "SELECT comment,ival2 FROM "
           . SQL_ADMIN_TABLE
           . " WHERE type='ipban' AND ? & ival2 = ival1 & ival2;" );
     $sth2->execute($numip) or make_error(S_SQLFAIL);
-    while ( $row = $sth2->fetchrow_arrayref() ) {
-        $id = $$row[0];
-        my $_mask = new Net::IP( dec_to_dot($$row[2]) );
+    while ( $row = get_decoded_hashref($sth2) ) {
+        my $_mask = new Net::IP( dec_to_dot($$row{ival2}) );
         $mask   = $_mask->ip();
-        $reason = $$row[1];
+        $reason = $$row{comment};
     }
     $_ip = new Net::IP( $ip . '/' . $mask );
+
+	# this will send the ban message to the client
     make_ban( $ip, $_ip->prefix(), $reason, $_ip->size(), 0 )
       if ( ( $sth->fetchrow_array() )[0] );
 
@@ -1571,12 +1568,12 @@ sub ban_check {
       or make_error(S_SQLFAIL);
     $sth->execute() or make_error(S_SQLFAIL);
 
-    while ( $row = $sth->fetchrow_arrayref() ) {
+    while ( $row = $sth->fetchrow_arrayref() ) { # TODO: use get_decoded_hashref()
         my $regexp = quotemeta $$row[0];
 
         #		make_error(S_STRREF) if($comment=~/$regexp/);
         if ( $comment =~ /$regexp/ ) {
-            $comment = $$row[1];
+            $comment = $$row[1]; # this does not work as $comment is a local variable
 
             #make_error($$row[1]);
         }
@@ -2279,11 +2276,10 @@ sub make_admin_post_panel {
     check_password( $admin, ADMIN_PASS );
 
 	# geoip
-	my ($api, $country, $country_v6, $city, $city_v6, $asn, $asn_v6);
+	my $api = 'n/a';
 	my $path = "/usr/local/share/GeoIP/";
 	my @geo_dbs = qw(GeoIP.dat GeoIPv6.dat GeoLiteCity.dat GeoLiteCityv6.dat GeoIPASNum.dat GeoIPASNumv6.dat);
 	my @results = ();
-	$api = 'n/a';
 
 	eval 'use Geo::IP';
 	unless ($@)
@@ -2398,9 +2394,8 @@ sub do_logout {
 }
 
 sub add_admin_entry {
-    my ($blame) = S_BANNED;
     my ($admin, $type, $comment, $ival1, $ival2, $sval1, $postid) = @_;
-    my ($sth, $row, $oldcomment, $newcomment, $threadid, $utf8_encoded_json_text);
+    my ($sth, $utf8_encoded_json_text);
     my ($time) = time();
     check_password( $admin, ADMIN_PASS );
 
@@ -2412,24 +2407,19 @@ sub add_admin_entry {
     $sth->execute( $type, $comment, $ival1, $ival2, $sval1, $time )
       or make_error(S_SQLFAIL);
     if ($postid) {
-        $sth =
-          $dbh->prepare( "SELECT num,parent,comment FROM "
-              . SQL_TABLE
-              . " WHERE num=? LIMIT 1;" )
+        $sth = $dbh->prepare( "UPDATE " . SQL_TABLE . " SET banned=? WHERE num=? LIMIT 1;" )
           or make_error(S_SQLFAIL);
-        $sth->execute($postid) or make_error(S_SQLFAIL);
-        $row        = get_decoded_hashref($sth);
-        $oldcomment = $$row{comment};
-        $newcomment = $oldcomment . $blame;
-        $threadid   = $$row{parent} if $$row{parent} ne 0;
-        $threadid   = $$row{num} if $$row{parent} eq 0;
-
-        $sth = $dbh->prepare(
-            "UPDATE " . SQL_TABLE . " SET comment = ? WHERE num=? LIMIT 1;" )
-          or make_error(S_SQLFAIL);
-        $sth->execute( $newcomment, $postid ) or make_error(S_SQLFAIL);
+        $sth->execute($time, $postid) or make_error(S_SQLFAIL);
     }
-    $utf8_encoded_json_text = encode_json( { "error_code" => 200, "banned_ip" => dec_to_dot($ival1), "banned_mask" => dec_to_dot($ival2), "reason" => $comment, "postid" => $postid, "debug" => $ival1 } );
+    $utf8_encoded_json_text = encode_json(
+		{
+			"error_code" => 200,
+			"banned_ip" => dec_to_dot($ival1),
+			"banned_mask" => dec_to_dot($ival2),
+			"reason" => $comment,
+			"postid" => $postid
+		}
+	);
     make_http_header();
     print $utf8_encoded_json_text;
     #make_http_forward( get_script_name() . "?admin=$admin&task=bans");
@@ -2657,11 +2647,19 @@ sub get_filetypes {
 sub parse_range {
     my ( $ip, $mask ) = @_;
 
-    $ip = dot_to_dec($ip) if ( $ip =~ /^\d+\.\d+\.\d+\.\d+$/ );
+	if ($ip =~ /:/ or length(pack('w', $ip)) > 5) # IPv6
+	{
+		# ignore mask because MySQL 5 will only do bit shifting operations up to 64 bit
+		$mask = "340282366920938463463374607431768211455";
+	}
+	else # IPv4
+	{
+		if ( $mask =~ /^\d+\.\d+\.\d+\.\d+$/ ) { $mask = dot_to_dec($mask); }
+		elsif ( $mask =~ /(\d+)/ ) { $mask = ( ~( ( 1 << $1 ) - 1 ) ); }
+		else                       { $mask = 0xffffffff; }
+	}
 
-    if ( $mask =~ /^\d+\.\d+\.\d+\.\d+$/ ) { $mask = dot_to_dec($mask); }
-    elsif ( $mask =~ /(\d+)/ ) { $mask = ( ~( ( 1 << $1 ) - 1 ) ); }
-    else                       { $mask = 0xffffffff; }
+    $ip = dot_to_dec($ip) if ( $ip =~ /(^\d+\.\d+\.\d+\.\d+$)|:/ );
 
     return ( $ip, $mask );
 }
