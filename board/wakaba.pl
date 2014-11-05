@@ -2319,6 +2319,8 @@ sub make_admin_post_panel {
 	unless ($@) {
 		eval '$api = Geo::IP->api';
 
+		$api .= ' (IPv6-Lookups erfordern CAPI)' unless ($api eq 'CAPI');
+
 		foreach (@geo_dbs) {
 			my ($gi, $geo_db);
 			$$geo_db{file} = $_;

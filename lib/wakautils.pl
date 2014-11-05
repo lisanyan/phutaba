@@ -166,10 +166,10 @@ sub get_geolocation($) {
 	}
 
 	if ($city_record) {
-		$loc          = $$city_record{country_code};
-		$country_name = $$city_record{country_name};
-		$region_name  = $$city_record{region_name};
-		$city         = $$city_record{city};
+		$loc          = $city_record->country_code;
+		$country_name = $city_record->country_name;
+		$region_name  = $city_record->region_name;
+		$city         = $city_record->city;
 	}
 
 	return ($city, $region_name, $country_name, $loc);
