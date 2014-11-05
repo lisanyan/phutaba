@@ -1601,8 +1601,8 @@ sub analyze_webm($) {
 }
 
 sub test_afmod {
-	my $day = localtime->mday;
-	my $month = localtime->mon + 1;
+	my @now = localtime;
+	my ($month, $day) = ($now[4] + 1, $now[3]);
 
 	return 1 if (ENABLE_AFMOD && $month == 4 && $day == 1);
 	return 0;
