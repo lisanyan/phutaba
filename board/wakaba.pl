@@ -307,15 +307,16 @@ elsif ( $task eq "addip" ) {
     my $ip      = $query->param("ip");
     my $mask    = $query->param("mask");
     my $postid  = $query->param("postid");
+	my $ajax    = $query->param("ajax");
     add_admin_entry( $admin, $type, $comment, parse_range( $ip, $mask ),
-        $string, $postid );
+        $string, $postid, $ajax );
 }
 elsif ( $task eq "addstring" ) {
     my $admin   = $query->cookie("wakaadmin");
     my $type    = $query->param("type");
     my $string  = $query->param("string");
     my $comment = $query->param("comment");
-    add_admin_entry( $admin, $type, $comment, 0, 0, $string, 0 );
+    add_admin_entry( $admin, $type, $comment, 0, 0, $string, 0, 0 );
 }
 elsif ( $task eq "checkban" ) {
     my $ival1	= $query->param("ip");
@@ -420,12 +421,12 @@ sub output_json_threads {
         $code = 500;
     }
     %status = (
-            "error_code" => $code,
-            "error_msg" => $error,
+        "error_code" => $code,
+        "error_msg" => $error,
     );
     %json = (
-            "data" => \@data,
-            "status" => \%status,
+        "data" => \@data,
+        "status" => \%status,
     );
 
     make_json_header();
@@ -450,12 +451,12 @@ sub output_json_thread {
         $code = 500;
     }
     %status = (
-            "error_code" => $code,
-            "error_msg" => $error,
+        "error_code" => $code,
+        "error_msg" => $error,
     );
     %json = (
-            "data" => \@data,
-            "status" => \%status,
+        "data" => \@data,
+        "status" => \%status,
     );
 
     make_json_header();
@@ -498,33 +499,36 @@ sub output_json_meta {
 	make_json_header();
 	print $JSON->encode(\%json);
 }
-		
+
 
 sub output_json_ban {
 	my ($id, $admin) = @_;
 	my ($row, $error, $code, %status, %data, %json);
 	use Net::Abuse::Utils qw( :all );
 
-	check_password($admin, ADMIN_PASS);
-
-	$sth = $dbh->prepare("SELECT `comment`, `ival1` as `ip`, `ival2` as `mask`, `date` FROM " . SQL_ADMIN_TABLE . " WHERE num=?;");
-	$sth->execute($id);
-	$error = encode_entities(decode('utf8', $sth->errstr));
-	$row = $sth->fetchrow_hashref();
-	if($row ne undef) {
-		$code = 200;
-		$$row{'ip'} = dec_to_dot($$row{'ip'});
-		$$row{'mask'} = dec_to_dot($$row{'mask'});
-		$data{'ban_info'} = $row;
-		$data{'ip_info'}{'asn_info'} = [get_asn_info($$row{'ip'})];
-		$data{'ip_info'}{'as_desc'} = encode_entities(decode('utf8', get_as_description($data{'ip_info'}{'asn_info'}[0])));
-		$data{'ip_info'}{'ptr'} = get_rdns($$row{'ip'});
-		$data{'ip_info'}{'contacts'} = [get_ipwi_contacts($$row{'ip'})];
-	} elsif($sth->rows eq 0) {
-		$code = 404;
-		$error = 'Element not found.';
+	if (!check_password_silent($admin, ADMIN_PASS)) {
+		$code = 401;
+		$error = 'Unauthorized';
 	} else {
-		$code = 500;
+		$sth = $dbh->prepare("SELECT `comment`, `ival1` as `ip`, `ival2` as `mask`, `date` FROM " . SQL_ADMIN_TABLE . " WHERE num=?;");
+		$sth->execute($id);
+		$error = encode_entities(decode('utf8', $sth->errstr));
+		$row = $sth->fetchrow_hashref();
+		if($row ne undef) {
+			$code = 200;
+			$$row{'ip'} = dec_to_dot($$row{'ip'});
+			$$row{'mask'} = dec_to_dot($$row{'mask'});
+			$data{'ban_info'} = $row;
+			$data{'ip_info'}{'asn_info'} = [get_asn_info($$row{'ip'})];
+			$data{'ip_info'}{'as_desc'} = encode_entities(decode('utf8', get_as_description($data{'ip_info'}{'asn_info'}[0])));
+			$data{'ip_info'}{'ptr'} = get_rdns($$row{'ip'});
+			$data{'ip_info'}{'contacts'} = [get_ipwi_contacts($$row{'ip'})];
+		} elsif($sth->rows eq 0) {
+			$code = 404;
+			$error = 'Element not found.';
+		} else {
+			$code = 500;
+		}
 	}
 
 	%status = (
@@ -621,7 +625,7 @@ sub show_post {
     if(defined($admin))
     {
 		#check_password($admin, ADMIN_PASS);
-		if ($admin eq crypt_password(ADMIN_PASS)) { $isAdmin = 1; } else { $admin = ""; }
+		if (check_password_silent($admin, ADMIN_PASS)) { $isAdmin = 1; } else { $admin = ""; }
     }
 
     $sth = $dbh->prepare(
@@ -653,7 +657,7 @@ sub show_post {
 		print($output);
     }
     else {
-        print encode_json( { "error_code" => 400 } );
+        print encode_json( { "error_code" => 400, "error_msg" => 'Bad Request' } );
     }
 }
 
@@ -668,7 +672,7 @@ sub show_page {
 	if(defined($admin))
 	{
 		#check_password($admin, ADMIN_PASS);
-		if ($admin eq crypt_password(ADMIN_PASS)) { $isAdmin = 1; } else { $admin = ""; }
+		if (check_password_silent($admin, ADMIN_PASS)) { $isAdmin = 1; } else { $admin = ""; }
 	}
 
     # grab all posts, in thread order (ugh, ugly kludge)
@@ -874,7 +878,7 @@ sub show_thread {
 	if(defined($admin))
 	{
 		#check_password($admin, ADMIN_PASS);
-		if ($admin eq crypt_password(ADMIN_PASS)) { $isAdmin = 1; } else { $admin = ""; }
+		if (check_password_silent($admin, ADMIN_PASS)) { $isAdmin = 1; } else { $admin = ""; }
 	}
 
     $sth = $dbh->prepare(
@@ -2397,6 +2401,7 @@ sub do_login {
 
     if ($password) {
         $crypt = crypt_password($password);
+		check_password( $crypt, ADMIN_PASS );
     }
     elsif ( $admincookie eq crypt_password(ADMIN_PASS) ) {
         $crypt    = $admincookie;
@@ -2428,63 +2433,79 @@ sub do_logout {
 }
 
 sub add_admin_entry {
-    my ($admin, $type, $comment, $ival1, $ival2, $sval1, $postid) = @_;
-    my ($sth, $utf8_encoded_json_text, $expires);
+    my ($admin, $type, $comment, $ival1, $ival2, $sval1, $postid, $ajax) = @_;
+    my ($sth, $utf8_encoded_json_text, $expires, $authorized);
     my ($time) = time();
-    check_password( $admin, ADMIN_PASS );
 
-    $comment = clean_string( decode_string( $comment, CHARSET ) );
+    check_password( $admin, ADMIN_PASS ) if (!$ajax);
 
-	if ($type eq 'ipban') {
-		if ($sval1 =~ /\d+/) {
-			$sval1 += $time;
-			$expires = get_date($sval1);
-		} else { $sval1 = ""; }
-	}
+	# checks password a second time on non-ajax call to make sure $authorized is always correct.
+    $authorized = check_password_silent( $admin, ADMIN_PASS );
 
-    $sth = $dbh->prepare(
-        "INSERT INTO " . SQL_ADMIN_TABLE . " VALUES(null,?,?,?,?,?,FROM_UNIXTIME(?));" )
-      or make_error(S_SQLFAIL);
-    $sth->execute( $type, $comment, $ival1, $ival2, $sval1, $time )
-      or make_error(S_SQLFAIL);
+	if (!$authorized) {
+		$utf8_encoded_json_text = encode_json({
+			"error_code" => 401,
+			"error_msg" => 'Unauthorized'
+		});
+	} else {
+		$comment = clean_string( decode_string( $comment, CHARSET ) );
 
-    if ($postid) {
-        $sth = $dbh->prepare( "UPDATE " . SQL_TABLE . " SET banned=? WHERE num=? LIMIT 1;" )
-          or make_error(S_SQLFAIL);
-        $sth->execute($time, $postid) or make_error(S_SQLFAIL);
-    }
+		if ($type eq 'ipban') {
+			if ($sval1 =~ /\d+/) {
+				$sval1 += $time;
+				$expires = get_date($sval1);
+			} else { $sval1 = ""; }
+		}
 
-    $utf8_encoded_json_text = encode_json(
-		{
+		$sth = $dbh->prepare(
+			"INSERT INTO " . SQL_ADMIN_TABLE . " VALUES(null,?,?,?,?,?,FROM_UNIXTIME(?));" )
+		  or make_error(S_SQLFAIL);
+		$sth->execute( $type, $comment, $ival1, $ival2, $sval1, $time )
+		  or make_error(S_SQLFAIL);
+
+		if ($postid) {
+			$sth = $dbh->prepare( "UPDATE " . SQL_TABLE . " SET banned=? WHERE num=? LIMIT 1;" )
+			  or make_error(S_SQLFAIL);
+			$sth->execute($time, $postid) or make_error(S_SQLFAIL);
+		}
+
+		$utf8_encoded_json_text = encode_json({
 			"error_code" => 200,
 			"banned_ip" => dec_to_dot($ival1),
 			"banned_mask" => dec_to_dot($ival2),
 			"expires" => $expires,
 			"reason" => $comment,
 			"postid" => $postid
-		}
-	);
-    make_http_header();
-    print $utf8_encoded_json_text;
-    #make_http_forward( get_script_name() . "?admin=$admin&task=bans");
+		});
+	}
+
+	if ($ajax) {
+		make_json_header();
+		print $utf8_encoded_json_text;
+	} else {
+		make_http_forward(get_script_name() . "?task=bans");
+	}
 }
 
 sub check_admin_entry {
     my ($admin, $ival1) = @_;
     my ($sth, $utf8_encoded_json_text, $results);
-    check_password( $admin, ADMIN_PASS );
-    if (!$ival1) {
-		$utf8_encoded_json_text = encode_json( { "error_code" => 500, "error_detail" => "Invalid parameter"});
-    } else {
-		$sth = $dbh->prepare("SELECT COUNT(*) AS count FROM "
-			. SQL_ADMIN_TABLE
-			. " WHERE type='ipban' AND ival1=? AND (CAST(sval1 AS UNSIGNED)>? OR sval1='');");
-		$sth->execute(dot_to_dec($ival1), time());
-		$results = get_decoded_hashref($sth);
+    if (!check_password_silent( $admin, ADMIN_PASS )) {
+		$utf8_encoded_json_text = encode_json({"error_code" => 401, "error_msg" => 'Unauthorized'});
+	} else {
+		if (!$ival1) {
+			$utf8_encoded_json_text = encode_json({"error_code" => 500, "error_msg" => 'Invalid parameter'});
+		} else {
+			$sth = $dbh->prepare("SELECT count(*) FROM "
+				. SQL_ADMIN_TABLE
+				. " WHERE type='ipban' AND ival1=? AND (CAST(sval1 AS UNSIGNED)>? OR sval1='');");
+			$sth->execute(dot_to_dec($ival1), time());
+			$results = ($sth->fetchrow_array())[0];
 
-        $utf8_encoded_json_text = encode_json({"error_code" => 200, "results" => $$results{count}});
-    }
-    make_http_header();
+			$utf8_encoded_json_text = encode_json({"error_code" => 200, "results" => $results});
+		}
+	}
+    make_json_header();
     print $utf8_encoded_json_text;
 }
 
@@ -2543,6 +2564,15 @@ sub check_password {
     make_error(S_WRONGPASS);
 }
 
+sub check_password_silent {
+    my ( $admin, $password ) = @_;
+
+    return 1 if ( $admin eq ADMIN_PASS );
+    return 1 if ( $admin eq crypt_password($password) );
+
+    return 0;
+}
+
 sub crypt_password {
     my $crypt = hide_data( (shift) . get_remote_addr(), 18, "admin", SECRET, 1 ); # do not use $ENV{REMOTE_ADDR}
     $crypt =~ tr/+/./;    # for web shit
@@ -2560,6 +2590,8 @@ sub make_http_header {
 }
 
 sub make_json_header {
+	print "Cache-Control: no-cache, no-store, must-revalidate\n";
+	print "Expires: Mon, 12 Apr 2010 05:00:00 GMT\n";
 	print "Content-Type: application/json\n";
 	print "Access-Control-Allow-Origin: *\n";
 	print "\n";
