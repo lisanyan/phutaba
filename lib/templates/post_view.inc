@@ -6,12 +6,7 @@
 <if $parent>
 	<article class="thread_reply" id="<var $num>">
 	<div class="doubledash">
-	<if $isAdmin>
-		<a href="<var get_reply_link($parent,0,$admin)>#<var $num>">&gt;&gt;</a>
-	</if>
-	<if !$isAdmin>
-		<a href="<var get_reply_link($parent,0)>#<var $num>">&gt;&gt;</a>
-	</if>
+	<a href="<var get_reply_link($parent,0)>#<var $num>">&gt;&gt;</a>
 	</div>
 
 	<section class="post<if $single> post_new</if>">
@@ -38,20 +33,10 @@
 
 	<span class="reflink">
                 <if !$parent>
-                        <if $isAdmin> 
-                                <a href="<var get_reply_link($num,0,$admin)>#i<var $num>">Nr. <var $num></a>
-                        </if>
-                        <if !$isAdmin>
-                                <a href="<var get_reply_link($num,0)>#i<var $num>">Nr. <var $num></a>
-                        </if>
+                        <a href="<var get_reply_link($num,0)>#i<var $num>">Nr. <var $num></a>
                 </if>			
                 <if $parent>
-                        <if $isAdmin>
-                                <a href="<var get_reply_link($parent,0,$admin)>#i<var $num>">Nr. <var $num></a>
-                        </if>
-                        <if !$isAdmin>
-                                <a href="<var get_reply_link($parent,0)>#i<var $num>">Nr. <var $num></a>
-                        </if>
+                        <a href="<var get_reply_link($parent,0)>#i<var $num>">Nr. <var $num></a>
                 </if>
 	</span>
 
@@ -67,46 +52,44 @@
 	</if>
 
 	<if !$parent && !$thread>	
-		<if $isAdmin>
-			<span class="replylink">[<a href="<var get_reply_link($num,0,$admin)>"><const S_REPLY></a>]</span>
-		</if>
-		<if !$isAdmin>
-			<span class="replylink">[<a href="<var get_reply_link($num,0)>"><const S_REPLY></a>]</span>
-		</if>
+		<span class="replylink">[<a href="<var get_reply_link($num,0)>"><const S_REPLY></a>]</span>
 	</if>
 
-	<if $isAdmin>  
-		[<var dec_to_dot($ip)>] 
+	<if $isAdmin>
+		<div style="display: none; min-width: 250px;" id="postinfo_<var $num>">
+			<var get_post_info($location)>
+		</div>
+		<span onmouseover="TagToTip('postinfo_<var $num>', TITLE, '<const S_POSTINFO>', DELAY, 0, CLICKSTICKY, true)" onmouseout="UnTip()">[<var dec_to_dot($ip)>]</span>
 		<if !$parent>	
 			<if $sticky_isnull>
-				<span class="sticky" onmouseover="Tip('<const S_MPSTICKY>')" onmouseout="UnTip()"><a href="<var $self>?admin=<var $admin>&amp;task=sticky&amp;threadid=<var $num>"><img src="/img/icons/sticky.png"></a></span>
+				<span class="sticky" onmouseover="Tip('<const S_MPSTICKY>')" onmouseout="UnTip()"><a href="<var $self>?task=sticky&amp;threadid=<var $num>"><img src="/img/icons/sticky.png"></a></span>
 			</if>
 
 			<if !$sticky_isnull>
-				<span class="unsticky" onmouseover="Tip('<const S_MPUNSTICKY>')" onmouseout="UnTip()"><a href="<var $self>?admin=<var $admin>&amp;task=sticky&amp;threadid=<var $num>"><img src="/img/icons/unsticky.png"></a></span>
+				<span class="unsticky" onmouseover="Tip('<const S_MPUNSTICKY>')" onmouseout="UnTip()"><a href="<var $self>?task=sticky&amp;threadid=<var $num>"><img src="/img/icons/unsticky.png"></a></span>
 			</if>
 			
 			<if !$locked>
-				<span class="lock" onmouseover="Tip('<const S_MPLOCK>')" onmouseout="UnTip()"><a href="<var $self>?admin=<var $admin>&amp;task=lock&amp;threadid=<var $num>"><img src="/img/icons/lock.png"></a></span>
+				<span class="lock" onmouseover="Tip('<const S_MPLOCK>')" onmouseout="UnTip()"><a href="<var $self>?task=lock&amp;threadid=<var $num>"><img src="/img/icons/lock.png"></a></span>
 			</if>
 
 			<if $locked>
-				<span class="unlock" onmouseover="Tip('<const S_MPUNLOCK>')" onmouseout="UnTip()"><a href="<var $self>?admin=<var $admin>&amp;task=lock&amp;threadid=<var $num>"><img src="/img/icons/unlock.png"></a></span>
+				<span class="unlock" onmouseover="Tip('<const S_MPUNLOCK>')" onmouseout="UnTip()"><a href="<var $self>?task=lock&amp;threadid=<var $num>"><img src="/img/icons/unlock.png"></a></span>
 			</if>
 		
 			<if !$autosage>
-				<span class="lock" onmouseover="Tip('<const S_MPSETSAGE>')" onmouseout="UnTip()"><a href="<var $self>?admin=<var $admin>&amp;task=kontra&amp;threadid=<var $num>"><img src="/img/icons/sage.png"></a></span>
+				<span class="lock" onmouseover="Tip('<const S_MPSETSAGE>')" onmouseout="UnTip()"><a href="<var $self>?task=kontra&amp;threadid=<var $num>"><img src="/img/icons/sage.png"></a></span>
 			</if>
 
 			<if $autosage>
-				<span class="autosage" onmouseover="Tip('<const S_MPUNSETSAGE>')" onmouseout="UnTip()"><a href="<var $self>?admin=<var $admin>&amp;task=kontra&amp;threadid=<var $num>"><img src="/img/icons/unsage.png"></a></span>
+				<span class="autosage" onmouseover="Tip('<const S_MPUNSETSAGE>')" onmouseout="UnTip()"><a href="<var $self>?task=kontra&amp;threadid=<var $num>"><img src="/img/icons/unsage.png"></a></span>
 			</if>
 			
 		</if>
-		<span class="ban"         onmouseover="Tip('<const S_MPBAN>')"       onmouseout="UnTip()"><a onclick="do_ban('<var dec_to_dot($ip)>', <var $num>, '<const BOARD_IDENT>', '<var $admin>')"><img src="/img/icons/ban.png"></a></span>
-		<span class="deleteall"   onmouseover="Tip('<const S_MPDELETEALL>')" onmouseout="UnTip()"><a href="<var $self>?admin=<var $admin>&amp;task=deleteall&amp;ip=<var $ip>"><img src="/img/icons/delete_all.png"></a></span>
-		<span class="delete_file" onmouseover="Tip('<const S_MPDELFILE>')"   onmouseout="UnTip()"><a href="<var $self>?admin=<var $admin>&amp;task=delete&amp;delete=<var $num>&amp;fileonly=on"><img src="/img/icons/delete_file.png"></a></span>
-		<span class="delete_post" onmouseover="Tip('<const S_MPDELETE>')"    onmouseout="UnTip()"><a href="<var $self>?admin=<var $admin>&amp;task=delete&amp;delete=<var $num>"><img src="/img/icons/delete.png"></a></span>
+		<span class="ban"         onmouseover="Tip('<const S_MPBAN>')"       onmouseout="UnTip()"><a onclick="do_ban('<var dec_to_dot($ip)>', <var $num>, '<const BOARD_IDENT>')"><img src="/img/icons/ban.png"></a></span>
+		<span class="deleteall"   onmouseover="Tip('<const S_MPDELETEALL>')" onmouseout="UnTip()"><a href="<var $self>?task=deleteall&amp;ip=<var $ip>"><img src="/img/icons/delete_all.png"></a></span>
+		<span class="delete_file" onmouseover="Tip('<const S_MPDELFILE>')"   onmouseout="UnTip()"><a href="<var $self>?task=delete&amp;delete=<var $num>&amp;fileonly=on"><img src="/img/icons/delete_file.png"></a></span>
+		<span class="delete_post" onmouseover="Tip('<const S_MPDELETE>')"    onmouseout="UnTip()"><a href="<var $self>?task=delete&amp;delete=<var $num>"><img src="/img/icons/delete.png"></a></span>
 	</if>
 
 <if $parent>
@@ -164,13 +147,9 @@
 	<section class="text">
 		<var $comment>
 		<if $abbrev>
-			<if $isAdmin>
-				<var sprintf(S_ABBRTEXT,get_reply_link($num,$parent,$admin))>
-			</if>
-			<if !$isAdmin>
-				<var sprintf(S_ABBRTEXT,get_reply_link($num,$parent))>
-			</if>
+			<var sprintf(S_ABBRTEXT,get_reply_link($num,$parent))>
 		</if>
+		<if $banned><const S_BANNED></if>
 	</section>
 
 </section>

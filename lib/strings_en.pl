@@ -84,7 +84,10 @@ use constant S_ADMINPASS => 'Passwort:';    # Prints login prompt
 
 use constant S_MANAPANEL => 'Posts moderieren'
   ; # Defines Management Panel radio button--allows the user to view the management panel (overview of all posts)
-use constant S_MANABANS    => 'IPs sperren';         # Defines Bans Panel button
+use constant S_MANATOOLS => 'Werkzeuge';
+use constant S_MANAGEOINFO => 'GeoIP-Informationen';
+use constant S_MANADELETE => 'Posts l&ouml;schen';
+use constant S_MANABANS    => 'Sperren verwalten';         # Defines Bans Panel button
 use constant S_MANAPROXY   => 'Proxys konfigurieren';
 use constant S_MANASPAM    => 'Spam';                # Defines Spam Panel button
 use constant S_MANASQLDUMP => 'MySQL abfragen';      # Defines SQL dump button
@@ -121,6 +124,7 @@ use constant S_FILEINFO => 'Informationen';
 use constant S_FILEDELETED => 'Datei gel&ouml;scht';
 
 
+use constant S_POSTINFO => 'IP-Informationen';
 use constant S_MPDELETEIP => 'Alle l&ouml;schen';
 use constant S_MPDELETE =>
   'L&ouml;schen';    # Defines for deletion button in Management Panel
@@ -140,18 +144,19 @@ use constant S_MPBAN =>
 use constant S_MPTABLE => '<th>Nr.</th><th>Zeit</th><th>Betreff</th>'
   . '<th>Name</th><th>Kommentar</th><th>IP</th>'
   ;          # Explains names for Management Panel
-use constant S_IMGSPACEUSAGE => '[ Benutzter Speicherplatz: %d KB ]'
+use constant S_IMGSPACEUSAGE => '[ Belegter Speicherplatz: %s, %s Dateien, %s Posts (%s Threads) ]'
   ;          # Prints space used KB by the board under Management Panel
 
 use constant S_DELALLMSG => 'Betroffen';
 use constant S_DELALLCOUNT => '%s Posts (%s Threads)';
 
 use constant S_BANTABLE =>
-  '<th>Typ</th><th>Wert</th><th>Kommentar</th><th>Datum</th><th>ASN</th><th>AS Name</th><th>Land</th><th>Aktion</th>'
+  '<th>Typ</th><th colspan="2">Wert</th><th>Kommentar</th><th>Erstelldatum</th><th>Ablaufdatum</th><th>Aktion</th>'
   ;          # Explains names for Ban Panel
-use constant S_BANIPLABEL      => 'IP';
-use constant S_BANMASKLABEL    => 'Mask';
+use constant S_BANIPLABEL      => 'IP-Adresse';
+use constant S_BANMASKLABEL    => 'Netzmaske';
 use constant S_BANCOMMENTLABEL => 'Kommentar';
+use constant S_BANDURATION     => 'Dauer';
 use constant S_BANWORDLABEL    => 'Wort';
 use constant S_BANIP           => 'IP sperren';
 use constant S_BANWORD         => 'Wortfilter';
@@ -160,6 +165,9 @@ use constant S_BANREMOVE       => 'Entfernen';
 use constant S_BANCOMMENT      => 'Kommentar';
 use constant S_BANTRUST        => 'Kein Captcha';
 use constant S_BANTRUSTTRIP    => 'Tripcode';
+use constant S_BANREASONLABEL  => 'Grund';
+use constant S_BANASNUMLABEL   => 'AS-Nummer';
+use constant S_BANASNUM        => 'Netz sperren';
 
 use constant S_LOCKED => 'Faden ist geschlossen';
 use constant S_PROXYTABLE =>
@@ -237,9 +245,9 @@ use constant S_DUPENAME =>
   ;    # Returns error when an filename already exists.
 use constant S_NOTHREADERR => 'Fehler: Thema existiert nicht.'
   ;    # Returns error when a non-existant thread is accessed
-use constant S_BADDELPASS => 'Fehler: Falsches Passwort.'
+use constant S_BADDELPASS => 'Fehler: Falsches L&ouml;schpasswort.'
   ;    # Returns error for wrong password (when user tries to delete file)
-use constant S_WRONGPASS => 'Fehler: Falsches Passwort'
+use constant S_WRONGPASS => 'Fehler: Falsches Passwort / Bitte erneut anmelden.'
   ;    # Returns error for wrong password (when trying to access Manager modes)
 use constant S_VIRUS =>
   'Fehler: Die Datei k&ouml;nnte von einem Virus befallen sein.'

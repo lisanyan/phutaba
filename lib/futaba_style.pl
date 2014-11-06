@@ -69,24 +69,46 @@ use constant NORMAL_HEAD_INCLUDE => q{
 <div id="modpanel" style="display: none">
 <table>
 <tr>
-<td><b>IP</b></td><td><input id="ip" type="text" name="ip" /></td>
+	<td><b><const S_BANIPLABEL></b></td><td><input id="ip" type="text" name="ip" size="30" /></td>
 </tr>
+<tr><td><b><const S_BANMASKLABEL></b></td><td>
+<select id="netmask" name="netmask">
+  <option value="255.0.0.0">IPv4 Class A (255.0.0.0)</option>
+  <option value="255.255.0.0" selected="selected">IPv4 Class B (255.255.0.0)</option>
+  <option value="255.255.255.0">IPv4 Class C (255.255.255.0)</option>
+  <option value="255.255.255.255">IPv4 Host (255.255.255.255)</option>
+
+  <!--option value="8">/8 (IPv4 Class A)</option>
+  <option value="16" selected="selected">/16 (IPv4 Class B)</option>
+  <option value="24">/24 (IPv4 Class C)</option>
+  <option value="32">/32 (IPv4 Host)</option>
+  <option value="48">/48 (IPv6)</option>
+  <option value="56">/56 (IPv6)</option>
+  <option value="64">/64 (IPv6)</option>
+  <option value="128">/128 (IPv6 Host)</option-->
+</select>
+</td></tr>
+<tr><td><b><const S_BANDURATION></b></td><td>
+<select id="duration" name="duration">
+	<option value="86400">1 Tag</option>
+	<option value="259200">3 Tage</option>
+	<option value="432000">5 Tage</option>
+	<option value="604800">1 Woche</option>
+	<option value="2419200">4 Wochen</option>
+	<option value="">Permanent</option>
+</select>
+</td></tr>
 <tr>
-<td><b>Netmask</b></td><td><input id="netmask" type="text" name="netmask" /></td>
-</tr>
-<tr>
-<td><b>PostID</b></td><td><input id="postid" type="text" name="postid" /></td>
-</tr>
-<tr>
-<td><b>Reason</b></td><td><input id="reason" type="text" name="reason" /></td>
+	<td><b><const S_BANREASONLABEL></b></td><td><input id="reason" type="text" name="reason" size="30" /></td>
 </tr>
 </table>
 <div id="infobox" style="display: none">
-<br />
-<b>IP</b>: <span id="r_ip"></span><br />
-<b>Netmask</b>: <span id="r_mask"></span><br />
-<b>Comment</b>: <span id="r_reason"></span><br />
-<b>Post</b>: <span id="r_post"></span><br />
+	<br />
+	<b><const S_BANIPLABEL></b>: <span id="r_ip"></span><br />
+	<b><const S_BANMASKLABEL></b>: <span id="r_mask"></span><br />
+	<b>Ende</b>: <span id="r_expires"></span><br />
+	<b><const S_BANREASONLABEL></b>: <span id="r_reason"></span><br />
+	<b>Post-Nr.</b>: <span id="r_post"></span><br />
 </div>
 <p id="info" style="display: none"><span style="font-weight: bolder; color: #002233;">Info: <span style="font-weight: bolder" id="infodetails"></span></span></p>
 <p id="error" style="display: none"><span style="font-weight: bolder; color: #FF0000;">Error: <span style="font-weight: bolder" id="errordetails"></span></span></p>
@@ -129,9 +151,10 @@ use constant MANAGER_HEAD_INCLUDE => NORMAL_HEAD_INCLUDE . q{
 
 <if $admin>
 	[<a href="<var expand_filename(HTML_SELF)>"><const S_MANARET></a>]
-	[<a href="<var $self>?task=mpanel&amp;admin=<var $admin>"><const S_MANAPANEL></a>]
-	[<a href="<var $self>?task=bans&amp;admin=<var $admin>"><const S_MANABANS></a>]
-	[<a href="<var $self>?task=mpost&amp;admin=<var $admin>"><const S_MANAPOST></a>]
+	[<a href="<var $self>?task=show"><const S_MANAPANEL></a>]
+	[<a href="<var $self>?task=mpanel"><const S_MANATOOLS></a>]
+	[<a href="<var $self>?task=bans"><const S_MANABANS></a>]
+	[<a href="<var $self>?task=mpost"><const S_MANAPOST></a>]
 	[<a href="<var $self>?task=logout"><const S_MANALOGOUT></a>]
 	<div class="passvalid"><const S_MANAMODE></div>
 </if>
@@ -165,9 +188,6 @@ use constant PAGE_TEMPLATE => compile_template(
 	<form id="postform" action="<var $self>" method="post" enctype="multipart/form-data">
 
 	<input type="hidden" name="task" value="post" />
-	<if $isAdmin>
-		<input type="hidden" name="admin" value="<var $admin>" />
-	</if>
 	<if $thread><input type="hidden" name="parent" value="<var $thread>" /></if>
 	<if !$image_inp and !$thread and ALLOW_TEXTONLY>
 		<input type="hidden" name="nofile" value="1" />
@@ -459,12 +479,21 @@ use constant ERROR_TEMPLATE => compile_template(
 <p><var $error></p>
 </if>
 <if $banned>
-<p>Deine IP <strong><var $ip></strong> wurde wegen <strong><var $reason></strong> auf unbestimmte Zeit gesperrt.
- Bitte kontaktiere uns im IRC wenn du wieder posten willst!</p>
+<loop $bans>
+ <br />
+ <p>Deine IP <strong><var $ip></strong>
+ <if $showmask>(<var $network>/<var $setbits>)</if> wurde 
+ <if $reason>mit der Begr&uuml;ndung <strong><var $reason></strong></if> gesperrt.
+ <br />Diese Sperrung 
+ <if $expires>l&auml;uft am <strong><var encode_entities(get_date($expires))></strong> ab.</if>
+ <if !$expires>gilt f&uuml;r unbestimmte Zeit.</if>
+ <br />
+</loop>
+ <br />Bitte kontaktiere uns im IRC, wenn du wieder posten willst!</p>
 </if>
 <if $dnsbl>
 <p>Deine IP <strong><var $ip></strong> wurde in der Blacklist <strong><var $dnsbl></strong> gelistet.
- Aufgrund dieser Tatsache ist es dir nicht gestattet zu posten. Bitte kontaktiere uns im IRC wenn du wieder posten willst!</p>
+ Aufgrund dieser Tatsache ist es dir nicht gestattet zu posten. Bitte kontaktiere uns im IRC, wenn du wieder posten willst!</p>
 </if>
 
 } . ERROR_FOOT_INCLUDE
@@ -486,7 +515,8 @@ use constant ADMIN_LOGIN_TEMPLATE => compile_template(
 <label><input type="checkbox" name="savelogin" /> <const S_MANASAVE></label>
 <br />
 <select name="nexttask">
-<option value="mpanel"><const S_MANAPANEL></option>
+<option value="show"><const S_MANAPANEL></option>
+<option value="mpanel"><const S_MANATOOLS></option>
 <option value="bans"><const S_MANABANS></option>
 <option value="mpost"><const S_MANAPOST></option>
 </select>
@@ -499,129 +529,25 @@ use constant ADMIN_LOGIN_TEMPLATE => compile_template(
 use constant POST_PANEL_TEMPLATE => compile_template(
     MANAGER_HEAD_INCLUDE . q{
 
-<div class="dellist"><const S_MANAPANEL></div>
+<div class="dellist"><const S_MANATOOLS></div>
 
-<form action="<var $self>" method="post">
-<input type="hidden" name="task" value="delete" />
-<input type="hidden" name="admin" value="<var $admin>" />
+<div class="postarea">
 
-<div class="delbuttons">
-<input type="submit" value="<const S_MPDELETE>" />
-<input type="submit" name="archive" value="<const S_MPARCHIVE>" />
-<input type="reset" value="<const S_MPRESET>" />
-[<label><input type="checkbox" name="fileonly" value="on" /><const S_MPONLYPIC></label>]
-</div>
-
-<table align="center" style="white-space: nowrap"><tbody>
-<tr class="managehead"><const S_MPTABLE></tr>
-
-<loop $posts>
-	<if !$parent><tr class="managehead"><th colspan="6"></th> </tr></if>
-
-	<tr class="row<var $rowtype>">
-
-	<if !$image><td></if>
-	<if $image><td rowspan="<var $imagecount+1>"></if>
-	<if $parent>
-		<label><input type="checkbox" name="delete" value="<var $num>" /><big><b><var $num></b></big>&nbsp;&nbsp;</label></td>
-	</if>
-	<if !$parent>
-		<label><input type="checkbox" name="delete" value="<var $num>" /><big><b><var $num></b></big>&nbsp;&nbsp;</label>
-		<if $sticky_isnull>
-			[<a href="<var $self>?admin=<var $admin>&amp;task=sticky&amp;threadid=<var $num>"><const S_MPSTICKY></a>]
-		</if>
-		<if !$sticky_isnull>
-			[<a href="<var $self>?admin=<var $admin>&amp;task=sticky&amp;threadid=<var $num>"><const S_MPUNSTICKY></a>]
-		</if>
-		<if $locked>
-			[<a href="<var $self>?admin=<var $admin>&amp;task=lock&amp;threadid=<var $num>"><const S_MPUNLOCK></a>]
-		</if>
-		<if !$locked>
-			[<a href="<var $self>?admin=<var $admin>&amp;task=lock&amp;threadid=<var $num>"><const S_MPLOCK></a>]
-		</if>
-		<if $autosage>
-			[<a href="<var $self>?admin=<var $admin>&amp;task=kontra&amp;threadid=<var $num>"><const S_MPUNSETSAGE></a>]
-		</if>
-		<if !$autosage>
-			[<a href="<var $self>?admin=<var $admin>&amp;task=kontra&amp;threadid=<var $num>"><const S_MPSETSAGE></a>]
-		</if>
-
-		</td>
-	</if>
-
-	<td><var make_date($timestamp,"tiny")></td>
-	<td><var clean_string(substr $subject,0,20)></td>
-	<td><b><var clean_string(substr $name,0,30)><var $trip></b></td>
-	<td><var clean_string(substr $comment,0,30)></td>
-	<td><var dec_to_dot($ip)>
-		[<a href="<var $self>?admin=<var $admin>&amp;task=deleteall&amp;ip=<var $ip>"><const S_MPDELETEALL></a>]
-		[<a onclick="do_ban('<var dec_to_dot($ip)>', <var $num>, '<const BOARD_IDENT>', '<var $admin>')"><const S_MPBAN></a>]
-	</td>
-
-	</tr>
-	<if $image>
-		<tr class="row<var $rowtype>">
-		<td colspan="5"><small>
-		<const S_PICNAME><a href="<var expand_filename(clean_path($image))>"><var clean_string($image)></a>
-		(<var $size> B, <var $width>x<var $height>)&nbsp; MD5: <var $md5>
-		</small></td></tr>
-	</if>
-	<if $image1>
-		<tr class="row<var $rowtype>">
-		<td colspan="5"><small>
-		<const S_PICNAME><a href="<var expand_filename(clean_path($image1))>"><var clean_string($image1)></a>
-		(<var $size1> B, <var $width1>x<var $height1>)&nbsp; MD5: <var $md51>
-		</small></td></tr>
-	</if>
-	<if $image2>
-		<tr class="row<var $rowtype>">
-		<td colspan="5"><small>
-		<const S_PICNAME><a href="<var expand_filename(clean_path($image2))>"><var clean_string($image2)></a>
-		(<var $size2> B, <var $width2>x<var $height2>)&nbsp; MD5: <var $md52>
-		</small></td></tr>
-	</if>
-	<if $image3>
-		<tr class="row<var $rowtype>">
-		<td colspan="5"><small>
-		<const S_PICNAME><a href="<var expand_filename(clean_path($image3))>"><var clean_string($image3)></a>
-		(<var $size3> B, <var $width3>x<var $height3>)&nbsp; MD5: <var $md53>
-		</small></td></tr>
-	</if>
+<const S_MANAGEOINFO>
+<table><tbody>
+<tr><td class="postblock">GeoIP-API</td><td><var $geoip_api></td></tr>
+<loop $geoip_results>
+	<tr><td class="postblock"><var $file></td><td><var $result></td></tr>
 </loop>
-
 </tbody></table>
 
-	<table class="paginator" border="1"><tbody><tr><td>Seiten:</td><if $prevpage><td>
-
-	[<a href="<var $prevpage>"><const S_PREV></a>]
-	</td></if><td>
-
-	<loop $pages>
-		<if !$current><a href="<var $filename>"><var $page+1></a></if>
-		<if $current>[<b><var $page+1></b>]</if>
-	</loop>
-
-	</td><if $nextpage><td>
-
-	[<a href="<var $nextpage>"><const S_NEXT></a>]
-
-	</td></if></tr></tbody></table>
-
-
-<div class="delbuttons">
-<input type="submit" value="<const S_MPDELETE>" />
-<input type="submit" name="archive" value="<const S_MPARCHIVE>" />
-<input type="reset" value="<const S_MPRESET>" />
-[<label><input type="checkbox" name="fileonly" value="on" /><const S_MPONLYPIC></label>]
 </div>
-
-</form>
 
 <br /><div class="postarea">
 
+<const S_MANADELETE>
 <form action="<var $self>" method="post">
 <input type="hidden" name="task" value="deleteall" />
-<input type="hidden" name="admin" value="<var $admin>" />
 <table><tbody>
 <tr><td class="postblock"><const S_BANIPLABEL></td><td><input type="text" name="ip" size="24" /></td></tr>
 <tr><td class="postblock"><const S_BANMASKLABEL></td><td><input type="text" name="mask" size="24" />
@@ -630,7 +556,7 @@ use constant POST_PANEL_TEMPLATE => compile_template(
 
 </div><br />
 
-<var sprintf S_IMGSPACEUSAGE,int($size/1024)>
+<var sprintf S_IMGSPACEUSAGE, get_displaysize($size, DECIMAL_MARK), $files, $posts, $threads>
 
 } . NORMAL_FOOT_INCLUDE
 );
@@ -643,7 +569,6 @@ use constant DELETE_PANEL_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 <form action="<var $self>" method="post">
 <input type="hidden" name="task" value="deleteall" />
 <input type="hidden" name="board" value="<const BOARD_NAME>" />
-<input type="hidden" name="admin" value="<var $admin>" />
 <input type="hidden" name="ip" value="<var $ip>" />
 <input type="hidden" name="mask" value="<var dec_to_dot($mask)>" />
 <input type="hidden" name="go" value="1" />
@@ -668,11 +593,18 @@ use constant BAN_PANEL_TEMPLATE => compile_template(
 <form action="<var $self>" method="post">
 <input type="hidden" name="task" value="addip" />
 <input type="hidden" name="type" value="ipban" />
-<input type="hidden" name="admin" value="<var $admin>" />
 <table><tbody>
 <tr><td class="postblock"><const S_BANIPLABEL></td><td><input type="text" name="ip" size="24" /></td></tr>
 <tr><td class="postblock"><const S_BANMASKLABEL></td><td><input type="text" name="mask" size="24" /></td></tr>
-<tr><td class="postblock"><const S_BANCOMMENTLABEL></td><td><input type="text" name="comment" size="16" />
+<tr><td class="postblock"><const S_BANDURATION></td><td><select name="string">
+<option value="86400">1 Tag</option>
+<option value="259200">3 Tage</option>
+<option value="432000">5 Tage</option>
+<option value="604800">1 Woche</option>
+<option value="2419200">4 Wochen</option>
+<option value="">Permanent</option>
+</select></td></tr>
+<tr><td class="postblock"><const S_BANREASONLABEL></td><td><input type="text" name="comment" size="16" />
 <input type="submit" value="<const S_BANIP>" /></td></tr>
 </tbody></table></form>
 
@@ -681,7 +613,6 @@ use constant BAN_PANEL_TEMPLATE => compile_template(
 <form action="<var $self>" method="post">
 <input type="hidden" name="task" value="addip" />
 <input type="hidden" name="type" value="whitelist" />
-<input type="hidden" name="admin" value="<var $admin>" />
 <table><tbody>
 <tr><td class="postblock"><const S_BANIPLABEL></td><td><input type="text" name="ip" size="24" /></td></tr>
 <tr><td class="postblock"><const S_BANMASKLABEL></td><td><input type="text" name="mask" size="24" /></td></tr>
@@ -694,7 +625,6 @@ use constant BAN_PANEL_TEMPLATE => compile_template(
 <form action="<var $self>" method="post">
 <input type="hidden" name="task" value="addstring" />
 <input type="hidden" name="type" value="wordban" />
-<input type="hidden" name="admin" value="<var $admin>" />
 <table><tbody>
 <tr><td class="postblock"><const S_BANWORDLABEL></td><td><input type="text" name="string" size="24" /></td></tr>
 <tr><td class="postblock"><const S_BANCOMMENTLABEL></td><td><input type="text" name="comment" size="16" />
@@ -706,12 +636,24 @@ use constant BAN_PANEL_TEMPLATE => compile_template(
 <form action="<var $self>" method="post">
 <input type="hidden" name="task" value="addstring" />
 <input type="hidden" name="type" value="trust" />
-<input type="hidden" name="admin" value="<var $admin>" />
 <table><tbody>
 <tr><td class="postblock"><const S_BANTRUSTTRIP></td><td><input type="text" name="string" size="24" /></td></tr>
 <tr><td class="postblock"><const S_BANCOMMENTLABEL></td><td><input type="text" name="comment" size="16" />
 <input type="submit" value="<const S_BANTRUST>" /></td></tr>
 </tbody></table></form>
+
+</td><td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td></tr><tr><td valign="bottom" colspan="3">
+
+<form action="<var $self>" method="post">
+<input type="hidden" name="task" value="addstring" />
+<input type="hidden" name="type" value="asban" />
+<table><tbody>
+<tr><td class="postblock"><const S_BANASNUMLABEL></td><td><input type="text" name="string" size="24" /></td></tr>
+<tr><td class="postblock"><const S_BANCOMMENTLABEL></td><td><input type="text" name="comment" size="16" />
+<input type="submit" value="<const S_BANASNUM>" /></td></tr>
+</tbody></table></form>
+
+</td><td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 
 </td></tr></tbody></table>
 </div><br />
@@ -720,25 +662,29 @@ use constant BAN_PANEL_TEMPLATE => compile_template(
 <tr class="managehead"><const S_BANTABLE></tr>
 
 <loop $bans>
-	<if $divider><tr class="managehead"><th colspan="9"></th></tr></if>
+	<if $divider><tr class="managehead"><th colspan="7"></th></tr></if>
 
 	<tr class="row<var $rowtype>">
 
 	<if $type eq 'ipban'>
 		<td>IP</td>
-		<td><var dec_to_dot($ival1)>/<var dec_to_dot($ival2)></td>
+		<td><var dec_to_dot($ival1)></td><td><var dec_to_dot($ival2)></td>
 	</if>
 	<if $type eq 'wordban'>
 		<td>Word</td>
-		<td><var $sval1></td>
+		<td colspan="2"><var $sval1></td>
 	</if>
 	<if $type eq 'trust'>
 		<td>NoCap</td>
-		<td><var $sval1></td>
+		<td colspan="2"><var $sval1></td>
 	</if>
 	<if $type eq 'whitelist'>
 		<td>Whitelist</td>
-		<td><var dec_to_dot($ival1)>/<var dec_to_dot($ival2)></td>
+		<td><var dec_to_dot($ival1)></td><td><var dec_to_dot($ival2)></td>
+	</if>
+	<if $type eq 'asban'>
+		<td>ASNum</td>
+		<td colspan="2"><var $sval1></td>
 	</if>
 
 	<td><var $comment></td>
@@ -751,20 +697,13 @@ use constant BAN_PANEL_TEMPLATE => compile_template(
 		</if>
 	</td>	
 	<td>
-		<if get_ip_info(1, $ival1)>
-			<var get_ip_info(1, $ival1)>
-		</if>
-		<if get_ip_info(1, $ival1) eq undef>
-			<i>none</i>
-		</if>
+	<if $type eq 'ipban'>
+		<if $sval1><var make_date($sval1, '2ch')></if>
+		<if !$sval1>never</if>
+	</if>
+	<if $type ne 'ipban'>-</if>
 	</td>
-	<td>
-  <em>wird erneuert</em>
-	</td>
-	<td>
-  <em>wird erneuert</em>
-	</td>
-	<td><a href="<var $self>?admin=<var $admin>&amp;task=removeban&amp;num=<var $num>"><const S_BANREMOVE></a></td>
+	<td><a href="<var $self>?task=removeban&amp;num=<var $num>"><const S_BANREMOVE></a></td>
 	</tr>
 </loop>
 
@@ -772,18 +711,6 @@ use constant BAN_PANEL_TEMPLATE => compile_template(
 
 } . NORMAL_FOOT_INCLUDE
 );
-    # <if get_as_description(get_ip_info(1, $ival1))>
-    #   <var get_as_description(get_ip_info(1, $ival1))>
-    # </if>
-    # <if get_as_description(get_ip_info(1, $ival1)) eq undef>
-    #   <i>none</i>
-    # </if>
-    # <if get_ip_info(2, $ival1)>
-    #   <img title="<var get_ip_info(2, $ival1)>" onmouseover="Tip('<var code2country(get_ip_info(2, $ival1))>')" onmouseout="UnTip()" src="/img/flags/<var get_ip_info(2, $ival1)>.PNG" />
-    # </if>
-    # <if get_ip_info(2, $ival1) eq undef>
-    #   <i>none</i>
-    # </if>
 
 
 use constant ADMIN_POST_TEMPLATE => compile_template(
@@ -794,9 +721,9 @@ use constant ADMIN_POST_TEMPLATE => compile_template(
 <div class="postarea">
 <form id="postform" action="<var $self>" method="post" enctype="multipart/form-data">
 <input type="hidden" name="task" value="post" />
-<input type="hidden" name="admin" value="<var $admin>" />
 <input type="hidden" name="no_captcha" value="1" />
 <input type="hidden" name="no_format" value="1" />
+<input type="hidden" name="as_admin" value="1" />
 
 <table><tbody>
 <tr><td class="postblock"><const S_SUBJECT></td><td><input type="text" name="field3" size="35" />

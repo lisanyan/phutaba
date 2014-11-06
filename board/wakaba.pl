@@ -8,14 +8,14 @@ use strict;
 use CGI;
 use DBI;
 use Net::DNS;
-use Net::IP qw(:PROC);
+#use Net::IP qw(:PROC);
 use HTML::Entities;
 use HTML::Strip;
 #use Math::BigInt;
 use JSON::XS;
 use JSON;
 use Digest::MD5 qw(md5 md5_hex md5_base64);
-use Image::ExifTool qw(:Public);
+#use Image::ExifTool qw(:Public);
 use File::stat;
 #use File::MimeInfo::Magic;
 use IO::Socket;
@@ -133,6 +133,9 @@ update_files_meta();
 # schema migration.
 update_db_schema();
 
+# schema migration 2 - change location column
+update_db_schema2();
+
 # check for admin table
 init_admin_database() if ( !table_exists(SQL_ADMIN_TABLE) );
 
@@ -159,8 +162,9 @@ elsif ( $json eq "stats" ) {
 }
 elsif ($json eq "ban") {
 	my $id = $query->param("id");
+	my $admin = $query->cookie("wakaadmin");
 	if ($id ne undef) {
-		output_json_ban($id);
+		output_json_ban($id, $admin);
 	}
 }
 elsif ($json eq "meta") {
@@ -183,44 +187,32 @@ elsif ( !$task and !$json ) {
     show_page(1);
 }
 elsif ( $task eq "show" ) {
-
-    my $admin    = $query->param("admin");
-
-    # show the requested page
-    my $page = $query->param("page");
-    if ( $page ne undef ) {
-        if ( $page =~ /^[+-]?\d+$/ ) {
-            show_page($page, $admin);
-        }
-        else {
-            make_error(S_STOP_FOOLING);
-        }
-    }
-
-    my $post = $query->param("post");
-    if ( $post ne undef ) {
-        if ( $post =~ /^[+-]?\d+$/ ) {
-            show_post($post, $admin);
-        }
-        else {
-            make_error(S_STOP_FOOLING);
-        }
-    }
-
-    # show the requested thread
+    my $page   = $query->param("page");
     my $thread = $query->param("thread");
-    if ( $thread ne undef ) {
-        if ( $thread =~ /^[+-]?\d+$/ ) {
+    my $post   = $query->param("post");
+    my $admin  = $query->cookie("wakaadmin");
+
+    # outputs a single post only
+    if (defined($post) and $post =~ /^[+-]?\d+$/)
+    {
+        show_post($post, $admin);
+    }
+    # show the requested thread
+    elsif (defined($thread) and $thread =~ /^[+-]?\d+$/)
+    {
 	    if($thread ne 0) {
 	        show_thread($thread, $admin);
 	    } else {
-		make_error(S_STOP_FOOLING);
+		    make_error(S_STOP_FOOLING);
 	    }
-        }
-        else {
-            make_error(S_STOP_FOOLING);
-        }
     }
+    # show the requested page (if any)
+	else
+	{
+		# fallback to page 1 if parameter was empty or incorrect
+		$page = 1 unless (defined($page) and $page =~ /^[+-]?\d+$/);
+        show_page($page, $admin);
+	}
 }
 elsif ($task eq "search") {
 	my $find			= $query->param("find");
@@ -241,7 +233,7 @@ elsif ( $task eq "post" ) {
     my $password   = $query->param("password");
     my $nofile     = $query->param("nofile");
     my $captcha    = $query->param("captcha");
-    my $admin      = $query->param("admin");
+    my $admin      = $query->cookie("wakaadmin");
     my $no_captcha = $query->param("no_captcha");
     my $no_format  = $query->param("no_format");
     my $postfix    = $query->param("postfix");
@@ -259,25 +251,25 @@ elsif ( $task eq "post" ) {
 elsif ( $task eq "delete" ) {
     my $password = $query->param("password");
     my $fileonly = $query->param("fileonly");
-    my $admin    = $query->param("admin");
+    my $admin    = $query->cookie("wakaadmin");
 	my $parent   = $query->param("parent");
     my @posts    = $query->param("delete");
 
     delete_stuff( $password, $fileonly, $admin, $parent, @posts );
 }
 elsif ( $task eq "sticky" ) {
-    my $admin    = $query->param("admin");
+    my $admin    = $query->cookie("wakaadmin");
     my $threadid = $query->param("threadid");
     make_sticky( $admin, $threadid );
 }
 elsif ( $task eq "kontra" ) {
-    my $admin    = $query->param("admin");
+    my $admin    = $query->cookie("wakaadmin");
     my $threadid = $query->param("threadid");
     make_kontra( $admin, $threadid );
 
 }
 elsif ( $task eq "lock" ) {
-    my $admin    = $query->param("admin");
+    my $admin    = $query->cookie("wakaadmin");
     my $threadid = $query->param("threadid");
     make_locked( $admin, $threadid );
 }
@@ -293,35 +285,33 @@ elsif ( $task eq "logout" ) {
     do_logout();
 }
 elsif ( $task eq "mpanel" ) {
-    my $admin = $query->param("admin");
-    my $page  = $query->param("page");
-    if ( !defined($page) ) { $page = 1; }
-	#make_admin_post_panel( $admin, $page );
-	show_page($page, $admin);
+    my $admin = $query->cookie("wakaadmin");
+	make_admin_post_panel($admin);
 }
 elsif ( $task eq "deleteall" ) {
-    my $admin = $query->param("admin");
+    my $admin = $query->cookie("wakaadmin");
     my $ip    = $query->param("ip");
     my $mask  = $query->param("mask");
 	my $go    = $query->param("go");
     delete_all($admin, parse_range($ip, $mask), $go);
 }
 elsif ( $task eq "bans" ) {
-    my $admin = $query->param("admin");
+    my $admin = $query->cookie("wakaadmin");
     make_admin_ban_panel($admin);
 }
 elsif ( $task eq "addip" ) {
-    my $admin   = $query->param("admin");
+    my $admin   = $query->cookie("wakaadmin");
     my $type    = $query->param("type");
+    my $string  = $query->param("string");
     my $comment = $query->param("comment");
     my $ip      = $query->param("ip");
     my $mask    = $query->param("mask");
     my $postid  = $query->param("postid");
     add_admin_entry( $admin, $type, $comment, parse_range( $ip, $mask ),
-        '', $postid );
+        $string, $postid );
 }
 elsif ( $task eq "addstring" ) {
-    my $admin   = $query->param("admin");
+    my $admin   = $query->cookie("wakaadmin");
     my $type    = $query->param("type");
     my $string  = $query->param("string");
     my $comment = $query->param("comment");
@@ -329,16 +319,16 @@ elsif ( $task eq "addstring" ) {
 }
 elsif ( $task eq "checkban" ) {
     my $ival1	= $query->param("ip");
-    my $admin   = $query->param("admin");
+    my $admin   = $query->cookie("wakaadmin");
     check_admin_entry($admin, $ival1);
 }
 elsif ( $task eq "removeban" ) {
-    my $admin = $query->param("admin");
+    my $admin = $query->cookie("wakaadmin");
     my $num   = $query->param("num");
     remove_admin_entry( $admin, $num );
 }
 elsif ( $task eq "mpost" ) {
-    my $admin = $query->param("admin");
+    my $admin = $query->cookie("wakaadmin");
     make_admin_post($admin);
 }
 elsif ( $task eq "paint" ) {
@@ -374,8 +364,10 @@ elsif ( $task eq "paint" ) {
     }  
 }
 else {
-	make_http_header();
-	print "Unknown task parameter.\n";
+	unless ($json) {
+		make_http_header();
+		print "Unknown task parameter.\n";
+	}
 }
 
 
@@ -509,8 +501,11 @@ sub output_json_meta {
 		
 
 sub output_json_ban {
-	my ($id) = @_;
+	my ($id, $admin) = @_;
 	my ($row, $error, $code, %status, %data, %json);
+	use Net::Abuse::Utils qw( :all );
+
+	check_password($admin, ADMIN_PASS);
 
 	$sth = $dbh->prepare("SELECT `comment`, `ival1` as `ip`, `ival2` as `mask`, `date` FROM " . SQL_ADMIN_TABLE . " WHERE num=?;");
 	$sth->execute($id);
@@ -558,8 +553,9 @@ sub output_json_post {
 		$code = 200;
 		$$row{'comment'} = resolve_reflinks($$row{'comment'});
 		$$row{'comment'} = encode_entities(decode('utf8', $$row{'comment'}));
-		$$row{'ip'} = "[REDACTED]";
-		$$row{'password'} = "[REDACTED]";
+		delete $$row{'ip'};
+		delete $$row{'password'};
+		delete $$row{'location'};
 		add_images_to_row($row);
 		$data{'post'} = $row;
 	} elsif($sth->rows eq 0) {
@@ -624,8 +620,8 @@ sub show_post {
     my $isAdmin = 0;
     if(defined($admin))
     {
-	check_password($admin, ADMIN_PASS);
-    	$isAdmin = 1;
+		#check_password($admin, ADMIN_PASS);
+		if ($admin eq crypt_password(ADMIN_PASS)) { $isAdmin = 1; } else { $admin = ""; }
     }
 
     $sth = $dbh->prepare(
@@ -671,8 +667,8 @@ sub show_page {
 	my $isAdmin = 0;
 	if(defined($admin))
 	{
-		check_password($admin, ADMIN_PASS);
-		$isAdmin = 1;
+		#check_password($admin, ADMIN_PASS);
+		if ($admin eq crypt_password(ADMIN_PASS)) { $isAdmin = 1; } else { $admin = ""; }
 	}
 
     # grab all posts, in thread order (ugh, ugly kludge)
@@ -693,9 +689,6 @@ sub show_page {
         my $threadcount = 0;
         my @threads;
 
-		if($isAdmin) {
-			fixup_admin_reference_links($row, $admin);
-		}
         my @thread = ($row);
 
         my $totalThreadCount = count_threads();
@@ -713,9 +706,6 @@ sub show_page {
         while ( $row = get_decoded_hashref($sth)
             and $threadcount <= ( IMAGES_PER_PAGE * ( $pageToShow ) ) )
         {
-			if($isAdmin) {
-				fixup_admin_reference_links($row, $admin);
-			}
             if ( !$$row{parent} ) {
                 push @threads, { posts => [@thread] };
                 @thread = ($row);    # start new thread
@@ -819,27 +809,12 @@ sub output_page {
     # make the list of pages
     my @pages = map +{ page => $_ }, ( 1 .. $total );
     foreach my $p (@pages) {
-        #if ( $$p{page} == 0 ) {
-		#	if($isAdmin)
-	    #    {
-		#		$$p{filename} = expand_filename("wakaba.pl?task=show&amp;page=0&amp;admin=$adminPass");
-		#	}
-		#	else
-		#	{
-		#		$$p{filename} = expand_filename("wakaba.pl?task=show&amp;page=0");			
-		#	}
+        #if ( $$p{page} == 1 ) {
+		#		$$p{filename} = expand_filename("wakaba.pl");			
         #}    # first page
         #else {
-            if($isAdmin)
-			{
-				$$p{filename} =
-	              expand_filename( "wakaba.pl?task=show&amp;page=" . $$p{page} . "&amp;admin=$adminPass" );
-			}
-			else
-			{
-				#$$p{filename} = expand_filename( "wakaba.pl?task=show&amp;page=" . $$p{page} );
-				$$p{filename} = expand_filename( "page/" . $$p{page} );
-			}
+			#$$p{filename} = expand_filename( "wakaba.pl?task=show&amp;page=" . $$p{page} );
+			$$p{filename} = expand_filename( "page/" . $$p{page} );
         #}
         if ( $$p{page} == $page ) { $$p{current} = 1 }   # current page, no link
     }
@@ -873,18 +848,6 @@ sub output_page {
 	print($output);
 }
 
-# TODO: hack to support >>1 references in admin mode.
-# might want a much cleaner solution. as for example dynamically generated
-# reflinks.
-sub fixup_admin_reference_links
-{
-    my ($row, $admin) = @_;
-	$$row{comment} =~ s/\/faden\/([0-9]*)#([0-9]*)/\/wakaba.pl?task=show&amp;thread=$1&amp;admin=$admin#$2/ig;
-	$$row{comment} =~ s/\/faden\/([0-9]*)/\/wakaba.pl?task=show&amp;thread=$1&amp;admin=$admin/ig;
-	$$row{comment} =~ s/\/thread\/([0-9]*)#([0-9]*)/\/wakaba.pl?task=show&amp;thread=$1&amp;admin=$admin#$2/ig;
-	$$row{comment} =~ s/\/thread\/([0-9]*)/\/wakaba.pl?task=show&amp;thread=$1&amp;admin=$admin/ig;
-}
-
 sub get_omit_message($$) {
 	my ($posts, $files) = @_;
 	return "" if !$posts;
@@ -902,7 +865,7 @@ sub get_omit_message($$) {
 sub show_thread {
     my ($thread, $admin) = @_;
     my ( $sth, $row, @thread );
-    my ( $filename, $tmpname );
+#    my ( $filename, $tmpname );
 	
 	# if we try to call show_thread with admin parameter
 	# the admin password will be checked and this
@@ -910,8 +873,8 @@ sub show_thread {
 	my $isAdmin = 0;
 	if(defined($admin))
 	{
-		check_password($admin, ADMIN_PASS);
-		$isAdmin = 1;
+		#check_password($admin, ADMIN_PASS);
+		if ($admin eq crypt_password(ADMIN_PASS)) { $isAdmin = 1; } else { $admin = ""; }
 	}
 
     $sth = $dbh->prepare(
@@ -923,9 +886,6 @@ sub show_thread {
 
     while ( $row = get_decoded_hashref($sth) ) {
 		$$row{comment} = resolve_reflinks($$row{comment});
-		if($isAdmin) {
-   			fixup_admin_reference_links($row, $admin);
-		}
         push( @thread, $row );
     }
     make_error(S_NOTHREADERR) if ( !$thread[0] or $thread[0]{parent} );
@@ -1093,7 +1053,7 @@ sub dnsbl_check {
         }
 
         if ( $result eq $dnsbl_answer ) {
-            make_ban( $ip, 0, $dnsbl_error, 0, 1 );
+            make_ban( $ip, $dnsbl_error, 1 );
         }
     }
 }
@@ -1139,9 +1099,6 @@ sub find_posts($$$$) {
 
 				add_images_to_row($row);
 				$$row{comment} = resolve_reflinks($$row{comment});
-				#if($isAdmin) {
-				#	fixup_admin_reference_links($row, $admin);
-				#}
 				if (!$$row{parent}) { # OP post
 					$$row{sticky_isnull} = 1; # hack, until this field is removed.
 					push @results, $row;
@@ -1212,7 +1169,10 @@ sub post_stuff {
     make_error(S_UNJUST)
       if ( $ENV{REQUEST_METHOD} and $ENV{REQUEST_METHOD} ne "POST" );
 
-    if ($admin)  # check admin password - allow both encrypted and non-encrypted
+	# clean up invalid admin cookie/session or posting would fail
+	$admin = "" unless ($admin eq crypt_password(ADMIN_PASS));
+
+    if ($admin)  # check admin password
     {
         check_password( $admin, ADMIN_PASS );
 		if(defined($postAsAdmin) && $postAsAdmin)
@@ -1275,8 +1235,7 @@ sub post_stuff {
     undef($ssl) unless $ssl;
 
     #$host = gethostbyaddr($ip);
-    my $iph   = new Net::IP($ip);
-    my $numip = $iph->intip();
+	my $numip = dot_to_dec($ip);
 
     # set up cookies
     my $c_name     = $name;
@@ -1292,13 +1251,22 @@ sub post_stuff {
     my $trip;
     ( $name, $trip ) = process_tripcode( $name, TRIPKEY, SECRET, CHARSET );
 
+	# get as number and owner
+	my ($as_num, $as_info) = get_as_info($ip);
+	$as_info = clean_string($as_info);
+
     # check for bans
-    ban_check( $numip, $c_name, $subject, $comment ) unless $whitelisted;
-    
+    ban_check($numip, $c_name, $subject, $comment, $as_num) unless $whitelisted;
+
+	# get geoip info
+	my ($city, $region_name, $country_name, $loc) = get_geolocation($ip);
+	$region_name = "" if ($region_name eq $city);
+	$region_name = clean_string($region_name);
+	$city = clean_string($city);
     # check captcha
-	my $loc = get_geolocation($ip);
     check_captcha( $dbh, $captcha, $ip, $parent, BOARD_IDENT )
       if ( (use_captcha(ENABLE_CAPTCHA, $loc) and !$admin) or (ENABLE_CAPTCHA and !$admin and !$no_captcha and !is_trusted($trip)) );
+	$loc = join("<br />", $loc, $country_name, $region_name, $city, $as_info);
 
     # check if thread exists, and get lasthit value
     my ( $parent_res, $lasthit );
@@ -1506,23 +1474,14 @@ sub post_stuff {
         gb2       => $c_gb2,
         password  => $c_password,
         -charset  => CHARSET,
-        -autopath => COOKIE_PATH
+        -autopath => COOKIE_PATH,
+		-expires  => time + 14 * 24 * 3600
     );    # yum!
 
-	if(!$admin)
-	{
-	    # forward back to the main page
-	    make_http_forward("/" . encode('utf-8', BOARD_IDENT) . "/") if ($parent eq '0');
-	    make_http_forward("thread/" . $parent) if ($c_gb2 =~ /thread/i);
-	    make_http_forward("/" . encode('utf-8', BOARD_IDENT) . "/");
-	}
-	else
-	{
-		# forward back to moderation page
-	    make_http_forward( encode('utf-8', HTML_SELF) . "?task=show&page=1&admin=$admin") if ( $parent eq '0' );
-	    make_http_forward( encode('utf-8', HTML_SELF) . "?task=show&thread=" . $parent . "&admin=$admin") if ( $c_gb2 =~ /thread/i );
-	    make_http_forward( encode('utf-8', HTML_SELF) . "?task=show&page=1&admin=$admin");
-	}
+	# go back to thread or board page
+    make_http_forward("/" . encode('utf-8', BOARD_IDENT) . "/") if ($parent eq '0');
+    make_http_forward("thread/" . $parent . "#" . $new_post_id) if ($c_gb2 =~ /thread/i);
+    make_http_forward("/" . encode('utf-8', BOARD_IDENT) . "/");
 }
 
 sub is_whitelisted {
@@ -1556,7 +1515,7 @@ sub make_kontra {
           or make_error(S_SQLFAIL);
         $sth2->execute( $kontra, $threadid ) or make_error(S_SQLFAIL);
     }
-    make_http_forward( get_script_name() . "?admin=$admin&task=mpanel");
+    make_http_forward( get_script_name() . "?task=show");
 
 }
 
@@ -1585,38 +1544,48 @@ sub check_locked {
 }
 
 sub ban_check {
-    my ( $numip, $name, $subject, $comment ) = @_;
-    my ($sth);
-
-    my $sth2;
-    my $row;
-    my ( $reason, $mask, $id );
-    my $iph = new Net::IP($numip);
-    my $ip  = $iph->ip() unless !$iph;
+    my ($numip, $name, $subject, $comment, $as_num) = @_;
+    my ($sth, $row);
     my $ip  = dec_to_dot($numip);
-    my $_ip;
+
+	# check for as num ban
+	if ($as_num) {
+		$sth =
+		  $dbh->prepare( "SELECT count(*) FROM "
+			  . SQL_ADMIN_TABLE
+			  . " WHERE type='asban' AND sval1 = ?;" )
+		  or make_error(S_SQLFAIL);
+		$sth->execute($as_num) or make_error(S_SQLFAIL);
+
+		make_ban(0, '', 0, { ip => $ip, showmask => 0, reason => 'AS-Netz-Sperre' }) if (($sth->fetchrow_array())[0]);
+	}
+
+	# check if the IP (ival1) belongs to a banned IP range (ival2) using MySQL 5 64 bit BIGINT bitwise logic
+	# also checks expired (sval2) and fetches the ban reason(s) (comment)
+	my @bans = ();
 
     $sth =
-      $dbh->prepare( "SELECT count(*) FROM "
-          . SQL_ADMIN_TABLE
-          . " WHERE type='ipban' AND ? & ival2 = ival1 & ival2;" )
+      $dbh->prepare( "SELECT comment,ival2,sval1 FROM "
+		  . SQL_ADMIN_TABLE
+		  . " WHERE type='ipban' AND ? & ival2 = ival1 & ival2"
+		  . " AND (CAST(sval1 AS UNSIGNED)>? OR sval1='')"
+		  . " ORDER BY num;" )
       or make_error(S_SQLFAIL);
-    $sth->execute($numip) or make_error(S_SQLFAIL);
+    $sth->execute($numip, time()) or make_error(S_SQLFAIL);
 
-    $sth2 =
-      $dbh->prepare( "SELECT num,comment,ival2 FROM "
-          . SQL_ADMIN_TABLE
-          . " WHERE type='ipban' AND ? & ival2 = ival1 & ival2;" );
-    $sth2->execute($numip) or make_error(S_SQLFAIL);
-    while ( $row = $sth2->fetchrow_arrayref() ) {
-        $id = $$row[0];
-        my $_mask = new Net::IP( dec_to_dot($$row[2]) );
-        $mask   = $_mask->ip();
-        $reason = $$row[1];
+    while ($row = get_decoded_hashref($sth)) {
+		my ($ban);
+		$$ban{ip}       = $ip;
+		$$ban{network}  = dec_to_dot($numip & $$row{ival2});
+		$$ban{setbits}  = unpack("%32b*", pack( 'N', $$row{ival2}));
+		$$ban{showmask} = $$ban{setbits} < 32 ? 1 : 0;
+		$$ban{reason}   = $$row{comment};
+		$$ban{expires}  = $$row{sval1};
+		push @bans, $ban;
     }
-    $_ip = new Net::IP( $ip . '/' . $mask );
-    make_ban( $ip, $_ip->prefix(), $reason, $_ip->size(), 0 )
-      if ( ( $sth->fetchrow_array() )[0] );
+
+	# this will send the ban message(s) to the client
+    make_ban(0, '', 0, @bans) if (@bans);
 
 # fucking mysql...
 #	$sth=$dbh->prepare("SELECT count(*) FROM ".SQL_ADMIN_TABLE." WHERE type='wordban' AND ? LIKE '%' || sval1 || '%';") or make_error(S_SQLFAIL);
@@ -1631,12 +1600,12 @@ sub ban_check {
       or make_error(S_SQLFAIL);
     $sth->execute() or make_error(S_SQLFAIL);
 
-    while ( $row = $sth->fetchrow_arrayref() ) {
+    while ( $row = $sth->fetchrow_arrayref() ) { # TODO: use get_decoded_hashref()
         my $regexp = quotemeta $$row[0];
 
         #		make_error(S_STRREF) if($comment=~/$regexp/);
         if ( $comment =~ /$regexp/ ) {
-            $comment = $$row[1];
+            $comment = $$row[1]; # this does not work as $comment is a local variable
 
             #make_error($$row[1]);
         }
@@ -2134,15 +2103,20 @@ sub delete_stuff {
     my $deletebyip = 0;
 	my $noko = 1; # try to stay in thread after deletion by default	
 
-    check_password( $admin, ADMIN_PASS ) if ($admin);
-    if ( !$password and !$admin ) { $deletebyip = 1; }
-    make_error(S_BADDELPASS)
-      unless ( ( !$password and $deletebyip )
-        or ( $password and !$deletebyip )
-        or $admin );    # allow deletion by ip with empty password
-                        # no password means delete always
+	# clean up invalid admin cookie/session or deletion would always fail
+	$admin = "" unless ($admin eq crypt_password(ADMIN_PASS));
 
+    check_password( $admin, ADMIN_PASS ) if ($admin);
+
+    if ( !$password and !$admin ) { $deletebyip = 1; }
+
+    # no password means delete always
     $password = "" if ($admin);
+
+    make_error(S_BADDELPASS)
+      unless ( ( !$password and $deletebyip ) # allow deletion by ip with empty password
+        or ( $password and !$deletebyip )
+        or $admin );
 
     foreach $post (@posts) {
         delete_post( $post, $password, $fileonly, $deletebyip, $admin );
@@ -2150,7 +2124,7 @@ sub delete_stuff {
     }
 
     if ($admin) {
-        make_http_forward( get_script_name() . "?admin=$admin&task=mpanel");
+        make_http_forward( get_script_name() . "?task=show");
     } elsif ( $noko == 1 and $parent ) {
 		make_http_forward("thread/" . $parent);
 	} else { make_http_forward("/" . encode('utf-8', BOARD_IDENT) . "/"); }
@@ -2174,7 +2148,7 @@ sub make_locked {
           or make_error(S_SQLFAIL);
         $sth2->execute( $locked, $threadid ) or make_error(S_SQLFAIL);
     }
-    make_http_forward( get_script_name() . "?admin=$admin&task=mpanel");
+    make_http_forward( get_script_name() . "?task=show");
 }
 
 sub make_sticky {
@@ -2196,14 +2170,14 @@ sub make_sticky {
         $sth2->execute( $sticky, $threadid, $threadid) or make_error(S_SQLFAIL);
     }
 
-    make_http_forward( get_script_name() . "?admin=$admin&task=mpanel");
+    make_http_forward( get_script_name() . "?task=show");
 }
 
 sub delete_post {
     my ( $post, $password, $fileonly, $deletebyip, $admin ) = @_;
     my ( $sth, $row, $res, $reply );
 
-	if(defined($admin))
+	if($admin)
 	{
 		check_password($admin, ADMIN_PASS);
 	}
@@ -2330,83 +2304,55 @@ sub make_admin_login {
     print encode_string( ADMIN_LOGIN_TEMPLATE->() );
 }
 
-# TODO: DEPRECATED - remove
 sub make_admin_post_panel {
-    my ( $admin, $pageToShow ) = @_;
-    my ( $sth, $row, @posts, $size, $rowtype );
+    my ($admin) = @_;
 
     check_password( $admin, ADMIN_PASS );
 
+	# geoip
+	my $api = 'n/a';
+	my $path = "/usr/local/share/GeoIP/";
+	my @geo_dbs = qw(GeoIP.dat GeoIPv6.dat GeoLiteCity.dat GeoLiteCityv6.dat GeoIPASNum.dat GeoIPASNumv6.dat);
+	my @results = ();
+
+	eval 'use Geo::IP';
+	unless ($@) {
+		eval '$api = Geo::IP->api';
+
+		$api .= ' (IPv6-Lookups erfordern CAPI)' unless ($api eq 'CAPI');
+
+		foreach (@geo_dbs) {
+			my ($gi, $geo_db);
+			$$geo_db{file} = $_;
+			$$geo_db{result} = 'n/a';
+			eval '$gi = Geo::IP->open($path . "$_")';
+			$$geo_db{result} = $gi->database_info unless ($@ or !$gi);
+			push(@results, $geo_db);
+		}
+	}
+
+	# statistics
+	my $sth;
+	my $threads = count_threads();
+	my ($posts, $size) = count_posts();
+
     $sth = $dbh->prepare(
-            "SELECT *, sticky IS NULL OR sticky=0 AS sticky_isnull FROM "
-          . SQL_TABLE
-          . " ORDER BY sticky_isnull ASC,lasthit DESC,CASE parent WHEN 0 THEN num ELSE parent END ASC,num ASC"
-    ) or make_error(S_SQLFAIL);
+		"SELECT count(*) FROM " . SQL_TABLE_IMG . " WHERE image IS NOT NULL AND size>0;"
+	) or make_error(S_SQLFAIL);
     $sth->execute() or make_error(S_SQLFAIL);
 
-    my $totalThreadCount = count_threads();
-    my $totalPages       = get_page_count_real($totalThreadCount);
-    if ( $pageToShow > ( $totalPages - 1 ) ) {
-        make_error(S_INVALID_PAGE);
-    }
-
-    $size    = 0;
-    $rowtype = 1;
-    my $displayPage = 0;
-    my $threadcount = 0;
-    while ( $row = get_decoded_hashref($sth)
-        and $threadcount < ( IMAGES_PER_PAGE * ( $pageToShow + 1 ) ) )
-    {
-        add_images_to_row($row);
-		if($admin) {
-			fixup_admin_reference_links($row, $admin);
-		}
-        if ( !$$row{parent} ) {
-            $rowtype = 1;
-            $threadcount++;
-            if ( $threadcount > IMAGES_PER_PAGE * $pageToShow ) {
-                $displayPage = 1;
-            }
-        }
-        else { $rowtype ^= 3; }
-
-        if ($displayPage) {
-            $$row{rowtype} = $rowtype;
-            $size += $$row{total_imagesize};
-            push @posts, $row;
-        }
-    }
-
-    # make the list of pages
-    my @pages = map +{ page => $_ }, ( 0 .. $totalPages - 1 );
-    foreach my $p (@pages) {
-        if ( $$p{page} == 0 ) {
-            $$p{filename} =
-              expand_filename("wakaba.pl?task=mpanel&amp;admin=$admin&amp;page=0");
-        }    # first page
-        else {
-            $$p{filename} = expand_filename(
-                "wakaba.pl?task=mpanel&amp;admin=$admin&amp;page=" . $$p{page} );
-        }
-        if ( $$p{page} == $pageToShow ) {
-            $$p{current} = 1;
-        }    # current page, no link
-    }
-
-    my ( $prevpage, $nextpage );
-    $prevpage = $pages[ $pageToShow - 1 ]{filename} if ( $pageToShow != 0 );
-    $nextpage = $pages[ $pageToShow + 1 ]{filename}
-      if ( $pageToShow != $totalPages - 1 );
+    my $files = ($sth->fetchrow_array())[0];
 
     make_http_header();
     print encode_string(
         POST_PANEL_TEMPLATE->(
             admin    => $admin,
-            posts    => \@posts,
+            posts    => $posts,
+            threads  => $threads,
+            files    => $files,
             size     => $size,
-            pages    => \@pages,
-            prevpage => $prevpage,
-            nextpage => $nextpage
+            geoip_api      => $api,
+            geoip_results  => \@results
         )
     );
 }
@@ -2420,7 +2366,7 @@ sub make_admin_ban_panel {
     $sth =
       $dbh->prepare( "SELECT * FROM "
           . SQL_ADMIN_TABLE
-          . " WHERE type='ipban' OR type='wordban' OR type='whitelist' OR type='trust' ORDER BY type ASC, num ASC, date ASC;"
+          . " WHERE type='ipban' OR type='wordban' OR type='whitelist' OR type='trust' OR type='asban' ORDER BY type ASC, num ASC, date ASC;"
       ) or make_error(S_SQLFAIL);
     $sth->execute() or make_error(S_SQLFAIL);
     while ( $row = get_decoded_hashref($sth) ) {
@@ -2454,20 +2400,24 @@ sub do_login {
     }
     elsif ( $admincookie eq crypt_password(ADMIN_PASS) ) {
         $crypt    = $admincookie;
-        $nexttask = "mpanel";
+        $nexttask = "show";
     }
 
     if ($crypt) {
+		my $expires = 0;
         if ( $savelogin ) {
-            make_cookies(
-                wakaadmin => $crypt,
-                -charset  => CHARSET,
-                -autopath => COOKIE_PATH,
-                -expires  => time + 365 * 24 * 3600
-            );
+			$expires = time + 14 * 24 * 3600;		
         }
 
-        make_http_forward( get_script_name() . "?task=$nexttask&admin=$crypt");
+		make_cookies(
+			wakaadmin => $crypt,
+			-charset  => CHARSET,
+			-autopath => COOKIE_PATH,
+			-expires  => $expires,
+			-httponly => 1
+            );
+
+        make_http_forward( get_script_name() . "?task=$nexttask");
     }
     else { make_admin_login() }
 }
@@ -2478,38 +2428,42 @@ sub do_logout {
 }
 
 sub add_admin_entry {
-    my ($blame) = S_BANNED;
     my ($admin, $type, $comment, $ival1, $ival2, $sval1, $postid) = @_;
-    my ($sth, $row, $oldcomment, $newcomment, $threadid, $utf8_encoded_json_text);
+    my ($sth, $utf8_encoded_json_text, $expires);
     my ($time) = time();
     check_password( $admin, ADMIN_PASS );
 
     $comment = clean_string( decode_string( $comment, CHARSET ) );
+
+	if ($type eq 'ipban') {
+		if ($sval1 =~ /\d+/) {
+			$sval1 += $time;
+			$expires = get_date($sval1);
+		} else { $sval1 = ""; }
+	}
 
     $sth = $dbh->prepare(
         "INSERT INTO " . SQL_ADMIN_TABLE . " VALUES(null,?,?,?,?,?,FROM_UNIXTIME(?));" )
       or make_error(S_SQLFAIL);
     $sth->execute( $type, $comment, $ival1, $ival2, $sval1, $time )
       or make_error(S_SQLFAIL);
-    if ($postid) {
-        $sth =
-          $dbh->prepare( "SELECT num,parent,comment FROM "
-              . SQL_TABLE
-              . " WHERE num=? LIMIT 1;" )
-          or make_error(S_SQLFAIL);
-        $sth->execute($postid) or make_error(S_SQLFAIL);
-        $row        = get_decoded_hashref($sth);
-        $oldcomment = $$row{comment};
-        $newcomment = $oldcomment . $blame;
-        $threadid   = $$row{parent} if $$row{parent} ne 0;
-        $threadid   = $$row{num} if $$row{parent} eq 0;
 
-        $sth = $dbh->prepare(
-            "UPDATE " . SQL_TABLE . " SET comment = ? WHERE num=? LIMIT 1;" )
+    if ($postid) {
+        $sth = $dbh->prepare( "UPDATE " . SQL_TABLE . " SET banned=? WHERE num=? LIMIT 1;" )
           or make_error(S_SQLFAIL);
-        $sth->execute( $newcomment, $postid ) or make_error(S_SQLFAIL);
+        $sth->execute($time, $postid) or make_error(S_SQLFAIL);
     }
-    $utf8_encoded_json_text = encode_json( { "error_code" => 200, "banned_ip" => dec_to_dot($ival1), "banned_mask" => dec_to_dot($ival2), "reason" => $comment, "postid" => $postid, "debug" => $ival1 } );
+
+    $utf8_encoded_json_text = encode_json(
+		{
+			"error_code" => 200,
+			"banned_ip" => dec_to_dot($ival1),
+			"banned_mask" => dec_to_dot($ival2),
+			"expires" => $expires,
+			"reason" => $comment,
+			"postid" => $postid
+		}
+	);
     make_http_header();
     print $utf8_encoded_json_text;
     #make_http_forward( get_script_name() . "?admin=$admin&task=bans");
@@ -2520,20 +2474,18 @@ sub check_admin_entry {
     my ($sth, $utf8_encoded_json_text, $results);
     check_password( $admin, ADMIN_PASS );
     if (!$ival1) {
-	$utf8_encoded_json_text = encode_json( { "error_code" => 500, "error_detail" => "Invalid parameter"});
+		$utf8_encoded_json_text = encode_json( { "error_code" => 500, "error_detail" => "Invalid parameter"});
     } else {
-	$sth = $dbh->prepare("SELECT COUNT(*) AS count FROM " . SQL_ADMIN_TABLE . " WHERE ival1=?;");
-	$sth->execute(dot_to_dec($ival1));
-	$results = get_decoded_hashref($sth);
+		$sth = $dbh->prepare("SELECT COUNT(*) AS count FROM "
+			. SQL_ADMIN_TABLE
+			. " WHERE type='ipban' AND ival1=? AND (CAST(sval1 AS UNSIGNED)>? OR sval1='');");
+		$sth->execute(dot_to_dec($ival1), time());
+		$results = get_decoded_hashref($sth);
 
-        $utf8_encoded_json_text = encode_json({ "error_code" => 200, "results" => $$results{count}});
-	if ($$results{count} eq 0) {
-	    $utf8_encoded_json_text = encode_json( { "error_code" => 200, "results" => 0});
-	}
+        $utf8_encoded_json_text = encode_json({"error_code" => 200, "results" => $$results{count}});
     }
     make_http_header();
     print $utf8_encoded_json_text;
-
 }
 
 sub remove_admin_entry {
@@ -2546,7 +2498,7 @@ sub remove_admin_entry {
       or make_error(S_SQLFAIL);
     $sth->execute($num) or make_error(S_SQLFAIL);
 
-    make_http_forward( get_script_name() . "?admin=$admin&task=bans");
+    make_http_forward( get_script_name() . "?task=bans");
 }
 
 sub delete_all {
@@ -2592,7 +2544,7 @@ sub check_password {
 }
 
 sub crypt_password {
-    my $crypt = hide_data( (shift) . get_remote_addr(), 9, "admin", SECRET, 1 ); # do not use $ENV{REMOTE_ADDR}
+    my $crypt = hide_data( (shift) . get_remote_addr(), 18, "admin", SECRET, 1 ); # do not use $ENV{REMOTE_ADDR}
     $crypt =~ tr/+/./;    # for web shit
     return $crypt;
 }
@@ -2647,7 +2599,7 @@ sub make_error {
 }
 
 sub make_ban {
-    my ( $ip, $subnet, $reason, $size, $mode ) = @_;
+    my ($ip, $reason, $mode, @bans) = @_;
 
     make_http_header();
     if ( $mode == 1 ) {
@@ -2656,7 +2608,7 @@ sub make_ban {
                 ip             => $ip,
                 dnsbl          => $reason,
                 error_page     => 'HTTP 403 - Proxy found',
-                error_subtitle => 'HTTP 403 - Proxy found',
+                #error_subtitle => 'HTTP 403 - Proxy found',
                 error_title    => 'Proxy found'
             )
         );
@@ -2664,13 +2616,10 @@ sub make_ban {
     else {
         print encode_string(
             ERROR_TEMPLATE->(
-                ip             => $ip,
-                reason         => $reason,
-                subnet         => $subnet,
-                size           => $size,
+                bans           => \@bans,
                 error_page     => 'Banned',
-                error_subtitle => 'GEH ZUR&Uuml;CK NACH KRAUTKANAL!',
-                error_title    => 'Banned :<',
+                #error_subtitle => 'GEH ZUR&Uuml;CK NACH KRAUTKANAL!',
+                error_title    => 'Banned :&lt;',
                 banned         => 1
             )
         );
@@ -2704,19 +2653,10 @@ sub expand_image_filename {
 }
 
 sub get_reply_link {
-    my ( $reply, $parent, $admin ) = @_;
+    my ($reply, $parent) = @_;
 
-	if(defined($admin))
-	{
-		# TODO: a bit hacky!
-		return expand_filename( encode('utf-8', HTML_SELF)."?task=show&amp;thread=$parent&amp;admin=$admin".'#'."$reply" ) if ($parent);
-		return expand_filename( encode('utf-8', HTML_SELF)."?task=show&amp;thread=$reply&amp;admin=$admin" );
-	}
-	else
-	{
-	 	return expand_filename( "thread/" . $parent ) . '#' . $reply if ($parent);
-   		return expand_filename( "thread/" . $reply );
-	}
+	return expand_filename( "thread/" . $parent ) . '#' . $reply if ($parent);
+   	return expand_filename( "thread/" . $reply );
 }
 
 sub get_page_count {
@@ -2746,11 +2686,19 @@ sub get_filetypes {
 sub parse_range {
     my ( $ip, $mask ) = @_;
 
-    $ip = dot_to_dec($ip) if ( $ip =~ /^\d+\.\d+\.\d+\.\d+$/ );
+	if ($ip =~ /:/ or length(pack('w', $ip)) > 5) # IPv6
+	{
+		# ignore mask because MySQL 5 will only do bit shifting operations up to 64 bit
+		$mask = "340282366920938463463374607431768211455";
+	}
+	else # IPv4
+	{
+		if ( $mask =~ /^\d+\.\d+\.\d+\.\d+$/ ) { $mask = dot_to_dec($mask); }
+		elsif ( $mask =~ /(\d+)/ ) { $mask = ( ~( ( 1 << $1 ) - 1 ) ); }
+		else                       { $mask = 0xffffffff; }
+	}
 
-    if ( $mask =~ /^\d+\.\d+\.\d+\.\d+$/ ) { $mask = dot_to_dec($mask); }
-    elsif ( $mask =~ /(\d+)/ ) { $mask = ( ~( ( 1 << $1 ) - 1 ) ); }
-    else                       { $mask = 0xffffffff; }
+    $ip = dot_to_dec($ip) if ( $ip =~ /(^\d+\.\d+\.\d+\.\d+$)|:/ );
 
     return ( $ip, $mask );
 }
@@ -3029,6 +2977,20 @@ sub get_decoded_arrayref {
 
     return $row;
 
+}
+
+sub update_db_schema2 {  # mysql-specific. will be removed after migration is done.
+	$sth = $dbh->prepare("SHOW COLUMNS FROM " . SQL_TABLE . " WHERE field = 'location';");
+	if ($sth->execute()) {
+		if (my $row = $sth->fetchrow_hashref()) {
+			if ($$row{Type} eq 'varchar(25)') {
+				$sth = $dbh->prepare(
+					"ALTER TABLE " . SQL_TABLE . " CHANGE location location TEXT;"
+				) or make_error($dbh->errstr);
+				$sth->execute() or make_error($dbh->errstr);
+			}
+		}
+	}
 }
 
 sub update_db_schema {  # mysql-specific. will be removed after migration is done.
