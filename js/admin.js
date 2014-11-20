@@ -1,46 +1,74 @@
 function do_ban(ip, postid, board) {
+
+	function show_info(msg) {
+		$j("#infodetails").text(msg);
+		$j("#info").show('normal');
+	}
+
+	function show_error(msg) {
+		$j("#errordetails").text(msg);
+		$j("#infobox").hide('normal');
+		$j("#info").hide('normal');
+		$j("#error").show('normal');
+	}
+
+	function hide_all() {
+		$j("#infobox").hide('normal');
+		$j("#info").hide('normal');
+		$j("#error").hide('normal');
+	}
+
+	function disable_controls() {
+		$j("#ip").attr('disabled', true);
+		$j("#netmask").attr('disabled', true);
+		$j("#duration").attr('disabled', true);
+		$j("#reason").attr('disabled', true);
+	}
+
 	buttons = {
-		"Ok": function () {
-			if (window.disable) {
-				$j("#infobox").hide('normal');
-				$j("#error").hide('normal');
-				$j("#info").hide('normal');
+		"OK": function () {
+			if ($j("#ip").is(':disabled')) {
+				hide_all();
 				$j(this).dialog('close');
 				return;
 			}
-			postid = $j("#postid").val() == "none" ? "" : postid;
-			reason = $j("#reason").val() ? $j("#reason").val() : "no reason";
-			mask = $j("#netmask").val() ? $j("#netmask").val() : "255.255.255.255";
+
 			ip = $j("#ip").val() ? $j("#ip").val() : ip;
-			url = "/" + board + "/?task=addip&type=ipban&ip=" + ip + "&postid=" + postid + "&mask=" + mask + "&comment=" + reason;
+			mask = $j("#netmask").val() ? $j("#netmask").val() : "255.255.255.255";
+			duration = $j("#duration").val() ? $j("#duration").val() : "";
+			reason = $j("#reason").val() ? $j("#reason").val() : "no reason";
+			url = "/" + board + "/?task=addip&ajax=1&type=ipban&ip=" + ip + "&postid=" + postid + "&mask=" + mask + "&comment=" + reason + "&string=" + duration;
+
 			$j("#infobox").hide('normal');
+			$j("#error").hide('normal');
+			show_info("Ausführen ...");
+
 			$j.ajax({
 				url: url,
 				dataType: 'json',
 				success: function (data) {
 					if (data['error_code'] == 200) {
+						disable_controls();
+						$j("#error").hide('normal');
 						$j("span#r_ip").html(data['banned_ip']);
 						$j("span#r_mask").html(data['banned_mask']);
+						$j("span#r_expires").html(data['expires'] ? data['expires'] : "<i>never</i>");
 						$j("span#r_reason").html(data['reason']);
 						$j("span#r_post").html(data['postid'] ? data['postid'] : "<i>none</i>");
 						$j("#infobox").show('normal');
-						$j("#postid").val("none");
-						$j("#infodetails").text("User wurde gesperrt");
-						$j("#info").show('normal');
+
+						show_info("User wurde gesperrt");
+					} else if (data['error_msg']) {
+						show_error(data['error_msg']);
 					}
 				},
-				error: function (data) {
-					$j("#infobox").hide('normal');
-					$j("#info").hide('normal');
-					$j("#errordetails").text(data);
-					$j("#error").show('normal');
+				error: function (data, status, error) {
+					show_error(status);
 				}
 			});
 		},
-		"Close": function () {
-			$j("#infobox").hide('normal');
-			$j("#error").hide('normal');
-			$j("#info").hide('normal');
+		"Schließen": function () {
+			hide_all();
 			$j(this).dialog('close');
 		}
 	}
@@ -49,47 +77,52 @@ function do_ban(ip, postid, board) {
 		draggable: true,
 		closeOnEscape: false,
 		resizable: true,
-		title: 'Moderation',
+		title: 'Moderation Post-Nr. ' + postid,
 		open: function (event, ui) {
 			$j(".ui-dialog-titlebar-close").hide();
-			$j("#ip").attr('disabled', true).val("");
-			$j("#netmask").attr('disabled', true);
-			$j("#postid").attr('disabled', true).val("");
-			$j("#reason").attr('disabled', true).val("");
-			$j("#infodetails").text("Daten abrufen ...");
-			$j("#info").show('normal');
-			$j.ajax({
-				url: "/" + board + "/?task=checkban&ip=" + ip,
-				dataType: 'json',
-				success: function (data) {
-					if (data['results'] == 0) {
-						window.disable = 0;
-						$j("#info").hide('normal');
-						$j("#ip").attr('disabled', false).val(ip);
-						if (ip.indexOf(":") != -1) {
-							$j("#netmask").attr('disabled', true).val("255.255.255.255");
-						} else {
-							$j("#netmask").attr('disabled', false);
-						}
-						$j("#postid").attr('disabled', true).val(postid);
-						$j("#reason").attr('disabled', false).val("").focus();
-					}
-					if (data['results'] >= 1) {
-						window.disable = 1;
-						$j("#ip").attr('disabled', true).val(ip);
-						$j("#netmask").attr('disabled', true);
-						$j("#postid").attr('disabled', true).val("none");
-						$j("#reason").attr('disabled', true).val("unknown");
-						$j("#infodetails").text("User wurde bereits gesperrt");
-						$j("#info").show('normal');
-					}
-				}
-			});
-
 		},
 		height: 'auto',
 		width: 'auto'
 	});
+
+	$j("#ip").val(ip);
+	$j("#reason").val("");
+	if (ip.indexOf(":") != -1) {
+		$j("#netmask").val("255.255.255.255");
+	} else {
+		$j("#netmask").val("255.255.0.0");
+	}
+
+	disable_controls();
+	$j("#infobox").hide('normal');
+	$j("#error").hide('normal');
+	show_info("Daten abrufen ...");
+
+	$j.ajax({
+		url: "/" + board + "/?task=checkban&ip=" + ip,
+		dataType: 'json',
+		success: function (data) {
+			if (data['results'] == 0) {
+				$j("#ip").attr('disabled', false);
+				if (ip.indexOf(":") != -1) {
+					$j("#netmask").attr('disabled', true);
+				} else {
+					$j("#netmask").attr('disabled', false);
+				}
+				$j("#duration").attr('disabled', false);
+				$j("#reason").attr('disabled', false).focus();
+				$j("#info").hide('normal');
+			} else if (data['results'] >= 1) {
+				show_info("User wurde bereits gesperrt");
+			} else if (data['error_msg']) {
+				show_error(data['error_msg']);
+			}
+		},
+		error: function (data, status, error) {
+			show_error(status);
+		}
+	});
+
 
 	//$j.ajax(<var $self>?admin=<var $admin>&amp;task=addip&amp;type=ipban&amp;ip=<var $ip>&amp;postid=<var $num>)
 	//var reason=prompt("Give a reason for this ban:");

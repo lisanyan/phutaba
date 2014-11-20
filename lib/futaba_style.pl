@@ -69,9 +69,9 @@ use constant NORMAL_HEAD_INCLUDE => q{
 <div id="modpanel" style="display: none">
 <table>
 <tr>
-	<td><b>IP</b></td><td><input id="ip" type="text" name="ip" /></td>
+	<td><b><const S_BANIPLABEL></b></td><td><input id="ip" type="text" name="ip" size="30" /></td>
 </tr>
-<tr><td><b>Netmask</b></td><td>
+<tr><td><b><const S_BANMASKLABEL></b></td><td>
 <select id="netmask" name="netmask">
   <option value="255.0.0.0">IPv4 Class A (255.0.0.0)</option>
   <option value="255.255.0.0" selected="selected">IPv4 Class B (255.255.0.0)</option>
@@ -88,19 +88,27 @@ use constant NORMAL_HEAD_INCLUDE => q{
   <option value="128">/128 (IPv6 Host)</option-->
 </select>
 </td></tr>
+<tr><td><b><const S_BANDURATION></b></td><td>
+<select id="duration" name="duration">
+	<option value="86400">1 Tag</option>
+	<option value="259200">3 Tage</option>
+	<option value="432000">5 Tage</option>
+	<option value="604800">1 Woche</option>
+	<option value="2419200">4 Wochen</option>
+	<option value="">Permanent</option>
+</select>
+</td></tr>
 <tr>
-	<td><b>PostID</b></td><td><input id="postid" type="text" name="postid" /></td>
-</tr>
-<tr>
-	<td><b>Reason</b></td><td><input id="reason" type="text" name="reason" /></td>
+	<td><b><const S_BANREASONLABEL></b></td><td><input id="reason" type="text" name="reason" size="30" /></td>
 </tr>
 </table>
 <div id="infobox" style="display: none">
-<br />
-<b>IP</b>: <span id="r_ip"></span><br />
-<b>Netmask</b>: <span id="r_mask"></span><br />
-<b>Comment</b>: <span id="r_reason"></span><br />
-<b>Post</b>: <span id="r_post"></span><br />
+	<br />
+	<b><const S_BANIPLABEL></b>: <span id="r_ip"></span><br />
+	<b><const S_BANMASKLABEL></b>: <span id="r_mask"></span><br />
+	<b>Ende</b>: <span id="r_expires"></span><br />
+	<b><const S_BANREASONLABEL></b>: <span id="r_reason"></span><br />
+	<b>Post-Nr.</b>: <span id="r_post"></span><br />
 </div>
 <p id="info" style="display: none"><span style="font-weight: bolder; color: #002233;">Info: <span style="font-weight: bolder" id="infodetails"></span></span></p>
 <p id="error" style="display: none"><span style="font-weight: bolder; color: #FF0000;">Error: <span style="font-weight: bolder" id="errordetails"></span></span></p>
@@ -471,12 +479,21 @@ use constant ERROR_TEMPLATE => compile_template(
 <p><var $error></p>
 </if>
 <if $banned>
-<p>Deine IP <strong><var $ip></strong> wurde wegen <strong><var $reason></strong> auf unbestimmte Zeit gesperrt.
- Bitte kontaktiere uns im IRC wenn du wieder posten willst!</p>
+<loop $bans>
+ <br />
+ <p>Deine IP <strong><var $ip></strong>
+ <if $showmask>(<var $network>/<var $setbits>)</if> wurde 
+ <if $reason>mit der Begr&uuml;ndung <strong><var $reason></strong></if> gesperrt.
+ <br />Diese Sperrung 
+ <if $expires>l&auml;uft am <strong><var encode_entities(get_date($expires))></strong> ab.</if>
+ <if !$expires>gilt f&uuml;r unbestimmte Zeit.</if>
+ <br />
+</loop>
+ <br />Bitte kontaktiere uns im IRC, wenn du wieder posten willst!</p>
 </if>
 <if $dnsbl>
 <p>Deine IP <strong><var $ip></strong> wurde in der Blacklist <strong><var $dnsbl></strong> gelistet.
- Aufgrund dieser Tatsache ist es dir nicht gestattet zu posten. Bitte kontaktiere uns im IRC wenn du wieder posten willst!</p>
+ Aufgrund dieser Tatsache ist es dir nicht gestattet zu posten. Bitte kontaktiere uns im IRC, wenn du wieder posten willst!</p>
 </if>
 
 } . ERROR_FOOT_INCLUDE
@@ -579,7 +596,15 @@ use constant BAN_PANEL_TEMPLATE => compile_template(
 <table><tbody>
 <tr><td class="postblock"><const S_BANIPLABEL></td><td><input type="text" name="ip" size="24" /></td></tr>
 <tr><td class="postblock"><const S_BANMASKLABEL></td><td><input type="text" name="mask" size="24" /></td></tr>
-<tr><td class="postblock"><const S_BANCOMMENTLABEL></td><td><input type="text" name="comment" size="16" />
+<tr><td class="postblock"><const S_BANDURATION></td><td><select name="string">
+<option value="86400">1 Tag</option>
+<option value="259200">3 Tage</option>
+<option value="432000">5 Tage</option>
+<option value="604800">1 Woche</option>
+<option value="2419200">4 Wochen</option>
+<option value="">Permanent</option>
+</select></td></tr>
+<tr><td class="postblock"><const S_BANREASONLABEL></td><td><input type="text" name="comment" size="16" />
 <input type="submit" value="<const S_BANIP>" /></td></tr>
 </tbody></table></form>
 
@@ -617,6 +642,19 @@ use constant BAN_PANEL_TEMPLATE => compile_template(
 <input type="submit" value="<const S_BANTRUST>" /></td></tr>
 </tbody></table></form>
 
+</td><td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td></tr><tr><td valign="bottom" colspan="3">
+
+<form action="<var $self>" method="post">
+<input type="hidden" name="task" value="addstring" />
+<input type="hidden" name="type" value="asban" />
+<table><tbody>
+<tr><td class="postblock"><const S_BANASNUMLABEL></td><td><input type="text" name="string" size="24" /></td></tr>
+<tr><td class="postblock"><const S_BANCOMMENTLABEL></td><td><input type="text" name="comment" size="16" />
+<input type="submit" value="<const S_BANASNUM>" /></td></tr>
+</tbody></table></form>
+
+</td><td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+
 </td></tr></tbody></table>
 </div><br />
 
@@ -624,25 +662,29 @@ use constant BAN_PANEL_TEMPLATE => compile_template(
 <tr class="managehead"><const S_BANTABLE></tr>
 
 <loop $bans>
-	<if $divider><tr class="managehead"><th colspan="9"></th></tr></if>
+	<if $divider><tr class="managehead"><th colspan="7"></th></tr></if>
 
 	<tr class="row<var $rowtype>">
 
 	<if $type eq 'ipban'>
 		<td>IP</td>
-		<td><var dec_to_dot($ival1)>/<var dec_to_dot($ival2)></td>
+		<td><var dec_to_dot($ival1)></td><td><var dec_to_dot($ival2)></td>
 	</if>
 	<if $type eq 'wordban'>
 		<td>Word</td>
-		<td><var $sval1></td>
+		<td colspan="2"><var $sval1></td>
 	</if>
 	<if $type eq 'trust'>
 		<td>NoCap</td>
-		<td><var $sval1></td>
+		<td colspan="2"><var $sval1></td>
 	</if>
 	<if $type eq 'whitelist'>
 		<td>Whitelist</td>
-		<td><var dec_to_dot($ival1)>/<var dec_to_dot($ival2)></td>
+		<td><var dec_to_dot($ival1)></td><td><var dec_to_dot($ival2)></td>
+	</if>
+	<if $type eq 'asban'>
+		<td>ASNum</td>
+		<td colspan="2"><var $sval1></td>
 	</if>
 
 	<td><var $comment></td>
@@ -655,18 +697,11 @@ use constant BAN_PANEL_TEMPLATE => compile_template(
 		</if>
 	</td>	
 	<td>
-		<if get_ip_info(1, $ival1)>
-			<var get_ip_info(1, $ival1)>
-		</if>
-		<if get_ip_info(1, $ival1) eq undef>
-			<i>none</i>
-		</if>
-	</td>
-	<td>
-  <em>wird erneuert</em>
-	</td>
-	<td>
-  <em>wird erneuert</em>
+	<if $type eq 'ipban'>
+		<if $sval1><var make_date($sval1, '2ch')></if>
+		<if !$sval1>never</if>
+	</if>
+	<if $type ne 'ipban'>-</if>
 	</td>
 	<td><a href="<var $self>?task=removeban&amp;num=<var $num>"><const S_BANREMOVE></a></td>
 	</tr>
@@ -676,18 +711,6 @@ use constant BAN_PANEL_TEMPLATE => compile_template(
 
 } . NORMAL_FOOT_INCLUDE
 );
-    # <if get_as_description(get_ip_info(1, $ival1))>
-    #   <var get_as_description(get_ip_info(1, $ival1))>
-    # </if>
-    # <if get_as_description(get_ip_info(1, $ival1)) eq undef>
-    #   <i>none</i>
-    # </if>
-    # <if get_ip_info(2, $ival1)>
-    #   <img title="<var get_ip_info(2, $ival1)>" onmouseover="Tip('<var code2country(get_ip_info(2, $ival1))>')" onmouseout="UnTip()" src="/img/flags/<var get_ip_info(2, $ival1)>.PNG" />
-    # </if>
-    # <if get_ip_info(2, $ival1) eq undef>
-    #   <i>none</i>
-    # </if>
 
 
 use constant ADMIN_POST_TEMPLATE => compile_template(

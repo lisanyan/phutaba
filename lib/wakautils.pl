@@ -3,20 +3,19 @@
 use strict;
 
 use Time::Local;
-use Time::localtime;
 use Socket;
-use Locale::Country;
-use Locale::Codes::Country;
+#use Locale::Country;
+#use Locale::Codes::Country;
 use DateTime;
 use Image::ExifTool;
 use Geo::IP;
 use Net::IP qw(:PROC); # IPv6 conversions
 
-use Net::Abuse::Utils qw( :all ); #TODO: remove (get_rdns get_ipwi_contacts get_as_description get_asn_info)
+#use Net::Abuse::Utils qw( :all ); #TODO: remove (get_rdns get_ipwi_contacts get_as_description get_asn_info)
 
 
 # add EU to the country code list
-Locale::Codes::Country::add_country("EU", "European Union");
+#Locale::Codes::Country::add_country("EU", "European Union");
 my $has_md5 = 0;
 eval 'use Digest::MD5 qw(md5)';
 $has_md5 = 1 unless $@;
@@ -98,30 +97,28 @@ sub get_meta_markup {
 	}
 	$exifData = get_meta($file, @metaOptions);
 	foreach (keys %$exifData) {
-		if (defined($options{$_})) {
-			if (!$$exifData{$_} eq "") {
-				$markup = $markup . "<strong>$options{$_}</strong>: $$exifData{$_}<br />";
-				if ($_ eq "PageCount") {
-					if ($$exifData{$_} eq 1) {
-						$info = "1 Seite";
-					} else {
-						$info = $$exifData{$_} . " Seiten";
-					}
+		if (defined($options{$_}) and $$exifData{$_} ne "") {
+			$markup = $markup . "<strong>$options{$_}</strong>: $$exifData{$_}<br />";
+			if ($_ eq "PageCount") {
+				if ($$exifData{$_} eq 1) {
+					$info = "1 Seite";
+				} else {
+					$info = $$exifData{$_} . " Seiten";
 				}
-				if ($_ eq "Duration") {
-					$info = $$exifData{$_};
-					$info =~ s/ \(approx\)$//;
-					$info =~ s/^0:0?//; # 0:01:45 -> 1:45 / 0:12:37 -> 12:37
+			}
+			if ($_ eq "Duration") {
+				$info = $$exifData{$_};
+				$info =~ s/ \(approx\)$//;
+				$info =~ s/^0:0?//; # 0:01:45 -> 1:45 / 0:12:37 -> 12:37
 
-					# round and format seconds to mm:ss if only seconds are returned
-					if ($info =~ /(\d+)\.(\d\d) s/) {
-						my $sec = $1;
-						if ($2 >= 50) { $sec++ }
-						my $min = int($sec / 60);
-						$sec = $sec - $min * 60;
-						$sec = sprintf("%02d", $sec);
-						$info = $min . ':' . $sec;
-					}
+				# round and format seconds to mm:ss if only seconds are returned
+				if ($info =~ /(\d+)\.(\d\d) s/) {
+					my $sec = $1;
+					if ($2 >= 50) { $sec++ }
+					my $min = int($sec / 60);
+					$sec = $sec - $min * 60;
+					$sec = sprintf("%02d", $sec);
+					$info = $min . ':' . $sec;
 				}
 			}
 		}
@@ -136,23 +133,49 @@ sub url_regexp { return $url_re }
 
 sub get_geolocation($) {
 	my ($ip) = @_;
+	my $loc = "unk";
 
-	# testing in a local network never requires a captcha
-	return "DE" if ($ip =~ /^192\.168\.\d{1,3}\.\d{1,3}$/);
+	my ($country_code, $country_name, $region_name, $city);
+	my ($gi, $city_record);
+	my $path = "/usr/local/share/GeoIP/";
 
-	# check for IPv6 address
-	return "v6" if ($ip =~ /:/);
+	# IPv6 only works with CAPI
+	if ($ip =~ /:/ and Geo::IP->api eq 'CAPI') {
+		eval '$gi = Geo::IP->open($path . "GeoLiteCityv6.dat")';
+		unless ($@ or !$gi) {
+			$gi->set_charset(&GEOIP_CHARSET_UTF8);
+			$city_record = $gi->record_by_addr_v6($ip);
+		} else { # fall back to country if city is not installed
+			eval '$gi = Geo::IP->open($path . "GeoIPv6.dat")';
+			$loc = $gi->country_code_by_addr_v6($ip) unless ($@ or !$gi);
+		}
+	}
 
-	my $gi = Geo::IP->new(GEOIP_MEMORY_CACHE);
-	my $loc = $gi->country_code_by_addr($ip);
+	# IPv4
+	if ($ip !~ /:/ and $ip =~ /\./) {
+		eval '$gi = Geo::IP->open($path . "GeoLiteCity.dat")';
+		unless ($@ or !$gi) {
+			$gi->set_charset(&GEOIP_CHARSET_UTF8);
+			$city_record = $gi->record_by_addr($ip);
+		} else { # fall back to country if city is not installed
+			eval '$gi = Geo::IP->open($path . "GeoIP.dat")';
+			$loc = $gi->country_code_by_addr($ip) unless ($@ or !$gi);
+		}
+	}
 
-	return "unk" if ($loc eq "");
-	return $loc;
+	if ($city_record) {
+		$loc          = $city_record->country_code;
+		$country_name = $city_record->country_name;
+		$region_name  = $city_record->region_name;
+		$city         = $city_record->city;
+	}
+
+	return ($city, $region_name, $country_name, $loc);
 }
 
 sub use_captcha($$) {
 	my ($always_on, $location) = @_;
-	my @allowed = qw(DE NO CH AT LI BE LU DK NL v6);
+	my @allowed = qw(DE NO CH AT LI BE LU DK NL);
 
 	return 1 if ($always_on eq 1);
 
@@ -163,24 +186,27 @@ sub use_captcha($$) {
 	return 1;
 }
 
-sub get_ip_info {
-	# 1 = ASN
-	# 2 = Countrycode
-	my ($type, $ip) = @_;
-	my (@infos);
-	$ip = dec_to_dot($ip);
-	# temporarily disabled
-	#@infos = get_asn_info($ip);
-	return 0;
-	if($type eq 1) {	
-		return $infos[0];
+sub get_as_info($) {
+	my ($ip) = @_;
+	my ($gi, $as_num, $as_info);
+	my $path = "/usr/local/share/GeoIP/";
+
+	# IPv6 only works with CAPI
+	if ($ip =~ /:/ and Geo::IP->api eq 'CAPI') {
+		eval '$gi = Geo::IP->open($path . "GeoIPASNumv6.dat");';
+		$as_info = $gi->name_by_addr_v6($ip) unless ($@ or !$gi);
 	}
-	if($type eq 2) {
-		return $infos[2];
+
+	# IPv4
+	if ($ip !~ /:/ and $ip =~ /\./) {
+		eval '$gi = Geo::IP->open($path . "GeoIPASNum.dat");';
+		$as_info = $gi->name_by_addr($ip) unless ($@ or !$gi);
 	}
-	return 0;
+
+	$as_info =~ /^AS(\d+) /;
+	$as_num = $1;
+	return ($as_num, $as_info);
 }
-	
 
 sub abbreviate_html {
     my ( $html, $max_lines, $approx_len ) = @_;
@@ -1099,20 +1125,10 @@ sub make_date {
         );
     }
     elsif ( $style eq "futaba" or $style eq "0" ) {
+		my @ltime=localtime($time);
 
-#		my @ltime=localtime($time);
-#
-#		return sprintf("%02d.%02d.%02d (%s) %02d:%02d",
-#		$ltime[3],$ltime[4]+1,$ltime[5]-100,$locdays[$ltime[6]],$ltime[2],$ltime[1]);
-        my $day   = localtime->mday;
-        my $wday  = localtime->wday;
-        my $month = localtime->mon;
-        my $year  = localtime->year + 1900;
-        my $hour  = localtime->hour;
-        my $min   = localtime->min;
-        my $sec   = localtime->sec;
-        return sprintf( "%02d. %s %04d (%s) %02d:%02d:%02d",
-            $day, $fullmonths[$month], $year, $days[$wday], $hour, $min, $sec );
+		return sprintf("%02d.%02d.%02d (%s) %02d:%02d",
+		$ltime[3],$ltime[4]+1,$ltime[5]-100,$locdays[$ltime[6]],$ltime[2],$ltime[1]);
     }
     elsif ( $style eq "localtime" ) {
         return scalar( localtime($time) );
@@ -1235,8 +1251,7 @@ sub decode_base64    # stolen from MIME::Base64::Perl
 sub dot_to_dec {
 	my $ip = $_[0];
 
-	if ($ip =~ /:/) # IPv6
-	{
+	if ($ip =~ /:/) { # IPv6
 		my $iph = new Net::IP($ip) or return 0;
 		return $iph->intip();
 	}
@@ -1584,8 +1599,8 @@ sub analyze_webm($) {
 }
 
 sub test_afmod {
-	my $day = localtime->mday;
-	my $month = localtime->mon + 1;
+	my @now = localtime;
+	my ($month, $day) = ($now[4] + 1, $now[3]);
 
 	return 1 if (ENABLE_AFMOD && $month == 4 && $day == 1);
 	return 0;
@@ -1595,7 +1610,7 @@ sub make_video_thumbnail {
 	my ($filename, $thumbnail, $width, $height, $command) = @_;
 
 	$command = "avconv" unless ($command);
-	my $filter = "scale='gte(iw,ih)*min(${width},iw)+not(gte(iw,ih))*-1':'gte(ih,iw)*min(${height},ih)+not(gte(ih,iw))*-1'";
+	my $filter = "scale='gte(iw\\,ih)*min(${width}\\,iw)+not(gte(iw\\,ih))*-1':'gte(ih\\,iw)*min(${height}\\,ih)+not(gte(ih\\,iw))*-1'";
 
 	`$command -v quiet -i $filename -vframes 1 -vf $filter $thumbnail`;
 
@@ -1909,6 +1924,32 @@ sub get_pretty_html($$) {
 	my ($text, $add) = @_;
 	$text =~ s!<br />!<br />$add!g;
 	return $text;
+}
+
+sub get_post_info($) {
+	my ($data) = @_;
+	my @items = split(/<br \/>/, $data);
+	return '(n/a)' unless (@items);
+
+	# country flag
+	$items[0] = 'UNKNOWN' if ($items[0] eq 'unk');
+	my $flag = '<img src="/img/flags/' . $items[0] . '.PNG"> ';
+
+	if (scalar @items == 1) { # for legacy entries
+		return $flag . $items[0];
+	} else {
+		# geo location
+		my @loc = grep {$_} ($items[1], $items[2], $items[3]);
+		my $location = join(', ', @loc);
+
+		# as num, name and ban link
+		$items[4] =~ /^AS(\d+) /;
+		$items[4] .= ' <a href="' . $ENV{SCRIPT_NAME}
+			. '?task=addstring&amp;type=asban&amp;string=' . $1
+			. '&amp;comment=' . urlenc($items[4]) . '">[Sperren]</a>';
+
+		return $flag . $location . '<br />' . $items[4];
+	}
 }
 
 sub get_date {

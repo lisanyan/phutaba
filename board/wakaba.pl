@@ -8,7 +8,7 @@ use strict;
 use CGI;
 use DBI;
 use Net::DNS;
-use Net::IP qw(:PROC);
+#use Net::IP qw(:PROC);
 use HTML::Entities;
 use HTML::Strip;
 #use Math::BigInt;
@@ -133,6 +133,9 @@ update_files_meta();
 # schema migration.
 update_db_schema();
 
+# schema migration 2 - change location column
+update_db_schema2();
+
 # check for admin table
 init_admin_database() if ( !table_exists(SQL_ADMIN_TABLE) );
 
@@ -159,8 +162,9 @@ elsif ( $json eq "stats" ) {
 }
 elsif ($json eq "ban") {
 	my $id = $query->param("id");
+	my $admin = $query->cookie("wakaadmin");
 	if ($id ne undef) {
-		output_json_ban($id);
+		output_json_ban($id, $admin);
 	}
 }
 elsif ($json eq "meta") {
@@ -298,19 +302,21 @@ elsif ( $task eq "bans" ) {
 elsif ( $task eq "addip" ) {
     my $admin   = $query->cookie("wakaadmin");
     my $type    = $query->param("type");
+    my $string  = $query->param("string");
     my $comment = $query->param("comment");
     my $ip      = $query->param("ip");
     my $mask    = $query->param("mask");
     my $postid  = $query->param("postid");
+	my $ajax    = $query->param("ajax");
     add_admin_entry( $admin, $type, $comment, parse_range( $ip, $mask ),
-        '', $postid );
+        $string, $postid, $ajax );
 }
 elsif ( $task eq "addstring" ) {
     my $admin   = $query->cookie("wakaadmin");
     my $type    = $query->param("type");
     my $string  = $query->param("string");
     my $comment = $query->param("comment");
-    add_admin_entry( $admin, $type, $comment, 0, 0, $string, 0 );
+    add_admin_entry( $admin, $type, $comment, 0, 0, $string, 0, 0 );
 }
 elsif ( $task eq "checkban" ) {
     my $ival1	= $query->param("ip");
@@ -359,8 +365,10 @@ elsif ( $task eq "paint" ) {
     }  
 }
 else {
-	make_http_header();
-	print "Unknown task parameter.\n";
+	unless ($json) {
+		make_http_header();
+		print "Unknown task parameter.\n";
+	}
 }
 
 
@@ -413,12 +421,12 @@ sub output_json_threads {
         $code = 500;
     }
     %status = (
-            "error_code" => $code,
-            "error_msg" => $error,
+        "error_code" => $code,
+        "error_msg" => $error,
     );
     %json = (
-            "data" => \@data,
-            "status" => \%status,
+        "data" => \@data,
+        "status" => \%status,
     );
 
     make_json_header();
@@ -443,12 +451,12 @@ sub output_json_thread {
         $code = 500;
     }
     %status = (
-            "error_code" => $code,
-            "error_msg" => $error,
+        "error_code" => $code,
+        "error_msg" => $error,
     );
     %json = (
-            "data" => \@data,
-            "status" => \%status,
+        "data" => \@data,
+        "status" => \%status,
     );
 
     make_json_header();
@@ -491,30 +499,36 @@ sub output_json_meta {
 	make_json_header();
 	print $JSON->encode(\%json);
 }
-		
+
 
 sub output_json_ban {
-	my ($id) = @_;
+	my ($id, $admin) = @_;
 	my ($row, $error, $code, %status, %data, %json);
+	use Net::Abuse::Utils qw( :all );
 
-	$sth = $dbh->prepare("SELECT `comment`, `ival1` as `ip`, `ival2` as `mask`, `date` FROM " . SQL_ADMIN_TABLE . " WHERE num=?;");
-	$sth->execute($id);
-	$error = encode_entities(decode('utf8', $sth->errstr));
-	$row = $sth->fetchrow_hashref();
-	if($row ne undef) {
-		$code = 200;
-		$$row{'ip'} = dec_to_dot($$row{'ip'});
-		$$row{'mask'} = dec_to_dot($$row{'mask'});
-		$data{'ban_info'} = $row;
-		$data{'ip_info'}{'asn_info'} = [get_asn_info($$row{'ip'})];
-		$data{'ip_info'}{'as_desc'} = encode_entities(decode('utf8', get_as_description($data{'ip_info'}{'asn_info'}[0])));
-		$data{'ip_info'}{'ptr'} = get_rdns($$row{'ip'});
-		$data{'ip_info'}{'contacts'} = [get_ipwi_contacts($$row{'ip'})];
-	} elsif($sth->rows eq 0) {
-		$code = 404;
-		$error = 'Element not found.';
+	if (!check_password_silent($admin, ADMIN_PASS)) {
+		$code = 401;
+		$error = 'Unauthorized';
 	} else {
-		$code = 500;
+		$sth = $dbh->prepare("SELECT `comment`, `ival1` as `ip`, `ival2` as `mask`, `date` FROM " . SQL_ADMIN_TABLE . " WHERE num=?;");
+		$sth->execute($id);
+		$error = encode_entities(decode('utf8', $sth->errstr));
+		$row = $sth->fetchrow_hashref();
+		if($row ne undef) {
+			$code = 200;
+			$$row{'ip'} = dec_to_dot($$row{'ip'});
+			$$row{'mask'} = dec_to_dot($$row{'mask'});
+			$data{'ban_info'} = $row;
+			$data{'ip_info'}{'asn_info'} = [get_asn_info($$row{'ip'})];
+			$data{'ip_info'}{'as_desc'} = encode_entities(decode('utf8', get_as_description($data{'ip_info'}{'asn_info'}[0])));
+			$data{'ip_info'}{'ptr'} = get_rdns($$row{'ip'});
+			$data{'ip_info'}{'contacts'} = [get_ipwi_contacts($$row{'ip'})];
+		} elsif($sth->rows eq 0) {
+			$code = 404;
+			$error = 'Element not found.';
+		} else {
+			$code = 500;
+		}
 	}
 
 	%status = (
@@ -543,8 +557,9 @@ sub output_json_post {
 		$code = 200;
 		$$row{'comment'} = resolve_reflinks($$row{'comment'});
 		$$row{'comment'} = encode_entities(decode('utf8', $$row{'comment'}));
-		$$row{'ip'} = "[REDACTED]";
-		$$row{'password'} = "[REDACTED]";
+		delete $$row{'ip'};
+		delete $$row{'password'};
+		delete $$row{'location'};
 		add_images_to_row($row);
 		$data{'post'} = $row;
 	} elsif($sth->rows eq 0) {
@@ -610,7 +625,7 @@ sub show_post {
     if(defined($admin))
     {
 		#check_password($admin, ADMIN_PASS);
-		if ($admin eq crypt_password(ADMIN_PASS)) { $isAdmin = 1; } else { $admin = ""; }
+		if (check_password_silent($admin, ADMIN_PASS)) { $isAdmin = 1; } else { $admin = ""; }
     }
 
     $sth = $dbh->prepare(
@@ -642,7 +657,7 @@ sub show_post {
 		print($output);
     }
     else {
-        print encode_json( { "error_code" => 400 } );
+        print encode_json( { "error_code" => 400, "error_msg" => 'Bad Request' } );
     }
 }
 
@@ -657,7 +672,7 @@ sub show_page {
 	if(defined($admin))
 	{
 		#check_password($admin, ADMIN_PASS);
-		if ($admin eq crypt_password(ADMIN_PASS)) { $isAdmin = 1; } else { $admin = ""; }
+		if (check_password_silent($admin, ADMIN_PASS)) { $isAdmin = 1; } else { $admin = ""; }
 	}
 
     # grab all posts, in thread order (ugh, ugly kludge)
@@ -863,7 +878,7 @@ sub show_thread {
 	if(defined($admin))
 	{
 		#check_password($admin, ADMIN_PASS);
-		if ($admin eq crypt_password(ADMIN_PASS)) { $isAdmin = 1; } else { $admin = ""; }
+		if (check_password_silent($admin, ADMIN_PASS)) { $isAdmin = 1; } else { $admin = ""; }
 	}
 
     $sth = $dbh->prepare(
@@ -1042,7 +1057,7 @@ sub dnsbl_check {
         }
 
         if ( $result eq $dnsbl_answer ) {
-            make_ban( $ip, 0, $dnsbl_error, 0, 1 );
+            make_ban( $ip, $dnsbl_error, 1 );
         }
     }
 }
@@ -1240,13 +1255,22 @@ sub post_stuff {
     my $trip;
     ( $name, $trip ) = process_tripcode( $name, TRIPKEY, SECRET, CHARSET );
 
+	# get as number and owner
+	my ($as_num, $as_info) = get_as_info($ip);
+	$as_info = clean_string($as_info);
+
     # check for bans
-    ban_check( $numip, $c_name, $subject, $comment ) unless $whitelisted;
-    
+    ban_check($numip, $c_name, $subject, $comment, $as_num) unless $whitelisted;
+
+	# get geoip info
+	my ($city, $region_name, $country_name, $loc) = get_geolocation($ip);
+	$region_name = "" if ($region_name eq $city);
+	$region_name = clean_string($region_name);
+	$city = clean_string($city);
     # check captcha
-	my $loc = get_geolocation($ip);
     check_captcha( $dbh, $captcha, $ip, $parent, BOARD_IDENT )
       if ( (use_captcha(ENABLE_CAPTCHA, $loc) and !$admin) or (ENABLE_CAPTCHA and !$admin and !$no_captcha and !is_trusted($trip)) );
+	$loc = join("<br />", $loc, $country_name, $region_name, $city, $as_info);
 
     # check if thread exists, and get lasthit value
     my ( $parent_res, $lasthit );
@@ -1460,7 +1484,7 @@ sub post_stuff {
 
 	# go back to thread or board page
     make_http_forward("/" . encode('utf-8', BOARD_IDENT) . "/") if ($parent eq '0');
-    make_http_forward("thread/" . $parent) if ($c_gb2 =~ /thread/i);
+    make_http_forward("thread/" . $parent . "#" . $new_post_id) if ($c_gb2 =~ /thread/i);
     make_http_forward("/" . encode('utf-8', BOARD_IDENT) . "/");
 }
 
@@ -1524,36 +1548,48 @@ sub check_locked {
 }
 
 sub ban_check {
-    my ( $numip, $name, $subject, $comment ) = @_;
-    my ($sth);
-    my ($sth2, $row, $reason, $mask, $_ip);
+    my ($numip, $name, $subject, $comment, $as_num) = @_;
+    my ($sth, $row);
     my $ip  = dec_to_dot($numip);
 
-	# this will check if the IP (ival1) belongs to a banned IP range
+	# check for as num ban
+	if ($as_num) {
+		$sth =
+		  $dbh->prepare( "SELECT count(*) FROM "
+			  . SQL_ADMIN_TABLE
+			  . " WHERE type='asban' AND sval1 = ?;" )
+		  or make_error(S_SQLFAIL);
+		$sth->execute($as_num) or make_error(S_SQLFAIL);
+
+		make_ban(0, '', 0, { ip => $ip, showmask => 0, reason => 'AS-Netz-Sperre' }) if (($sth->fetchrow_array())[0]);
+	}
+
+	# check if the IP (ival1) belongs to a banned IP range (ival2) using MySQL 5 64 bit BIGINT bitwise logic
+	# also checks expired (sval2) and fetches the ban reason(s) (comment)
+	my @bans = ();
+
     $sth =
-      $dbh->prepare( "SELECT count(*) FROM "
-          . SQL_ADMIN_TABLE
-          . " WHERE type='ipban' AND ? & ival2 = ival1 & ival2;" )
+      $dbh->prepare( "SELECT comment,ival2,sval1 FROM "
+		  . SQL_ADMIN_TABLE
+		  . " WHERE type='ipban' AND ? & ival2 = ival1 & ival2"
+		  . " AND (CAST(sval1 AS UNSIGNED)>? OR sval1='')"
+		  . " ORDER BY num;" )
       or make_error(S_SQLFAIL);
-    $sth->execute($numip) or make_error(S_SQLFAIL);
+    $sth->execute($numip, time()) or make_error(S_SQLFAIL);
 
-	# added for phutaba
-	# this will fetch the ban reason (comment) and IP range (ival2)
-    $sth2 =
-      $dbh->prepare( "SELECT comment,ival2 FROM "
-          . SQL_ADMIN_TABLE
-          . " WHERE type='ipban' AND ? & ival2 = ival1 & ival2;" );
-    $sth2->execute($numip) or make_error(S_SQLFAIL);
-    while ( $row = get_decoded_hashref($sth2) ) {
-        my $_mask = new Net::IP( dec_to_dot($$row{ival2}) );
-        $mask   = $_mask->ip();
-        $reason = $$row{comment};
+    while ($row = get_decoded_hashref($sth)) {
+		my ($ban);
+		$$ban{ip}       = $ip;
+		$$ban{network}  = dec_to_dot($numip & $$row{ival2});
+		$$ban{setbits}  = unpack("%32b*", pack( 'N', $$row{ival2}));
+		$$ban{showmask} = $$ban{setbits} < 32 ? 1 : 0;
+		$$ban{reason}   = $$row{comment};
+		$$ban{expires}  = $$row{sval1};
+		push @bans, $ban;
     }
-    $_ip = new Net::IP( $ip . '/' . $mask );
 
-	# this will send the ban message to the client
-    make_ban( $ip, $_ip->prefix(), $reason, $_ip->size(), 0 )
-      if ( ( $sth->fetchrow_array() )[0] );
+	# this will send the ban message(s) to the client
+    make_ban(0, '', 0, @bans) if (@bans);
 
 # fucking mysql...
 #	$sth=$dbh->prepare("SELECT count(*) FROM ".SQL_ADMIN_TABLE." WHERE type='wordban' AND ? LIKE '%' || sval1 || '%';") or make_error(S_SQLFAIL);
@@ -2075,14 +2111,16 @@ sub delete_stuff {
 	$admin = "" unless ($admin eq crypt_password(ADMIN_PASS));
 
     check_password( $admin, ADMIN_PASS ) if ($admin);
-    if ( !$password and !$admin ) { $deletebyip = 1; }
-    make_error(S_BADDELPASS)
-      unless ( ( !$password and $deletebyip )
-        or ( $password and !$deletebyip )
-        or $admin );    # allow deletion by ip with empty password
-                        # no password means delete always
 
+    if ( !$password and !$admin ) { $deletebyip = 1; }
+
+    # no password means delete always
     $password = "" if ($admin);
+
+    make_error(S_BADDELPASS)
+      unless ( ( !$password and $deletebyip ) # allow deletion by ip with empty password
+        or ( $password and !$deletebyip )
+        or $admin );
 
     foreach $post (@posts) {
         delete_post( $post, $password, $fileonly, $deletebyip, $admin );
@@ -2282,17 +2320,17 @@ sub make_admin_post_panel {
 	my @results = ();
 
 	eval 'use Geo::IP';
-	unless ($@)
-	{
+	unless ($@) {
 		eval '$api = Geo::IP->api';
 
-		foreach (@geo_dbs)
-		{
+		$api .= ' (IPv6-Lookups erfordern CAPI)' unless ($api eq 'CAPI');
+
+		foreach (@geo_dbs) {
 			my ($gi, $geo_db);
 			$$geo_db{file} = $_;
 			$$geo_db{result} = 'n/a';
 			eval '$gi = Geo::IP->open($path . "$_")';
-			eval '$$geo_db{result} = $gi->database_info;' unless ($@);
+			$$geo_db{result} = $gi->database_info unless ($@ or !$gi);
 			push(@results, $geo_db);
 		}
 	}
@@ -2332,7 +2370,7 @@ sub make_admin_ban_panel {
     $sth =
       $dbh->prepare( "SELECT * FROM "
           . SQL_ADMIN_TABLE
-          . " WHERE type='ipban' OR type='wordban' OR type='whitelist' OR type='trust' ORDER BY type ASC, num ASC, date ASC;"
+          . " WHERE type='ipban' OR type='wordban' OR type='whitelist' OR type='trust' OR type='asban' ORDER BY type ASC, num ASC, date ASC;"
       ) or make_error(S_SQLFAIL);
     $sth->execute() or make_error(S_SQLFAIL);
     while ( $row = get_decoded_hashref($sth) ) {
@@ -2363,6 +2401,7 @@ sub do_login {
 
     if ($password) {
         $crypt = crypt_password($password);
+		check_password( $crypt, ADMIN_PASS );
     }
     elsif ( $admincookie eq crypt_password(ADMIN_PASS) ) {
         $crypt    = $admincookie;
@@ -2394,56 +2433,80 @@ sub do_logout {
 }
 
 sub add_admin_entry {
-    my ($admin, $type, $comment, $ival1, $ival2, $sval1, $postid) = @_;
-    my ($sth, $utf8_encoded_json_text);
+    my ($admin, $type, $comment, $ival1, $ival2, $sval1, $postid, $ajax) = @_;
+    my ($sth, $utf8_encoded_json_text, $expires, $authorized);
     my ($time) = time();
-    check_password( $admin, ADMIN_PASS );
 
-    $comment = clean_string( decode_string( $comment, CHARSET ) );
+    check_password( $admin, ADMIN_PASS ) if (!$ajax);
 
-    $sth = $dbh->prepare(
-        "INSERT INTO " . SQL_ADMIN_TABLE . " VALUES(null,?,?,?,?,?,FROM_UNIXTIME(?));" )
-      or make_error(S_SQLFAIL);
-    $sth->execute( $type, $comment, $ival1, $ival2, $sval1, $time )
-      or make_error(S_SQLFAIL);
-    if ($postid) {
-        $sth = $dbh->prepare( "UPDATE " . SQL_TABLE . " SET banned=? WHERE num=? LIMIT 1;" )
-          or make_error(S_SQLFAIL);
-        $sth->execute($time, $postid) or make_error(S_SQLFAIL);
-    }
-    $utf8_encoded_json_text = encode_json(
-		{
+	# checks password a second time on non-ajax call to make sure $authorized is always correct.
+    $authorized = check_password_silent( $admin, ADMIN_PASS );
+
+	if (!$authorized) {
+		$utf8_encoded_json_text = encode_json({
+			"error_code" => 401,
+			"error_msg" => 'Unauthorized'
+		});
+	} else {
+		$comment = clean_string( decode_string( $comment, CHARSET ) );
+
+		if ($type eq 'ipban') {
+			if ($sval1 =~ /\d+/) {
+				$sval1 += $time;
+				$expires = get_date($sval1);
+			} else { $sval1 = ""; }
+		}
+
+		$sth = $dbh->prepare(
+			"INSERT INTO " . SQL_ADMIN_TABLE . " VALUES(null,?,?,?,?,?,FROM_UNIXTIME(?));" )
+		  or make_error(S_SQLFAIL);
+		$sth->execute( $type, $comment, $ival1, $ival2, $sval1, $time )
+		  or make_error(S_SQLFAIL);
+
+		if ($postid) {
+			$sth = $dbh->prepare( "UPDATE " . SQL_TABLE . " SET banned=? WHERE num=? LIMIT 1;" )
+			  or make_error(S_SQLFAIL);
+			$sth->execute($time, $postid) or make_error(S_SQLFAIL);
+		}
+
+		$utf8_encoded_json_text = encode_json({
 			"error_code" => 200,
 			"banned_ip" => dec_to_dot($ival1),
 			"banned_mask" => dec_to_dot($ival2),
+			"expires" => $expires,
 			"reason" => $comment,
 			"postid" => $postid
-		}
-	);
-    make_http_header();
-    print $utf8_encoded_json_text;
-    #make_http_forward( get_script_name() . "?admin=$admin&task=bans");
+		});
+	}
+
+	if ($ajax) {
+		make_json_header();
+		print $utf8_encoded_json_text;
+	} else {
+		make_http_forward(get_script_name() . "?task=bans");
+	}
 }
 
 sub check_admin_entry {
     my ($admin, $ival1) = @_;
     my ($sth, $utf8_encoded_json_text, $results);
-    check_password( $admin, ADMIN_PASS );
-    if (!$ival1) {
-	$utf8_encoded_json_text = encode_json( { "error_code" => 500, "error_detail" => "Invalid parameter"});
-    } else {
-	$sth = $dbh->prepare("SELECT COUNT(*) AS count FROM " . SQL_ADMIN_TABLE . " WHERE ival1=?;");
-	$sth->execute(dot_to_dec($ival1));
-	$results = get_decoded_hashref($sth);
+    if (!check_password_silent( $admin, ADMIN_PASS )) {
+		$utf8_encoded_json_text = encode_json({"error_code" => 401, "error_msg" => 'Unauthorized'});
+	} else {
+		if (!$ival1) {
+			$utf8_encoded_json_text = encode_json({"error_code" => 500, "error_msg" => 'Invalid parameter'});
+		} else {
+			$sth = $dbh->prepare("SELECT count(*) FROM "
+				. SQL_ADMIN_TABLE
+				. " WHERE type='ipban' AND ival1=? AND (CAST(sval1 AS UNSIGNED)>? OR sval1='');");
+			$sth->execute(dot_to_dec($ival1), time());
+			$results = ($sth->fetchrow_array())[0];
 
-        $utf8_encoded_json_text = encode_json({ "error_code" => 200, "results" => $$results{count}});
-	if ($$results{count} eq 0) {
-	    $utf8_encoded_json_text = encode_json( { "error_code" => 200, "results" => 0});
+			$utf8_encoded_json_text = encode_json({"error_code" => 200, "results" => $results});
+		}
 	}
-    }
-    make_http_header();
+    make_json_header();
     print $utf8_encoded_json_text;
-
 }
 
 sub remove_admin_entry {
@@ -2501,6 +2564,15 @@ sub check_password {
     make_error(S_WRONGPASS);
 }
 
+sub check_password_silent {
+    my ( $admin, $password ) = @_;
+
+    return 1 if ( $admin eq ADMIN_PASS );
+    return 1 if ( $admin eq crypt_password($password) );
+
+    return 0;
+}
+
 sub crypt_password {
     my $crypt = hide_data( (shift) . get_remote_addr(), 18, "admin", SECRET, 1 ); # do not use $ENV{REMOTE_ADDR}
     $crypt =~ tr/+/./;    # for web shit
@@ -2518,6 +2590,8 @@ sub make_http_header {
 }
 
 sub make_json_header {
+	print "Cache-Control: no-cache, no-store, must-revalidate\n";
+	print "Expires: Mon, 12 Apr 2010 05:00:00 GMT\n";
 	print "Content-Type: application/json\n";
 	print "Access-Control-Allow-Origin: *\n";
 	print "\n";
@@ -2557,7 +2631,7 @@ sub make_error {
 }
 
 sub make_ban {
-    my ( $ip, $subnet, $reason, $size, $mode ) = @_;
+    my ($ip, $reason, $mode, @bans) = @_;
 
     make_http_header();
     if ( $mode == 1 ) {
@@ -2566,7 +2640,7 @@ sub make_ban {
                 ip             => $ip,
                 dnsbl          => $reason,
                 error_page     => 'HTTP 403 - Proxy found',
-                error_subtitle => 'HTTP 403 - Proxy found',
+                #error_subtitle => 'HTTP 403 - Proxy found',
                 error_title    => 'Proxy found'
             )
         );
@@ -2574,13 +2648,10 @@ sub make_ban {
     else {
         print encode_string(
             ERROR_TEMPLATE->(
-                ip             => $ip,
-                reason         => $reason,
-                subnet         => $subnet,
-                size           => $size,
+                bans           => \@bans,
                 error_page     => 'Banned',
-                error_subtitle => 'GEH ZUR&Uuml;CK NACH KRAUTKANAL!',
-                error_title    => 'Banned :<',
+                #error_subtitle => 'GEH ZUR&Uuml;CK NACH KRAUTKANAL!',
+                error_title    => 'Banned :&lt;',
                 banned         => 1
             )
         );
@@ -2938,6 +3009,20 @@ sub get_decoded_arrayref {
 
     return $row;
 
+}
+
+sub update_db_schema2 {  # mysql-specific. will be removed after migration is done.
+	$sth = $dbh->prepare("SHOW COLUMNS FROM " . SQL_TABLE . " WHERE field = 'location';");
+	if ($sth->execute()) {
+		if (my $row = $sth->fetchrow_hashref()) {
+			if ($$row{Type} eq 'varchar(25)') {
+				$sth = $dbh->prepare(
+					"ALTER TABLE " . SQL_TABLE . " CHANGE location location TEXT;"
+				) or make_error($dbh->errstr);
+				$sth->execute() or make_error($dbh->errstr);
+			}
+		}
+	}
 }
 
 sub update_db_schema {  # mysql-specific. will be removed after migration is done.

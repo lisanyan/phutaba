@@ -57,9 +57,9 @@
 
 	<if $isAdmin>
 		<div style="display: none; min-width: 250px;" id="postinfo_<var $num>">
-			<strong>Standort:</strong> <img src="/img/flags/<var $location>.PNG"> <var $location><br />
+			<var get_post_info($location)>
 		</div>
-		<span onmouseover="TagToTip('postinfo_<var $num>', DELAY, 0)" onmouseout="UnTip()">[<var dec_to_dot($ip)>]</span>
+		<span onmouseover="TagToTip('postinfo_<var $num>', TITLE, '<const S_POSTINFO>', DELAY, 0, CLICKSTICKY, true)" onmouseout="UnTip()">[<var dec_to_dot($ip)>]</span>
 		<if !$parent>	
 			<if $sticky_isnull>
 				<span class="sticky" onmouseover="Tip('<const S_MPSTICKY>')" onmouseout="UnTip()"><a href="<var $self>?task=sticky&amp;threadid=<var $num>"><img src="/img/icons/sticky.png"></a></span>
