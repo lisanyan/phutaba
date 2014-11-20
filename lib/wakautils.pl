@@ -4,8 +4,8 @@ use strict;
 
 use Time::Local;
 use Socket;
-use Locale::Country;
-use Locale::Codes::Country;
+#use Locale::Country;
+#use Locale::Codes::Country;
 use DateTime;
 use Image::ExifTool;
 use Geo::IP;
@@ -15,7 +15,7 @@ use Net::IP qw(:PROC); # IPv6 conversions
 
 
 # add EU to the country code list
-Locale::Codes::Country::add_country("EU", "European Union");
+#Locale::Codes::Country::add_country("EU", "European Union");
 my $has_md5 = 0;
 eval 'use Digest::MD5 qw(md5)';
 $has_md5 = 1 unless $@;
@@ -97,30 +97,28 @@ sub get_meta_markup {
 	}
 	$exifData = get_meta($file, @metaOptions);
 	foreach (keys %$exifData) {
-		if (defined($options{$_})) {
-			if (!$$exifData{$_} eq "") {
-				$markup = $markup . "<strong>$options{$_}</strong>: $$exifData{$_}<br />";
-				if ($_ eq "PageCount") {
-					if ($$exifData{$_} eq 1) {
-						$info = "1 Seite";
-					} else {
-						$info = $$exifData{$_} . " Seiten";
-					}
+		if (defined($options{$_}) and $$exifData{$_} ne "") {
+			$markup = $markup . "<strong>$options{$_}</strong>: $$exifData{$_}<br />";
+			if ($_ eq "PageCount") {
+				if ($$exifData{$_} eq 1) {
+					$info = "1 Seite";
+				} else {
+					$info = $$exifData{$_} . " Seiten";
 				}
-				if ($_ eq "Duration") {
-					$info = $$exifData{$_};
-					$info =~ s/ \(approx\)$//;
-					$info =~ s/^0:0?//; # 0:01:45 -> 1:45 / 0:12:37 -> 12:37
+			}
+			if ($_ eq "Duration") {
+				$info = $$exifData{$_};
+				$info =~ s/ \(approx\)$//;
+				$info =~ s/^0:0?//; # 0:01:45 -> 1:45 / 0:12:37 -> 12:37
 
-					# round and format seconds to mm:ss if only seconds are returned
-					if ($info =~ /(\d+)\.(\d\d) s/) {
-						my $sec = $1;
-						if ($2 >= 50) { $sec++ }
-						my $min = int($sec / 60);
-						$sec = $sec - $min * 60;
-						$sec = sprintf("%02d", $sec);
-						$info = $min . ':' . $sec;
-					}
+				# round and format seconds to mm:ss if only seconds are returned
+				if ($info =~ /(\d+)\.(\d\d) s/) {
+					my $sec = $1;
+					if ($2 >= 50) { $sec++ }
+					my $min = int($sec / 60);
+					$sec = $sec - $min * 60;
+					$sec = sprintf("%02d", $sec);
+					$info = $min . ':' . $sec;
 				}
 			}
 		}
@@ -1612,7 +1610,7 @@ sub make_video_thumbnail {
 	my ($filename, $thumbnail, $width, $height, $command) = @_;
 
 	$command = "avconv" unless ($command);
-	my $filter = "scale='gte(iw,ih)*min(${width},iw)+not(gte(iw,ih))*-1':'gte(ih,iw)*min(${height},ih)+not(gte(ih,iw))*-1'";
+	my $filter = "scale='gte(iw\\,ih)*min(${width}\\,iw)+not(gte(iw\\,ih))*-1':'gte(ih\\,iw)*min(${height}\\,ih)+not(gte(ih\\,iw))*-1'";
 
 	`$command -v quiet -i $filename -vframes 1 -vf $filter $thumbnail`;
 

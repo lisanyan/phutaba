@@ -1,25 +1,54 @@
 function do_ban(ip, postid, board) {
+
+	function show_info(msg) {
+		$j("#infodetails").text(msg);
+		$j("#info").show('normal');
+	}
+
+	function show_error(msg) {
+		$j("#errordetails").text(msg);
+		$j("#infobox").hide('normal');
+		$j("#info").hide('normal');
+		$j("#error").show('normal');
+	}
+
+	function hide_all() {
+		$j("#infobox").hide('normal');
+		$j("#info").hide('normal');
+		$j("#error").hide('normal');
+	}
+
+	function disable_controls() {
+		$j("#ip").attr('disabled', true);
+		$j("#netmask").attr('disabled', true);
+		$j("#duration").attr('disabled', true);
+		$j("#reason").attr('disabled', true);
+	}
+
 	buttons = {
 		"OK": function () {
-			if (window.disable) {
-				$j("#infobox").hide('normal');
-				$j("#error").hide('normal');
-				$j("#info").hide('normal');
+			if ($j("#ip").is(':disabled')) {
+				hide_all();
 				$j(this).dialog('close');
 				return;
 			}
-			reason = $j("#reason").val() ? $j("#reason").val() : "no reason";
-			duration = $j("#duration").val() ? $j("#duration").val() : "";
-			mask = $j("#netmask").val() ? $j("#netmask").val() : "255.255.255.255";
+
 			ip = $j("#ip").val() ? $j("#ip").val() : ip;
-			url = "/" + board + "/?task=addip&type=ipban&ip=" + ip + "&postid=" + postid + "&mask=" + mask + "&comment=" + reason + "&string=" + duration;
+			mask = $j("#netmask").val() ? $j("#netmask").val() : "255.255.255.255";
+			duration = $j("#duration").val() ? $j("#duration").val() : "";
+			reason = $j("#reason").val() ? $j("#reason").val() : "no reason";
+			url = "/" + board + "/?task=addip&ajax=1&type=ipban&ip=" + ip + "&postid=" + postid + "&mask=" + mask + "&comment=" + reason + "&string=" + duration;
+
 			$j("#infobox").hide('normal');
+			$j("#error").hide('normal');
+			show_info("Ausführen ...");
+
 			$j.ajax({
 				url: url,
 				dataType: 'json',
 				success: function (data) {
 					if (data['error_code'] == 200) {
-						window.disable = 1;
+						disable_controls();
 						$j("#error").hide('normal');
 						$j("span#r_ip").html(data['banned_ip']);
 						$j("span#r_mask").html(data['banned_mask']);
@@ -28,22 +57,18 @@ function do_ban(ip, postid, board) {
 						$j("span#r_post").html(data['postid'] ? data['postid'] : "<i>none</i>");
 						$j("#infobox").show('normal');
 
-						$j("#infodetails").text("User wurde gesperrt");
-						$j("#info").show('normal');
+						show_info("User wurde gesperrt");
+					} else if (data['error_msg']) {
+						show_error(data['error_msg']);
 					}
 				},
-				error: function (data) {
-					$j("#infobox").hide('normal');
-					$j("#info").hide('normal');
-					$j("#errordetails").text(data);
-					$j("#error").show('normal');
+				error: function (data, status, error) {
+					show_error(status);
 				}
 			});
 		},
 		"Schließen": function () {
-			$j("#infobox").hide('normal');
-			$j("#error").hide('normal');
-			$j("#info").hide('normal');
+			hide_all();
 			$j(this).dialog('close');
 		}
 	}
@@ -60,42 +85,41 @@ function do_ban(ip, postid, board) {
 		width: 'auto'
 	});
 
-	$j("#ip").attr('disabled', true).val(ip);
-	$j("#netmask").attr('disabled', true);
-	$j("#duration").attr('disabled', true);
-	$j("#reason").attr('disabled', true).val("");
+	$j("#ip").val(ip);
+	$j("#reason").val("");
+	if (ip.indexOf(":") != -1) {
+		$j("#netmask").val("255.255.255.255");
+	} else {
+		$j("#netmask").val("255.255.0.0");
+	}
 
-	$j("#infodetails").text("Daten abrufen ...");
-	$j("#info").show('normal');
+	disable_controls();
 	$j("#infobox").hide('normal');
 	$j("#error").hide('normal');
+	show_info("Daten abrufen ...");
 
 	$j.ajax({
 		url: "/" + board + "/?task=checkban&ip=" + ip,
 		dataType: 'json',
 		success: function (data) {
 			if (data['results'] == 0) {
-				window.disable = 0;
-				$j("#info").hide('normal');
 				$j("#ip").attr('disabled', false);
 				if (ip.indexOf(":") != -1) {
-					$j("#netmask").attr('disabled', true).val("255.255.255.255");
+					$j("#netmask").attr('disabled', true);
 				} else {
 					$j("#netmask").attr('disabled', false);
 				}
 				$j("#duration").attr('disabled', false);
-				$j("#reason").attr('disabled', false).val("").focus();
+				$j("#reason").attr('disabled', false).focus();
+				$j("#info").hide('normal');
+			} else if (data['results'] >= 1) {
+				show_info("User wurde bereits gesperrt");
+			} else if (data['error_msg']) {
+				show_error(data['error_msg']);
 			}
-			if (data['results'] >= 1) {
-				window.disable = 1;
-				$j("#ip").attr('disabled', true);
-				$j("#netmask").attr('disabled', true);
-				$j("#duration").attr('disabled', true);
-				$j("#reason").attr('disabled', true).val("unknown");
-
-				$j("#infodetails").text("User wurde bereits gesperrt");
-				$j("#info").show('normal');
-			}
+		},
+		error: function (data, status, error) {
+			show_error(status);
 		}
 	});
 
