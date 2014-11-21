@@ -208,6 +208,12 @@ sub get_as_info($) {
 	return ($as_num, $as_info);
 }
 
+sub count_lines($) {
+	my ($str) = @_;
+	my $count = () = $str =~ m!<br />!g;
+	return $count;
+}
+
 sub abbreviate_html {
     my ( $html, $max_lines, $approx_len ) = @_;
     my ( $lines, $chars, @stack );

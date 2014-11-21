@@ -145,10 +145,20 @@
 </loop>
 
 	<section class="text">
-		<var $comment>
 		<if $abbrev>
-			<var sprintf(S_ABBRTEXT,get_reply_link($num,$parent))>
+			<div style="display: none;" id="posttext_full_<var $num>">
+				<var $comment_full>
+			</div>
 		</if>
+
+		<div id="posttext_<var $num>">
+			<var $comment>
+			<if $abbrev>
+				<p class="tldr">
+					[<a href="<var get_reply_link($num,$parent)>" onclick="return expand_post('<var $num>')"><var $abbrev></a>]
+				</p>
+			</if>
+		</div>
 		<if $banned><const S_BANNED></if>
 	</section>
 
