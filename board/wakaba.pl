@@ -800,14 +800,13 @@ sub output_page {
 			# create ref-links
 			$$post{comment} = resolve_reflinks($$post{comment});
 
-            my ($abbreviation, $hidden) =
+            my $abbreviation =
               abbreviate_html( $$post{comment}, MAX_LINES_SHOWN,
                 APPROX_LINE_LENGTH );
             if ($abbreviation) {
-#                $$post{abbrev} = get_abbrev_message(count_lines($$post{comment}) - count_lines($abbreviation));
+                $$post{abbrev} = get_abbrev_message(count_lines($$post{comment}) - count_lines($abbreviation));
                 $$post{comment_full} = $$post{comment};
                 $$post{comment} = $abbreviation;
-                $$post{abbrev} = get_abbrev_message($hidden);
             }
         }
     }
