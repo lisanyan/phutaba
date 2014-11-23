@@ -173,6 +173,7 @@ use constant NORMAL_FOOT_INCLUDE => q{
 	</ul>
 </nav>
 </div>
+<const TRACKING_CODE>
 </body>
 </html>
 };

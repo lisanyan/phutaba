@@ -68,10 +68,12 @@ my $tt = Template->new({
 my $ttfile = "content/" . $page . ".tt2";
 
 if (-e 'tpl/' . $ttfile) {
-        $tt->process($ttfile, {}) or die($tt->process("error.tt2", {'error' => $tt->error}));
+        $tt->process($ttfile, {'tracking_code' => TRACKING_CODE}) or die($tt->process("error.tt2", {'error' => $tt->error}));
 } else {
-        $tt->process("error.tt2", {'error' => {'type' => "HTTP 404", 'info' => "Die angeforderte Datei wurde nicht gefunden."}});
+        $tt->process("error.tt2", {
+			'tracking_code' => TRACKING_CODE,
+			'error' => {'type' => "HTTP 404", 'info' => "Die angeforderte Datei wurde nicht gefunden."}
+		});
 }
 
 1;
-
