@@ -211,6 +211,8 @@ sub get_as_info($) {
 sub count_lines($) {
 	my ($str) = @_;
 	my $count = () = $str =~ m!<br ?/>|<p>|<blockquote!g;
+	# correct "off by one" error caused by abbreviation code
+	$count-- if ($str =~ m!<br /></blockquote>$!);
 	return $count;
 }
 
