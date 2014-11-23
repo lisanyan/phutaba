@@ -216,8 +216,11 @@ sub count_lines($) {
 
 sub abbreviate_html {
     my ( $html, $max_lines, $approx_len ) = @_;
-    my ( $lines, $chars, @stack );
+    my ( $lines, $chars, @stack, $visible, $done, $abbrev );
     $lines = 0;
+	$visible = 0;
+	$done = 0;
+	$abbrev = undef;
     return undef unless ($max_lines);
 
     while ( $html =~ m!(?:([^<]+)|<(/?)(\w+).*?(/?)>)!g ) {
@@ -243,21 +246,21 @@ sub abbreviate_html {
                 $lines++ if ( $tag eq "p" or $tag eq "blockquote" );
                 $chars = 0;
             }
-            if ( $lines >= $max_lines ) {
+
+            if ( $lines >= $max_lines and !$done ) {
+				$done = 1;
+				$visible = $lines;
 
                 # check if there's anything left other than end-tags
-                return undef
-                  if ( substr $html, pos $html ) =~ m!^(?:\s*</\w+>)*\s*$!s;
-
-                my $abbrev = substr $html, 0, pos $html;
-                while ( my $tag = pop @stack ) { $abbrev .= "</$tag>" }
-
-                return $abbrev;
+                unless (( substr $html, pos $html ) =~ m!^(?:\s*</\w+>)*\s*$!s) {
+					$abbrev = substr $html, 0, pos $html;
+					while ( my $tag = pop @stack ) { $abbrev .= "</$tag>" }
+				}
             }
         }
     }
 
-    return undef;
+    return ($abbrev, $lines-$visible);
 }
 
 sub sanitize_html {
@@ -1886,6 +1889,8 @@ sub remove_path($) {
 sub get_urlstring($) {
     my ($filename) = @_;
 	$filename =~ s/ /%20/g;
+	$filename =~ s/\[/%5B/g;
+	$filename =~ s/\]/%5D/g;
 	return $filename;
 }
 
