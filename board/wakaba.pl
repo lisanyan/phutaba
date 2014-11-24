@@ -2280,9 +2280,9 @@ sub delete_post {
         else    # remove just the image(s) and update the database
         {
             $sth = $dbh->prepare(
-                    "SELECT image,thumbnail FROM " . SQL_TABLE_IMG . " WHERE post=? OR thread=?" )
+                    "SELECT image,thumbnail FROM " . SQL_TABLE_IMG . " WHERE post=?;" )
               or make_error(S_SQLFAIL);
-            $sth->execute( $post, $post ) or make_error(S_SQLFAIL);
+            $sth->execute($post) or make_error(S_SQLFAIL);
 
             while ( $res = $sth->fetchrow_hashref() ) {
 				# delete images if they exist
@@ -2292,9 +2292,9 @@ sub delete_post {
 
 			$sth = $dbh->prepare( "UPDATE "
 				  . SQL_TABLE_IMG
-				  . " SET size=0,md5=null,thumbnail=null,info=null,info_all=null WHERE post=? OR thread=?;" )
+				  . " SET size=0,md5=null,thumbnail=null,info=null,info_all=null WHERE post=?;" )
 				or make_error(S_SQLFAIL);
-			$sth->execute($post, $post) or make_error(S_SQLFAIL);
+			$sth->execute($post) or make_error(S_SQLFAIL);
         }
     }
 }
