@@ -173,6 +173,7 @@ use constant NORMAL_FOOT_INCLUDE => q{
 	</ul>
 </nav>
 </div>
+<const TRACKING_CODE>
 </body>
 </html>
 };
@@ -468,6 +469,7 @@ use constant ERROR_FOOT_INCLUDE => q{
 <hr />
 <footer>Powered by <img src="/img/phutaba_icon.png" alt="" /> <strong>Phutaba</strong>.</footer>
 </div>
+<const TRACKING_CODE>
 </body>
 </html>
 };
