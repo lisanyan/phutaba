@@ -3,5 +3,6 @@
 %]
 
 	<section class="error">
-		<p>Fehler: [[% error.type %]] [% error.info %]</p>
+		<p>[% error.type %]</p>
+		<p>[% error.info %]</p>
 	</section>

@@ -1,11 +1,10 @@
+ErrorDocument 403 /index.pl?p=err403
+ErrorDocument 404 /index.pl?p=err404
 
+ErrorDocument 500 /errors/50x.html
 ErrorDocument 502 /errors/50x.html
 ErrorDocument 503 /errors/50x.html
 ErrorDocument 504 /errors/50x.html
-
-ErrorDocument 500 /errors/50x.html
-ErrorDocument 403 /errors/403.html
-ErrorDocument 404 /errors/404.html
 
 Options -MultiViews
 
