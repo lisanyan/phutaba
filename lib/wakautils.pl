@@ -1954,9 +1954,9 @@ sub get_post_info($) {
 
 		# as num, name and ban link
 		$items[4] =~ /^AS(\d+) /;
-		$items[4] .= ' <a href="' . $ENV{SCRIPT_NAME}
+		$items[4] .= ' [<a href="' . $ENV{SCRIPT_NAME}
 			. '?task=addstring&amp;type=asban&amp;string=' . $1
-			. '&amp;comment=' . urlenc($items[4]) . '">[Sperren]</a>';
+			. '&amp;comment=' . urlenc($items[4]) . '">Sperren</a>]';
 
 		return $flag . $location . '<br />' . $items[4];
 	}
