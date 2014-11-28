@@ -37,8 +37,8 @@ use constant S_ABBRIMG1 => 'und 1 Datei ';		# Prints text to be shown when repli
 use constant S_ABBRIMG2 => 'und %d Dateien ';
 use constant S_ABBR_END => 'ausgeblendet.'; 
 
-use constant S_ABBRTEXT =>
-  '<p class="tldr">[<a href="%s">Post gek&uuml;rzt; Vollst&auml;ndig anzeigen</a>]</p>';
+use constant S_ABBRTEXT1 => '1 weitere Zeile anzeigen';
+use constant S_ABBRTEXT2 => '%d weitere Zeilen anzeigen';
 
 use constant S_BANNED  => '<p class="ban">(User wurde f&uuml;r diesen Post gesperrt)</p>';
 

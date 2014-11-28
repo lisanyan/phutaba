@@ -208,6 +208,14 @@ sub get_as_info($) {
 	return ($as_num, $as_info);
 }
 
+sub count_lines($) {
+	my ($str) = @_;
+	my $count = () = $str =~ m!<br ?/>|<p>|<blockquote!g;
+	# correct "off by one" error caused by abbreviation code
+	$count-- if ($str =~ m!<br /></blockquote>$!);
+	return $count;
+}
+
 sub abbreviate_html {
     my ( $html, $max_lines, $approx_len ) = @_;
     my ( $lines, $chars, @stack );
@@ -1880,6 +1888,8 @@ sub remove_path($) {
 sub get_urlstring($) {
     my ($filename) = @_;
 	$filename =~ s/ /%20/g;
+	$filename =~ s/\[/%5B/g;
+	$filename =~ s/\]/%5D/g;
 	return $filename;
 }
 
@@ -1944,9 +1954,9 @@ sub get_post_info($) {
 
 		# as num, name and ban link
 		$items[4] =~ /^AS(\d+) /;
-		$items[4] .= ' <a href="' . $ENV{SCRIPT_NAME}
+		$items[4] .= ' [<a href="' . $ENV{SCRIPT_NAME}
 			. '?task=addstring&amp;type=asban&amp;string=' . $1
-			. '&amp;comment=' . urlenc($items[4]) . '">[Sperren]</a>';
+			. '&amp;comment=' . urlenc($items[4]) . '">Sperren</a>]';
 
 		return $flag . $location . '<br />' . $items[4];
 	}

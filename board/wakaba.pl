@@ -804,8 +804,9 @@ sub output_page {
               abbreviate_html( $$post{comment}, MAX_LINES_SHOWN,
                 APPROX_LINE_LENGTH );
             if ($abbreviation) {
+                $$post{abbrev} = get_abbrev_message(count_lines($$post{comment}) - count_lines($abbreviation));
+                $$post{comment_full} = $$post{comment};
                 $$post{comment} = $abbreviation;
-                $$post{abbrev}  = 1;
             }
         }
     }
@@ -864,6 +865,12 @@ sub get_omit_message($$) {
 	$omitfiles = sprintf(S_ABBRIMG2, $files) if ($files > 1);
 
 	return $omitposts . $omitfiles . S_ABBR_END;
+}
+
+sub get_abbrev_message($) {
+	my ($lines) = @_;
+	return S_ABBRTEXT1 if ($lines == 1);
+	return sprintf(S_ABBRTEXT2, $lines);
 }
 
 sub show_thread {

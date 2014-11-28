@@ -137,6 +137,11 @@ function insert(text) {
 	}
 }
 
+function expand_post(id) {
+	$j("#posttext_" + id).html($j("#posttext_full_" + id).html());
+	return false;
+}
+
 function set_inputs(id) {
 	with (document.getElementById(id)) {
 		if ((typeof field1 == "object") && (!field1.value)) field1.value = get_cookie("name");
