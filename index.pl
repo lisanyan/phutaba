@@ -69,13 +69,13 @@ my $ttfile = "content/" . $page . ".tt2";
 
 if ($page eq 'err403') {
 	tpl_make_error({
-		'type' => "Fehler 403: Zugriff verboten",
+		'type' => "HTTP-Fehler 403: Zugriff verboten",
 		'info' => "Der Zugriff auf diese Ressource ist nicht erlaubt."
 	});
 }
 elsif ($page eq 'err404') {
 	tpl_make_error({
-		'type' => "Fehler 404: Objekt nicht gefunden",
+		'type' => "HTTP-Fehler 404: Objekt nicht gefunden",
 		'info' => "Die gew&uuml;nschte Datei existiert nicht oder wurde gel&ouml;scht."}
 	);
 }
@@ -83,10 +83,9 @@ elsif (-e 'tpl/' . $ttfile) {
 	$tt->process($ttfile, {'tracking_code' => TRACKING_CODE}) or die($tt->process("error.tt2", {'error' => $tt->error}));
 }
 else {
-#	tpl_make_error({'type' => "Template fehlt", 'info' => "Die angeforderte Datei wurde nicht gefunden."});
 	tpl_make_error({
-		'type' => "Fehler 404: Objekt nicht gefunden",
-		'info' => "Die gew&uuml;nschte Datei existiert nicht oder wurde gel&ouml;scht."}
+		'type' => "HTTP-Fehler 404: Objekt nicht gefunden",
+		'info' => "Es existiert weder ein Board noch eine Seite mit diesem Namen."}
 	);
 }
 
