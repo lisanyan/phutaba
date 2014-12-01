@@ -3027,6 +3027,8 @@ sub update_db_schema2 {  # mysql-specific. will be removed after migration is do
 					"ALTER TABLE " . SQL_TABLE . " CHANGE location location TEXT;"
 				) or make_error($dbh->errstr);
 				$sth->execute() or make_error($dbh->errstr);
+			} else {
+				$sth->finish;
 			}
 		}
 	}
