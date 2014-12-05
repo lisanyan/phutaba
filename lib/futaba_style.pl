@@ -14,15 +14,21 @@ use constant NORMAL_HEAD_INCLUDE => q{
 <link rel="stylesheet" type="text/css" href="/css/phutaba.css" />
 <if STYLESHEET><link rel="stylesheet" type="text/css" href="<const STYLESHEET>" /></if>
 <if test_afmod()><link rel="stylesheet" type="text/css" href="/css/af.css" /></if>
-<link rel="stylesheet" type="text/css" href="/css/ui-lightness/jquery-ui-1.10.2.custom.css" />
 
 <script type="text/javascript" src="/js/jquery-1.9.1.min.js"></script>
-<script type="text/javascript" src="/js/jquery/jquery-ui-1.10.2.custom.min.js"></script>
 <script type="text/javascript" src="/js/jquery/jquery.blockUI.js"></script>
-<script type="text/javascript" src="/js/jquery/jquery.cookie.js"></script>
 <script type="text/javascript" src="/js/wakaba3.js"></script>
-<if $isAdmin><script type="text/javascript" src="/js/admin.js"></script></if>
-<if ENABLE_HIDE_THREADS && !$thread><script type="text/javascript" src="/js/hidethreads.js"></script></if>
+
+<if $isAdmin>
+	<link rel="stylesheet" type="text/css" href="/css/ui-lightness/jquery-ui-1.10.2.custom.css" />
+	<script type="text/javascript" src="/js/jquery/jquery-ui-1.10.2.custom.min.js"></script>
+	<script type="text/javascript" src="/js/admin.js"></script>
+</if>
+
+<if ENABLE_HIDE_THREADS && !$thread>
+	<script type="text/javascript" src="/js/jquery/jquery.cookie.js"></script>
+	<script type="text/javascript" src="/js/hidethreads.js"></script>
+</if>
 <script type="text/javascript">
 /* <![CDATA[ */
   $j = jQuery.noConflict();
@@ -52,9 +58,6 @@ use constant NORMAL_HEAD_INCLUDE => q{
 /* ]]> */
 </script>
 
-<script type="text/javascript">
-	var board = '<const BOARD_IDENT>', thread_id = <if $thread><var $thread></if><if !$thread>null</if>;
-</script>
 <script type="text/javascript" src="/js/context.js"></script>
 
 <style type="text/css">
@@ -118,7 +121,13 @@ use constant NORMAL_HEAD_INCLUDE => q{
 <div class="content">
 
 <script type="text/javascript" src="/js/wz_tooltip.js"></script>
-<if ENABLE_WEBSOCKET_NOTIFY && $thread && !$locked><script type="text/javascript" src="/js/websock.js"></script></if>
+
+<if ENABLE_WEBSOCKET_NOTIFY && $thread && !$locked>
+<script type="text/javascript">
+	var board = '<const BOARD_IDENT>', thread_id = <if $thread><var $thread></if><if !$thread>null</if>;
+</script>
+<script type="text/javascript" src="/js/websock.js"></script>
+</if>
 
 <nav>
 	<ul class="menu">
@@ -165,7 +174,7 @@ use constant NORMAL_FOOT_INCLUDE => q{
 
 <footer>
 	<p>Powered by <img src="/img/phutaba_icon.png" alt="" /> <strong>Phutaba</strong>.</p>
-	<p><em>Report illegal material to <a href="mailto:post-abuse@ernstchan.com">post-abuse@ernstchan.com</a>.</em></p>
+	<if ABUSE_EMAIL><p><em>Report illegal material to <a href="mailto:<const ABUSE_EMAIL>"><const ABUSE_EMAIL></a>.</em></p></if>
 </footer>
 <nav>
 	<ul class="menu_bottom">
@@ -204,8 +213,6 @@ use constant PAGE_TEMPLATE => compile_template(
 		<if $isAdmin>
 			<tr><td class="postblock">## Team ##</td>
 			<td><label><input type="checkbox" name="as_admin" value="1" />  <const S_POSTASADMIN></label></td></tr>
-		</if>
-		<if $isAdmin>
 			<tr><td class="postblock">HTML</td>
 			<td><label><input type="checkbox" name="no_format" value="1" /> <const S_NOTAGS2></label></td></tr>
 		</if>
@@ -240,7 +247,8 @@ use constant PAGE_TEMPLATE => compile_template(
 	</if>
 
 	<if use_captcha(ENABLE_CAPTCHA, $loc)>
-		<tr><td class="postblock"><const S_CAPTCHA> (<a href="/faq">?</a>) (<var $loc>)</td><td><input type="text" name="captcha" size="10" /> <img alt="" src="/lib/captcha.pl?key=<var get_captcha_key($thread)>&amp;dummy=<var $dummy>&amp;board=<var BOARD_IDENT>" /></td></tr>
+		<tr><td class="postblock"><label for="captcha"><const S_CAPTCHA></label> (<a href="/faq">?</a>) (<var $loc>)</td>
+		<td><input type="text" name="captcha" id="captcha" size="10" /> <img alt="" src="/lib/captcha.pl?key=<var get_captcha_key($thread)>&amp;dummy=<var $dummy>&amp;board=<var BOARD_IDENT>" /></td></tr>
 	</if>
 
 	<tr id="passwordField"><td class="postblock"><label for="password"><const S_DELPASS></label></td><td><input type="password" name="password" id="password" /> <const S_DELEXPL></td></tr>
