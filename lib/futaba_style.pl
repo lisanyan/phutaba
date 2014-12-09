@@ -13,8 +13,8 @@ use constant NORMAL_HEAD_INCLUDE => q{
 <link rel="stylesheet" type="text/css" href="/css/phutaba.css" />
 <if STYLESHEET><link rel="stylesheet" type="text/css" href="<const STYLESHEET>" /></if>
 <if test_afmod()><link rel="stylesheet" type="text/css" href="/css/af.css" /></if>
-<link rel="shortcut icon" href="/img/favicon.ico" />
-<link rel="apple-touch-icon" href="/img/favicon-152.png" />
+<link rel="shortcut icon" type="image/x-icon" href="/img/favicon.ico" />
+<link rel="icon" type="image/x-icon" href="/img/favicon.ico" />
 <link rel="apple-touch-icon-precomposed" href="/img/favicon-152.png" />
 <meta name="msapplication-TileImage" content="/img/favicon-144.png" />
 <meta name="msapplication-TileColor" content="#ECE9E2" />
@@ -444,8 +444,8 @@ use constant ERROR_HEAD_INCLUDE => q{
 	<title><const TITLE> &raquo; <var $error_page></title>
 	<meta charset="<const CHARSET>" />
 	<link rel="stylesheet" type="text/css" href="/css/phutaba.css" />
-	<link rel="shortcut icon" href="/img/favicon.ico" />
-	<link rel="apple-touch-icon" href="/img/favicon-152.png" />
+	<link rel="shortcut icon" type="image/x-icon" href="/img/favicon.ico" />
+	<link rel="icon" type="image/x-icon" href="/img/favicon.ico" />
 	<link rel="apple-touch-icon-precomposed" href="/img/favicon-152.png" />
 	<meta name="msapplication-TileImage" content="/img/favicon-144.png" />
 	<meta name="msapplication-TileColor" content="#ECE9E2" />
