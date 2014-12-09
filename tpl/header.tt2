@@ -6,6 +6,10 @@
 	<!--meta charset="utf-8" /-->
 	<link rel="stylesheet" type="text/css" href="/css/phutaba.css" />
 	<link rel="shortcut icon" href="/img/favicon.ico" />
+	<link rel="apple-touch-icon-precomposed" href="/img/favicon-152.png" />
+	<meta name="msapplication-TileImage" content="/img/favicon-144.png" />
+	<meta name="msapplication-TileColor" content="#ECE9E2" />
+	<meta name="msapplication-navbutton-color" content="#BFB5A1" />
 </head>
 
 <body>

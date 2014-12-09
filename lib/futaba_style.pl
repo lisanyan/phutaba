@@ -10,10 +10,14 @@ use constant NORMAL_HEAD_INCLUDE => q{
 <title><var strip_html(TITLE)> &raquo; <if $title><var strip_html($title)></if><if !$title>/<var strip_html(BOARD_IDENT)>/ - <var strip_html(BOARD_NAME)></if></title>
 <meta charset="<const CHARSET>" />
 
-<link rel="shortcut icon" href="/img/favicon.ico" />
 <link rel="stylesheet" type="text/css" href="/css/phutaba.css" />
 <if STYLESHEET><link rel="stylesheet" type="text/css" href="<const STYLESHEET>" /></if>
 <if test_afmod()><link rel="stylesheet" type="text/css" href="/css/af.css" /></if>
+<link rel="shortcut icon" href="/img/favicon.ico" />
+<link rel="apple-touch-icon-precomposed" href="/img/favicon-152.png" />
+<meta name="msapplication-TileImage" content="/img/favicon-144.png" />
+<meta name="msapplication-TileColor" content="#ECE9E2" />
+<meta name="msapplication-navbutton-color" content="#BFB5A1" />
 
 <script type="text/javascript" src="/js/jquery-1.9.1.min.js"></script>
 <script type="text/javascript" src="/js/jquery/jquery.blockUI.js"></script>
@@ -438,8 +442,12 @@ use constant ERROR_HEAD_INCLUDE => q{
 <head>
 	<title><const TITLE> &raquo; <var $error_page></title>
 	<meta charset="<const CHARSET>" />
-	<link rel="shortcut icon" href="/img/favicon.ico" />
 	<link rel="stylesheet" type="text/css" href="/css/phutaba.css" />
+	<link rel="shortcut icon" href="/img/favicon.ico" />
+	<link rel="apple-touch-icon-precomposed" href="/img/favicon-152.png" />
+	<meta name="msapplication-TileImage" content="/img/favicon-144.png" />
+	<meta name="msapplication-TileColor" content="#ECE9E2" />
+	<meta name="msapplication-navbutton-color" content="#BFB5A1" />
 </head>
 
 <body>
