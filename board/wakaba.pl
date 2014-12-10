@@ -2671,7 +2671,8 @@ sub make_ban {
 }
 
 sub get_script_name {
-    return encode('utf-8', $ENV{SCRIPT_NAME});
+    #return encode('utf-8', $ENV{SCRIPT_NAME});
+    return $ENV{SCRIPT_NAME};
 }
 
 sub get_secure_script_name {

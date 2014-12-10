@@ -210,6 +210,10 @@ sub get_as_info($) {
 
 sub count_lines($) {
 	my ($str) = @_;
+	# do not count empty lines
+	$str =~ s!(<br ?/>)+!<br />!g;
+	# do not count newlines at the end of the comment
+	$str =~ s!(<br ?/>)+$!!;
 	my $count = () = $str =~ m!<br ?/>|<p>|<blockquote!g;
 	# correct "off by one" error caused by abbreviation code
 	$count-- if ($str =~ m!<br /></blockquote>$!);
@@ -253,6 +257,9 @@ sub abbreviate_html {
 
                 my $abbrev = substr $html, 0, pos $html;
                 while ( my $tag = pop @stack ) { $abbrev .= "</$tag>" }
+
+				# remove newlines from the end of the comment
+				$abbrev =~ s/(<br ?\/>)+$//;
 
                 return $abbrev;
             }
@@ -577,6 +584,8 @@ sub do_wakabamark($;$$) {
         }
         $simplify = 0;
     }
+
+	$res =~ s!<br />$!!; # remove last newline
 
     return $res;
 }
