@@ -182,9 +182,9 @@ if ( !table_exists(SQL_TABLE) )    # check for comments table
     show_page(1);
 }
 elsif ( !$task and !$json ) {
-
+    my $admin  = $query->cookie("wakaadmin");
     # when there is no task, show the first page.
-    show_page(1);
+    show_page(1, $admin);
 }
 elsif ( $task eq "show" ) {
     my $page   = $query->param("page");
@@ -2671,7 +2671,8 @@ sub make_ban {
 }
 
 sub get_script_name {
-    return encode('utf-8', $ENV{SCRIPT_NAME});
+    #return encode('utf-8', $ENV{SCRIPT_NAME});
+    return $ENV{SCRIPT_NAME};
 }
 
 sub get_secure_script_name {

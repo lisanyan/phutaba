@@ -14,6 +14,7 @@ BEGIN {
     die S_NOSQL    unless ( defined &SQL_DBI_SOURCE );
     die S_NOSQL    unless ( defined &SQL_USERNAME );
     die S_NOSQL    unless ( defined &SQL_PASSWORD );
+    eval "use constant ABUSE_EMAIL => ''" unless (defined &ABUSE_EMAIL);
     eval "use constant TRACKING_CODE => ''" unless (defined &TRACKING_CODE);
     eval "use constant DISABLE_NEW_THREADS => 0" unless (defined &DISABLE_NEW_THREADS);
     eval "use constant SQL_TABLE => 'comments'" unless ( defined &SQL_TABLE );
