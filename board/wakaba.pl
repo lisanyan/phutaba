@@ -2205,6 +2205,8 @@ sub delete_post {
           if ( $password and $$row{password} ne $password );
         make_error(S_BADDELIP)
           if ( $deletebyip and ( $numip and $$row{ip} ne $numip ) );
+		make_error(S_RENZOKU4)
+		  if ( $$row{timestamp} + RENZOKU4 >= time() and !$admin );
 
         unless ($fileonly) {
 

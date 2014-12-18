@@ -235,6 +235,8 @@ use constant S_RENZOKU2 =>
   'Fehler: Zu viele Posts abgesetzt.';    # Returns error for $sec/upload spam filter
 use constant S_RENZOKU3 =>
   'Fehler: Zu viele Posts abgesetzt.';    # Returns error for $sec/similar posts spam filter.
+use constant S_RENZOKU4 =>
+  'Fehler: L&ouml;schwartezeit noch nicht abgelaufen.';    # Returns error for too early post deletion.
 use constant S_PROXY =>
   'Fehler: Ich mag keine Proxys.';    # Returns error for proxy detection.
 use constant S_DUPE =>

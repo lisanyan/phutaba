@@ -138,6 +138,7 @@ eval "use constant SQL_PREFIX => 'ernstchan_';" unless ( defined &SQL_PREFIX );
     eval "use constant RENZOKU => 5"          unless ( defined &RENZOKU );
     eval "use constant RENZOKU2 => 10"        unless ( defined &RENZOKU2 );
     eval "use constant RENZOKU3 => 900"       unless ( defined &RENZOKU3 );
+    eval "use constant RENZOKU4 => 60"        unless ( defined &RENZOKU4 );
     eval "use constant NOSAGE_WINDOW => 1200" unless ( defined &NOSAGE_WINDOW );
     eval "use constant USE_SECURE_ADMIN => 0"
       unless ( defined &USE_SECURE_ADMIN );
