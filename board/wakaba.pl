@@ -899,7 +899,7 @@ sub show_thread {
 		$$row{comment} = resolve_reflinks($$row{comment});
         push( @thread, $row );
     }
-    make_error(S_NOTHREADERR) if ( !$thread[0] or $thread[0]{parent} );
+    make_error(S_NOTHREADERR, 1) if ( !$thread[0] or $thread[0]{parent} );
 
 	add_images_to_thread(@thread);
 
@@ -2593,9 +2593,9 @@ sub crypt_password {
 #
 
 sub make_http_header {
-    print "Content-Type: "
-      . get_xhtml_content_type( CHARSET, USE_XHTML ) . "\n";
-    print "\n";
+	my ($not_found) = @_;
+	print $query->header('text/html', '404 Not found') if ($not_found);
+	print $query->header('text/html') if (!$not_found);
 }
 
 sub make_json_header {
@@ -2607,9 +2607,10 @@ sub make_json_header {
 }
 
 sub make_error {
-    my ($error) = @_;
+    my ($error, $not_found) = @_;
 
-    make_http_header();
+    make_http_header() if (!defined $not_found);
+    make_http_header($not_found) if (defined $not_found);
 
     print encode_string(
         ERROR_TEMPLATE->(
