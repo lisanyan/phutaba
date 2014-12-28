@@ -2594,8 +2594,8 @@ sub crypt_password {
 
 sub make_http_header {
 	my ($not_found) = @_;
-	print $query->header('text/html', '404 Not found') if ($not_found);
-	print $query->header('text/html') if (!$not_found);
+	print $query->header(-type=>'text/html', -status=>'404 Not found', -charset=>'utf-8') if ($not_found);
+	print $query->header(-type=>'text/html', -charset=>'utf-8') if (!$not_found);
 }
 
 sub make_json_header {
