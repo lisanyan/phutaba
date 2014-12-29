@@ -351,7 +351,9 @@ elsif ( $task eq "paint" ) {
         my $time = time();
 	make_error("Keine Daten empfangen.") unless $file;
 	
-	my ( $filename, $md5, $width, $height, $thumbnail, $tn_width, $tn_height, $ignore1, $ignore2 ) = process_file( $file, $uploadname, $time );
+	my ( $filename, $md5, $width, $height, $thumbnail, $tn_width, $tn_height, $ignore1, $ignore2, $ignore3 )
+		= process_file( $file, $uploadname, $time );
+
       	# board, tmpid, filename, time, width, height, thumbnail, tn_width, tn_height
 	$sth = $dbh->prepare("INSERT INTO `oekaki` VALUES(?,?,?,?,?,?,?,?,?);") or make_error($dbh->errstr);
 	$sth->execute(BOARD_IDENT, $tmpid, $filename, $time, $width, $height, $thumbnail, $tn_width, $tn_height) or make_error($dbh->errstr);
@@ -1232,10 +1234,10 @@ sub post_stuff {
     make_error(S_NOTEXT) if ( $comment =~ /^\s*$/ and !$file );
 
     # get file size, and check for limitations.
-    my $size  = get_file_size($file)  if ($file);
-    my $size1 = get_file_size($file1) if ($file1);
-    my $size2 = get_file_size($file2) if ($file2);
-    my $size3 = get_file_size($file3) if ($file3);
+    my $size  = get_file_size($files[0]) if ($files[0]);
+    my $size1 = get_file_size($files[1]) if ($files[1]);
+    my $size2 = get_file_size($files[2]) if ($files[2]);
+    my $size3 = get_file_size($files[3]) if ($files[3]);
 
     # find IP
     #my $ip  = $ENV{REMOTE_ADDR};
@@ -1329,28 +1331,28 @@ sub post_stuff {
     # copy file, do checksums, make thumbnail, etc
     my (@filename, @md5, @width, @height, @thumbnail, @tn_width, @tn_height, @info, @info_all);
 
-	($filename[0], $md5[0], $width[0], $height[0], $thumbnail[0], $tn_width[0], $tn_height[0], $info[0], $info_all[0]) =
-		process_file($file, $uploadname, $time) if ($file);
+	($filename[0], $md5[0], $width[0], $height[0], $thumbnail[0], $tn_width[0], $tn_height[0], $info[0], $info_all[0], $file) =
+		process_file($files[0], $uploadname, $time) if ($files[0]);
 
     my $tsf1 = 0;
     my $tsf2 = 0;
     my $tsf3 = 0;
-    if ($file1) {
+    if ($files[1]) {
         $tsf1 = time() . sprintf( "%03d", int( rand(1000) ) );
-		($filename[1], $md5[1], $width[1], $height[1], $thumbnail[1], $tn_width[1], $tn_height[1], $info[1], $info_all[1]) =
-			process_file($file1, $file1, $tsf1);
+		($filename[1], $md5[1], $width[1], $height[1], $thumbnail[1], $tn_width[1], $tn_height[1], $info[1], $info_all[1], $file1) =
+			process_file($files[1], $files[1], $tsf1);
     }
 
-    if ($file2) {
+    if ($files[2]) {
         $tsf2 = time() . sprintf( "%03d", int( rand(1000) ) );
-		($filename[2], $md5[2], $width[2], $height[2], $thumbnail[2], $tn_width[2], $tn_height[2], $info[2], $info_all[2]) =
-			process_file($file2, $file2, $tsf2);
+		($filename[2], $md5[2], $width[2], $height[2], $thumbnail[2], $tn_width[2], $tn_height[2], $info[2], $info_all[2], $file2) =
+			process_file($files[2], $files[2], $tsf2);
     }
 
-    if ($file3) {
+    if ($files[3]) {
         $tsf3 = time() . sprintf( "%03d", int( rand(1000) ) );
-		($filename[3], $md5[3], $width[3], $height[3], $thumbnail[3], $tn_width[3], $tn_height[3], $info[3], $info_all[3]) =
-			process_file($file3, $file3, $tsf3);
+		($filename[3], $md5[3], $width[3], $height[3], $thumbnail[3], $tn_width[3], $tn_height[3], $info[3], $info_all[3], $file3) =
+			process_file($files[3], $files[3], $tsf3);
     }
 
     $numip = "0" if (ANONYMIZE_IP_ADDRESSES);
@@ -1387,17 +1389,17 @@ sub post_stuff {
 		($sth->execute(
 			$thread_id, $new_post_id, $filename[1], $size1, $md5[1], $width[1], $height[1],
 			$thumbnail[1], $tn_width[1], $tn_height[1], $file1, $info[1], $info_all[1]
-		) or make_error(S_SQLFAIL)) if ($file1);
+		) or make_error(S_SQLFAIL)) if ($files[1]);
 
 		($sth->execute(
 			$thread_id, $new_post_id, $filename[2], $size2, $md5[2], $width[2], $height[2],
 			$thumbnail[2], $tn_width[2], $tn_height[2], $file2, $info[2], $info_all[2]
-		) or make_error(S_SQLFAIL)) if ($file2);
+		) or make_error(S_SQLFAIL)) if ($files[2]);
 
 		($sth->execute(
 			$thread_id, $new_post_id, $filename[3], $size3, $md5[3], $width[3], $height[3],
 			$thumbnail[3], $tn_width[3], $tn_height[3], $file3, $info[3], $info_all[3]
-		) or make_error(S_SQLFAIL)) if ($file3);
+		) or make_error(S_SQLFAIL)) if ($files[3]);
 	}
 
 
@@ -1877,6 +1879,7 @@ sub get_file_size {
     my ($size) = 0;
     my ($ext) = $file =~ /\.([^\.]+)$/;
     my %sizehash = FILESIZES;
+	#my $errfname = clean_string(decode_string($uploadname, CHARSET));
 
     $size = stat($file)->size if (defined($file));
     if ( $sizehash{$ext} ) {
@@ -1931,6 +1934,13 @@ sub process_file {
     make_error(S_TOOBIG . ' ('.$errfname.')') if ( MAX_IMAGE_HEIGHT and $height > MAX_IMAGE_HEIGHT );
     make_error(S_TOOBIG . ' ('.$errfname.')')
       if ( MAX_IMAGE_PIXELS and $width * $height > MAX_IMAGE_PIXELS );
+
+	# jpeg -> jpg
+	$uploadname =~ s/\.jpeg$/\.jpg/i;
+
+	# make sure $uploadname file extension matches detected extension (for internal formats)
+	my ($uploadext) = $uploadname =~ /\.([^\.]+)$/;
+	$uploadname .= "." . $ext if (lc($uploadext) ne $ext);
 
     # generate random filename - fudges the microseconds
     my $filebase  = $time . sprintf( "%03d", int( rand(1000) ) );
@@ -2101,7 +2111,7 @@ sub process_file {
     #	}
 
 	my ($info, $info_all) = get_meta_markup($filename);
-    return ($filename, $md5, $width, $height, $thumbnail, $tn_width, $tn_height, $info, $info_all);
+    return ($filename, $md5, $width, $height, $thumbnail, $tn_width, $tn_height, $info, $info_all, $uploadname);
 }
 
 #

@@ -74,6 +74,12 @@ use constant S_STICKYTITLE => 'Thread ist angepinnt'
 use constant S_LOCKEDTITLE => 'Thread ist geschlossen'
   ;    # Defines the title of the tiny locked image on a thread if it is locked
 
+# javascript message strings (do not use HTML entities; mask single quotes with \\\')
+use constant S_JS_EXPAND => 'Textfeld vergrößern';
+use constant S_JS_SHRINK => 'Textfeld verkleinern';
+use constant S_JS_REMOVEFILE => 'Datei entfernen';
+# javascript strings END
+
 use constant S_MANARET => 'Zur&uuml;ck'
   ;    # Returns to HTML file instead of PHP--thus no log/SQLDB update occurs
 use constant S_MANAMODE => 'Administration';   # Prints heading on top of Manager page

@@ -56,9 +56,10 @@ my $selector = ( $query->param("selector") or ".captcha" );
 my $style    = ( $query->cookie("wakabastyle"));
 my $board    = ( $query->param("board") or 'default');
 my $ip = $ENV{HTTP_X_REAL_IP};
-$ip = $ENV{REMOTE_ADDR} if ($ip eq undef); # for crazy people who expose their server to the internet
+$ip = $ENV{REMOTE_ADDR} unless (defined($ip));
 
-my @foreground = find_stylesheet_color( $style, $selector );
+#my @foreground = find_stylesheet_color( $style, $selector );
+my @foreground = ( 0x70, 0x6b, 0x5e );
 my @background = ( 0xff, 0xff, 0xff );
 
 my $dbh =
