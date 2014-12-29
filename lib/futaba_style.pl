@@ -19,6 +19,7 @@ use constant NORMAL_HEAD_INCLUDE => q{
 <meta name="msapplication-TileImage" content="/img/favicon-144.png" />
 <meta name="msapplication-TileColor" content="#ECE9E2" />
 <meta name="msapplication-navbutton-color" content="#BFB5A1" />
+<meta name="msapplication-config" content="none" />
 <if TITLE && !$thread>
 <meta name="application-name" content="<const TITLE> /<const BOARD_IDENT>/" />
 <meta name="apple-mobile-web-app-title" content="<const TITLE>" />
@@ -458,6 +459,7 @@ use constant ERROR_HEAD_INCLUDE => q{
 	<meta name="msapplication-TileImage" content="/img/favicon-144.png" />
 	<meta name="msapplication-TileColor" content="#ECE9E2" />
 	<meta name="msapplication-navbutton-color" content="#BFB5A1" />
+	<meta name="msapplication-config" content="none" />
 </head>
 
 <body>
