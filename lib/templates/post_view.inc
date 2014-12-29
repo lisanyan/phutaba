@@ -56,10 +56,12 @@
 	</if>
 
 	<if $isAdmin>
+		<if !$adminpost>
 		<div style="display: none; min-width: 250px;" id="postinfo_<var $num>">
 			<var get_post_info($location)>
 		</div>
 		<span onmouseover="TagToTip('postinfo_<var $num>', TITLE, '<const S_POSTINFO>', DELAY, 0, CLICKSTICKY, true)" onmouseout="UnTip()">[<var dec_to_dot($ip)>]</span>
+		</if>
 		<if !$parent>	
 			<if $sticky_isnull>
 				<span class="sticky" onmouseover="Tip('<const S_MPSTICKY>')" onmouseout="UnTip()"><a href="<var $self>?task=sticky&amp;threadid=<var $num>"><img src="/img/icons/sticky.png"></a></span>
@@ -86,8 +88,10 @@
 			</if>
 			
 		</if>
+		<if !$adminpost>
 		<span class="ban"         onmouseover="Tip('<const S_MPBAN>')"       onmouseout="UnTip()"><a onclick="do_ban('<var dec_to_dot($ip)>', <var $num>, '<const BOARD_IDENT>')"><img src="/img/icons/ban.png"></a></span>
 		<span class="deleteall"   onmouseover="Tip('<const S_MPDELETEALL>')" onmouseout="UnTip()"><a href="<var $self>?task=deleteall&amp;ip=<var $ip>"><img src="/img/icons/delete_all.png"></a></span>
+		</if>
 		<span class="delete_file" onmouseover="Tip('<const S_MPDELFILE>')"   onmouseout="UnTip()"><a href="<var $self>?task=delete&amp;delete=<var $num>&amp;fileonly=on"><img src="/img/icons/delete_file.png"></a></span>
 		<span class="delete_post" onmouseover="Tip('<const S_MPDELETE>')"    onmouseout="UnTip()"><a href="<var $self>?task=delete&amp;delete=<var $num>"><img src="/img/icons/delete.png"></a></span>
 	</if>

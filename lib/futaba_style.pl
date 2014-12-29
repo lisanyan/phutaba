@@ -7,7 +7,7 @@ use constant NORMAL_HEAD_INCLUDE => q{
 <!DOCTYPE html>
 <html lang="de">
 <head>
-<title><var strip_html(TITLE)> &raquo; <if $title><var strip_html($title)></if><if !$title>/<var strip_html(BOARD_IDENT)>/ - <var strip_html(BOARD_NAME)></if></title>
+<title><var strip_html(TITLE)> &raquo; <if $title><var strip_html($title)></if><if !$title>/<const BOARD_IDENT>/ - <var strip_html(BOARD_NAME)></if></title>
 <meta charset="<const CHARSET>" />
 
 <link rel="stylesheet" type="text/css" href="/css/phutaba.css" />
@@ -19,6 +19,10 @@ use constant NORMAL_HEAD_INCLUDE => q{
 <meta name="msapplication-TileImage" content="/img/favicon-144.png" />
 <meta name="msapplication-TileColor" content="#ECE9E2" />
 <meta name="msapplication-navbutton-color" content="#BFB5A1" />
+<if TITLE && !$thread>
+<meta name="application-name" content="<const TITLE> /<const BOARD_IDENT>/" />
+<meta name="apple-mobile-web-app-title" content="<const TITLE>" />
+</if>
 
 <script type="text/javascript" src="/js/jquery-1.9.1.min.js"></script>
 <script type="text/javascript" src="/js/jquery/jquery.blockUI.js"></script>
@@ -31,8 +35,8 @@ use constant NORMAL_HEAD_INCLUDE => q{
 </if>
 
 <if ENABLE_HIDE_THREADS && !$thread>
-	<script type="text/javascript" src="/js/jquery/jquery.cookie.js"></script>
-	<script type="text/javascript" src="/js/hidethreads.js"></script>
+<script type="text/javascript" src="/js/jquery/jquery.cookie.js"></script>
+<script type="text/javascript" src="/js/hidethreads.js"></script>
 </if>
 <script type="text/javascript">
 /* <![CDATA[ */
@@ -65,6 +69,10 @@ use constant NORMAL_HEAD_INCLUDE => q{
 
 <script type="text/javascript">
 	var board = '<const BOARD_IDENT>', thread_id = <if $thread><var $thread></if><if !$thread>null</if>;
+	var filetypes = '<var get_filetypes()>';
+	var msg_expand_field = '<const S_JS_EXPAND>';
+	var msg_shrink_field = '<const S_JS_SHRINK>';
+	var msg_remove_file = '<const S_JS_REMOVEFILE>';
 </script>
 <script type="text/javascript" src="/js/context.js"></script>
 
@@ -145,7 +153,7 @@ use constant NORMAL_HEAD_INCLUDE => q{
 	<div class="header">
 		<div class="banner">
 			<a href="/<const BOARD_IDENT>/">
-				<img src="/banner.pl?board=<const BOARD_IDENT>" alt="<const BOARD_IDENT>" />
+				<img src="/banner.pl?board=<const BOARD_IDENT>" alt="Banner" />
 			</a>
 		</div>
 		<div class="boardname" <if BOARD_DESC>style="margin-bottom: 5px;"</if>>/<const BOARD_IDENT>/ &ndash; <const BOARD_NAME></div>
@@ -467,7 +475,7 @@ use constant ERROR_HEAD_INCLUDE => q{
 
 <header>
 	<div class="header">
-		<div class="banner"><a href="/"><img src="/banner.pl" alt="Ernstchan" /></a></div>
+		<div class="banner"><a href="/"><img src="/banner.pl" alt="Banner" /></a></div>
 		<div class="boardname"><const TITLE></div>
 	</div>
 </header>
