@@ -6,6 +6,17 @@ use constant SQL_PASSWORD => '';		# MySQL password
 use constant DEFAULT_BOARD => '/board/';	# default board to redirect to from /
 use constant ABUSE_EMAIL => '';			# Abuse contact e-mail address. Shown in the footer of all pages.
 
+use constant FILEGROUPS => (
+	image => 'Bilder',
+	video => 'Videos',
+	archive => 'Archive',
+	audio => 'Audio',
+	doc => 'Dokumente',
+	other => 'Sonstige',
+);
+
+use constant GROUPORDER => qw(image video archive audio doc other); # other has to be last
+
 use constant TRACKING_CODE => qq();			# Paste the js/html of a visitor tracking software between ()
 
 1;
