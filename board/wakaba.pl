@@ -2738,6 +2738,7 @@ sub get_filetypes_table {
 	my %filegroups = FILEGROUPS;
 	my %filesizes = FILESIZES;
 	my @groups = GROUPORDER;
+	my @rows;
 	my $blocks = 0;
 	my $output = '<table style="margin:0px;border-collapse:collapse;display:inline-table;">' . "\n<tr>\n\t" . '<td colspan="4">'
 		. sprintf(S_ALLOWED, get_displaysize(MAX_KB*1024, DECIMAL_MARK, 0)) . "</td>\n</tr><tr>\n";
@@ -2756,15 +2757,16 @@ sub get_filetypes_table {
 		if (@extensions) {
 			$output .= "\t<td><strong>" . $filegroups{$group} . ":</strong>&nbsp;</td>\n\t<td>"
 				. join(", ", sort(@extensions)) . "&nbsp;&nbsp;&nbsp;</td>\n";
-
 			$blocks++;
 			if (!($blocks % 2)) {
-				$output .= "</tr><tr>\n";
+				push(@rows, $output);
+				$output = '';
 				$blocks = 0;
 			}
+
 		}
 	}
-	return $output . "</tr>\n</table>";
+	return join("</tr><tr>\n", @rows) . "</tr>\n</table>";
 }
 
 #sub dot_to_dec($)
