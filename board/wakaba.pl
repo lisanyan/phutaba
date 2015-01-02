@@ -2764,8 +2764,8 @@ sub get_filetypes_table {
 				$blocks = 0;
 			}
 		}
-		push(@rows, $output) if ($output);
 	}
+	push(@rows, $output) if ($output);
 	return join("</tr><tr>\n", @rows) . "</tr>\n</table>";
 }
 
