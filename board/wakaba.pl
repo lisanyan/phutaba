@@ -2763,8 +2763,8 @@ sub get_filetypes_table {
 				$output = '';
 				$blocks = 0;
 			}
-
 		}
+		push(@rows, $output) if ($output);
 	}
 	return join("</tr><tr>\n", @rows) . "</tr>\n</table>";
 }
