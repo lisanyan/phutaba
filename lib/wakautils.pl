@@ -98,7 +98,7 @@ sub get_meta_markup {
 	$exifData = get_meta($file, @metaOptions);
 	foreach (keys %$exifData) {
 		if (defined($options{$_}) and $$exifData{$_} ne "") {
-			$markup = $markup . "<strong>$options{$_}</strong>: $$exifData{$_}<br />";
+			$markup = $markup . "<strong>$options{$_}:</strong> $$exifData{$_}<br />";
 			if ($_ eq "PageCount") {
 				if ($$exifData{$_} eq 1) {
 					$info = "1 Seite";
@@ -1922,17 +1922,18 @@ sub get_displayname($) {
 	return $filename;
 }
 
-sub get_displaysize($;$) {
-	my ($size, $dec_mark) = @_;
+sub get_displaysize($;$$) {
+	my ($size, $dec_mark, $dec_places) = @_;
 	my $out;
+	$dec_places = 2 if (!defined($dec_places));
 
 	if ($size < 1024) {
 		$out = sprintf("%d Bytes", $size);
 	} elsif ($size >= 1024 && $size < 1024*1024) {
 		$out = sprintf("%.0f kB", $size/1024);
 	} else {
-		$out = sprintf("%.2f MB", $size / (1024*1024));
-		$out =~ s/00 MB$/0 MB/;
+		$out = sprintf("%.${dec_places}f MB", $size / (1024*1024));
+		$out =~ s/00 MB$/0 MB/ if ($dec_places gt 1);
 	}
 
 	$out =~ s/\./$dec_mark/e if ($dec_mark);

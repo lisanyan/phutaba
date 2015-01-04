@@ -18,6 +18,7 @@ use constant S_DELPASS => 'Passwort';    # Describes password field
 use constant S_DELEXPL =>
   '(Optional)';    # Prints explanation for password box (to the right)
 use constant S_SPAMTRAP => '';
+use constant S_ALLOWED => 'Erlaubte Dateiformate (Maximalgr&ouml;&szlig;e %s oder angegeben)';
 
 use constant S_THUMB => '';    # Prints instructions for viewing real source
 use constant S_HIDDEN =>

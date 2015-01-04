@@ -2006,21 +2006,21 @@ sub process_file {
 
     if ( !$width or !$filename =~ /\.svg$/ )    # unsupported file
     {
-        if ( $filetypes{$ext} )                 # externally defined filetype
-        {
-            open THUMBNAIL, $filetypes{$ext};
-            binmode THUMBNAIL;
-            ( $tn_ext, $tn_width, $tn_height ) =
-              analyze_image( \*THUMBNAIL, $filetypes{$ext} );
-            close THUMBNAIL;
-
-            # was that icon file really there?
-            if   ( !$tn_width ) { $thumbnail = undef }
-            else                { $thumbnail = $filetypes{$ext} }
-        }
-        else {
+#        if ( $filetypes{$ext} )                 # externally defined filetype
+#        {
+#            open THUMBNAIL, $filetypes{$ext};
+#            binmode THUMBNAIL;
+#            ( $tn_ext, $tn_width, $tn_height ) =
+#              analyze_image( \*THUMBNAIL, $filetypes{$ext} );
+#            close THUMBNAIL;
+#
+#            # was that icon file really there?
+#            if   ( !$tn_width ) { $thumbnail = undef }
+#            else                { $thumbnail = $filetypes{$ext} }
+#        }
+#        else {
             $thumbnail = undef;
-        }
+#        }
     }
     elsif ($width > MAX_W
         or $height > MAX_H
@@ -2720,10 +2720,53 @@ sub get_page_count {
     return int( ( $total + IMAGES_PER_PAGE- 1 ) / IMAGES_PER_PAGE );
 }
 
-sub get_filetypes {
+sub get_filetypes_hash {
     my %filetypes = FILETYPES;
-    $filetypes{gif} = $filetypes{jpg} = $filetypes{png} = $filetypes{pdf} = $filetypes{svg} = $filetypes{webm} = 1;
+    $filetypes{gif} = $filetypes{jpg} = $filetypes{jpeg} = $filetypes{png} = $filetypes{svg} = 'image';
+	$filetypes{pdf} = 'doc';
+	$filetypes{webm} = 'video';
+	return %filetypes;
+}
+
+sub get_filetypes {
+	my %filetypes = get_filetypes_hash();
     return join ", ", map { uc } sort keys %filetypes;
+}
+
+sub get_filetypes_table {
+	my %filetypes = get_filetypes_hash();
+	my %filegroups = FILEGROUPS;
+	my %filesizes = FILESIZES;
+	my @groups = GROUPORDER;
+	my @rows;
+	my $blocks = 0;
+	my $output = '<table style="margin:0px;border-collapse:collapse;display:inline-table;">' . "\n<tr>\n\t" . '<td colspan="4">'
+		. sprintf(S_ALLOWED, get_displaysize(MAX_KB*1024, DECIMAL_MARK, 0)) . "</td>\n</tr><tr>\n";
+	delete $filetypes{'jpeg'}; # show only jpg
+
+	foreach my $group (@groups) {
+		my @extensions;
+		foreach my $ext (keys %filetypes) {
+			if ($filetypes{$ext} eq $group or $group eq 'other') {
+				my $ext_desc = uc($ext);
+				$ext_desc .= ' (' . get_displaysize($filesizes{$ext}*1024, DECIMAL_MARK, 0) . ')' if ($filesizes{$ext});
+				push(@extensions, $ext_desc);
+				delete $filetypes{$ext};
+			}
+		}
+		if (@extensions) {
+			$output .= "\t<td><strong>" . $filegroups{$group} . ":</strong>&nbsp;</td>\n\t<td>"
+				. join(", ", sort(@extensions)) . "&nbsp;&nbsp;&nbsp;</td>\n";
+			$blocks++;
+			if (!($blocks % 2)) {
+				push(@rows, $output);
+				$output = '';
+				$blocks = 0;
+			}
+		}
+	}
+	push(@rows, $output) if ($output);
+	return join("</tr><tr>\n", @rows) . "</tr>\n</table>";
 }
 
 #sub dot_to_dec($)
