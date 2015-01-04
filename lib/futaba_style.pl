@@ -25,20 +25,10 @@ use constant NORMAL_HEAD_INCLUDE => q{
 <meta name="apple-mobile-web-app-title" content="<const TITLE>" />
 </if>
 
-<script type="text/javascript" src="/js/jquery-1.9.1.min.js"></script>
-<script type="text/javascript" src="/js/jquery/jquery.blockUI.js"></script>
-<script type="text/javascript" src="/js/wakaba3.js"></script>
-
 <if $isAdmin>
 	<link rel="stylesheet" type="text/css" href="/css/ui-lightness/jquery-ui-1.10.2.custom.css" />
-	<script type="text/javascript" src="/js/jquery/jquery-ui-1.10.2.custom.min.js"></script>
-	<script type="text/javascript" src="/js/admin.js"></script>
 </if>
 
-<if ENABLE_HIDE_THREADS && !$thread>
-<script type="text/javascript" src="/js/jquery/jquery.cookie.js"></script>
-<script type="text/javascript" src="/js/hidethreads.js"></script>
-</if>
 <script type="text/javascript">
 /* <![CDATA[ */
   $j = jQuery.noConflict();
@@ -75,7 +65,6 @@ use constant NORMAL_HEAD_INCLUDE => q{
 	var msg_shrink_field = '<const S_JS_SHRINK>';
 	var msg_remove_file = '<const S_JS_REMOVEFILE>';
 </script>
-<script type="text/javascript" src="/js/context.js"></script>
 
 <style type="text/css">
 <const ADDITIONAL_CSS>
@@ -194,6 +183,23 @@ use constant NORMAL_FOOT_INCLUDE => q{
 </nav>
 </div>
 <const TRACKING_CODE>
+
+<script type="text/javascript" src="/js/jquery-1.9.1.min.js"></script>
+<script type="text/javascript" src="/js/jquery/jquery.blockUI.js"></script>
+<script type="text/javascript" src="/js/wakaba3.js"></script>
+<script type="text/javascript" src="/js/context.js"></script>
+
+<if $isAdmin>
+        <script type="text/javascript" src="/js/jquery/jquery-ui-1.10.2.custom.min.js"></script>
+        <script type="text/javascript" src="/js/admin.js"></script>
+</if>
+
+<if ENABLE_HIDE_THREADS && !$thread>
+<script type="text/javascript" src="/js/jquery/jquery.cookie.js"></script>
+<script type="text/javascript" src="/js/hidethreads.js"></script>
+</if>
+
+
 </body>
 </html>
 };
