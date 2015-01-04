@@ -707,7 +707,7 @@ sub show_page {
 			$total = get_page_count($totalThreadCount);
 		}
         if ( $pageToShow > ( $total ) ) {
-            make_error(S_INVALID_PAGE);
+            make_error(S_INVALID_PAGE, 1);
         }
 
         while ( $row = get_decoded_hashref($sth)
@@ -736,7 +736,7 @@ sub show_page {
             $page++;
         }
         if ( $built_page == 0 ) {
-            make_error(S_INVALID_PAGE);
+            make_error(S_INVALID_PAGE, 1);
         }
     }
 }
