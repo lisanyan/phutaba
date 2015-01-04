@@ -225,27 +225,28 @@ elsif ($task eq "search") {
 }
 elsif ( $task eq "post" ) {
     my $parent     = $query->param("parent");
-    my $gb2        = $query->param("gb2");
+    my $spam1      = $query->param("name");
+    my $spam2      = $query->param("link");
     my $name       = $query->param("field1");
     my $email      = $query->param("field2");
     my $subject    = $query->param("field3");
     my $comment    = $query->param("field4");
-    my $password   = $query->param("password");
-    my $nofile     = $query->param("nofile");
+    my $gb2        = $query->param("gb2");
     my $captcha    = $query->param("captcha");
+    my $password   = $query->param("password");
     my $admin      = $query->cookie("wakaadmin");
+    my $nofile     = $query->param("nofile");
     my $no_captcha = $query->param("no_captcha");
     my $no_format  = $query->param("no_format");
     my $postfix    = $query->param("postfix");
-    my $sage       = $query->param("sage");
 	my $postAsAdmin = $query->param("as_admin");
 	my @files = $query->param("file"); # multiple uploads
 
     post_stuff(
-        $parent,  $name,      $email,      $gb2,       $subject,
-        $comment, $password,  $nofile,
-        $captcha, $admin,     $no_captcha, $no_format, $postfix,
-        $sage,    $postAsAdmin, @files
+        $parent,  $spam1,   $spam2,      $name,      $email,
+        $subject, $comment, $gb2,        $captcha,   $password,
+        $admin,   $nofile,  $no_captcha, $no_format, $postfix,
+        $postAsAdmin, @files
     );
 }
 elsif ( $task eq "delete" ) {
@@ -1161,10 +1162,10 @@ sub strip_html {
 
 sub post_stuff {
     my (
-        $parent,  $name,  $email,      $gb2,       $subject,
-        $comment, $password,  $nofile,
-        $captcha, $admin, $no_captcha, $no_format, $postfix,
-        $sage,    $postAsAdmin, @files
+        $parent,  $spam1,   $spam2,      $name,      $email,
+        $subject, $comment, $gb2,        $captcha,   $password,
+        $admin,   $nofile,  $no_captcha, $no_format, $postfix,
+        $postAsAdmin, @files
     ) = @_;
 
 	my $file = $files[0];
@@ -1270,6 +1271,19 @@ sub post_stuff {
 
     # check for bans
     ban_check($numip, $c_name, $subject, $comment, $as_num) unless $whitelisted;
+
+	# check for spam trap fields
+	if ($spam1 or $spam2) {
+		my ($banip, $banmask) = parse_range($numip, 0);
+
+		$sth = $dbh->prepare(
+			"INSERT INTO " . SQL_ADMIN_TABLE . " VALUES(null,?,?,?,?,?,FROM_UNIXTIME(?));")
+		  or make_error(S_SQLFAIL);
+		$sth->execute('ipban', 'Spam [Auto Ban]', $banip, $banmask, $time + 259200, $time)
+		  or make_error(S_SQLFAIL);
+
+		make_error(S_SPAM);
+	}
 
 	# get geoip info
 	my ($city, $region_name, $country_name, $loc) = get_geolocation($ip);
