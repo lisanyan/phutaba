@@ -29,43 +29,6 @@ use constant NORMAL_HEAD_INCLUDE => q{
 	<link rel="stylesheet" type="text/css" href="/css/ui-lightness/jquery-ui-1.10.2.custom.css" />
 </if>
 
-<script type="text/javascript">
-/* <![CDATA[ */
-  $j = jQuery.noConflict();
-  $j(document).ready(function() {
-    var match;
-    if ((match = /#i([0-9]+)/.exec(document.location.toString())) && !document.forms.postform.field4.value) insert(">>" + match[1] + "\n");
-    if ((match = /#([0-9]+)/.exec(document.location.toString()))) highlight(match[1]);
-    $j('#postform_submit').click(function() {
-	$j('.postarea').block({
-		message: 'Bitte warten &hellip;',
-		css: { fontSize: '2em', color: '#000000', background: '#D7CFC0', border: '1px solid #BFB5A1' },
-	});
-	setTimeout($j.unblockUI, 5000);
-    });
-
-	<if $thread>
-	$j('#delform').delegate('span.reflink a', 'click', function (ev) {
-		var a = ev.target,
-			sel = window.getSelection().toString();
-		ev.preventDefault();
-		insert('>>' + a.href.match(/#i(\d+)$/)[1] + '\n' + (sel ? '>' + sel.replace(/\n/g, '\n>') + '\n' : ''));
-	});
-	</if>
-
-	<if ENABLE_HIDE_THREADS && !$thread>hideThreads('<const BOARD_IDENT>', $j);</if>
-  });
-/* ]]> */
-</script>
-
-<script type="text/javascript">
-	var board = '<const BOARD_IDENT>', thread_id = <if $thread><var $thread></if><if !$thread>null</if>;
-	var filetypes = '<var get_filetypes()>';
-	var msg_expand_field = '<const S_JS_EXPAND>';
-	var msg_shrink_field = '<const S_JS_SHRINK>';
-	var msg_remove_file = '<const S_JS_REMOVEFILE>';
-</script>
-
 <style type="text/css">
 <const ADDITIONAL_CSS>
 </style>
@@ -198,6 +161,43 @@ use constant NORMAL_FOOT_INCLUDE => q{
 <script type="text/javascript" src="/js/jquery/jquery.cookie.js"></script>
 <script type="text/javascript" src="/js/hidethreads.js"></script>
 </if>
+
+<script type="text/javascript">
+/* <![CDATA[ */
+  $j = jQuery.noConflict();
+  $j(document).ready(function() {
+    var match;
+    if ((match = /#i([0-9]+)/.exec(document.location.toString())) && !document.forms.postform.field4.value) insert(">>" + match[1] + "\n");
+    if ((match = /#([0-9]+)/.exec(document.location.toString()))) highlight(match[1]);
+    $j('#postform_submit').click(function() {
+        $j('.postarea').block({
+                message: 'Bitte warten &hellip;',
+                css: { fontSize: '2em', color: '#000000', background: '#D7CFC0', border: '1px solid #BFB5A1' },
+        });
+        setTimeout($j.unblockUI, 5000);
+    });
+
+        <if $thread>
+        $j('#delform').delegate('span.reflink a', 'click', function (ev) {
+                var a = ev.target,
+                        sel = window.getSelection().toString();
+                ev.preventDefault();
+                insert('>>' + a.href.match(/#i(\d+)$/)[1] + '\n' + (sel ? '>' + sel.replace(/\n/g, '\n>') + '\n' : ''));
+        });
+        </if>
+
+        <if ENABLE_HIDE_THREADS && !$thread>hideThreads('<const BOARD_IDENT>', $j);</if>
+  });
+/* ]]> */
+</script>
+
+<script type="text/javascript">
+        var board = '<const BOARD_IDENT>', thread_id = <if $thread><var $thread></if><if !$thread>null</if>;
+        var filetypes = '<var get_filetypes()>';
+        var msg_expand_field = '<const S_JS_EXPAND>';
+        var msg_shrink_field = '<const S_JS_SHRINK>';
+        var msg_remove_file = '<const S_JS_REMOVEFILE>';
+</script>
 
 
 </body>
