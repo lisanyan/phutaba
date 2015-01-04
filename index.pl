@@ -55,35 +55,39 @@ if ($page eq "") {
         exit print $q->redirect(BASE_URL . "/" . DEFAULT_BOARD . "/");
 }
 
-#print $q->header(-charset => 'utf-8');
-print $q->header();
-
 my $tt = Template->new({
         INCLUDE_PATH => 'tpl/',
         ERROR => 'error.tt2',
         PRE_PROCESS  => 'header.tt2',
         POST_PROCESS => 'footer.tt2',
-    }) || print Template->error(), "\n";
+});
 
 my $ttfile = "content/" . $page . ".tt2";
 
 if ($page eq 'err403') {
 	tpl_make_error({
+		'http' => '403 Forbidden',
 		'type' => "HTTP-Fehler 403: Zugriff verboten",
 		'info' => "Der Zugriff auf diese Ressource ist nicht erlaubt."
 	});
 }
 elsif ($page eq 'err404') {
 	tpl_make_error({
+		'http' => '404 Not found',
 		'type' => "HTTP-Fehler 404: Objekt nicht gefunden",
 		'info' => "Die gew&uuml;nschte Datei existiert nicht oder wurde gel&ouml;scht."}
 	);
 }
 elsif (-e 'tpl/' . $ttfile) {
-	$tt->process($ttfile, {'tracking_code' => TRACKING_CODE}) or die($tt->process("error.tt2", {'error' => $tt->error}));
+	my $output;
+	$tt->process($ttfile, {'tracking_code' => TRACKING_CODE}, \$output) or tpl_make_error({'http' => '500 Boom', 'type' => "Fehler bei Scriptausf&uuml;hrung", 'info' => $tt->error});
+	print $q->header();
+	print $output;
+
 }
 else {
 	tpl_make_error({
+		'http' => '404 Not found',
 		'type' => "HTTP-Fehler 404: Objekt nicht gefunden",
 		'info' => "Es existiert weder ein Board noch eine Seite mit diesem Namen."}
 	);
@@ -91,6 +95,7 @@ else {
 
 sub tpl_make_error($) {
 	my ($error) = @_;
+	print $q->header(-status=>$$error{http});
         $tt->process("error.tt2", {
 			'tracking_code' => TRACKING_CODE,
 			'error' => $error
