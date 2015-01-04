@@ -44,7 +44,7 @@ if ($ts ne "") {
         exit;
 }
 if ($query ne "") {
-        print $q->redirect("http://blog.fefe.de/?q=$query");
+        print $q->redirect("https://blog.fefe.de/?q=$query");
         exit;
 }
 
@@ -52,7 +52,7 @@ if ($query ne "") {
 # redirects should have a full URL: http://ernstchan.com/b/
 # but this can be tricky if running behind some proxy
 if ($page eq "") {
-        exit print $q->redirect(DEFAULT_BOARD);
+        exit print $q->redirect(BASE_URL . "/" . DEFAULT_BOARD . "/");
 }
 
 #print $q->header(-charset => 'utf-8');

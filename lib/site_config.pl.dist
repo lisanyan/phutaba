@@ -3,8 +3,9 @@ use constant SECRET => '';				# Cryptographic secret. CHANGE THIS to something t
 use constant SQL_DBI_SOURCE => 'DBI:mysql:database=xxxxx;host=localhost'; # DBI data source string (mysql version, put server and database name in here)
 use constant SQL_USERNAME => '';		# MySQL login name
 use constant SQL_PASSWORD => '';		# MySQL password
-use constant DEFAULT_BOARD => '/board/';	# default board to redirect to from /
+use constant DEFAULT_BOARD => 'board';	# default board to redirect to from /
 use constant ABUSE_EMAIL => '';			# Abuse contact e-mail address. Shown in the footer of all pages.
+use constant BASE_URL => ""; # main url, WITHOUT trailing slash
 
 use constant FILEGROUPS => (
 	image => 'Bilder',
