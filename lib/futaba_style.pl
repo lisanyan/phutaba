@@ -24,6 +24,7 @@ use constant NORMAL_HEAD_INCLUDE => q{
 <meta name="application-name" content="<const TITLE> /<const BOARD_IDENT>/" />
 <meta name="apple-mobile-web-app-title" content="<const TITLE>" />
 </if>
+<script type="text/javascript" src="/js/wakaba3.js"></script>
 
 <if $isAdmin>
 	<link rel="stylesheet" type="text/css" href="/css/ui-lightness/jquery-ui-1.10.2.custom.css" />
@@ -149,8 +150,6 @@ use constant NORMAL_FOOT_INCLUDE => q{
 
 <script type="text/javascript" src="/js/jquery-1.9.1.min.js"></script>
 <script type="text/javascript" src="/js/jquery/jquery.blockUI.js"></script>
-<script type="text/javascript" src="/js/wakaba3.js"></script>
-<script type="text/javascript" src="/js/context.js"></script>
 
 <if $isAdmin>
         <script type="text/javascript" src="/js/jquery/jquery-ui-1.10.2.custom.min.js"></script>
@@ -199,6 +198,7 @@ use constant NORMAL_FOOT_INCLUDE => q{
         var msg_remove_file = '<const S_JS_REMOVEFILE>';
 </script>
 
+<script type="text/javascript" src="/js/context.js"></script>
 
 </body>
 </html>
