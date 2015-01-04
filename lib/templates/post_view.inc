@@ -27,7 +27,7 @@
 		<span class="date"><var encode_entities(get_date($timestamp))></span>
 	</label>
 
-	<if $secure>
+	<if SSL_ICON && $secure>
 		<span class="ssl" onmouseover="Tip('<var $secure>')" onmouseout="UnTip()"><img src="<var SSL_ICON>" alt="SSL" /></span>
 	</if>
 
