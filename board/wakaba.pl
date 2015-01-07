@@ -1274,7 +1274,7 @@ sub post_stuff {
 
 	# check for spam trap fields
 	if ($spam1 or $spam2) {
-		my ($banip, $banmask) = parse_range($numip, 0);
+		my ($banip, $banmask) = parse_range($numip, '');
 
 		$sth = $dbh->prepare(
 			"INSERT INTO " . SQL_ADMIN_TABLE . " VALUES(null,?,?,?,?,?,FROM_UNIXTIME(?));")
