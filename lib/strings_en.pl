@@ -103,7 +103,7 @@ use constant S_MANAPOST => 'Adminbeitrag verfassen'
   ; # Defines Manager Post radio button--allows the user to post using HTML code in the comment box
 use constant S_MANAREBUILD => 'Cache erneuern';    #
 use constant S_MANANUKE    => 'Atombombe';         #
-use constant S_MANALOGOUT  => 'Ausloggen';         #
+use constant S_MANALOGOUT  => 'Abmelden';          #
 use constant S_MANASAVE =>
   'Speichern';    # Defines Label for the login cookie checbox
 use constant S_MANASUB =>
@@ -157,6 +157,8 @@ use constant S_IMGSPACEUSAGE => '[ Belegter Speicherplatz: %s, %s Dateien, %s Po
 use constant S_DELALLMSG => 'Betroffen';
 use constant S_DELALLCOUNT => '%s Posts (%s Threads)';
 
+use constant S_BANFILTER => 'Abgelaufene Sperren ausblenden';
+use constant S_BANSHOWALL => 'Abgelaufene Sperren anzeigen';
 use constant S_BANTABLE =>
   '<th>Typ</th><th colspan="2">Wert</th><th>Kommentar</th><th>Erstelldatum</th><th>Ablaufdatum</th><th>Aktion</th>'
   ;          # Explains names for Ban Panel

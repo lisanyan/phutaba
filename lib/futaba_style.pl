@@ -691,6 +691,9 @@ use constant BAN_PANEL_TEMPLATE => compile_template(
 </td></tr></tbody></table>
 </div><br />
 
+<if $filter ne 'off'>[<a href="<var $self>?task=bans&amp;filter=off#tbl"><const S_BANSHOWALL></a>]</if>
+<if $filter eq 'off'>[<a href="<var $self>?task=bans#tbl"><const S_BANFILTER></a>]</if>
+<a id="tbl"></a>
 <table align="center"><tbody>
 <tr class="managehead"><const S_BANTABLE></tr>
 
@@ -701,7 +704,7 @@ use constant BAN_PANEL_TEMPLATE => compile_template(
 
 	<if $type eq 'ipban'>
 		<td>IP</td>
-		<td><var dec_to_dot($ival1)></td><td><var dec_to_dot($ival2)></td>
+		<td><img src="/img/flags/<var $flag>.PNG"> <var dec_to_dot($ival1)></td><td><var dec_to_dot($ival2)></td>
 	</if>
 	<if $type eq 'wordban'>
 		<td>Word</td>
@@ -713,7 +716,7 @@ use constant BAN_PANEL_TEMPLATE => compile_template(
 	</if>
 	<if $type eq 'whitelist'>
 		<td>Whitelist</td>
-		<td><var dec_to_dot($ival1)></td><td><var dec_to_dot($ival2)></td>
+		<td><img src="/img/flags/<var $flag>.PNG"> <var dec_to_dot($ival1)></td><td><var dec_to_dot($ival2)></td>
 	</if>
 	<if $type eq 'asban'>
 		<td>ASNum</td>
