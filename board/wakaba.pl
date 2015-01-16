@@ -33,7 +33,7 @@ use constant HANDLER_ERROR_PAGE_HEAD => q{
 <!DOCTYPE html>
 <html lang="de"> 
 <head>
-<title>Ernstchan &raquo; Serverfehler</title>
+<title>Phutaba &raquo; Serverfehler</title>
 <meta charset="utf-8" />
 <link rel="shortcut icon" href="/img/favicon.ico" />
 <link rel="stylesheet" type="text/css" href="/css/phutaba.css" />
@@ -42,7 +42,7 @@ use constant HANDLER_ERROR_PAGE_HEAD => q{
 <div class="content">
 <header>
 	<div class="header">
-		<div class="banner"><a href="/"><img src="/banner.pl" alt="Ernstchan" /></a></div>
+		<div class="banner"><a href="/"><img src="/banner.pl" alt="Banner" /></a></div>
 		<div class="boardname">Serverfehler</div>
 	</div>
 </header>
@@ -57,8 +57,10 @@ use constant HANDLER_ERROR_PAGE_FOOTER => q{
 
 </p>
 </div> 
-<p style="text-align: center;margin-top: 50px;"><span style="font-size: small; font-style: italic;">This is a <strong>fatal error</strong> in the <em>request/response handler</em>. Please contact the administrator of this site at the <a href="irc://irc.euirc.net/#ernstchan">IRC</a> or via <a href="mailto:admin@ernstchan.net">email</a> and ask him to fix this error</span></p>
-
+<p style="text-align: center;margin-top: 50px;"><span style="font-size: small; font-style: italic;">
+This is a <strong>fatal error</strong> in the <em>request/response handler</em>. Please contact the administrator of this
+site on the <a href="irc://irc.hackint.org/#ernstchan">IRC</a> or via <a href="mailto:admin@ernstchan.com">email</a> and
+ask him to fix this error</span></p>
 
 	<hr />
 	<footer>Powered by <img src="/img/phutaba_icon.png" alt="" /> <strong>Phutaba</strong>.</footer>
@@ -298,7 +300,8 @@ elsif ( $task eq "deleteall" ) {
 }
 elsif ( $task eq "bans" ) {
     my $admin = $query->cookie("wakaadmin");
-    make_admin_ban_panel($admin);
+	my $filter = $query->param("filter");
+    make_admin_ban_panel($admin, $filter);
 }
 elsif ( $task eq "addip" ) {
     my $admin   = $query->cookie("wakaadmin");
@@ -1279,7 +1282,7 @@ sub post_stuff {
 		$sth = $dbh->prepare(
 			"INSERT INTO " . SQL_ADMIN_TABLE . " VALUES(null,?,?,?,?,?,FROM_UNIXTIME(?));")
 		  or make_error(S_SQLFAIL);
-		$sth->execute('ipban', 'Spam [Auto Ban]', $banip, $banmask, $time + 259200, $time)
+		$sth->execute('ipban', 'Spambot [Auto Ban]', $banip, $banmask, $time + 259200, $time)
 		  or make_error(S_SQLFAIL);
 
 		make_error(S_SPAM);
@@ -2395,27 +2398,42 @@ sub make_admin_post_panel {
 }
 
 sub make_admin_ban_panel {
-    my ($admin) = @_;
+    my ($admin, $filter) = @_;
     my ( $sth, $row, @bans, $prevtype );
 
     check_password( $admin, ADMIN_PASS );
 
+	my $expired = "";
+	$expired = " AND (sval1='' OR CAST(sval1 AS UNSIGNED)>?)" if ($filter ne "off");
+
     $sth =
       $dbh->prepare( "SELECT * FROM "
           . SQL_ADMIN_TABLE
-          . " WHERE type='ipban' OR type='wordban' OR type='whitelist' OR type='trust' OR type='asban' ORDER BY type ASC, num ASC, date ASC;"
+          . " WHERE type='ipban'" . $expired . " OR type='wordban' OR type='whitelist' OR type='trust' OR type='asban'"
+		  . " ORDER BY type ASC, date DESC, num DESC;"
       ) or make_error(S_SQLFAIL);
-    $sth->execute() or make_error(S_SQLFAIL);
+
+	if ($expired) {
+		$sth->execute(time()) or make_error(S_SQLFAIL);
+	} else {
+		$sth->execute() or make_error(S_SQLFAIL);
+	}
+
     while ( $row = get_decoded_hashref($sth) ) {
         $$row{divider} = 1 if ( $prevtype ne $$row{type} );
         $prevtype      = $$row{type};
         $$row{rowtype} = @bans % 2 + 1;
+		if ($$row{type} eq 'ipban' or $$row{type} eq 'whitelist') {
+			my $flag = get_geolocation(dec_to_dot($$row{ival1}));
+			$flag = 'UNKNOWN' if ($flag eq 'unk');
+			$$row{flag} = $flag;
+		}
         push @bans, $row;
     }
 
     make_http_header();
     print encode_string(
-        BAN_PANEL_TEMPLATE->( admin => $admin, bans => \@bans ) );
+        BAN_PANEL_TEMPLATE->( admin => $admin, filter => $filter, bans => \@bans ) );
 }
 
 
@@ -2770,7 +2788,7 @@ sub get_filetypes_table {
 		}
 		if (@extensions) {
 			$output .= "\t<td><strong>" . $filegroups{$group} . ":</strong>&nbsp;</td>\n\t<td>"
-				. join(", ", sort(@extensions)) . "&nbsp;&nbsp;&nbsp;</td>\n";
+				. join(", ", sort(@extensions)) . "&nbsp;&nbsp;</td>\n";
 			$blocks++;
 			if (!($blocks % 2)) {
 				push(@rows, $output);
