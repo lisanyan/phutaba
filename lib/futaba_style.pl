@@ -41,23 +41,18 @@ use constant NORMAL_HEAD_INCLUDE => q{
 <div id="modpanel" style="display: none">
 <table>
 <tr>
-	<td><b><const S_BANIPLABEL></b></td><td><input id="ip" type="text" name="ip" size="30" /></td>
+	<td><b><const S_BANIPLABEL></b></td><td><input id="ip" type="text" name="ip" size="40" /></td>
 </tr>
 <tr><td><b><const S_BANMASKLABEL></b></td><td>
 <select id="netmask" name="netmask">
-  <option value="255.0.0.0">IPv4 Class A (255.0.0.0)</option>
-  <option value="255.255.0.0" selected="selected">IPv4 Class B (255.255.0.0)</option>
-  <option value="255.255.255.0">IPv4 Class C (255.255.255.0)</option>
-  <option value="255.255.255.255">IPv4 Host (255.255.255.255)</option>
-
-  <!--option value="8">/8 (IPv4 Class A)</option>
-  <option value="16" selected="selected">/16 (IPv4 Class B)</option>
-  <option value="24">/24 (IPv4 Class C)</option>
-  <option value="32">/32 (IPv4 Host)</option>
-  <option value="48">/48 (IPv6)</option>
-  <option value="56">/56 (IPv6)</option>
-  <option value="64">/64 (IPv6)</option>
-  <option value="128">/128 (IPv6 Host)</option-->
+  <option value="255.0.0.0">/8 (IPv4 Class A)</option>
+  <option value="255.255.0.0" selected="selected">/16 (IPv4 Class B)</option>
+  <option value="255.255.255.0">/24 (IPv4 Class C)</option>
+  <option value="255.255.255.255">/32 (IPv4 Host)</option>
+  <option value="ffff:ffff:ffff:0000:0000:0000:0000:0000">/48 (IPv6)</option>
+  <option value="ffff:ffff:ffff:ff00:0000:0000:0000:0000">/56 (IPv6)</option>
+  <option value="ffff:ffff:ffff:ffff:0000:0000:0000:0000">/64 (IPv6)</option>
+  <option value="ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff">/128 (IPv6 Host)</option>
 </select>
 </td></tr>
 <tr><td><b><const S_BANDURATION></b></td><td>
@@ -71,7 +66,7 @@ use constant NORMAL_HEAD_INCLUDE => q{
 </select>
 </td></tr>
 <tr>
-	<td><b><const S_BANREASONLABEL></b></td><td><input id="reason" type="text" name="reason" size="30" /></td>
+	<td><b><const S_BANREASONLABEL></b></td><td><input id="reason" type="text" name="reason" size="40" /></td>
 </tr>
 </table>
 <div id="infobox" style="display: none">
@@ -703,7 +698,7 @@ use constant BAN_PANEL_TEMPLATE => compile_template(
 
 	<if $type eq 'ipban'>
 		<td>IP</td>
-		<td><img src="/img/flags/<var $flag>.PNG"> <var dec_to_dot($ival1)></td><td><var dec_to_dot($ival2)></td>
+		<td><img src="/img/flags/<var $flag>.PNG"> <var dec_to_dot($ival1)></td><td>/<var get_mask_len($ival2)> (<var dec_to_dot($ival2)>)</td>
 	</if>
 	<if $type eq 'wordban'>
 		<td>Word</td>
@@ -715,7 +710,7 @@ use constant BAN_PANEL_TEMPLATE => compile_template(
 	</if>
 	<if $type eq 'whitelist'>
 		<td>Whitelist</td>
-		<td><img src="/img/flags/<var $flag>.PNG"> <var dec_to_dot($ival1)></td><td><var dec_to_dot($ival2)></td>
+		<td><img src="/img/flags/<var $flag>.PNG"> <var dec_to_dot($ival1)></td><td>/<var get_mask_len($ival2)> (<var dec_to_dot($ival2)>)</td>
 	</if>
 	<if $type eq 'asban'>
 		<td>ASNum</td>
