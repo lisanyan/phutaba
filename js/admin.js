@@ -88,7 +88,7 @@ function do_ban(ip, postid, board) {
 	$j("#ip").val(ip);
 	$j("#reason").val("");
 	if (ip.indexOf(":") != -1) {
-		$j("#netmask").val("255.255.255.255");
+		$j("#netmask").val("ffff:ffff:ffff:ffff:0000:0000:0000:0000");
 	} else {
 		$j("#netmask").val("255.255.0.0");
 	}
@@ -104,11 +104,7 @@ function do_ban(ip, postid, board) {
 		success: function (data) {
 			if (data['results'] == 0) {
 				$j("#ip").attr('disabled', false);
-				if (ip.indexOf(":") != -1) {
-					$j("#netmask").attr('disabled', true);
-				} else {
-					$j("#netmask").attr('disabled', false);
-				}
+				$j("#netmask").attr('disabled', false);
 				$j("#duration").attr('disabled', false);
 				$j("#reason").attr('disabled', false).focus();
 				$j("#info").hide('normal');

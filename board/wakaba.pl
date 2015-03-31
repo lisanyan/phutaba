@@ -8,7 +8,7 @@ use strict;
 use CGI;
 use DBI;
 use Net::DNS;
-#use Net::IP qw(:PROC);
+use Net::IP qw(:PROC);
 use HTML::Entities;
 use HTML::Strip;
 #use Math::BigInt;
@@ -1516,12 +1516,17 @@ sub post_stuff {
 
 sub is_whitelisted {
     my ($numip) = @_;
-    my ($sth);
+    my ($sth, $where);
 
+	if (length(pack('w', $numip)) > 5) { # IPv6 - no support for network masks yet, only single hosts
+		$where = " WHERE type='whitelist' AND ival1=?;";
+	} else { # IPv4
+		$where = " WHERE type='whitelist' AND ? & ival2 = ival1 & ival2;";
+	}
     $sth =
       $dbh->prepare( "SELECT count(*) FROM "
           . SQL_ADMIN_TABLE
-          . " WHERE type='whitelist' AND ? & ival2 = ival1 & ival2;" )
+          . $where)
       or make_error(S_SQLFAIL);
     $sth->execute($numip) or make_error(S_SQLFAIL);
 
@@ -1590,29 +1595,68 @@ sub ban_check {
 		make_ban(0, '', 0, { ip => $ip, showmask => 0, reason => 'AS-Netz-Sperre' }) if (($sth->fetchrow_array())[0]);
 	}
 
-	# check if the IP (ival1) belongs to a banned IP range (ival2) using MySQL 5 64 bit BIGINT bitwise logic
+	# check if the IP (ival1) belongs to a banned IP range (ival2)
 	# also checks expired (sval2) and fetches the ban reason(s) (comment)
 	my @bans = ();
 
-    $sth =
-      $dbh->prepare( "SELECT comment,ival2,sval1 FROM "
-		  . SQL_ADMIN_TABLE
-		  . " WHERE type='ipban' AND ? & ival2 = ival1 & ival2"
-		  . " AND (CAST(sval1 AS UNSIGNED)>? OR sval1='')"
-		  . " ORDER BY num;" )
-      or make_error(S_SQLFAIL);
-    $sth->execute($numip, time()) or make_error(S_SQLFAIL);
+	if ($ip =~ /:/) { # IPv6
+		my $client_ip = new Net::IP($ip) or make_error(Net::IP::Error());
 
-    while ($row = get_decoded_hashref($sth)) {
-		my ($ban);
-		$$ban{ip}       = $ip;
-		$$ban{network}  = dec_to_dot($numip & $$row{ival2});
-		$$ban{setbits}  = unpack("%32b*", pack( 'N', $$row{ival2}));
-		$$ban{showmask} = $$ban{setbits} < 32 ? 1 : 0;
-		$$ban{reason}   = $$row{comment};
-		$$ban{expires}  = $$row{sval1};
-		push @bans, $ban;
-    }
+		# fetch all active bans from the database, regardless of actual IP version and range
+		$sth =
+		  $dbh->prepare( "SELECT comment,ival1,ival2,sval1 FROM "
+			  . SQL_ADMIN_TABLE
+			  . " WHERE type='ipban'"
+			  . " AND (CAST(sval1 AS UNSIGNED)>? OR sval1='')"
+			  . " ORDER BY num;" )
+		  or make_error(S_SQLFAIL);
+		$sth->execute(time()) or make_error(S_SQLFAIL);
+
+		while ($row = get_decoded_hashref($sth)) {
+			# ignore IPv4 addresses
+			if (length(pack('w', $$row{ival1})) > 5) {
+				my $banned_ip   = new Net::IP(dec_to_dot($$row{ival1})) or make_error(Net::IP::Error());
+				my $mask_len = get_mask_len($$row{ival2});
+
+				# compare binary strings of $banned_ip and $client_ip up to mask length
+				my $client_bits = substr($client_ip->binip(), 0, $mask_len);
+				my $banned_bits = substr($banned_ip->binip(), 0, $mask_len);
+				if ($client_bits eq $banned_bits) {
+					# fill $banned_bits with 0 to get a valid 128 bit IPv6 address mask
+					$banned_bits .= ('0' x (128 - $mask_len));
+
+					my ($ban);
+					$$ban{ip}       = $ip;
+					$$ban{network}  = ip_compress_address(ip_bintoip($banned_bits, 6), 6);
+					$$ban{setbits}  = $mask_len;
+					$$ban{showmask} = $$ban{setbits} < 128 ? 1 : 0;
+					$$ban{reason}   = $$row{comment};
+					$$ban{expires}  = $$row{sval1};
+					push @bans, $ban;
+				}
+			}
+		}
+	} else { # IPv4 using MySQL 5 (64 bit BIGINT) bitwise logic
+		$sth =
+		  $dbh->prepare( "SELECT comment,ival2,sval1 FROM "
+			  . SQL_ADMIN_TABLE
+			  . " WHERE type='ipban' AND ? & ival2 = ival1 & ival2"
+			  . " AND (CAST(sval1 AS UNSIGNED)>? OR sval1='')"
+			  . " ORDER BY num;" )
+		  or make_error(S_SQLFAIL);
+		$sth->execute($numip, time()) or make_error(S_SQLFAIL);
+
+		while ($row = get_decoded_hashref($sth)) {
+			my ($ban);
+			$$ban{ip}       = $ip;
+			$$ban{network}  = dec_to_dot($numip & $$row{ival2});
+			$$ban{setbits}  = unpack("%32b*", pack('N', $$row{ival2}));
+			$$ban{showmask} = $$ban{setbits} < 32 ? 1 : 0;
+			$$ban{reason}   = $$row{comment};
+			$$ban{expires}  = $$row{sval1};
+			push @bans, $ban;
+		}
+	}
 
 	# this will send the ban message(s) to the client
     make_ban(0, '', 0, @bans) if (@bans);
@@ -2816,8 +2860,8 @@ sub parse_range {
 
 	if ($ip =~ /:/ or length(pack('w', $ip)) > 5) # IPv6
 	{
-		# ignore mask because MySQL 5 will only do bit shifting operations up to 64 bit
-		$mask = "340282366920938463463374607431768211455";
+		if ($mask =~ /:/) { $mask = dot_to_dec($mask); }
+		else { $mask = "340282366920938463463374607431768211455"; }
 	}
 	else # IPv4
 	{

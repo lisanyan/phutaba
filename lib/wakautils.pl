@@ -1287,6 +1287,14 @@ sub dec_to_dot {
     return join('.', unpack('C4', pack('N', $ip)));
 }
 
+sub get_mask_len {
+	my $ip = $_[0];
+	$ip = dec_to_dot($ip) if ($ip =~ /^(\d+)$/);
+	my $mask = new Net::IP($ip) or die(Net::IP::Error());
+	my ($bits) = $mask->binip() =~ /^(1+)/;
+	return length($bits);
+}
+
 sub mask_ip {
     my ( $ip, $key, $algorithm ) = @_;
 
@@ -1436,7 +1444,7 @@ sub analyze_file {
     my $io_scalar = new IO::Scalar \$data;
     my $mimeType  = mimetype($io_scalar);
 
-    make_error($mimeType);
+    die($mimeType);
     if ( $exifInfo->{width} && $exifInfo->{height} ) {
         $width  = $exifInfo->{width};
         $height = $exifInfo->{height};
