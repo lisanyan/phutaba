@@ -202,6 +202,21 @@ function expand_post(id) {
 	return false;
 }
 
+function expand_image(event, thumb_width, thumb_height, org_witdh, org_height, thumb, org) {
+	img = event.target;
+	if (img.src.substr(img.src.length - thumb.length) == thumb) {
+		img.src = org;
+		img.width = org_witdh;
+		img.height = org_height;
+	} else {
+		img.src = thumb;
+		img.width = thumb_width;
+		img.height = thumb_height;
+	}
+	UnTip();
+	return false;
+}
+
 function set_inputs(id) {
 	with (document.getElementById(id)) {
 		if ((typeof field1 == "object") && (!field1.value)) field1.value = get_cookie("name");
