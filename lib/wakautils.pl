@@ -1669,7 +1669,7 @@ sub make_thumbnail {
 			. '-stroke none -fill white -annotate 90x90+5+135 "Unregistered Hypercam"'
 		);
 		$param = $params[rand @params];
-		$background = "#BFB5A1" if ($thumbnail =~ /\.jpg$/ && $filename !~ /\.pdf$/);
+		$background = '"#BFB5A1"' if ($thumbnail =~ /\.jpg$/ && $filename !~ /\.pdf$/);
 	}
 
     $convert = "convert" unless ($convert);
