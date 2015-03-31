@@ -214,7 +214,7 @@ sub count_lines($) {
 	$str =~ s!(<br ?/>)+!<br />!g;
 	# do not count newlines at the end of the comment
 	$str =~ s!(<br ?/>)+$!!;
-	my $count = () = $str =~ m!<br ?/>|<p>|<blockquote!g;
+	my $count = () = $str =~ m!<br ?/>|<p>|<li>|<blockquote!g;
 	# correct "off by one" error caused by abbreviation code
 	$count-- if ($str =~ m!<br /></blockquote>$!);
 	return $count;
@@ -1952,7 +1952,7 @@ sub get_post_info($) {
 	return '(n/a)' unless (@items);
 
 	# country flag
-	$items[0] = 'UNKNOWN' if ($items[0] eq 'unk');
+	$items[0] = 'UNKNOWN' if ($items[0] eq 'unk' or $items[0] eq 'A1' or $items[0] eq 'A2');
 	my $flag = '<img src="/img/flags/' . $items[0] . '.PNG"> ';
 
 	if (scalar @items == 1) { # for legacy entries

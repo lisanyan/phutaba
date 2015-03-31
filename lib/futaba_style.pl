@@ -35,8 +35,7 @@ use constant NORMAL_HEAD_INCLUDE => q{
 </style>
 </head>
 
-<if $thread><body class="replypage"></if>
-<if !$thread><body></if>
+<body>
 
 <if $isAdmin>
 <div id="modpanel" style="display: none">
@@ -91,7 +90,6 @@ use constant NORMAL_HEAD_INCLUDE => q{
 <div class="content">
 
 <script type="text/javascript" src="/js/wz_tooltip.js"></script>
-<if ENABLE_WEBSOCKET_NOTIFY && $thread && !$locked><script type="text/javascript" src="/js/websock.js"></script></if>
 
 <nav>
 	<ul class="menu">
@@ -198,6 +196,7 @@ use constant NORMAL_FOOT_INCLUDE => q{
         var msg_remove_file = '<const S_JS_REMOVEFILE>';
 </script>
 
+<if ENABLE_WEBSOCKET_NOTIFY && $thread && !$locked><script type="text/javascript" src="/js/websock.js"></script></if>
 <script type="text/javascript" src="/js/context.js"></script>
 
 </body>
@@ -246,7 +245,7 @@ use constant PAGE_TEMPLATE => compile_template(
 	</if>
 
 	<tr><td class="postblock"><label for="field4"><const S_COMMENT></label></td>
-	<td><textarea id="field4" name="field4" cols="48" rows="6"></textarea> <img onclick="resizeCommentfield('field4', this)" src="/img/icons/expand.png" alt="<const S_IMGEXPAND>" title="<const S_IMGEXPAND>" />
+	<td id="textField"><textarea id="field4" name="field4" cols="48" rows="6"></textarea> <img onclick="resizeCommentfield('field4', this)" src="/img/icons/expand.png" alt="<const S_IMGEXPAND>" title="<const S_IMGEXPAND>" />
 	</td></tr>
 
 	<if $image_inp>

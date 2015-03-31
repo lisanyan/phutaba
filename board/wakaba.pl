@@ -2425,7 +2425,7 @@ sub make_admin_ban_panel {
         $$row{rowtype} = @bans % 2 + 1;
 		if ($$row{type} eq 'ipban' or $$row{type} eq 'whitelist') {
 			my $flag = get_geolocation(dec_to_dot($$row{ival1}));
-			$flag = 'UNKNOWN' if ($flag eq 'unk');
+			$flag = 'UNKNOWN' if ($flag eq 'unk' or $flag eq 'A1' or $flag eq 'A2');
 			$$row{flag} = $flag;
 		}
         push @bans, $row;
