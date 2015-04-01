@@ -40,3 +40,14 @@ RewriteRule ^([^/]+)/thread/(\d+)$ $1/wakaba.pl?task=show&thread=$2 [L]
 
 # allow download of original filenames
 RewriteRule ^([^/]+)/src/([^/]+)/([^/]+)$ $1/src/$2 [L,NS,DPI]
+
+# new path for emoticons, can be removed on new installations or if no posts before 2015-04-02 exist anymore
+RewriteRule ^img/(trollface.png)$   img/emotes/$1
+RewriteRule ^img/(zahngrinsen.png)$ img/emotes/$1
+RewriteRule ^img/(eisfee.gif)$      img/emotes/$1
+RewriteRule ^img/(fu.png)$          img/emotes/$1
+RewriteRule ^img/(awesome.png)$     img/emotes/$1
+RewriteRule ^img/(schreikopf.png)$  img/emotes/$1
+RewriteRule ^img/(blau.png)$        img/emotes/$1
+RewriteRule ^img/(rot.png)$         img/emotes/$1
+RewriteRule ^img/(marisa.png)$      img/emotes/$1

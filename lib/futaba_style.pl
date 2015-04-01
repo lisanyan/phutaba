@@ -259,7 +259,7 @@ use constant PAGE_TEMPLATE => compile_template(
 
 	<if use_captcha(ENABLE_CAPTCHA, $loc)>
 		<tr><td class="postblock"><label for="captcha"><const S_CAPTCHA></label> (<a href="/faq">?</a>) (<var $loc>)</td>
-		<td><input type="text" name="captcha" id="captcha" size="10" /> <img alt="" src="/lib/captcha.pl?key=<var get_captcha_key($thread)>&amp;dummy=<var $dummy>&amp;board=<var BOARD_IDENT>" /></td></tr>
+		<td><input type="text" name="captcha" id="captcha" size="10" /> <img alt="" src="/captcha.pl?key=<var get_captcha_key($thread)>&amp;dummy=<var $dummy>&amp;board=<var BOARD_IDENT>" /></td></tr>
 	</if>
 
 	<tr id="passwordField"><td class="postblock"><label for="password"><const S_DELPASS></label></td><td><input type="password" name="password" id="password" /> <const S_DELEXPL></td></tr>
@@ -292,7 +292,7 @@ use constant PAGE_TEMPLATE => compile_template(
 	</if>
 
 		<loop $posts>
-			} . include("../lib/templates/post_view.inc") . q{
+			} . include("../lib/post_view.inc") . q{
 		</loop>
 
 		</div>
@@ -386,7 +386,7 @@ use constant SEARCH_TEMPLATE => compile_template(
 	</if>
 
 	<loop $posts>
-		} . include("../lib/templates/post_view.inc") . q{
+		} . include("../lib/post_view.inc") . q{
 	</loop>
 
 	<p style="clear: both;"></p>
@@ -397,7 +397,7 @@ use constant SEARCH_TEMPLATE => compile_template(
 
 use constant SINGLE_POST_TEMPLATE => compile_template(q{
 <loop $posts>
-} . include("../lib/templates/post_view.inc") . q{
+} . include("../lib/post_view.inc") . q{
 </loop>
 });
 

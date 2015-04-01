@@ -10,6 +10,10 @@
 	text-shadow: none;
 }
 
+body {
+	text-shadow: 1px 1px #FFCCCC;
+}
+
 img {
 	-moz-transform:rotate(180deg);
 	-webkit-transform:rotate(180deg);
