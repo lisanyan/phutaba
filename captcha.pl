@@ -7,11 +7,12 @@ use strict;
 use CGI;
 use DBI;
 
-use lib '.';
-BEGIN { require "../lib/site_config.pl"; }
-BEGIN { require "../lib/config_defaults.pl"; }
-BEGIN { require "../lib/strings_en.pl"; }
-BEGIN { require "../lib/wakautils.pl"; }
+use lib 'lib';
+use lib '../lib'; # remove after wakaba.pl was moved to the same directory where captcha.pl is
+BEGIN { require "site_config.pl"; }
+BEGIN { require "config_defaults.pl"; }
+BEGIN { require "strings_de.pl"; }
+BEGIN { require "wakautils.pl"; }
 
 return 1 if (caller);
 
