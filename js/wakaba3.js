@@ -202,9 +202,10 @@ function expand_post(id) {
 	return false;
 }
 
-function expand_image(event, thumb_width, thumb_height, org_witdh, org_height, thumb, org) {
-	img = event.target;
-	if (img.src.substr(img.src.length - thumb.length) == thumb) {
+function expand_image(element, org_witdh, org_height, thumb_width, thumb_height, thumb) {
+	img = element;
+	org = img.parentNode.href;
+	if (img.src != org) {
 		img.src = org;
 		img.width = org_witdh;
 		img.height = org_height;
