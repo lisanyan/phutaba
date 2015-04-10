@@ -1483,15 +1483,6 @@ sub post_stuff {
               ;    # or make_error(S_SQLFAIL);
             $sth->execute( $parent, $parent ) or make_error(S_SQLFAIL);
         }
-        if ($isAdminPost) {
-            $sth =
-              $dbh->prepare( "UPDATE "
-                  . SQL_TABLE
-                  . " SET adminpost=1 WHERE parent=? ORDER BY num DESC LIMIT 1;"
-              );    # oh, you ugly fix :3
-            $sth->execute($parent);    # or make_error(S_SQLFAIL);
-
-        }
     }
 
     # remove old threads from the database
@@ -1505,13 +1496,12 @@ sub post_stuff {
         password  => $c_password,
         -charset  => CHARSET,
         -autopath => COOKIE_PATH,
-		-expires  => time + 14 * 24 * 3600
+        -expires  => time + 14 * 24 * 3600
     );    # yum!
 
 	# go back to thread or board page
-    make_http_forward("/" . encode('utf-8', BOARD_IDENT) . "/") if ($parent eq '0');
-    make_http_forward("thread/" . $parent . "#" . $new_post_id) if ($c_gb2 =~ /thread/i);
-    make_http_forward("/" . encode('utf-8', BOARD_IDENT) . "/");
+    make_http_forward("thread/" . $parent . "#" . $new_post_id) if ($c_gb2 =~ /thread/i and $parent ne '0');
+    make_http_forward("/" . urlenc(BOARD_IDENT) . "/");
 }
 
 sub is_whitelisted {
@@ -1607,6 +1597,7 @@ sub ban_check {
 		  $dbh->prepare( "SELECT comment,ival1,ival2,sval1 FROM "
 			  . SQL_ADMIN_TABLE
 			  . " WHERE type='ipban'"
+			  . " AND LENGTH(ival1)>10"
 			  . " AND (CAST(sval1 AS UNSIGNED)>? OR sval1='')"
 			  . " ORDER BY num;" )
 		  or make_error(S_SQLFAIL);
@@ -1615,7 +1606,7 @@ sub ban_check {
 		while ($row = get_decoded_hashref($sth)) {
 			# ignore IPv4 addresses
 			if (length(pack('w', $$row{ival1})) > 5) {
-				my $banned_ip   = new Net::IP(dec_to_dot($$row{ival1})) or make_error(Net::IP::Error());
+				my $banned_ip = new Net::IP(dec_to_dot($$row{ival1})) or make_error(Net::IP::Error());
 				my $mask_len = get_mask_len($$row{ival2});
 
 				# compare binary strings of $banned_ip and $client_ip up to mask length
@@ -1640,7 +1631,9 @@ sub ban_check {
 		$sth =
 		  $dbh->prepare( "SELECT comment,ival2,sval1 FROM "
 			  . SQL_ADMIN_TABLE
-			  . " WHERE type='ipban' AND ? & ival2 = ival1 & ival2"
+			  . " WHERE type='ipban'"
+			  . " AND LENGTH(ival1)<=10"
+			  . " AND ? & ival2 = ival1 & ival2"
 			  . " AND (CAST(sval1 AS UNSIGNED)>? OR sval1='')"
 			  . " ORDER BY num;" )
 		  or make_error(S_SQLFAIL);
@@ -2209,7 +2202,7 @@ sub delete_stuff {
         make_http_forward( get_script_name() . "?task=show");
     } elsif ( $noko == 1 and $parent ) {
 		make_http_forward("thread/" . $parent);
-	} else { make_http_forward("/" . encode('utf-8', BOARD_IDENT) . "/"); }
+	} else { make_http_forward("/" . urlenc(BOARD_IDENT) . "/"); }
 }
 
 sub make_locked {
