@@ -68,15 +68,17 @@ if ($page eq 'err403') {
 	tpl_make_error({
 		'http' => '403 Forbidden',
 		'type' => "HTTP-Fehler 403: Zugriff verboten",
-		'info' => "Der Zugriff auf diese Ressource ist nicht erlaubt."
+		'info' => "Der Zugriff auf diese Ressource ist nicht erlaubt.",
+		'image' => "/img/403.png"
 	});
 }
 elsif ($page eq 'err404') {
 	tpl_make_error({
 		'http' => '404 Not found',
 		'type' => "HTTP-Fehler 404: Objekt nicht gefunden",
-		'info' => "Die gew&uuml;nschte Datei existiert nicht oder wurde gel&ouml;scht."}
-	);
+		'info' => "Die gew&uuml;nschte Datei existiert nicht oder wurde gel&ouml;scht.",
+		'image' => "/img/404.png"
+	});
 }
 elsif (-e 'tpl/' . $ttfile) {
 	my $output;
@@ -89,8 +91,9 @@ else {
 	tpl_make_error({
 		'http' => '404 Not found',
 		'type' => "HTTP-Fehler 404: Objekt nicht gefunden",
-		'info' => "Es existiert weder ein Board noch eine Seite mit diesem Namen."}
-	);
+		'info' => "Es existiert weder ein Board noch eine Seite mit diesem Namen.",
+		'image' => "/img/404.png"
+	});
 }
 
 sub tpl_make_error($) {

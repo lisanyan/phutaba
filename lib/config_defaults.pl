@@ -28,20 +28,19 @@ BEGIN {
     eval "use constant SHOWTITLETXT => 1" unless ( defined &SHOWTITLETXT );
     eval "use constant SHOWTITLEIMG => 0" unless ( defined &SHOWTITLEIMG );
     eval "use constant TITLEIMG => 'title.jpg'" unless ( defined &TITLEIMG );
+    eval "use constant BOARD_DESC => 0" unless ( defined &BOARD_DESC );
     eval "use constant FAVICON => 'wakaba.ico'" unless ( defined &FAVICON );
     eval "use constant HOME => '../'"           unless ( defined &HOME );
     eval "use constant IMAGES_PER_PAGE => 10"
       unless ( defined &IMAGES_PER_PAGE );
     eval "use constant ANONYMIZE_IP_ADDRESSES => 0"
       unless ( defined &ANONYMIZE_IP_ADDRESSES );
-    eval "use constant REPLIES_PER_THREAD => 10"
+    eval "use constant REPLIES_PER_THREAD => 4"
       unless ( defined &REPLIES_PER_THREAD );
     eval "use constant IMAGE_REPLIES_PER_THREAD => 0"
       unless ( defined &IMAGE_REPLIES_PER_THREAD );
-    eval "use constant REPLIES_PER_STICKY_THREAD => 2"
+    eval "use constant REPLIES_PER_STICKY_THREAD => 1"
       unless ( defined &REPLIES_PER_STICKY_THREAD );
-    eval "use constant BOARD_DESC => 0" unless ( defined &BOARD_DESC );
-
     eval "use constant IMAGE_REPLIES_PER_STICKY_THREAD => 0"
       unless ( defined &IMAGE_REPLIES_PER_STICKY_THREAD );
     eval "use constant REPLIES_PER_LOCKED_THREAD => 1"
