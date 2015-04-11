@@ -134,13 +134,14 @@ use constant S_FILEDELETED => 'Datei gel&ouml;scht';
 use constant S_POSTINFO => 'IP-Informationen';
 use constant S_MPDELETEIP => 'Alle l&ouml;schen';
 use constant S_MPDELETE =>
-  'L&ouml;schen';    # Defines for deletion button in Management Panel
+  'Post l&ouml;schen';    # Defines for deletion button in Management Panel
 use constant S_MPDELFILE  => 'Datei(en) l&ouml;schen';
 use constant S_MPARCHIVE  => 'Archiv';
 use constant S_MPSTICKY   => 'Sticky setzen';
 use constant S_MPUNSTICKY => 'Sticky entfernen';
 use constant S_MPLOCK     => 'Thread schlie&szlig;en';
 use constant S_MPUNLOCK   => 'Thread &ouml;ffnen';
+use constant S_MPEDIT     => 'Post-Text bearbeiten';
 use constant S_MPRESET =>
   'Resetten';        # Defines name for field reset button in Management Panel
 use constant S_MPONLYPIC =>

@@ -86,6 +86,7 @@ BEGIN {
 #
 
 use lib '.';
+
 BEGIN {
     require "config.pl";
     require "../lib/config_defaults.pl";
@@ -268,12 +269,24 @@ elsif ( $task eq "kontra" ) {
     my $admin    = $query->cookie("wakaadmin");
     my $threadid = $query->param("threadid");
     make_kontra( $admin, $threadid );
-
 }
 elsif ( $task eq "lock" ) {
     my $admin    = $query->cookie("wakaadmin");
     my $threadid = $query->param("threadid");
     make_locked( $admin, $threadid );
+}
+elsif ( $task eq "edit" ) {
+    my $admin  = $query->cookie("wakaadmin");
+    my $postid = $query->param("post");
+    make_admin_edit_panel($admin, $postid);
+}
+elsif ( $task eq "save" ) {
+    my $admin   = $query->cookie("wakaadmin");
+    my $postid  = $query->param("post");
+    my $name    = $query->param("field1");
+    my $subject = $query->param("field3");
+    my $comment = $query->param("field4");
+    save_admin_edit($admin, $postid, $name, $subject, $comment);
 }
 elsif ( $task eq "admin" ) {
     my $password    = $query->param("berra");        # lol obfuscation
@@ -2480,6 +2493,57 @@ sub make_admin_post {
 
     make_http_header();
     print encode_string( ADMIN_POST_TEMPLATE->( admin => $admin ) );
+}
+
+sub make_admin_edit_panel {
+	my ($admin, $postid) = @_;
+	my $row;
+
+	check_password($admin, ADMIN_PASS);
+
+	$sth = $dbh->prepare("SELECT name, subject, comment FROM " . SQL_TABLE . " WHERE num=?;")
+	  or make_error(S_SQLFAIL);
+	$sth->execute($postid) or make_error(S_SQLFAIL);
+
+	if ($row = get_decoded_hashref($sth)) {
+		# add newlines for better readability but remove them on save!
+		$$row{comment} =~ s!<br />!<br />\n!g;
+		$$row{comment} =~ s!</li>!</li>\n!g;
+		$$row{comment} =~ s!</blockquote>!</blockquote>\n!g;
+
+		make_http_header();
+		print encode_string(ADMIN_EDIT_TEMPLATE->(
+			admin => 1,
+			postid => $postid,
+			name => $$row{name},
+			subject => $$row{subject},
+			comment => $$row{comment}
+		));
+	} else { make_error(S_NOREC); }
+}
+
+sub save_admin_edit {
+	my ($admin, $postid, $name, $subject, $comment) = @_;
+	my ($sth);
+
+	check_password($admin, ADMIN_PASS);
+
+	# remove any newlines
+	$name =~ s/\r\n|\n|\r//g;
+	$subject =~ s/\r\n|\n|\r//g;
+	$comment =~ s/\r\n|\n|\r//g;
+
+	# decode and clean string inputs
+	# could do even more checking (newlines, length) but admin is trusted
+	$name = clean_string(decode_string($name, CHARSET));
+	$subject = clean_string(decode_string($subject, CHARSET));
+	$comment = decode_string($comment, CHARSET);
+
+	$sth = $dbh->prepare("UPDATE " . SQL_TABLE . " SET name=?, subject=?, comment=? WHERE num=? LIMIT 1;" )
+	  or make_error(S_SQLFAIL);
+	$sth->execute($name, $subject, $comment, $postid) or make_error(S_SQLFAIL);
+
+	make_http_forward(get_script_name());
 }
 
 sub do_login {
