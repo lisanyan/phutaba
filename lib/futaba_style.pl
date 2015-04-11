@@ -771,4 +771,31 @@ use constant ADMIN_POST_TEMPLATE => compile_template(
 } . NORMAL_FOOT_INCLUDE
 );
 
+
+use constant ADMIN_EDIT_TEMPLATE => compile_template(
+    MANAGER_HEAD_INCLUDE . q{
+
+<div class="dellist"><const S_MPEDIT> (Nr. <var $postid>)</div>
+
+<div align="center"><em><const S_NOTAGS></em></div>
+
+<div class="postarea">
+<form id="postform" action="<var $self>" method="post" enctype="multipart/form-data">
+<input type="hidden" name="task" value="save" />
+<input type="hidden" name="board" value="<const BOARD_IDENT>" />
+<input type="hidden" name="post" value="<var $postid>" />
+
+<table><tbody>
+	<tr><td class="postblock"><label for="name"><const S_NAME></label></td><td><input type="text" name="field1" id="name" value="<var $name>" /></td></tr>
+	<tr><td class="postblock"><label for="subject"><const S_SUBJECT></label></td><td><input type="text" name="field3" id="subject" value="<var $subject>" />
+	<input type="submit" value="<const S_SUBMIT>" /></td></tr>
+	<tr><td class="postblock"><label for="field4"><const S_COMMENT></label></td>
+	<td id="textField"><textarea id="field4" name="field4" cols="80" rows="14"><var $comment></textarea>
+	</td></tr>
+</tbody></table></form></div><hr />
+
+
+} . NORMAL_FOOT_INCLUDE
+);
+
 1;
