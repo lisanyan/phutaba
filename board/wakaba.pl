@@ -128,15 +128,13 @@ my $task  = ( $query->param("task") or $query->param("action")) unless $query->p
 $task = ( $query->url_param("task") ) unless $task;
 my $json  = ( $query->param("json") or "" );
 
-# fill meta-data fields of all existing board files. this will run only once after schema migration.
-# placed before migration to prevent both functions running in the same script call which could cause a timeout.
-update_files_meta();
-
-# schema migration.
-update_db_schema();
-
-# schema migration 2 - change location column
-update_db_schema2();
+if (table_exists(SQL_TABLE)) {
+	# fill meta-data fields of all existing board files. this will run only once after schema migration.
+	# placed before migration to prevent both functions running in the same script call which could cause a timeout.
+	update_files_meta();
+	update_db_schema();  # schema migration.
+	update_db_schema2(); # schema migration 2 - change location column
+}
 
 # check for admin table
 init_admin_database() if ( !table_exists(SQL_ADMIN_TABLE) );
@@ -179,6 +177,7 @@ elsif ($json eq "meta") {
 if ( !table_exists(SQL_TABLE) )    # check for comments table
 {
     init_database();
+	init_files_database() unless table_exists(SQL_TABLE_IMG);
 
     # if nothing exists show the first page.
     show_page(1);
@@ -2887,42 +2886,59 @@ sub init_database {
     $sth = $dbh->do( "DROP TABLE " . SQL_TABLE . ";" )
       if ( table_exists(SQL_TABLE) );
     $sth = $dbh->prepare(
-            "CREATE TABLE "
-          . SQL_TABLE . " ("
-          .
+		"CREATE TABLE " . SQL_TABLE . " (" .
 
-          "num "
-          . get_sql_autoincrement() . ","
-          .    # Post number, auto-increments
-          "parent INTEGER,"
-          . # Parent post for replies in threads. For original posts, must be set to 0 (and not null)
-          "timestamp INTEGER,"
-          .    # Timestamp in seconds for when the post was created
-          "lasthit INTEGER,"
-          . # Last activity in thread. Must be set to the same value for BOTH the original post and all replies!
-          "ip TEXT," .    # IP number of poster, in integer form!
+		"num " . get_sql_autoincrement() . "," . # Post number, auto-increments
+		"parent INTEGER," .     # Parent post for replies in threads. For original posts, must be set to 0 (and not null)
+		"timestamp INTEGER," .  # Timestamp in seconds for when the post was created
+		"lasthit INTEGER," .    # Last activity in thread. Must be set to the same value for BOTH the original post and all replies!
 
-          "date TEXT," .        # The date, as a string
-          "name TEXT," .        # Name of the poster
-          "trip TEXT," .        # Tripcode (encoded)
-          "email TEXT," .       # Email address
-          "subject TEXT," .     # Subject
-          "password TEXT," .    # Deletion password (in plaintext)
-          "comment TEXT," .     # Comment text, HTML encoded.
+		"ip TEXT," .            # IP number of poster, in integer form! Stored as text because IPv6 128 bit integers are not always supported.
+		"name TEXT," .          # Name of the poster
+		"trip TEXT," .          # Tripcode (encoded)
+		"email TEXT," .         # Email address
+		"subject TEXT," .       # Subject
+		"password TEXT," .      # Deletion password (in plaintext)
+		"comment TEXT," .       # Comment text, HTML encoded.
 
-          "image TEXT,"
-          . # Image filename with path and extension (IE, src/1081231233721.jpg)
-          "size INTEGER," .        # File size in bytes
-          "md5 TEXT," .            # md5 sum in hex
-          "width INTEGER," .       # Width of image in pixels
-          "height INTEGER," .      # Height of image in pixels
-          "thumbnail TEXT," .      # Thumbnail filename with path and extension
-          "tn_width TEXT," .       # Thumbnail width in pixels
-          "tn_height TEXT," .      # Thumbnail height in pixels
-          "uploadname TEXT," .     # Original filename supplied by the user agent
-          "displaysize TEXT" .     # Human readable size with B/K/M
+		"banned INTEGER," .     # Timestamp when the post was banned
+		"autosage INTEGER," .   # Flag to indicate that thread is on bump limit
+		"adminpost INTEGER," .  # Post was made by a staff member
+		"locked INTEGER," .     # Thread is locked (applied to parent post only)
+		"sticky INTEGER," .     # Thread is sticky (applied to all posts of a thread)
+		"location TEXT," .      # Geo::IP information for the IP address if available
+		"secure TEXT" .         # Cipher information if posted using SSL connection
 
-          ");"
+		");"
+    ) or make_error(S_SQLFAIL);
+    $sth->execute() or make_error(S_SQLFAIL);
+}
+
+sub init_files_database {
+    my ($sth);
+
+    $sth = $dbh->do( "DROP TABLE " . SQL_TABLE_IMG . ";" )
+      if ( table_exists(SQL_TABLE_IMG) );
+    $sth = $dbh->prepare(
+		"CREATE TABLE " . SQL_TABLE_IMG . " (" .
+
+		"num " . get_sql_autoincrement() . "," . # Primary key
+		"thread INTEGER," .    # Thread ID / parent (num in comments table) of file's post
+		                       # Reduces queries needed for thread output and thread deletion
+		"post INTEGER," .      # Post ID (num in comments table) where file belongs to
+		"image TEXT," .        # Image filename with path and extension (IE, src/1081231233721.jpg)
+		"size INTEGER," .      # File size in bytes
+		"md5 TEXT," .          # md5 sum in hex
+		"width INTEGER," .     # Width of image in pixels
+		"height INTEGER," .    # Height of image in pixels
+		"thumbnail TEXT," .    # Thumbnail filename with path and extension
+		"tn_width INTEGER," .  # Thumbnail width in pixels
+		"tn_height INTEGER," . # Thumbnail height in pixels
+		"uploadname TEXT," .   # Original filename supplied by the user agent
+		"info TEXT," .         # Short file information displayed in the post
+		"info_all TEXT" .      # Full file information displayed in the tooltip
+
+		");"
     ) or make_error(S_SQLFAIL);
     $sth->execute() or make_error(S_SQLFAIL);
 }
