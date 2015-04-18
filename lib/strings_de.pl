@@ -99,7 +99,8 @@ use constant S_MANAPROXY   => 'Proxys konfigurieren';
 use constant S_MANASPAM    => 'Spam';                # Defines Spam Panel button
 use constant S_MANASQLDUMP => 'MySQL abfragen';      # Defines SQL dump button
 use constant S_MANASQLINT => 'MySQL Interface';   # Defines SQL interface button
-use constant S_MANAPOST => 'Adminbeitrag verfassen'
+use constant S_MANAORPH => 'Verwaiste Dateien';
+use constant S_MANASHOW => 'Anzeigen';
   ; # Defines Manager Post radio button--allows the user to post using HTML code in the comment box
 use constant S_MANAREBUILD => 'Cache erneuern';    #
 use constant S_MANANUKE    => 'Atombombe';         #
@@ -109,7 +110,7 @@ use constant S_MANASAVE =>
 use constant S_MANASUB =>
   'Los';          # Defines name for submit button in Manager Mode
 
-use constant S_NOTAGS => '<p>HTML-Tags sind m&ouml;glich. Kein WakabaMark.</p>'
+use constant S_NOTAGS => '<p>Formatierung nur mit HTML-Tags. Keine Parser-Verarbeitung.</p>'
   ;               # Prints message on Management Board
 
 use constant S_POSTASADMIN => 'Administrationskennung am Post anzeigen';

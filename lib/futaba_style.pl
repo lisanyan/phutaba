@@ -120,7 +120,7 @@ use constant MANAGER_HEAD_INCLUDE => NORMAL_HEAD_INCLUDE . q{
 	[<a href="<var $self>?task=show"><const S_MANAPANEL></a>]
 	[<a href="<var $self>?task=mpanel"><const S_MANATOOLS></a>]
 	[<a href="<var $self>?task=bans"><const S_MANABANS></a>]
-	[<a href="<var $self>?task=mpost"><const S_MANAPOST></a>]
+	[<a href="<var $self>?task=orphans"><const S_MANAORPH></a>]
 	[<a href="<var $self>?task=logout"><const S_MANALOGOUT></a>]
 	<div class="passvalid"><const S_MANAMODE></div>
 </if>
@@ -223,7 +223,7 @@ use constant PAGE_TEMPLATE => compile_template(
 	<tbody id="postTableBody">
 		<if $isAdmin>
 			<tr><td class="postblock">## Team ##</td>
-			<td><label><input type="checkbox" name="as_admin" value="1" />  <const S_POSTASADMIN></label></td></tr>
+			<td><label><input type="checkbox" name="as_staff" value="1" />  <const S_POSTASADMIN></label></td></tr>
 			<tr><td class="postblock">HTML</td>
 			<td><label><input type="checkbox" name="no_format" value="1" /> <const S_NOTAGS2></label></td></tr>
 		</if>
@@ -353,7 +353,7 @@ use constant SEARCH_TEMPLATE => compile_template(
     MANAGER_HEAD_INCLUDE . q{
 
 	<section class="postarea">
-	<form id="searchform" action="<var $self>" method="post" enctype="multipart/form-data">
+	<form id="searchform" action="<var $self>" method="post">
 	<input type="hidden" name="task" value="search" />
 
 	<table>
@@ -545,7 +545,7 @@ use constant ADMIN_LOGIN_TEMPLATE => compile_template(
 <option value="show"><const S_MANAPANEL></option>
 <option value="mpanel"><const S_MANATOOLS></option>
 <option value="bans"><const S_MANABANS></option>
-<option value="mpost"><const S_MANAPOST></option>
+<option value="orphans"><const S_MANAORPH></option>
 </select>
 <input type="submit" value="<const S_MANASUB>" />
 </form></div>
@@ -743,30 +743,35 @@ use constant BAN_PANEL_TEMPLATE => compile_template(
 );
 
 
-use constant ADMIN_POST_TEMPLATE => compile_template(
+use constant ADMIN_ORPHANS_TEMPLATE => compile_template(
     MANAGER_HEAD_INCLUDE . q{
 
-<div align="center"><em><const S_NOTAGS></em></div>
+<div class="dellist"><const S_MANAORPH></div>
 
 <div class="postarea">
-<form id="postform" action="<var $self>" method="post" enctype="multipart/form-data">
-<input type="hidden" name="task" value="post" />
-<input type="hidden" name="no_captcha" value="1" />
-<input type="hidden" name="no_format" value="1" />
-<input type="hidden" name="as_admin" value="1" />
+
+<form action="<var $self>" method="post">
 
 <table><tbody>
-<tr><td class="postblock"><const S_SUBJECT></td><td><input type="text" name="field3" size="35" />
-<input type="submit" value="<const S_SUBMIT>" /></td></tr>
-<tr><td class="postblock"><const S_SAGE></td><td><input type="checkbox" name="field2" value="sage" /></td></tr>
-<tr><td class="postblock"><const S_COMMENT></td><td><textarea name="field4" cols="48" rows="4"></textarea></td></tr>
-<tr><td class="postblock"><const S_UPLOADFILE></td><td><input type="file" name="file" size="35" />
-[<label><input type="checkbox" name="nofile" value="on" /><const S_NOFILE> ]</label>
-</td></tr>
-<tr><td class="postblock"><const S_PARENT></td><td><input type="text" name="parent" size="8" /></td></tr>
-<tr><td class="postblock"><const S_DELPASS></td><td><input type="password" name="password" size="8" /><const S_DELEXPL></td></tr>
-</tbody></table></form></div><hr />
-<script type="text/javascript">set_inputs("postform")</script>
+<loop $thumbs>
+<tr><td><img src="<var expand_filename($_)>" /></td>
+<td><label><input type="checkbox" name="file" value="<var $_>" /><var $_></label></td></tr>
+</loop>
+</tbody></table>
+
+<table><tbody>
+<loop $files>
+<tr><td><a href="<var expand_filename($_)>"><const S_MANASHOW></a></td>
+<td><label><input type="checkbox" name="file" value="<var $_>" /><var $_></label></td></tr>
+</loop>
+</tbody></table>
+
+<input type="hidden" name="task" value="removefiles" />
+<input type="hidden" name="board" value="<const BOARD_IDENT>" />
+<input value="<const S_DELETE>" type="submit" />
+</form>
+
+</div>
 
 } . NORMAL_FOOT_INCLUDE
 );
@@ -780,7 +785,7 @@ use constant ADMIN_EDIT_TEMPLATE => compile_template(
 <div align="center"><em><const S_NOTAGS></em></div>
 
 <div class="postarea">
-<form id="postform" action="<var $self>" method="post" enctype="multipart/form-data">
+<form action="<var $self>" method="post">
 <input type="hidden" name="task" value="save" />
 <input type="hidden" name="board" value="<const BOARD_IDENT>" />
 <input type="hidden" name="post" value="<var $postid>" />
