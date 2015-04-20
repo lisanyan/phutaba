@@ -100,7 +100,6 @@ use constant S_MANASPAM    => 'Spam';                # Defines Spam Panel button
 use constant S_MANASQLDUMP => 'MySQL abfragen';      # Defines SQL dump button
 use constant S_MANASQLINT => 'MySQL Interface';   # Defines SQL interface button
 use constant S_MANAORPH => 'Verwaiste Dateien';
-use constant S_MANASHOW => 'Anzeigen';
   ; # Defines Manager Post radio button--allows the user to post using HTML code in the comment box
 use constant S_MANAREBUILD => 'Cache erneuern';    #
 use constant S_MANANUKE    => 'Atombombe';         #
@@ -150,9 +149,6 @@ use constant S_MPONLYPIC =>
 use constant S_MPDELETEALL => 'Alle&nbsp;Posts&nbsp;dieser&nbsp;IP&nbsp;l&ouml;schen';    #
 use constant S_MPBAN =>
   'Bann';    # Sets whether or not to delete only file, or entire post/thread
-use constant S_MPTABLE => '<th>Nr.</th><th>Zeit</th><th>Betreff</th>'
-  . '<th>Name</th><th>Kommentar</th><th>IP</th>'
-  ;          # Explains names for Management Panel
 use constant S_IMGSPACEUSAGE => '[ Belegter Speicherplatz: %s, %s Dateien, %s Posts (%s Threads) ]'
   ;          # Prints space used KB by the board under Management Panel
 
@@ -180,7 +176,7 @@ use constant S_BANREASONLABEL  => 'Grund';
 use constant S_BANASNUMLABEL   => 'AS-Nummer';
 use constant S_BANASNUM        => 'Netz sperren';
 
-use constant S_LOCKED => 'Faden ist geschlossen';
+use constant S_LOCKED => 'Thread ist geschlossen';
 use constant S_PROXYTABLE =>
   '<th>Typ</th><th>IP</th><th>L&auml;uft aus</th><th>Datum</th>'
   ;    # Explains names for Proxy Panel
@@ -188,6 +184,10 @@ use constant S_PROXYIPLABEL     => 'IP';
 use constant S_PROXYTIMELABEL   => 'Zeit';
 use constant S_PROXYREMOVEBLACK => 'Entfernen';
 use constant S_PROXYWHITELIST   => 'Whitelist';
+
+use constant S_ORPHTABLE     => '<th>&Ouml;ffnen</th><th>Datei</th><th>&Auml;nderungsdatum</th><th>Gr&ouml;&szlig;e</th>';
+use constant S_MANASHOW      => '&Ouml;ffnen';
+
 use constant S_PROXYDISABLED => 'Proxy-Abfrage ist momentan nicht aktiviert.';
 use constant S_BADIP         => 'Falsche IP-Adresse';
 use constant S_BADDELIP      => 'Fehler: Falsche IP.'
@@ -281,4 +281,3 @@ use constant S_DNSBL =>
   'Fehler: TOR-Nodes sind nicht erlaubt!';    # error string for tor node check
 
 1;
-

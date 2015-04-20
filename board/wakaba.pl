@@ -347,10 +347,10 @@ elsif ( $task eq "orphans" ) {
     my $admin = $query->cookie("wakaadmin");
     make_admin_orphans($admin);
 }
-elsif ( $task eq "removefiles" ) {
+elsif ( $task eq "movefiles" ) {
     my $admin = $query->cookie("wakaadmin");
 	my @files = $query->param("file");
-	remove_files($admin, @files);
+	move_files($admin, @files);
 }
 elsif ( $task eq "paint" ) {
     my $do = $query->param("do");
@@ -1314,6 +1314,9 @@ sub post_stuff {
     if ($parent) {
         $parent_res = get_parent_post($parent) or make_error(S_NOTHREADERR);
         $lasthit = $$parent_res{lasthit};
+		# move "locked" check here:
+		# make_error(S_LOCKED) if ($$parent_res{locked} and !$admin);
+		# and remove sub check_locked($parent);
     }
     else {
         $lasthit = $time;
@@ -2493,11 +2496,11 @@ sub make_admin_orphans {
 
     check_password($admin, ADMIN_PASS);
 
+	# gather all files/thumbs on disk
 	my @files = glob IMG_DIR . '*';
 	my @thumbs = glob THUMB_DIR . '*';
 
-	# if a file on disk has no database-entry, add it to the output-list for the template
-
+	# gather all files/thumbs from database
 	$sth = $dbh->prepare("SELECT image, thumbnail FROM " . SQL_TABLE_IMG . " WHERE size > 0 ORDER by num ASC;")
 	  or make_error(S_SQLFAIL);
 	$sth->execute() or make_error(S_SQLFAIL);
@@ -2506,28 +2509,55 @@ sub make_admin_orphans {
 		push(@dbthumbs, $$row[1]) if $$row[1];
 	}
 
+	# copy all entries from the disk arrays that are not found in the database arrays to new arrays
 	my %dbfiles_hash = map { $_ => 1 } @dbfiles;
 	my %dbthumbs_hash = map { $_ => 1 } @dbthumbs;
 	my @orph_files = grep { !$dbfiles_hash{$_} } @files;
 	my @orph_thumbs = grep { !$dbthumbs_hash{$_} } @thumbs;
 
+	my $file_count = @orph_files;
+	my $thumb_count = @orph_thumbs;
+	my @f_orph;
+	my @t_orph;
+
+	foreach my $file (@orph_files) {
+		my $result = stat($file);
+		my $entry = {};
+		$$entry{rowtype} = @f_orph % 2 + 1;
+		$$entry{name} = $file;
+		$$entry{modified} = $$result[9];
+		$$entry{size} = $$result[7];
+		push(@f_orph, $entry);
+	}
+
+	foreach my $thumb (@orph_thumbs) {
+		my $result = stat($thumb);
+		my $entry = {};
+		$$entry{name} = $thumb;
+		$$entry{modified} = $$result[9];
+		$$entry{size} = $$result[7];
+		push(@t_orph, $entry);
+	}
+
 	make_http_header();
 	print encode_string(ADMIN_ORPHANS_TEMPLATE->(
 		admin => $admin,
-		files => \@orph_files,
-		thumbs => \@orph_thumbs
+		files => \@f_orph,
+		thumbs => \@t_orph,
+		file_count => $file_count,
+		thumb_count => $thumb_count
 	));
 }
 
-sub remove_files($$){
+sub move_files($$){
 	my ($admin, @files) = @_;
 
 	check_password($admin, ADMIN_PASS);
 
     foreach my $file (@files) {
 		$file = clean_string($file);
-		if ($file =~ m!^[A-Za-z0-9]+/[0-9]+\.[A-Za-z0-9]+$!) {
-			# unlink $file;
+		if ($file =~ m!^[a-zA-Z0-9]+/[a-zA-Z0-9-]+\.[a-zA-Z0-9]+$!) {
+			rename($file, ORPH_DIR . $file) or make_error(S_NOTWRITE . ' (' . decode_string(ORPH_DIR . $file, CHARSET) . ')');
 		}
 	}
 

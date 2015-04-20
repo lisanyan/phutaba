@@ -746,29 +746,37 @@ use constant BAN_PANEL_TEMPLATE => compile_template(
 use constant ADMIN_ORPHANS_TEMPLATE => compile_template(
     MANAGER_HEAD_INCLUDE . q{
 
-<div class="dellist"><const S_MANAORPH></div>
+<div class="dellist"><const S_MANAORPH> (<var $file_count> Files, <var $thumb_count> Thumbs)</div>
 
 <div class="postarea">
 
 <form action="<var $self>" method="post">
 
 <table><tbody>
+	<tr class="managehead"><const S_ORPHTABLE></tr>
+	<loop $files>
+		<tr class="row<var $rowtype>">
+		<td><a target="_blank" href="<var expand_filename($name)>"><const S_MANASHOW></a></td>
+		<td><label><input type="checkbox" name="file" value="<var $name>" checked="checked" /><var $name></label></td>
+		<td><var make_date($modified, '2ch')></td>
+		<td align="right"><var get_displaysize($size, DECIMAL_MARK)></td>
+		</tr>
+	</loop>
+</tbody></table><br />
+
 <loop $thumbs>
-<tr><td><img src="<var expand_filename($_)>" /></td>
-<td><label><input type="checkbox" name="file" value="<var $_>" /><var $_></label></td></tr>
+	<div class="file">
+	<label><input type="checkbox" name="file" value="<var $name>" checked="checked" /><var $name></label><br />
+	<var make_date($modified, '2ch')> (<var get_displaysize($size, DECIMAL_MARK)>)<br />
+	<img src="<var expand_filename($name)>" />
+	</div>
 </loop>
-</tbody></table>
 
-<table><tbody>
-<loop $files>
-<tr><td><a href="<var expand_filename($_)>"><const S_MANASHOW></a></td>
-<td><label><input type="checkbox" name="file" value="<var $_>" /><var $_></label></td></tr>
-</loop>
-</tbody></table>
+<p style="clear: both;"></p>
 
-<input type="hidden" name="task" value="removefiles" />
+<input type="hidden" name="task" value="movefiles" />
 <input type="hidden" name="board" value="<const BOARD_IDENT>" />
-<input value="<const S_DELETE>" type="submit" />
+<input value="<const S_MPARCHIVE>" type="submit" />
 </form>
 
 </div>
