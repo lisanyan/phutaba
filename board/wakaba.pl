@@ -238,17 +238,16 @@ elsif ( $task eq "post" ) {
     my $password   = $query->param("password");
     my $admin      = $query->cookie("wakaadmin");
     my $nofile     = $query->param("nofile");
-    my $no_captcha = $query->param("no_captcha");
     my $no_format  = $query->param("no_format");
     my $postfix    = $query->param("postfix");
-	my $postAsAdmin = $query->param("as_admin");
+	my $as_staff   = $query->param("as_staff");
 	my @files = $query->param("file"); # multiple uploads
 
     post_stuff(
         $parent,  $spam1,   $spam2,      $name,      $email,
         $subject, $comment, $gb2,        $captcha,   $password,
-        $admin,   $nofile,  $no_captcha, $no_format, $postfix,
-        $postAsAdmin, @files
+        $admin,   $nofile,  $no_format,  $postfix,   $as_staff,
+        @files
     );
 }
 elsif ( $task eq "delete" ) {
@@ -344,9 +343,14 @@ elsif ( $task eq "removeban" ) {
     my $num   = $query->param("num");
     remove_admin_entry( $admin, $num );
 }
-elsif ( $task eq "mpost" ) {
+elsif ( $task eq "orphans" ) {
     my $admin = $query->cookie("wakaadmin");
-    make_admin_post($admin);
+    make_admin_orphans($admin);
+}
+elsif ( $task eq "movefiles" ) {
+    my $admin = $query->cookie("wakaadmin");
+	my @files = $query->param("file");
+	move_files($admin, @files);
 }
 elsif ( $task eq "paint" ) {
     my $do = $query->param("do");
@@ -1179,8 +1183,8 @@ sub post_stuff {
     my (
         $parent,  $spam1,   $spam2,      $name,      $email,
         $subject, $comment, $gb2,        $captcha,   $password,
-        $admin,   $nofile,  $no_captcha, $no_format, $postfix,
-        $postAsAdmin, @files
+        $admin,   $nofile,  $no_format,  $postfix,   $as_staff,
+        @files
     ) = @_;
 
 	my $file = $files[0];
@@ -1192,7 +1196,6 @@ sub post_stuff {
     my $original_comment = $comment;
     # get a timestamp for future use
     my $time = time();
-	my $isAdminPost = 0;
 
     # check that the request came in as a POST, or from the command line
     make_error(S_UNJUST)
@@ -1204,15 +1207,11 @@ sub post_stuff {
     if ($admin)  # check admin password
     {
         check_password( $admin, ADMIN_PASS );
-		if(defined($postAsAdmin) && $postAsAdmin)
-		{
-			$isAdminPost = 1;
-		}
     }
     else {
 
         # forbid admin-only features
-        make_error(S_WRONGPASS) if ( $no_captcha or $no_format or $postfix );
+        make_error(S_WRONGPASS) if ( $no_format or $postfix or $as_staff );
 
         # check what kind of posting is allowed
         if ($parent) {
@@ -1244,7 +1243,7 @@ sub post_stuff {
     make_error(S_TOOLONG) if ( length($comment) > MAX_COMMENT_LENGTH );
 
     # check to make sure the user selected a file, or clicked the checkbox
-    make_error(S_NOPIC) if ( !$parent and !$file and !$nofile and !$isAdminPost );
+    make_error(S_NOPIC) if ( !$parent and !$file and !$nofile and !$as_staff );
 
     # check for empty reply or empty text-only post
     make_error(S_NOTEXT) if ( $comment =~ /^\s*$/ and !$file );
@@ -1307,7 +1306,7 @@ sub post_stuff {
 	$city = clean_string($city);
     # check captcha
     check_captcha( $dbh, $captcha, $ip, $parent, BOARD_IDENT )
-      if ( (use_captcha(ENABLE_CAPTCHA, $loc) and !$admin) or (ENABLE_CAPTCHA and !$admin and !$no_captcha and !is_trusted($trip)) );
+      if ( (use_captcha(ENABLE_CAPTCHA, $loc) and !$admin) or (ENABLE_CAPTCHA and !$admin and !is_trusted($trip)) );
 	$loc = join("<br />", $loc, $country_name, $region_name, $city, $as_info);
 
     # check if thread exists, and get lasthit value
@@ -1315,6 +1314,9 @@ sub post_stuff {
     if ($parent) {
         $parent_res = get_parent_post($parent) or make_error(S_NOTHREADERR);
         $lasthit = $$parent_res{lasthit};
+		# move "locked" check here:
+		# make_error(S_LOCKED) if ($$parent_res{locked} and !$admin);
+		# and remove sub check_locked($parent);
     }
     else {
         $lasthit = $time;
@@ -1324,10 +1326,10 @@ sub post_stuff {
     if (FORCED_ANON && !$admin) {
         $name = '';
         $trip = '';
-	if(ENABLE_RANDOM_NAMES) {
-		my @names = RANDOM_NAMES; 
-		$name = $names[rand(@names)];
-	}
+		if(ENABLE_RANDOM_NAMES) {
+			my @names = RANDOM_NAMES;
+			$name = $names[rand(@names)];
+		}
         if   ($email) { $email = 'sage'; }
         else          { $email = ''; }
     }
@@ -1385,15 +1387,18 @@ sub post_stuff {
     }
 
     $numip = "0" if (ANONYMIZE_IP_ADDRESSES);
+	if ($as_staff) { $as_staff = 1; }
+	else           { $as_staff = 0; };
+
     # finally, write to the database
     my $sth = $dbh->prepare(
         "INSERT INTO " . SQL_TABLE . "
 		VALUES(null,?,?,?,?,?,?,?,?,?,?,null,null,?,null,?,?,?);"
     ) or make_error(S_SQLFAIL);
     $sth->execute(
-		$parent,    $time,     $lasthit,      $numip,
-		$name,      $trip,     $email,        $subject,
-		$password,  $comment,  $isAdminPost,  $$parent_res{sticky},
+		$parent,    $time,     $lasthit,   $numip,
+		$name,      $trip,     $email,     $subject,
+		$password,  $comment,  $as_staff,  $$parent_res{sticky},
 		$loc,       $ssl
     ) or make_error(S_SQLFAIL);
 
@@ -2485,14 +2490,78 @@ sub make_admin_ban_panel {
         BAN_PANEL_TEMPLATE->( admin => $admin, filter => $filter, bans => \@bans ) );
 }
 
-
-sub make_admin_post {
+sub make_admin_orphans {
     my ($admin) = @_;
+	my ($sth, $row, @results, @dbfiles, @dbthumbs);
 
-    check_password( $admin, ADMIN_PASS );
+    check_password($admin, ADMIN_PASS);
 
-    make_http_header();
-    print encode_string( ADMIN_POST_TEMPLATE->( admin => $admin ) );
+	# gather all files/thumbs on disk
+	my @files = glob IMG_DIR . '*';
+	my @thumbs = glob THUMB_DIR . '*';
+
+	# gather all files/thumbs from database
+	$sth = $dbh->prepare("SELECT image, thumbnail FROM " . SQL_TABLE_IMG . " WHERE size > 0 ORDER by num ASC;")
+	  or make_error(S_SQLFAIL);
+	$sth->execute() or make_error(S_SQLFAIL);
+	while ($row = get_decoded_arrayref($sth)) {
+		push(@dbfiles, $$row[0]);
+		push(@dbthumbs, $$row[1]) if $$row[1];
+	}
+
+	# copy all entries from the disk arrays that are not found in the database arrays to new arrays
+	my %dbfiles_hash = map { $_ => 1 } @dbfiles;
+	my %dbthumbs_hash = map { $_ => 1 } @dbthumbs;
+	my @orph_files = grep { !$dbfiles_hash{$_} } @files;
+	my @orph_thumbs = grep { !$dbthumbs_hash{$_} } @thumbs;
+
+	my $file_count = @orph_files;
+	my $thumb_count = @orph_thumbs;
+	my @f_orph;
+	my @t_orph;
+
+	foreach my $file (@orph_files) {
+		my $result = stat($file);
+		my $entry = {};
+		$$entry{rowtype} = @f_orph % 2 + 1;
+		$$entry{name} = $file;
+		$$entry{modified} = $$result[9];
+		$$entry{size} = $$result[7];
+		push(@f_orph, $entry);
+	}
+
+	foreach my $thumb (@orph_thumbs) {
+		my $result = stat($thumb);
+		my $entry = {};
+		$$entry{name} = $thumb;
+		$$entry{modified} = $$result[9];
+		$$entry{size} = $$result[7];
+		push(@t_orph, $entry);
+	}
+
+	make_http_header();
+	print encode_string(ADMIN_ORPHANS_TEMPLATE->(
+		admin => $admin,
+		files => \@f_orph,
+		thumbs => \@t_orph,
+		file_count => $file_count,
+		thumb_count => $thumb_count
+	));
+}
+
+sub move_files($$){
+	my ($admin, @files) = @_;
+
+	check_password($admin, ADMIN_PASS);
+
+    foreach my $file (@files) {
+		$file = clean_string($file);
+		if ($file =~ m!^[a-zA-Z0-9]+/[a-zA-Z0-9-]+\.[a-zA-Z0-9]+$!) {
+			rename($file, ORPH_DIR . $file) or make_error(S_NOTWRITE . ' (' . decode_string(ORPH_DIR . $file, CHARSET) . ')');
+		}
+	}
+
+	make_http_forward(get_script_name() . "?task=orphans");
 }
 
 sub make_admin_edit_panel {

@@ -167,6 +167,7 @@ eval "use constant SQL_PREFIX => 'ernstchan_';" unless ( defined &SQL_PREFIX );
     eval "use constant IMG_DIR => 'src/'"      unless ( defined &IMG_DIR );
     eval "use constant THUMB_DIR => 'thumb/'"  unless ( defined &THUMB_DIR );
     eval "use constant RES_DIR => 'res/'"      unless ( defined &RES_DIR );
+    eval "use constant ORPH_DIR => 'orphans/'" unless ( defined &ORPH_DIR );
     eval "use constant REDIR_DIR => 'redir/'"  unless ( defined &REDIR_DIR );
     eval "use constant HTML_SELF => 'wakaba.html'"
       unless ( defined &HTML_SELF );
