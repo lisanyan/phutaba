@@ -20,15 +20,9 @@ use constant S_DELEXPL =>
 use constant S_SPAMTRAP => '';
 use constant S_ALLOWED => 'Erlaubte Dateiformate (Maximalgr&ouml;&szlig;e %s oder angegeben)';
 
-use constant S_THUMB => '';    # Prints instructions for viewing real source
-use constant S_HIDDEN =>
-  '';    # Prints instructions for viewing hidden image reply
-use constant S_NOTHUMB =>
-  'Datei';    # Printed when there's no thumbnail
+
 use constant S_PICNAME => '';             # Prints text before upload name/link
 use constant S_REPLY   => 'Antworten';    # Prints text for reply link
-use constant S_OLD => 'Dieses Thema ist kurz vor der L&ouml;schung.'
-  ; # Prints text to be displayed before post is marked for deletion, see: retention
 
 use constant S_HIDE => 'Thread %d ausblenden';
 
@@ -55,6 +49,7 @@ use constant S_FIRSTPG => 'Zur&uuml;ck';    # Defines previous button
 use constant S_NEXT    => 'Vor';            # Defines next button
 use constant S_LASTPG  => 'Vor';            # Defines next button
 use constant S_TOP     => 'Nach oben';
+use constant S_BOARD   => 'Board';
 
 use constant S_SEARCHTITLE		=> 'Suche';
 use constant S_SEARCH			=> 'Suchen nach';
@@ -102,7 +97,6 @@ use constant S_MANASQLINT => 'MySQL Interface';   # Defines SQL interface button
 use constant S_MANAORPH => 'Verwaiste Dateien';
   ; # Defines Manager Post radio button--allows the user to post using HTML code in the comment box
 use constant S_MANAREBUILD => 'Cache erneuern';    #
-use constant S_MANANUKE    => 'Atombombe';         #
 use constant S_MANALOGOUT  => 'Abmelden';          #
 use constant S_MANASAVE =>
   'Speichern';    # Defines Label for the login cookie checbox
@@ -164,6 +158,7 @@ use constant S_BANIPLABEL      => 'IP-Adresse';
 use constant S_BANMASKLABEL    => 'Netzmaske';
 use constant S_BANCOMMENTLABEL => 'Kommentar';
 use constant S_BANDURATION     => 'Dauer';
+use constant S_BANFLAGPOST     => 'Post als gesperrt markieren';
 use constant S_BANWORDLABEL    => 'Wort';
 use constant S_BANIP           => 'IP sperren';
 use constant S_BANWORD         => 'Wortfilter';

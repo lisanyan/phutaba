@@ -68,6 +68,9 @@ use constant NORMAL_HEAD_INCLUDE => q{
 <tr>
 	<td><b><const S_BANREASONLABEL></b></td><td><input id="reason" type="text" name="reason" size="40" /></td>
 </tr>
+<tr>
+	<td colspan="2"><label><input id="ban_flag" type="checkbox" name="ban_flag" value="1" checked="checked" /> <const S_BANFLAGPOST></label></td>
+</tr>
 </table>
 <div id="infobox" style="display: none">
 	<br />
@@ -117,11 +120,11 @@ use constant MANAGER_HEAD_INCLUDE => NORMAL_HEAD_INCLUDE . q{
 
 <if $admin>
 	[<a href="<var expand_filename(HTML_SELF)>"><const S_MANARET></a>]
-	[<a href="<var $self>?task=show"><const S_MANAPANEL></a>]
-	[<a href="<var $self>?task=mpanel"><const S_MANATOOLS></a>]
-	[<a href="<var $self>?task=bans"><const S_MANABANS></a>]
-	[<a href="<var $self>?task=orphans"><const S_MANAORPH></a>]
-	[<a href="<var $self>?task=logout"><const S_MANALOGOUT></a>]
+	[<a href="<var $self>?board=<const BOARD_IDENT>&amp;task=show"><const S_MANAPANEL></a>]
+	[<a href="<var $self>?board=<const BOARD_IDENT>&amp;task=mpanel"><const S_MANATOOLS></a>]
+	[<a href="<var $self>?board=<const BOARD_IDENT>&amp;task=bans"><const S_MANABANS></a>]
+	[<a href="<var $self>?board=<const BOARD_IDENT>&amp;task=orphans"><const S_MANAORPH></a>]
+	[<a href="<var $self>?board=<const BOARD_IDENT>&amp;task=logout"><const S_MANALOGOUT></a>]
 	<div class="passvalid"><const S_MANAMODE></div>
 </if>
 };
@@ -202,13 +205,13 @@ use constant NORMAL_FOOT_INCLUDE => q{
 use constant PAGE_TEMPLATE => compile_template(
     MANAGER_HEAD_INCLUDE . q{
 
-<if !$locked>
+<if !$locked or $isAdmin>
 <if !DISABLE_NEW_THREADS or $thread or $isAdmin>
 <if $postform>
 	<section class="postarea">
 	<form id="postform" action="<var $self>" method="post" enctype="multipart/form-data">
-
 	<input type="hidden" name="task" value="post" />
+	<input type="hidden" name="board" value="<const BOARD_IDENT>" />
 	<if $thread><input type="hidden" name="parent" value="<var $thread>" /></if>
 	<if !$image_inp and !$thread and ALLOW_TEXTONLY>
 		<input type="hidden" name="nofile" value="1" />
@@ -257,7 +260,7 @@ use constant PAGE_TEMPLATE => compile_template(
 	</td></tr>
 	</if>
 
-	<if use_captcha(ENABLE_CAPTCHA, $loc)>
+	<if !$isAdmin && need_captcha(CAPTCHA_MODE, CAPTCHA_SKIP, $loc)>
 		<tr><td class="postblock"><label for="captcha"><const S_CAPTCHA></label> (<a href="/faq">?</a>) (<var $loc>)</td>
 		<td><input type="text" name="captcha" id="captcha" size="10" /> <img alt="" src="/captcha.pl?key=<var get_captcha_key($thread)>&amp;dummy=<var $dummy>&amp;board=<var BOARD_IDENT>" /></td></tr>
 	</if>
@@ -275,7 +278,7 @@ use constant PAGE_TEMPLATE => compile_template(
 </if>
 </if>
 
-<if $locked>
+<if $locked && !$isAdmin>
 <p class="locked"><var sprintf S_THREADLOCKED, $thread></p>
 </if>
 
@@ -338,6 +341,7 @@ use constant PAGE_TEMPLATE => compile_template(
 
 <div class="delete">
 	<input type="hidden" name="task" value="delete" />
+	<input type="hidden" name="board" value="<const BOARD_IDENT>" />
 	<if $thread><input type="hidden" name="parent" value="<var $thread>" /></if>
 	<input type="password" name="password" placeholder="<const S_DELKEY>" />
 	<input value="<const S_DELETE>" type="submit" />
@@ -355,6 +359,7 @@ use constant SEARCH_TEMPLATE => compile_template(
 	<section class="postarea">
 	<form id="searchform" action="<var $self>" method="post">
 	<input type="hidden" name="task" value="search" />
+	<input type="hidden" name="board" value="<const BOARD_IDENT>" />
 
 	<table>
 	<tbody>
@@ -536,6 +541,7 @@ use constant ADMIN_LOGIN_TEMPLATE => compile_template(
 
 <div align="center"><form action="<var $self>" method="post">
 <input type="hidden" name="task" value="admin" />
+<input type="hidden" name="board" value="<const BOARD_IDENT>" />
 <const S_ADMINPASS>
 <input type="password" name="berra" size="8" value="" />
 <br />
@@ -575,6 +581,7 @@ use constant POST_PANEL_TEMPLATE => compile_template(
 <const S_MANADELETE>
 <form action="<var $self>" method="post">
 <input type="hidden" name="task" value="deleteall" />
+<input type="hidden" name="board" value="<const BOARD_IDENT>" />
 <table><tbody>
 <tr><td class="postblock"><const S_BANIPLABEL></td><td><input type="text" name="ip" size="24" /></td></tr>
 <tr><td class="postblock"><const S_BANMASKLABEL></td><td><input type="text" name="mask" size="24" />
@@ -595,13 +602,14 @@ use constant DELETE_PANEL_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 <div class="postarea">
 <form action="<var $self>" method="post">
 <input type="hidden" name="task" value="deleteall" />
-<input type="hidden" name="board" value="<const BOARD_NAME>" />
+<input type="hidden" name="board" value="<const BOARD_IDENT>" />
 <input type="hidden" name="ip" value="<var $ip>" />
 <input type="hidden" name="mask" value="<var dec_to_dot($mask)>" />
 <input type="hidden" name="go" value="1" />
 <table><tbody>
 <tr><td class="postblock"><const S_BANIPLABEL></td><td><var dec_to_dot($ip)></td></tr>
 <tr><td class="postblock"><const S_BANMASKLABEL></td><td><var dec_to_dot($mask)></tr>
+<tr><td class="postblock"><const S_BOARD></td><td>/<const BOARD_IDENT>/</tr>
 <tr><td class="postblock"><const S_DELALLMSG></td><td><var sprintf S_DELALLCOUNT, $posts, $threads>
 <input type="submit" value="<const S_MPDELETEIP>" /></td></tr>
 </tbody></table></form>
@@ -620,6 +628,7 @@ use constant BAN_PANEL_TEMPLATE => compile_template(
 <form action="<var $self>" method="post">
 <input type="hidden" name="task" value="addip" />
 <input type="hidden" name="type" value="ipban" />
+<input type="hidden" name="board" value="<const BOARD_IDENT>" />
 <table><tbody>
 <tr><td class="postblock"><const S_BANIPLABEL></td><td><input type="text" name="ip" size="24" /></td></tr>
 <tr><td class="postblock"><const S_BANMASKLABEL></td><td><input type="text" name="mask" size="24" /></td></tr>
@@ -640,6 +649,7 @@ use constant BAN_PANEL_TEMPLATE => compile_template(
 <form action="<var $self>" method="post">
 <input type="hidden" name="task" value="addip" />
 <input type="hidden" name="type" value="whitelist" />
+<input type="hidden" name="board" value="<const BOARD_IDENT>" />
 <table><tbody>
 <tr><td class="postblock"><const S_BANIPLABEL></td><td><input type="text" name="ip" size="24" /></td></tr>
 <tr><td class="postblock"><const S_BANMASKLABEL></td><td><input type="text" name="mask" size="24" /></td></tr>
@@ -652,6 +662,7 @@ use constant BAN_PANEL_TEMPLATE => compile_template(
 <form action="<var $self>" method="post">
 <input type="hidden" name="task" value="addstring" />
 <input type="hidden" name="type" value="wordban" />
+<input type="hidden" name="board" value="<const BOARD_IDENT>" />
 <table><tbody>
 <tr><td class="postblock"><const S_BANWORDLABEL></td><td><input type="text" name="string" size="24" /></td></tr>
 <tr><td class="postblock"><const S_BANCOMMENTLABEL></td><td><input type="text" name="comment" size="16" />
@@ -663,6 +674,7 @@ use constant BAN_PANEL_TEMPLATE => compile_template(
 <form action="<var $self>" method="post">
 <input type="hidden" name="task" value="addstring" />
 <input type="hidden" name="type" value="trust" />
+<input type="hidden" name="board" value="<const BOARD_IDENT>" />
 <table><tbody>
 <tr><td class="postblock"><const S_BANTRUSTTRIP></td><td><input type="text" name="string" size="24" /></td></tr>
 <tr><td class="postblock"><const S_BANCOMMENTLABEL></td><td><input type="text" name="comment" size="16" />
@@ -674,6 +686,7 @@ use constant BAN_PANEL_TEMPLATE => compile_template(
 <form action="<var $self>" method="post">
 <input type="hidden" name="task" value="addstring" />
 <input type="hidden" name="type" value="asban" />
+<input type="hidden" name="board" value="<const BOARD_IDENT>" />
 <table><tbody>
 <tr><td class="postblock"><const S_BANASNUMLABEL></td><td><input type="text" name="string" size="24" /></td></tr>
 <tr><td class="postblock"><const S_BANCOMMENTLABEL></td><td><input type="text" name="comment" size="16" />
@@ -733,7 +746,7 @@ use constant BAN_PANEL_TEMPLATE => compile_template(
 	</if>
 	<if $type ne 'ipban'>-</if>
 	</td>
-	<td><a href="<var $self>?task=removeban&amp;num=<var $num>"><const S_BANREMOVE></a></td>
+	<td><a href="<var $self>?task=removeban&amp;board=<const BOARD_IDENT>&amp;num=<var $num>"><const S_BANREMOVE></a></td>
 	</tr>
 </loop>
 
@@ -746,7 +759,7 @@ use constant BAN_PANEL_TEMPLATE => compile_template(
 use constant ADMIN_ORPHANS_TEMPLATE => compile_template(
     MANAGER_HEAD_INCLUDE . q{
 
-<div class="dellist"><const S_MANAORPH> (<var $file_count> Files, <var $thumb_count> Thumbs)</div>
+<div class="dellist"><const S_MANAORPH>, <const S_BOARD>: /<const BOARD_IDENT>/ (<var $file_count> Files, <var $thumb_count> Thumbs)</div>
 
 <div class="postarea">
 
@@ -788,7 +801,7 @@ use constant ADMIN_ORPHANS_TEMPLATE => compile_template(
 use constant ADMIN_EDIT_TEMPLATE => compile_template(
     MANAGER_HEAD_INCLUDE . q{
 
-<div class="dellist"><const S_MPEDIT> (Nr. <var $postid>)</div>
+<div class="dellist"><const S_MPEDIT> (/<const BOARD_IDENT>/<var $postid>)</div>
 
 <div align="center"><em><const S_NOTAGS></em></div>
 

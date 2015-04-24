@@ -142,35 +142,35 @@ init_admin_database() if ( !table_exists(SQL_ADMIN_TABLE) );
 
 if ( $json eq "post" ) {
     my $id = $query->param("id");
-    if ( $id ne undef ) {
+    if (defined($id)) {
         output_json_post($id);
+    }
+}
+elsif ($json eq "thread") {
+    my $id = $query->param("id");
+    if (defined($id)) {
+        output_json_thread($id);
     }
 }
 elsif ($json eq "threads") {
     output_json_threads();
 }
-elsif ($json eq "thread") {
-    my $id = $query->param("id");
-    if ($id ne undef) {
-        output_json_thread($id);
-    }
-}
-elsif ( $json eq "stats" ) {
+elsif ($json eq "stats") {
 	my $date_format = $query->param("date_format");
-	if ( $date_format ne undef ) {
+	if (defined($date_format)) {
 		output_json_stats($date_format);
 	}
 }
 elsif ($json eq "ban") {
 	my $id = $query->param("id");
 	my $admin = $query->cookie("wakaadmin");
-	if ($id ne undef) {
+	if (defined($id)) {
 		output_json_ban($id, $admin);
 	}
 }
 elsif ($json eq "meta") {
 	my $id = $query->param("post");
-    if ($id ne undef) {
+    if (defined($id)) {
 		output_json_meta($id);
 	}
 }
@@ -261,17 +261,17 @@ elsif ( $task eq "delete" ) {
 }
 elsif ( $task eq "sticky" ) {
     my $admin    = $query->cookie("wakaadmin");
-    my $threadid = $query->param("threadid");
+    my $threadid = $query->param("thread");
     make_sticky( $admin, $threadid );
 }
 elsif ( $task eq "kontra" ) {
     my $admin    = $query->cookie("wakaadmin");
-    my $threadid = $query->param("threadid");
+    my $threadid = $query->param("thread");
     make_kontra( $admin, $threadid );
 }
 elsif ( $task eq "lock" ) {
     my $admin    = $query->cookie("wakaadmin");
-    my $threadid = $query->param("threadid");
+    my $threadid = $query->param("thread");
     make_locked( $admin, $threadid );
 }
 elsif ( $task eq "edit" ) {
@@ -321,17 +321,18 @@ elsif ( $task eq "addip" ) {
     my $comment = $query->param("comment");
     my $ip      = $query->param("ip");
     my $mask    = $query->param("mask");
-    my $postid  = $query->param("postid");
+    my $postid  = $query->param("post");
 	my $ajax    = $query->param("ajax");
+	my $flag    = $query->param("flag");
     add_admin_entry( $admin, $type, $comment, parse_range( $ip, $mask ),
-        $string, $postid, $ajax );
+        $string, $postid, $ajax, $flag );
 }
 elsif ( $task eq "addstring" ) {
     my $admin   = $query->cookie("wakaadmin");
     my $type    = $query->param("type");
     my $string  = $query->param("string");
     my $comment = $query->param("comment");
-    add_admin_entry( $admin, $type, $comment, 0, 0, $string, 0, 0 );
+    add_admin_entry( $admin, $type, $comment, 0, 0, $string, 0, 0, 0 );
 }
 elsif ( $task eq "checkban" ) {
     my $ival1	= $query->param("ip");
@@ -428,7 +429,7 @@ sub do_paint {
 
 sub output_json_threads {
     my ($row, $error, $code, %status, @data, %json);
-    $sth = $dbh->prepare("SELECT num, sticky IS NULL OR sticky=0 AS sticky_isnull FROM " . SQL_TABLE . " WHERE parent = 0 ORDER BY sticky_isnull ASC,lasthit DESC,CASE parent WHEN 0 THEN num ELSE parent END ASC,num ASC");
+    $sth = $dbh->prepare("SELECT num FROM " . SQL_TABLE . " WHERE parent = 0 ORDER BY sticky DESC,lasthit DESC,CASE parent WHEN 0 THEN num ELSE parent END ASC,num ASC");
     $sth->execute();
     $error = encode_entities(decode('utf8', $sth->errstr));
     while($row = $sth->fetch()) {
@@ -458,7 +459,7 @@ sub output_json_threads {
 sub output_json_thread {
     my ($id) = @_;
     my ($row, $error, $code, %status, @data, %json);
-    $sth = $dbh->prepare("SELECT num, sticky IS NULL OR sticky=0 AS sticky_isnull FROM " . SQL_TABLE . " WHERE num=? OR parent=? ORDER BY num ASC;");
+    $sth = $dbh->prepare("SELECT num FROM " . SQL_TABLE . " WHERE num=? OR parent=? ORDER BY num ASC;");
     $sth->execute($id, $id);
     $error = encode_entities(decode('utf8', $sth->errstr));
     while($row = $sth->fetch()) {
@@ -651,7 +652,7 @@ sub show_post {
     }
 
     $sth = $dbh->prepare(
-            "SELECT *, sticky IS NULL OR sticky=0 AS sticky_isnull FROM "
+            "SELECT * FROM "
           . SQL_TABLE
           . " WHERE num=?;" )
       or make_error(S_SQLFAIL);
@@ -699,9 +700,9 @@ sub show_page {
 
     # grab all posts, in thread order (ugh, ugly kludge)
     $sth = $dbh->prepare(
-            "SELECT *, sticky IS NULL OR sticky=0 AS sticky_isnull FROM "
+            "SELECT * FROM "
           . SQL_TABLE
-          . " ORDER BY sticky_isnull ASC,lasthit DESC,CASE parent WHEN 0 THEN num ELSE parent END ASC,num ASC"
+          . " ORDER BY sticky DESC,lasthit DESC,CASE parent WHEN 0 THEN num ELSE parent END ASC,num ASC"
     ) or make_error(S_SQLFAIL);
     $sth->execute() or make_error(S_SQLFAIL);
 
@@ -798,7 +799,7 @@ sub output_page {
 
         # in case of a sticky thread, use custom number of replies
         # NOTE: has priority over locked thread
-        if ( !$$parent{sticky_isnull} ) {
+        if ( $$parent{sticky} ) {
             $max_replies = REPLIES_PER_STICKY_THREAD;
             $max_images = ( IMAGE_REPLIES_PER_STICKY_THREAD or $images );
         }
@@ -911,7 +912,7 @@ sub show_thread {
 	}
 
     $sth = $dbh->prepare(
-            "SELECT *, sticky IS NULL OR sticky=0 AS sticky_isnull FROM "
+            "SELECT * FROM "
           . SQL_TABLE
           . " WHERE num=? OR parent=? ORDER BY num ASC;" )
       or make_error(S_SQLFAIL);
@@ -1133,7 +1134,6 @@ sub find_posts($$$$) {
 				add_images_to_row($row);
 				$$row{comment} = resolve_reflinks($$row{comment});
 				if (!$$row{parent}) { # OP post
-					$$row{sticky_isnull} = 1; # hack, until this field is removed.
 					push @results, $row;
 				} else { # reply post
 					push @results, $row unless ($op_only);
@@ -1215,10 +1215,6 @@ sub post_stuff {
 
         # check what kind of posting is allowed
         if ($parent) {
-
-            # check if the thread is locked and return error if it is
-            check_locked($parent);
-
             make_error(S_NOTALLOWED) if ( $file  and !ALLOW_IMAGE_REPLIES );
             make_error(S_NOTALLOWED) if ( !$file and !ALLOW_TEXT_REPLIES );
         }
@@ -1306,7 +1302,7 @@ sub post_stuff {
 	$city = clean_string($city);
     # check captcha
     check_captcha( $dbh, $captcha, $ip, $parent, BOARD_IDENT )
-      if ( (use_captcha(ENABLE_CAPTCHA, $loc) and !$admin) or (ENABLE_CAPTCHA and !$admin and !is_trusted($trip)) );
+      if (need_captcha(CAPTCHA_MODE, CAPTCHA_SKIP, $loc) and !$admin and !is_trusted($trip));
 	$loc = join("<br />", $loc, $country_name, $region_name, $city, $as_info);
 
     # check if thread exists, and get lasthit value
@@ -1314,9 +1310,7 @@ sub post_stuff {
     if ($parent) {
         $parent_res = get_parent_post($parent) or make_error(S_NOTHREADERR);
         $lasthit = $$parent_res{lasthit};
-		# move "locked" check here:
-		# make_error(S_LOCKED) if ($$parent_res{locked} and !$admin);
-		# and remove sub check_locked($parent);
+		make_error(S_LOCKED) if ($$parent_res{locked} and !$admin);
     }
     else {
         $lasthit = $time;
@@ -1557,7 +1551,7 @@ sub make_kontra {
           or make_error(S_SQLFAIL);
         $sth2->execute( $kontra, $threadid ) or make_error(S_SQLFAIL);
     }
-    make_http_forward( get_script_name() . "?task=show");
+    make_http_forward(get_script_name() . "?task=show&board=" . urlenc(BOARD_IDENT));
 
 }
 
@@ -1574,15 +1568,6 @@ sub is_trusted {
     return 1 if ( ( $sth->fetchrow_array() )[0] );
 
     return 0;
-}
-
-sub check_locked {
-    my ($parent) = @_;
-    my $sth;
-    $sth = $dbh->prepare( "SELECT locked FROM " . SQL_TABLE . " WHERE num=?;" )
-      or make_error(S_SQLFAIL);
-    $sth->execute($parent) or make_error(S_SQLFAIL);
-    if ( ( $sth->fetchrow_array() )[0] ) { make_error(S_LOCKED); }
 }
 
 sub ban_check {
@@ -2216,7 +2201,7 @@ sub delete_stuff {
     }
 
     if ($admin) {
-        make_http_forward( get_script_name() . "?task=show");
+        make_http_forward(get_script_name() . "?task=show&board=" . urlenc(BOARD_IDENT));
     } elsif ( $noko == 1 and $parent ) {
 		make_http_forward("thread/" . $parent);
 	} else { make_http_forward("/" . urlenc(BOARD_IDENT) . "/"); }
@@ -2240,7 +2225,7 @@ sub make_locked {
           or make_error(S_SQLFAIL);
         $sth2->execute( $locked, $threadid ) or make_error(S_SQLFAIL);
     }
-    make_http_forward( get_script_name() . "?task=show");
+    make_http_forward(get_script_name() . "?task=show&board=" . urlenc(BOARD_IDENT));
 }
 
 sub make_sticky {
@@ -2262,7 +2247,7 @@ sub make_sticky {
         $sth2->execute( $sticky, $threadid, $threadid) or make_error(S_SQLFAIL);
     }
 
-    make_http_forward( get_script_name() . "?task=show");
+    make_http_forward(get_script_name() . "?task=show&board=" . urlenc(BOARD_IDENT));
 }
 
 sub delete_post {
@@ -2561,7 +2546,7 @@ sub move_files($$){
 		}
 	}
 
-	make_http_forward(get_script_name() . "?task=orphans");
+	make_http_forward(get_script_name() . "?task=orphans&board=" . urlenc(BOARD_IDENT));
 }
 
 sub make_admin_edit_panel {
@@ -2569,6 +2554,7 @@ sub make_admin_edit_panel {
 	my $row;
 
 	check_password($admin, ADMIN_PASS);
+	make_error(S_UNUSUAL) if ($postid =~ /[^0-9]/);
 
 	$sth = $dbh->prepare("SELECT name, subject, comment FROM " . SQL_TABLE . " WHERE num=?;")
 	  or make_error(S_SQLFAIL);
@@ -2612,7 +2598,7 @@ sub save_admin_edit {
 	  or make_error(S_SQLFAIL);
 	$sth->execute($name, $subject, $comment, $postid) or make_error(S_SQLFAIL);
 
-	make_http_forward(get_script_name());
+	make_http_forward(get_script_name() . "?task=show&board=" . urlenc(BOARD_IDENT));
 }
 
 sub do_login {
@@ -2642,18 +2628,18 @@ sub do_login {
 			-httponly => 1
             );
 
-        make_http_forward( get_script_name() . "?task=$nexttask");
+        make_http_forward(get_script_name() . "?task=$nexttask&board=" . urlenc(BOARD_IDENT));
     }
     else { make_admin_login() }
 }
 
 sub do_logout {
     make_cookies( wakaadmin => "", -expires => 1 );
-    make_http_forward( get_script_name() . "?task=admin");
+    make_http_forward(get_script_name() . "?task=admin&board=" . urlenc(BOARD_IDENT));
 }
 
 sub add_admin_entry {
-    my ($admin, $type, $comment, $ival1, $ival2, $sval1, $postid, $ajax) = @_;
+    my ($admin, $type, $comment, $ival1, $ival2, $sval1, $postid, $ajax, $flag) = @_;
     my ($sth, $utf8_encoded_json_text, $expires, $authorized);
     my ($time) = time();
 
@@ -2683,7 +2669,7 @@ sub add_admin_entry {
 		$sth->execute( $type, $comment, $ival1, $ival2, $sval1, $time )
 		  or make_error(S_SQLFAIL);
 
-		if ($postid) {
+		if ($postid and $flag) {
 			$sth = $dbh->prepare( "UPDATE " . SQL_TABLE . " SET banned=? WHERE num=? LIMIT 1;" )
 			  or make_error(S_SQLFAIL);
 			$sth->execute($time, $postid) or make_error(S_SQLFAIL);
@@ -2703,7 +2689,7 @@ sub add_admin_entry {
 		make_json_header();
 		print $utf8_encoded_json_text;
 	} else {
-		make_http_forward(get_script_name() . "?task=bans");
+		make_http_forward(get_script_name() . "?task=bans&board=" . urlenc(BOARD_IDENT));
 	}
 }
 
@@ -2739,7 +2725,7 @@ sub remove_admin_entry {
       or make_error(S_SQLFAIL);
     $sth->execute($num) or make_error(S_SQLFAIL);
 
-    make_http_forward( get_script_name() . "?task=bans");
+    make_http_forward(get_script_name() . "?task=bans&board=" . urlenc(BOARD_IDENT));
 }
 
 sub delete_all {
@@ -2938,7 +2924,7 @@ sub get_filetypes_table {
 	my %filetypes = get_filetypes_hash();
 	my %filegroups = FILEGROUPS;
 	my %filesizes = FILESIZES;
-	my @groups = GROUPORDER;
+	my @groups = split(' ', GROUPORDER);
 	my @rows;
 	my $blocks = 0;
 	my $output = '<table style="margin:0px;border-collapse:collapse;display:inline-table;">' . "\n<tr>\n\t" . '<td colspan="4">'
@@ -3155,7 +3141,7 @@ sub trim_database {
         $sth =
           $dbh->prepare( "SELECT * FROM "
               . SQL_TABLE
-              . " WHERE parent=0 AND timestamp<=$mintime AND (sticky=0 OR sticky IS NULL);"
+              . " WHERE parent=0 AND timestamp<=$mintime AND sticky IS NULL;"
           ) or make_error(S_SQLFAIL);
         $sth->execute() or make_error(S_SQLFAIL);
 
@@ -3177,7 +3163,7 @@ sub trim_database {
         $sth =
           $dbh->prepare( "SELECT * FROM "
               . SQL_TABLE
-              . " WHERE parent=0 AND (sticky=0 OR sticky IS NULL) ORDER BY $order LIMIT 1;"
+              . " WHERE parent=0 AND sticky IS NULL ORDER BY $order LIMIT 1;"
           ) or make_error(S_SQLFAIL);
         $sth->execute() or make_error(S_SQLFAIL);
 

@@ -98,7 +98,8 @@ eval "use constant SQL_PREFIX => 'ernstchan_';" unless ( defined &SQL_PREFIX );
       unless ( defined &MAX_IMAGE_PIXELS );
 	eval "use constant MAX_SEARCH_RESULTS => 200" unless (defined &MAX_SEARCH_RESULTS);
 
-    eval "use constant ENABLE_CAPTCHA => 1" unless ( defined &ENABLE_CAPTCHA );
+    eval "use constant CAPTCHA_MODE => 1"  unless ( defined &CAPTCHA_MODE );
+    eval "use constant CAPTCHA_SKIP => ''" unless ( defined &CAPTCHA_SKIP );
     eval "use constant SQL_CAPTCHA_TABLE => 'captcha'"
       unless ( defined &SQL_CAPTCHA_TABLE );
     eval "use constant CAPTCHA_LIFETIME => 1440"
