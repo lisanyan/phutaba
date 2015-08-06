@@ -23,6 +23,7 @@ function do_ban(ip, postid, board) {
 		$j("#netmask").attr('disabled', true);
 		$j("#duration").attr('disabled', true);
 		$j("#reason").attr('disabled', true);
+		$j("#ban_flag").attr('disabled', true);
 	}
 
 	buttons = {
@@ -37,7 +38,8 @@ function do_ban(ip, postid, board) {
 			mask = $j("#netmask").val() ? $j("#netmask").val() : "255.255.255.255";
 			duration = $j("#duration").val() ? $j("#duration").val() : "";
 			reason = $j("#reason").val() ? $j("#reason").val() : "no reason";
-			url = "/" + board + "/?task=addip&ajax=1&type=ipban&ip=" + ip + "&postid=" + postid + "&mask=" + mask + "&comment=" + reason + "&string=" + duration;
+			flag = $j("#ban_flag").prop('checked') ? 1 : 0;
+			url = "/" + board + "/wakaba.pl?task=addip&ajax=1&type=ipban&board=" + board + "&post=" + postid + "&ip=" + ip + "&mask=" + mask + "&comment=" + encodeURIComponent(reason) + "&string=" + duration + "&flag=" + flag;
 
 			$j("#infobox").hide('normal');
 			$j("#error").hide('normal');
@@ -77,7 +79,7 @@ function do_ban(ip, postid, board) {
 		draggable: true,
 		closeOnEscape: false,
 		resizable: true,
-		title: 'Moderation Post-Nr. ' + postid,
+		title: 'Moderation Post /' + board + '/' + postid,
 		open: function (event, ui) {
 			$j(".ui-dialog-titlebar-close").hide();
 		},
@@ -99,13 +101,14 @@ function do_ban(ip, postid, board) {
 	show_info("Daten abrufen ...");
 
 	$j.ajax({
-		url: "/" + board + "/?task=checkban&ip=" + ip,
+		url: "/" + board + "/wakaba.pl?task=checkban&board=" + board + "&ip=" + ip,
 		dataType: 'json',
 		success: function (data) {
 			if (data['results'] == 0) {
 				$j("#ip").attr('disabled', false);
 				$j("#netmask").attr('disabled', false);
 				$j("#duration").attr('disabled', false);
+				$j("#ban_flag").attr('disabled', false);
 				$j("#reason").attr('disabled', false).focus();
 				$j("#info").hide('normal');
 			} else if (data['results'] >= 1) {

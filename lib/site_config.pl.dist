@@ -16,7 +16,10 @@ use constant FILEGROUPS => (
 	other => 'Sonstige',
 );
 
-use constant GROUPORDER => qw(image video archive audio doc other); # other has to be last
+use constant GROUPORDER => 'image video archive audio doc other'; # other has to be last
+
+use constant CAPTCHA_MODE => 2;
+use constant CAPTCHA_SKIP = 'DE NO CH AT LI BE LU DK NL';
 
 use constant TRACKING_CODE => qq();			# Paste the js/html of a visitor tracking software between ()
 

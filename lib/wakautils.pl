@@ -173,11 +173,12 @@ sub get_geolocation($) {
 	return ($city, $region_name, $country_name, $loc);
 }
 
-sub use_captcha($$) {
-	my ($always_on, $location) = @_;
-	my @allowed = qw(DE NO CH AT LI BE LU DK NL);
+sub need_captcha($$$) {
+	my ($mode, $allowed_list, $location) = @_;
+	my @allowed = split(' ', $allowed_list);
 
-	return 1 if ($always_on eq 1);
+	return 0 if ($mode eq 0);
+	return 1 if ($mode eq 1);
 
 	foreach my $country (@allowed) {
 		return 0 if ($country eq $location);
