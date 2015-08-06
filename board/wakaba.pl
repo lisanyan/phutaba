@@ -1669,17 +1669,16 @@ sub ban_check {
       or make_error(S_SQLFAIL);
     $sth->execute() or make_error(S_SQLFAIL);
 
-    while ( $row = $sth->fetchrow_arrayref() ) { # TODO: use get_decoded_hashref()
+    while ( $row = $sth->fetchrow_arrayref() ) {
         my $regexp = quotemeta $$row[0];
 
-        #		make_error(S_STRREF) if($comment=~/$regexp/);
-        if ( $comment =~ /$regexp/ ) {
-            $comment = $$row[1]; # this does not work as $comment is a local variable
-
-            #make_error($$row[1]);
-        }
-        make_error(S_STRREF) if ( $name    =~ /$regexp/ );
-        make_error(S_STRREF) if ( $subject =~ /$regexp/ );
+        make_error(S_STRREF) if ($comment =~ /$regexp/);
+        make_error(S_STRREF) if ($name    =~ /$regexp/);
+        make_error(S_STRREF) if ($subject =~ /$regexp/);
+        #if ( $comment =~ /$regexp/ ) {
+        #    $comment = $$row[1]; # this does not work as $comment is a local variable
+        #    #make_error($$row[1]);
+        #}
     }
 
     # etc etc etc

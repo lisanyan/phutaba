@@ -69,7 +69,9 @@ use constant NORMAL_HEAD_INCLUDE => q{
 	<td><b><const S_BANREASONLABEL></b></td><td><input id="reason" type="text" name="reason" size="40" /></td>
 </tr>
 <tr>
-	<td colspan="2"><label><input id="ban_flag" type="checkbox" name="ban_flag" value="1" checked="checked" /> <const S_BANFLAGPOST></label></td>
+	<td colspan="2">
+	<label><input id="ban_flag" type="checkbox" name="ban_flag" value="1" checked="checked" /> <b><const S_BANFLAGPOST></b></label>
+	</td>
 </tr>
 </table>
 <div id="infobox" style="display: none">

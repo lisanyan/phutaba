@@ -161,7 +161,7 @@ use constant S_BANDURATION     => 'Dauer';
 use constant S_BANFLAGPOST     => 'Post als gesperrt markieren';
 use constant S_BANWORDLABEL    => 'Wort';
 use constant S_BANIP           => 'IP sperren';
-use constant S_BANWORD         => 'Wortfilter';
+use constant S_BANWORD         => 'Wort abweisen';
 use constant S_BANWHITELIST    => 'Whitelist';
 use constant S_BANREMOVE       => 'Entfernen';
 use constant S_BANCOMMENT      => 'Kommentar';
@@ -197,9 +197,6 @@ use constant S_SPAMEXPL =>
 use constant S_SPAMSUBMIT => 'Speichern';
 use constant S_SPAMCLEAR  => 'Leeren';
 use constant S_SPAMRESET  => 'Wiederherstellen';
-
-use constant S_SQLNUKE    => 'Nuke-Passwort:';
-use constant S_SQLEXECUTE => 'Execute';
 
 use constant S_TOOBIG       => 'Die Datei ist zu gro&szlig;.';
 use constant S_TOOBIGORNONE => 'Die Datei ist zu gro&szlig; oder leer.';
