@@ -1671,14 +1671,9 @@ sub ban_check {
 
     while ( $row = $sth->fetchrow_arrayref() ) {
         my $regexp = quotemeta $$row[0];
-
         make_error(S_STRREF) if ($comment =~ /$regexp/);
         make_error(S_STRREF) if ($name    =~ /$regexp/);
         make_error(S_STRREF) if ($subject =~ /$regexp/);
-        #if ( $comment =~ /$regexp/ ) {
-        #    $comment = $$row[1]; # this does not work as $comment is a local variable
-        #    #make_error($$row[1]);
-        #}
     }
 
     # etc etc etc
@@ -1771,7 +1766,7 @@ sub simple_format {
 
         # make URLs into links
         $line =~
-s{(https?://[^\s<>"]*?)((?:\s|<|>|"|\.|\)|\]|!|\?|,|&#44;|&quot;)*(?:[\s<>"]|$))}{\<a href="$1"\>$1\</a\>$2}sgi;
+s{(https?://[^\s<>"]*?)((?:\s|<|>|"|\.|\)|\]|!|\?|,|&#44;|&quot;)*(?:[\s<>"]|$))}{\<a target="_blank" href="$1" rel="nofollow"\>$1\</a\>$2}sgi;
 
         # colour quoted sections if working in old-style mode.
         $line =~ s!^(&gt;.*)$!\<span class="unkfunc"\>$1\</span\>!g
@@ -2082,7 +2077,8 @@ sub process_file {
         or THUMBNAIL_SMALL
         or $filename =~ /\.svg$/ # why not check $ext?
 		or $ext eq 'pdf'
-		or $ext eq 'webm')
+		or $ext eq 'webm'
+		or $ext eq 'mp4')
     {
         if ( $width <= MAX_W and $height <= MAX_H ) {
             $tn_width  = $width;
@@ -2107,10 +2103,10 @@ sub process_file {
 
         if (STUPID_THUMBNAILING) {
 			$thumbnail = $filename;
-			$thumbnail = undef if($ext eq 'pdf' or $ext eq 'svg' or $ext eq 'webm');
+			$thumbnail = undef if($ext eq 'pdf' or $ext eq 'svg' or $ext eq 'webm' or $ext eq 'mp4');
 		}
         else {
-			if ($ext eq 'webm') {
+			if ($ext eq 'webm' or $ext eq 'mp4') {
 				$thumbnail = undef
 				  unless (
 					make_video_thumbnail(
@@ -2910,7 +2906,7 @@ sub get_filetypes_hash {
     my %filetypes = FILETYPES;
     $filetypes{gif} = $filetypes{jpg} = $filetypes{jpeg} = $filetypes{png} = $filetypes{svg} = 'image';
 	$filetypes{pdf} = 'doc';
-	$filetypes{webm} = 'video';
+	$filetypes{webm} = $filetypes{mp4} = 'video';
 	return %filetypes;
 }
 
