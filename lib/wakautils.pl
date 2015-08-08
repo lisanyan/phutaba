@@ -1626,15 +1626,15 @@ sub analyze_webm($) {
 }
 
 sub analyze_mp4($) {
-    my ($file) = @_;
-    my ($buffer1, $buffer2);
+	my ($file) = @_;
+	my ($buffer1, $buffer2);
 
 	read($file, $buffer1, 3);
 	seek($file, 1, 1);
-	read($file, $buffer2, 7);
+	read($file, $buffer2, 8);
 	seek($file, 0, 0);
 
-    if ($buffer1 eq "\x00\x00\x00" and $buffer2 eq "\x66\x74\x79\x70\x6D\x70\x34") {
+	if ($buffer1 eq "\x00\x00\x00" and $buffer2 eq "\x66\x74\x79\x70\x6D\x70\x34\x32") {
 		my $exifTool = new Image::ExifTool;
 		my $exifData = $exifTool->ImageInfo($file, 'ImageSize');
 		seek($file, 0, 0);

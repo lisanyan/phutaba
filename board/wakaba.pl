@@ -1215,12 +1215,12 @@ sub post_stuff {
 
         # check what kind of posting is allowed
         if ($parent) {
-            make_error(S_NOTALLOWED) if ( $file  and !ALLOW_IMAGE_REPLIES );
-            make_error(S_NOTALLOWED) if ( !$file and !ALLOW_TEXT_REPLIES );
+            make_error(S_NOTALLOWED4) if ($file  and !ALLOW_IMAGE_REPLIES);
+            make_error(S_NOTALLOWED3) if (!$file and !ALLOW_TEXT_REPLIES);
         }
         else {
-            make_error(S_NOTALLOWED) if ( $file  and !ALLOW_IMAGES );
-            make_error(S_NOTALLOWED) if ( !$file and !ALLOW_TEXTONLY );
+            make_error(S_NOTALLOWED2) if ($file  and !ALLOW_IMAGES);
+            make_error(S_NOTALLOWED1) if (!$file and !ALLOW_TEXTONLY);
             make_error(S_NONEWTHREADS) if (DISABLE_NEW_THREADS);
         }
     }
