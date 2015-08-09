@@ -210,7 +210,7 @@ use constant S_NOCAPTCHA => 'Fehler: Kein CAPTCHA in der DB für diesen Key.'
   ;    # Returns error when there's no captcha in the database for this IP/key
 use constant S_BADCAPTCHA =>
   'Fehler: Falscher Captcha-Code.';    # Returns error when the captcha is wrong
-use constant S_BADFORMAT => 'Fehler: Dateityp wird nicht unterst&uuml;tzt.'
+use constant S_BADFORMAT => 'Fehler: Dateityp oder -format wird nicht unterst&uuml;tzt.'
   ;    # Returns error when the file is not in a supported format.
 use constant S_STRREF =>
   'Fehler: String abgewiesen.';    # Returns error when a string is refused
@@ -222,8 +222,14 @@ use constant S_NOTEXT => 'Fehler: Keinen Text eingegeben.'
   ;    # Returns error for no text entered in to subject/comment
 use constant S_TOOLONG => 'Fehler: Zu viele Zeichen im Kommentar.'
   ;    # Returns error for too many characters in a given field
-use constant S_NOTALLOWED =>
-  'Fehler: Das Post-Formular wurde falsch ausgef&uuml;llt.';    # Returns error for non-allowed post types
+use constant S_NOTALLOWED1 =>
+  'Fehler: Neue Threads m&uuml;ssen eine Datei enthalten.';    # Returns error for non-allowed post types
+use constant S_NOTALLOWED2 =>
+  'Fehler: Neue Threads d&uuml;rfen keine Dateien enthalten.';
+use constant S_NOTALLOWED3 =>
+  'Fehler: Antworten m&uuml;ssen eine Datei enthalten.';
+use constant S_NOTALLOWED4 =>
+  'Fehler: Antworten d&uuml;rfen keine Dateien enthalten.';
 use constant S_NONEWTHREADS =>
   'Fehler: Neue Threads d&uuml;rfen nicht er&ouml;ffnet werden.';
 use constant S_UNUSUAL => 'Fehler: WAS GEHT DENN MIT DIR AB?'

@@ -619,7 +619,7 @@ s{ (?<![\x80-\x9f\xe0-\xfc]) (`+) ([^<>]+?) (?<![\x80-\x9f\xe0-\xfc]) \1}{push @
 
         # make URLs into links and hide them
         $line =~
-s{$url_re}{push @hidden,"<a href=\"$1\" rel=\"nofollow\">$1\</a>"; "<!--$#hidden-->$2"}sge;
+s{$url_re}{push @hidden,"<a target=\"_blank\" href=\"$1\" rel=\"nofollow\">$1\</a>"; "<!--$#hidden-->$2"}sge;
 
         # do <strong>
         $line =~
@@ -1480,6 +1480,7 @@ sub analyze_image {
 	return ( "pdf", @res ) if ( @res = analyze_pdf($file) );
 	return ( "svg", @res ) if ( @res = analyze_svg($file) );
 	return ( "webm", @res ) if ( @res = analyze_webm($file) );
+	return ( "mp4", @res ) if ( @res = analyze_mp4($file) );
 
     # find file extension for unknown files
     my ($ext) = $name =~ /\.([^\.]+)$/;
@@ -1613,6 +1614,27 @@ sub analyze_webm($) {
     seek($file, 0, 0);
 
     if ($buffer eq "\x1A\x45\xDF\xA3") {
+		my $exifTool = new Image::ExifTool;
+		my $exifData = $exifTool->ImageInfo($file, 'ImageSize');
+		seek($file, 0, 0);
+		if ($$exifData{ImageSize} =~ /(\d+)x(\d+)/) {
+			return($1, $2);
+		}
+	}
+
+	return();
+}
+
+sub analyze_mp4($) {
+	my ($file) = @_;
+	my ($buffer1, $buffer2);
+
+	read($file, $buffer1, 3);
+	seek($file, 1, 1);
+	read($file, $buffer2, 8);
+	seek($file, 0, 0);
+
+	if ($buffer1 eq "\x00\x00\x00" and $buffer2 eq "\x66\x74\x79\x70\x6D\x70\x34\x32") {
 		my $exifTool = new Image::ExifTool;
 		my $exifData = $exifTool->ImageInfo($file, 'ImageSize');
 		seek($file, 0, 0);
