@@ -39,7 +39,7 @@ function do_ban(ip, postid, board) {
 			duration = $j("#duration").val() ? $j("#duration").val() : "";
 			reason = $j("#reason").val() ? $j("#reason").val() : "no reason";
 			flag = $j("#ban_flag").prop('checked') ? 1 : 0;
-			url = "/" + board + "/wakaba.pl?task=addip&ajax=1&type=ipban&board=" + board + "&post=" + postid + "&ip=" + ip + "&mask=" + mask + "&comment=" + encodeURIComponent(reason) + "&string=" + duration + "&flag=" + flag;
+			url = "wakaba.pl?task=addip&ajax=1&type=ipban&board=" + board + "&post=" + postid + "&ip=" + ip + "&mask=" + mask + "&comment=" + encodeURIComponent(reason) + "&string=" + duration + "&flag=" + flag;
 
 			$j("#infobox").hide('normal');
 			$j("#error").hide('normal');
@@ -101,7 +101,7 @@ function do_ban(ip, postid, board) {
 	show_info("Daten abrufen ...");
 
 	$j.ajax({
-		url: "/" + board + "/wakaba.pl?task=checkban&board=" + board + "&ip=" + ip,
+		url: "wakaba.pl?task=checkban&board=" + board + "&ip=" + ip,
 		dataType: 'json',
 		success: function (data) {
 			if (data['results'] == 0) {

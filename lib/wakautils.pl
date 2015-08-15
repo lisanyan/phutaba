@@ -1054,16 +1054,6 @@ sub get_xhtml_content_type {
     return $type;
 }
 
-sub expand_filename {
-    my ($filename) = @_;
-
-    return $filename if ( $filename =~ m!^/! );
-    return $filename if ( $filename =~ m!^\w+:! );
-
-    my ($self_path) = $ENV{SCRIPT_NAME} =~ m!^(.*/)[^/]+$!;
-    return decode('utf-8', $self_path) . $filename;
-}
-
 #
 # Network utilities
 #

@@ -1,6 +1,6 @@
 use strict;
 
-BEGIN { require "../lib/wakautils.pl"; }
+BEGIN { require "wakautils.pl"; }
 
 use constant NORMAL_HEAD_INCLUDE => q{
 
@@ -297,7 +297,7 @@ use constant PAGE_TEMPLATE => compile_template(
 	</if>
 
 		<loop $posts>
-			} . include("../lib/post_view.inc") . q{
+			} . include("lib/post_view.inc") . q{
 		</loop>
 
 		</div>
