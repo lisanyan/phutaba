@@ -1548,8 +1548,8 @@ sub post_stuff {
     );    # yum!
 
 	# go back to thread or board page
-    make_http_forward(urlenc(BOARD_IDENT) . "/thread/" . $parent . "#" . $new_post_id) if ($c_gb2 =~ /thread/i and $parent ne '0');
-    make_http_forward(urlenc(BOARD_IDENT) . "/");
+    make_http_forward(urlenc(encode_string(BOARD_IDENT)) . "/thread/" . $parent . "#" . $new_post_id) if ($c_gb2 =~ /thread/i and $parent ne '0');
+    make_http_forward(urlenc(encode_string(BOARD_IDENT)) . "/");
 }
 
 sub is_whitelisted {
@@ -1588,7 +1588,7 @@ sub make_kontra {
           or make_error(S_SQLFAIL);
         $sth2->execute( $kontra, $threadid ) or make_error(S_SQLFAIL);
     }
-    make_http_forward(get_script_name() . "?task=show&board=" . urlenc(BOARD_IDENT));
+    make_http_forward(get_script_name() . "?task=show&board=" . urlenc(encode_string(BOARD_IDENT)));
 
 }
 
@@ -2233,10 +2233,10 @@ sub delete_stuff {
     }
 
     if ($admin) {
-        make_http_forward(get_script_name() . "?task=show&board=" . urlenc(BOARD_IDENT));
+        make_http_forward(get_script_name() . "?task=show&board=" . urlenc(encode_string(BOARD_IDENT)));
     } elsif ( $noko == 1 and $parent ) {
-		make_http_forward(urlenc(BOARD_IDENT) . "/thread/" . $parent);
-	} else { make_http_forward(urlenc(BOARD_IDENT) . "/"); }
+		make_http_forward(urlenc(encode_string(BOARD_IDENT)) . "/thread/" . $parent);
+	} else { make_http_forward(urlenc(encode_string(BOARD_IDENT)) . "/"); }
 }
 
 sub make_locked {
@@ -2257,7 +2257,7 @@ sub make_locked {
           or make_error(S_SQLFAIL);
         $sth2->execute( $locked, $threadid ) or make_error(S_SQLFAIL);
     }
-    make_http_forward(get_script_name() . "?task=show&board=" . urlenc(BOARD_IDENT));
+    make_http_forward(get_script_name() . "?task=show&board=" . urlenc(encode_string(BOARD_IDENT)));
 }
 
 sub make_sticky {
@@ -2279,7 +2279,7 @@ sub make_sticky {
         $sth2->execute( $sticky, $threadid, $threadid) or make_error(S_SQLFAIL);
     }
 
-    make_http_forward(get_script_name() . "?task=show&board=" . urlenc(BOARD_IDENT));
+    make_http_forward(get_script_name() . "?task=show&board=" . urlenc(encode_string(BOARD_IDENT)));
 }
 
 sub delete_post {
@@ -2598,7 +2598,7 @@ sub move_files($$){
 		}
 	}
 
-	make_http_forward(get_script_name() . "?task=orphans&board=" . urlenc(BOARD_IDENT));
+	make_http_forward(get_script_name() . "?task=orphans&board=" . urlenc(encode_string(BOARD_IDENT)));
 }
 
 sub make_admin_edit_panel {
@@ -2650,7 +2650,7 @@ sub save_admin_edit {
 	  or make_error(S_SQLFAIL);
 	$sth->execute($name, $subject, $comment, $postid) or make_error(S_SQLFAIL);
 
-	make_http_forward(get_script_name() . "?task=show&board=" . urlenc(BOARD_IDENT));
+	make_http_forward(get_script_name() . "?task=show&board=" . urlenc(encode_string(BOARD_IDENT)));
 }
 
 sub do_login {
@@ -2680,14 +2680,14 @@ sub do_login {
 			-httponly => 1
             );
 
-        make_http_forward(get_script_name() . "?task=$nexttask&board=" . urlenc(BOARD_IDENT));
+        make_http_forward(get_script_name() . "?task=$nexttask&board=" . urlenc(encode_string(BOARD_IDENT)));
     }
     else { make_admin_login() }
 }
 
 sub do_logout {
     make_cookies( wakaadmin => "", -expires => 1 );
-    make_http_forward(get_script_name() . "?task=admin&board=" . urlenc(BOARD_IDENT));
+    make_http_forward(get_script_name() . "?task=admin&board=" . urlenc(encode_string(BOARD_IDENT)));
 }
 
 sub add_admin_entry {
@@ -2741,7 +2741,7 @@ sub add_admin_entry {
 		make_json_header();
 		print $utf8_encoded_json_text;
 	} else {
-		make_http_forward(get_script_name() . "?task=bans&board=" . urlenc(BOARD_IDENT));
+		make_http_forward(get_script_name() . "?task=bans&board=" . urlenc(encode_string(BOARD_IDENT)));
 	}
 }
 
@@ -2777,7 +2777,7 @@ sub remove_admin_entry {
       or make_error(S_SQLFAIL);
     $sth->execute($num) or make_error(S_SQLFAIL);
 
-    make_http_forward(get_script_name() . "?task=bans&board=" . urlenc(BOARD_IDENT));
+    make_http_forward(get_script_name() . "?task=bans&board=" . urlenc(encode_string(BOARD_IDENT)));
 }
 
 sub delete_all {
@@ -2941,7 +2941,7 @@ sub expand_filename {
 
     my ($self_path) = $ENV{SCRIPT_NAME} =~ m!^(.*/)[^/]+$!;
     #return decode('utf-8', $self_path) . $filename;
-    return $self_path . urlenc(BOARD_IDENT) . '/' . $filename;
+    return $self_path . BOARD_IDENT . '/' . $filename;
 }
 
 sub expand_image_filename { # TODO: remove and replace by expand_filename since load balancing is not used anymore
