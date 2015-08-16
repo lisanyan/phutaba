@@ -96,12 +96,12 @@ BEGIN {
 	$board =~ s/.*[\\\/]//; # remove any leading path
 
 	if (!$board) {
-		print "\nMissing board parameter.\n";
+		print "Content-Type: text/plain\n\nMissing board parameter.\n";
 		exit;
 	}
 
 	if (!-d $board or !-f $board . "/config.pl") {
-		print "\nUnknown board.\n";
+		print "Content-Type: text/plain\n\nUnknown board.\n";
 		exit;
 	}
 
@@ -984,10 +984,10 @@ sub add_images_to_thread(@) {
 
 		$$res{thumbnail} = undef if ($$res{thumbnail} =~ m|^\.\./img/|); # temporary, static thumbs are not used anymore
 
-		$$res{image} =~ s!.*/!!;                          # remove any leading path that was stored in the database (for old posts)
+		$$res{image} =~ s!.*/!!;                # remove any leading path that was stored in the database (for old posts)
 		$$res{thumbnail} =~ s!.*/!!;
-		$$res{image} = IMG_DIR . $$res{image};            # add directory to filenames
-		$$res{thumbnail} = THUMB_DIR . $$res{thumbnail};
+		$$res{image} = IMG_DIR . $$res{image};  # add directory to filenames
+		$$res{thumbnail} = THUMB_DIR . $$res{thumbnail} if ($$res{thumbnail});
 
 		push(@files, $res);
 	}
@@ -1023,7 +1023,7 @@ sub add_images_to_array($@) {
 		$$res{image} =~ s!.*/!!;
 		$$res{thumbnail} =~ s!.*/!!;
 		$$res{image} = IMG_DIR . $$res{image};
-		$$res{thumbnail} = THUMB_DIR . $$res{thumbnail};
+		$$res{thumbnail} = THUMB_DIR . $$res{thumbnail} if ($$res{thumbnail});
 
 		push(@$files, $res); # @$ dereferences the array to modify it in the calling sub
 	}
@@ -2315,9 +2315,11 @@ sub delete_post {
             $sth->execute( $post, $post ) or make_error(S_SQLFAIL);
 
             while ( $res = $sth->fetchrow_hashref() ) {
+				$$res{image} =~ s!.*/!!;
+				$$res{thumbnail} =~ s!.*/!!;
 				# delete images if they exist
-				unlink BOARD_IDENT . '/' . $$res{image};
-				unlink BOARD_IDENT . '/' . $$res{thumbnail} if ( $$res{thumbnail} =~ /^$thumb/ );
+				unlink BOARD_IDENT . '/' . IMG_DIR . $$res{image};
+				unlink BOARD_IDENT . '/' . THUMB_DIR . $$res{thumbnail}; # if ( $$res{thumbnail} =~ /^$thumb/ );
             }
 
             # remove post and possible replies
@@ -2392,9 +2394,11 @@ sub delete_post {
             $sth->execute($post) or make_error(S_SQLFAIL);
 
             while ( $res = $sth->fetchrow_hashref() ) {
+				$$res{image} =~ s!.*/!!;
+				$$res{thumbnail} =~ s!.*/!!;
 				# delete images if they exist
-				unlink BOARD_IDENT . '/' . $$res{image};
-				unlink BOARD_IDENT . '/' . $$res{thumbnail} if ( $$res{thumbnail} =~ /^$thumb/ );
+				unlink BOARD_IDENT . '/' . IMG_DIR . $$res{image};
+				unlink BOARD_IDENT . '/' . THUMB_DIR . $$res{thumbnail}; # if ( $$res{thumbnail} =~ /^$thumb/ );
             }
 
 			$sth = $dbh->prepare( "UPDATE "
