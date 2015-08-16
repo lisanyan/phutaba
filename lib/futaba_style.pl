@@ -393,7 +393,7 @@ use constant SEARCH_TEMPLATE => compile_template(
 	</if>
 
 	<loop $posts>
-		} . include("../lib/post_view.inc") . q{
+		} . include("lib/post_view.inc") . q{
 	</loop>
 
 	<p style="clear: both;"></p>
@@ -404,7 +404,7 @@ use constant SEARCH_TEMPLATE => compile_template(
 
 use constant SINGLE_POST_TEMPLATE => compile_template(q{
 <loop $posts>
-} . include("../lib/post_view.inc") . q{
+} . include("lib/post_view.inc") . q{
 </loop>
 });
 
