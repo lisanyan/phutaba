@@ -121,7 +121,7 @@ use constant NORMAL_HEAD_INCLUDE => q{
 use constant MANAGER_HEAD_INCLUDE => NORMAL_HEAD_INCLUDE . q{
 
 <if $admin>
-	[<a href="<var expand_filename(HTML_SELF)>"><const S_MANARET></a>]
+	<!--[<a href="<var expand_filename(HTML_SELF)>"><const S_MANARET></a>]-->
 	[<a href="<var $self>?board=<const BOARD_IDENT>&amp;task=show"><const S_MANAPANEL></a>]
 	[<a href="<var $self>?board=<const BOARD_IDENT>&amp;task=mpanel"><const S_MANATOOLS></a>]
 	[<a href="<var $self>?board=<const BOARD_IDENT>&amp;task=bans"><const S_MANABANS></a>]
