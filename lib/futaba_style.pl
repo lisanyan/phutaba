@@ -700,8 +700,8 @@ use constant BAN_PANEL_TEMPLATE => compile_template(
 </td></tr></tbody></table>
 </div><br />
 
-<if $filter ne 'off'>[<a href="<var $self>?task=bans&amp;filter=off#tbl"><const S_BANSHOWALL></a>]</if>
-<if $filter eq 'off'>[<a href="<var $self>?task=bans#tbl"><const S_BANFILTER></a>]</if>
+<if $filter ne 'off'>[<a href="<var $self>?board=<const BOARD_IDENT>&amp;task=bans&amp;filter=off#tbl"><const S_BANSHOWALL></a>]</if>
+<if $filter eq 'off'>[<a href="<var $self>?board=<const BOARD_IDENT>&amp;task=bans#tbl"><const S_BANFILTER></a>]</if>
 <a id="tbl"></a>
 <table align="center"><tbody>
 <tr class="managehead"><const S_BANTABLE></tr>
