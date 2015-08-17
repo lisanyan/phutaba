@@ -2523,10 +2523,10 @@ sub make_admin_orphans {
 
 	# remove leading board path
 	foreach my $item (@files) {
-		$item = substr($item, length(BOARD_IDENT . '/'));
+		$item =~ s!^[^/]+/!!;
 	}
 	foreach my $item (@thumbs) {
-		$item = substr($item, length(BOARD_IDENT . '/'));
+		$item =~ s!^[^/]+/!!;
 	}
 
 	# gather all files/thumbs from database
