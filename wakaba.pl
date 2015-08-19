@@ -90,13 +90,18 @@ use lib 'lib';
 
 BEGIN {
 	$query = CGI->new;
-	my $board=$query->param("board");
+	my $board = $query->param("board");
 	# todo: this will be replaced by a global list of boards
 	$board =~ s/[\*<>|?&]//g; # remove special characters
 	$board =~ s/.*[\\\/]//; # remove any leading path
 
 	if (!$board) {
 		print "Content-Type: text/plain\n\nMissing board parameter.\n";
+		exit;
+	}
+
+	if ($board =~ m/[^\wäöü]/) {
+		print "Content-Type: text/plain\n\nInvalid board parameter.\n";
 		exit;
 	}
 
