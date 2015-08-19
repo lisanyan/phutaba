@@ -1,3 +1,5 @@
+use constant POST_VIEW_INCLUDE => q{
+
 <if !$parent>
 	<article class="thread_OP" id="<var $num>">
 	<header class="thread_head">
@@ -58,7 +60,7 @@
 	<if $isAdmin>
 		<if !$adminpost>
 		<div style="display: none; min-width: 250px;" id="postinfo_<var $num>">
-			<var get_post_info($location)>
+			<var get_post_info($location, BOARD_IDENT)>
 		</div>
 		<span onmouseover="TagToTip('postinfo_<var $num>', TITLE, '<const S_POSTINFO>', DELAY, 0, CLICKSTICKY, true)" onmouseout="UnTip()">[<var dec_to_dot($ip)>]</span>
 		</if>
@@ -180,3 +182,7 @@
 		</aside>
 	</if>
 </if>
+
+};
+
+1;

@@ -1,26 +1,25 @@
 # use encoding 'shift-jis'; # Uncomment this to use shift-jis in strings. ALSO uncomment the "no encoding" at the end of the file!
+# use encoding 'utf-8'; # Uncomment this to use utf-8 in strings. ALSO uncomment the "no encoding" at the end of the file!
 
 #
 # Example config file.
 # 
 # Uncomment and edit the options you want to specifically change from the
-# default values. You must specify ADMIN_PASS, NUKE_PASS, SECRET and the
-# SQL_ options.
+# default values for this board.
 #
-require '../lib/site_config.pl';
 
 # System config
 use constant SQL_TABLE_IMG => 'board_img';			# Table (NOT DATABASE) used by image board for secondary images
 use constant SQL_TABLE => 'board';			# Table (NOT DATABASE) used by image board
 use constant SQL_ADMIN_TABLE => 'admin';		# Table used for admin information
 use constant USE_TEMPFILES => 1;				# Set this to 1 under Unix and 0 under Windows! (Use tempfiles when creating pages)
-use constant ENABLE_WEBSOCKET_NOTIFY => 1;
+use constant ENABLE_WEBSOCKET_NOTIFY => 0;
+use constant ENABLE_IRC_NOTIFY => 0;
 
 # Page look
 use constant TITLE => 'Ernstchan';	# Name of this image board
 use constant BOARD_IDENT => 'board';
 #use constant BOARD_NAME => '&Epsilon;&rho;&nu;&sigma;&tau;&tau;&sigma;&alpha;&nu;';
-#use constant BOARD_NAME => 'Zufall';
 #use constant BOARD_NAME => '&#120176;&#120215;&#120211;&#120216;&#120217;&#120200;&#120205;&#120198;&#120211;';
 use constant BOARD_NAME => 'Ernstchan';
 use constant BOARD_DESC => 'Gesch&auml;ft wie &uuml;blich';
@@ -29,6 +28,7 @@ use constant SHOWTITLEIMG => 0;				# Show image at top (0: no, 1: single, 2: rot
 use constant TITLEIMG => 'title.jpg';			# Title image (point to a script file if rotating)
 use constant FAVICON => '';			# Favicon.ico file
 use constant HOME => './board/';					# Site home directory (up one level by default)
+#use constant ENABLE_HIDE_THREADS => 0;			# Users can hide single threads using JS
 use constant IMAGES_PER_PAGE => 10;			# Images per page
 use constant REPLIES_PER_THREAD => 4;			# Replies shown
 use constant IMAGE_REPLIES_PER_THREAD => 0;	# Number of image replies per thread to show, set to 0 for no limit.
@@ -45,20 +45,21 @@ use constant MAX_W => 200;						# Images exceeding this width will be thumbnaile
 use constant MAX_H => 200;						# Images exceeding this height will be thumbnailed
 use constant MAX_RES => 120;					# Maximum topic bumps
 use constant MAX_POSTS => 0;					# Maximum number of posts (set to 0 to disable)
-use constant MAX_THREADS => 500;					# Maximum number of threads (set to 0 to disable)
+use constant MAX_THREADS => 500;				# Maximum number of threads (set to 0 to disable)
 use constant MAX_SHOWN_THREADS => 100;
 use constant MAX_AGE => 0;						# Maximum age of a thread in hours (set to 0 to disable)
 use constant MAX_MEGABYTES => 0;				# Maximum size to use for all images in megabytes (set to 0 to disable)
 use constant MAX_FIELD_LENGTH => 100;			# Maximum number of characters in subject, name, and email
 use constant MAX_COMMENT_LENGTH => 8192;		# Maximum number of characters in a comment
-use constant MAX_LINES_SHOWN => 15;			# Max lines shown per post (0 = no limit)
-use constant MAX_IMAGE_WIDTH => 50000000000;			# Maximum width of image before rejecting
+use constant MAX_LINES_SHOWN => 15;				# Max lines shown per post (0 = no limit)
+use constant MAX_IMAGE_WIDTH => 50000000000;		# Maximum width of image before rejecting
 use constant MAX_IMAGE_HEIGHT => 50000000000;		# Maximum height of image before rejecting
 use constant MAX_IMAGE_PIXELS => 50000000000;		# Maximum width*height of image before rejecting
 
 # Captcha
-use constant ENABLE_CAPTCHA => 0;
-use constant SQL_CAPTCHA_TABLE => 'captcha';	# Use a different captcha table for each board, if you have more than one!
+#use constant CAPTCHA_MODE => 2; # Require captcha for posting (0: never, 1: always, 2: on except for countries in CAPTCHA_SKIP)
+#use constant CAPTCHA_SKIP => 'DE AT CH'; # Country codes that do not require a captcha for posting if CAPTCHA_MODE eq 2
+use constant SQL_CAPTCHA_TABLE => 'captcha';	# Global captcha table for all boards
 use constant CAPTCHA_LIFETIME => 300;			# Captcha lifetime in seconds
 use constant CAPTCHA_SCRIPT => 'captcha.pl';
 use constant CAPTCHA_HEIGHT => 18;
@@ -82,6 +83,7 @@ use constant FORBIDDEN_EXTENSIONS => ('php','php3','php4','phtml','shtml','cgi',
 use constant RENZOKU => 5;						# Seconds between posts (floodcheck)
 use constant RENZOKU2 => 10;					# Seconds between image posts (floodcheck)
 use constant RENZOKU3 => 900;					# Seconds between identical posts (floodcheck)
+#use constant RENZOKU4 => 0;					# Seconds until a post can be deleted
 use constant NOSAGE_WINDOW => 1200;			# Seconds that you can post to your own thread without increasing the sage count
 use constant USE_SECURE_ADMIN => 0;			# Use HTTPS for the admin panel.
 use constant CHARSET => 'utf-8';				# Character set to use, typically 'utf-8' or 'shift_jis'. Disable charset handling by setting to ''. Remember to set Apache to use the same character set for .html files! (AddCharset shift_jis html)
@@ -97,6 +99,7 @@ use constant DATE_STYLE => 'futaba';			# Date style ('futaba', '2ch', 'localtime
 use constant DISPLAY_ID => 0;					# Display user IDs (0: never, 1: if no email, 2:always)
 use constant EMAIL_ID => 'Ernst';				# ID string to use when DISPLAY_ID is 1 and the user uses an email.
 use constant TRIPKEY => '!';					# this character is displayed before tripcodes
+# use constant ENABLE_BBCODE => 0;			# Enable BB-Coder formatting. (0: no, 1: yes)
 use constant ENABLE_WAKABAMARK => 0;			# Enable WakabaMark formatting. (0: no, 1: yes)
 use constant APPROX_LINE_LENGTH => 150;		# Approximate line length used by reply abbreviation code to guess at the length of a reply.
 use constant STUPID_THUMBNAILING => 0;			# Bypass thumbnailing code and just use HTML to resize the image. STUPID, wastes bandwidth. (1: enable, 0: disable)
@@ -114,8 +117,6 @@ use constant JS_FILE => 'wakaba.js';			# Location of the js file
 use constant ERRORLOG => '';					# Writes out all errors seen by user, mainly useful for debugging
 use constant CONVERT_COMMAND => 'convert';		# location of the ImageMagick convert command (usually just 'convert', but sometime a full path is needed)
 #use constant CONVERT_COMMAND => '/usr/X11R6/bin/convert';
-use constant ADMIN_MASK_IPS => 1;												#        * Set up two files, one being the official list from
-												#          http://wakaba.c3.cx/antispam/spam.txt, and one your own additions.
 
 # Icons for filetypes - file extensions specified here will not be renamed, and will get icons
 # (except for the built-in image formats). These example icons can be found in the extras/ directory.
@@ -148,12 +149,12 @@ use constant FILETYPES => (
 #	swf => 'icons/flash.png',
 #	torrent => 'icons/torrent.png',
 #	# To stop Wakaba from renaming image files, put their names in here like this:
-	gif => '.',
-	jpg => '.',
-	png => '.',
+#	gif => '.',
+#	jpg => '.',
+#	png => '.',
 	bmp => '.',
 	psd => '.',
-	svg => '.',
+#	svg => '.',
 	rar => '.',
 	zip => '.',
 	mp3 => '.',

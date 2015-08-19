@@ -1,6 +1,7 @@
 use strict;
 
 BEGIN { require "wakautils.pl"; }
+BEGIN { require "post_view.pl"; }
 
 use constant NORMAL_HEAD_INCLUDE => q{
 
@@ -49,6 +50,7 @@ use constant NORMAL_HEAD_INCLUDE => q{
   <option value="255.255.0.0" selected="selected">/16 (IPv4 Class B)</option>
   <option value="255.255.255.0">/24 (IPv4 Class C)</option>
   <option value="255.255.255.255">/32 (IPv4 Host)</option>
+  <option disabled>&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;</option>
   <option value="ffff:ffff:ffff:0000:0000:0000:0000:0000">/48 (IPv6)</option>
   <option value="ffff:ffff:ffff:ff00:0000:0000:0000:0000">/56 (IPv6)</option>
   <option value="ffff:ffff:ffff:ffff:0000:0000:0000:0000">/64 (IPv6)</option>
@@ -297,7 +299,7 @@ use constant PAGE_TEMPLATE => compile_template(
 	</if>
 
 		<loop $posts>
-			} . include("lib/post_view.inc") . q{
+			} . POST_VIEW_INCLUDE . q{
 		</loop>
 
 		</div>
@@ -393,7 +395,7 @@ use constant SEARCH_TEMPLATE => compile_template(
 	</if>
 
 	<loop $posts>
-		} . include("lib/post_view.inc") . q{
+		} . POST_VIEW_INCLUDE . q{
 	</loop>
 
 	<p style="clear: both;"></p>
@@ -404,7 +406,7 @@ use constant SEARCH_TEMPLATE => compile_template(
 
 use constant SINGLE_POST_TEMPLATE => compile_template(q{
 <loop $posts>
-} . include("lib/post_view.inc") . q{
+} . POST_VIEW_INCLUDE . q{
 </loop>
 });
 
@@ -713,7 +715,7 @@ use constant BAN_PANEL_TEMPLATE => compile_template(
 
 	<if $type eq 'ipban'>
 		<td>IP</td>
-		<td><img src="/img/flags/<var $flag>.PNG"> <var dec_to_dot($ival1)></td><td>/<var get_mask_len($ival2)> (<var dec_to_dot($ival2)>)</td>
+		<td><img src="/img/flags/<var $flag>.PNG" title="<var $flag>" /> <var dec_to_dot($ival1)></td><td>/<var get_mask_len($ival2)> (<var dec_to_dot($ival2)>)</td>
 	</if>
 	<if $type eq 'wordban'>
 		<td>Word</td>
@@ -725,7 +727,7 @@ use constant BAN_PANEL_TEMPLATE => compile_template(
 	</if>
 	<if $type eq 'whitelist'>
 		<td>Whitelist</td>
-		<td><img src="/img/flags/<var $flag>.PNG"> <var dec_to_dot($ival1)></td><td>/<var get_mask_len($ival2)> (<var dec_to_dot($ival2)>)</td>
+		<td><img src="/img/flags/<var $flag>.PNG" title="<var $flag>" /> <var dec_to_dot($ival1)></td><td>/<var get_mask_len($ival2)> (<var dec_to_dot($ival2)>)</td>
 	</if>
 	<if $type eq 'asban'>
 		<td>ASNum</td>

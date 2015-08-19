@@ -105,12 +105,13 @@ BEGIN {
 		exit;
 	}
 
-    require $board . "/config.pl";
-    require "config_defaults.pl";
-    require "strings_de.pl"; # need some good replacement
-    require "wakautils.pl";
-    require "futaba_style.pl";
-    require "captcha.pl";
+	require "site_config.pl";
+	require $board . "/config.pl";
+	require "config_defaults.pl";
+	require "strings_de.pl"; # need some good replacement
+	require "wakautils.pl";
+	require "futaba_style.pl";
+	require "captcha.pl";
 }
 
 #
@@ -515,10 +516,10 @@ sub output_json_meta {
 		$code = 200;
 		add_images_to_row($row);
 		$data{'file'} = [
-			get_meta($$row{'files'}[0]{'image'}),
-			get_meta($$row{'files'}[1]{'image'}),
-			get_meta($$row{'files'}[2]{'image'}),
-			get_meta($$row{'files'}[3]{'image'})
+			get_meta($$row{'files'}[0]{'image'}, CHARSET),
+			get_meta($$row{'files'}[1]{'image'}, CHARSET),
+			get_meta($$row{'files'}[2]{'image'}, CHARSET),
+			get_meta($$row{'files'}[3]{'image'}, CHARSET)
 		];
 	} elsif($sth->rows eq 0) {
 		$code = 404;
@@ -1548,8 +1549,8 @@ sub post_stuff {
     );    # yum!
 
 	# go back to thread or board page
-    make_http_forward(urlenc(encode_string(BOARD_IDENT)) . "/thread/" . $parent . "#" . $new_post_id) if ($c_gb2 =~ /thread/i and $parent ne '0');
-    make_http_forward(urlenc(encode_string(BOARD_IDENT)) . "/");
+    make_http_forward(get_board_id() . "/thread/" . $parent . "#" . $new_post_id) if ($c_gb2 =~ /thread/i and $parent ne '0');
+    make_http_forward(get_board_id() . "/");
 }
 
 sub is_whitelisted {
@@ -1588,7 +1589,7 @@ sub make_kontra {
           or make_error(S_SQLFAIL);
         $sth2->execute( $kontra, $threadid ) or make_error(S_SQLFAIL);
     }
-    make_http_forward(get_script_name() . "?task=show&board=" . urlenc(encode_string(BOARD_IDENT)));
+    make_http_forward(get_script_name() . "?task=show&board=" . get_board_id());
 
 }
 
@@ -1829,7 +1830,7 @@ sub make_anonymous {
 
     my $string = $ip;
     $string .= "," . int( $time / 86400 ) if ( SILLY_ANONYMOUS =~ /day/i );
-    $string .= "," . $ENV{SCRIPT_NAME} if ( SILLY_ANONYMOUS =~ /board/i );
+    $string .= "," . BOARD_IDENT if ( SILLY_ANONYMOUS =~ /board/i );
 
     srand unpack "N", hide_data( $string, 4, "silly", SECRET );
 
@@ -1914,7 +1915,7 @@ sub make_id_code {
 
     my $string = "";
     $string .= "," . int( $time / 86400 ) if ( DISPLAY_ID =~ /day/i );
-    $string .= "," . $ENV{SCRIPT_NAME} if ( DISPLAY_ID =~ /board/i );
+    $string .= "," . BOARD_IDENT if ( DISPLAY_ID =~ /board/i );
 
     return mask_ip( get_remote_addr(), make_key( "mask", SECRET, 32 ) . $string )
       if ( DISPLAY_ID =~ /mask/i );
@@ -2198,7 +2199,7 @@ sub process_file {
     #		}
     #	}
 
-	my ($info, $info_all) = get_meta_markup($filename);
+	my ($info, $info_all) = get_meta_markup($filename, CHARSET);
     return ($filename, $md5, $width, $height, $thumbnail, $tn_width, $tn_height, $info, $info_all, $uploadname);
 }
 
@@ -2233,10 +2234,10 @@ sub delete_stuff {
     }
 
     if ($admin) {
-        make_http_forward(get_script_name() . "?task=show&board=" . urlenc(encode_string(BOARD_IDENT)));
+        make_http_forward(get_script_name() . "?task=show&board=" . get_board_id());
     } elsif ( $noko == 1 and $parent ) {
-		make_http_forward(urlenc(encode_string(BOARD_IDENT)) . "/thread/" . $parent);
-	} else { make_http_forward(urlenc(encode_string(BOARD_IDENT)) . "/"); }
+		make_http_forward(get_board_id() . "/thread/" . $parent);
+	} else { make_http_forward(get_board_id() . "/"); }
 }
 
 sub make_locked {
@@ -2257,7 +2258,7 @@ sub make_locked {
           or make_error(S_SQLFAIL);
         $sth2->execute( $locked, $threadid ) or make_error(S_SQLFAIL);
     }
-    make_http_forward(get_script_name() . "?task=show&board=" . urlenc(encode_string(BOARD_IDENT)));
+    make_http_forward(get_script_name() . "?task=show&board=" . get_board_id());
 }
 
 sub make_sticky {
@@ -2279,7 +2280,7 @@ sub make_sticky {
         $sth2->execute( $sticky, $threadid, $threadid) or make_error(S_SQLFAIL);
     }
 
-    make_http_forward(get_script_name() . "?task=show&board=" . urlenc(encode_string(BOARD_IDENT)));
+    make_http_forward(get_script_name() . "?task=show&board=" . get_board_id());
 }
 
 sub delete_post {
@@ -2598,7 +2599,7 @@ sub move_files($$){
 		}
 	}
 
-	make_http_forward(get_script_name() . "?task=orphans&board=" . urlenc(encode_string(BOARD_IDENT)));
+	make_http_forward(get_script_name() . "?task=orphans&board=" . get_board_id());
 }
 
 sub make_admin_edit_panel {
@@ -2650,7 +2651,7 @@ sub save_admin_edit {
 	  or make_error(S_SQLFAIL);
 	$sth->execute($name, $subject, $comment, $postid) or make_error(S_SQLFAIL);
 
-	make_http_forward(get_script_name() . "?task=show&board=" . urlenc(encode_string(BOARD_IDENT)));
+	make_http_forward(get_script_name() . "?task=show&board=" . get_board_id());
 }
 
 sub do_login {
@@ -2680,14 +2681,14 @@ sub do_login {
 			-httponly => 1
             );
 
-        make_http_forward(get_script_name() . "?task=$nexttask&board=" . urlenc(encode_string(BOARD_IDENT)));
+        make_http_forward(get_script_name() . "?task=$nexttask&board=" . get_board_id());
     }
     else { make_admin_login() }
 }
 
 sub do_logout {
     make_cookies( wakaadmin => "", -expires => 1 );
-    make_http_forward(get_script_name() . "?task=admin&board=" . urlenc(encode_string(BOARD_IDENT)));
+    make_http_forward(get_script_name() . "?task=admin&board=" . get_board_id());
 }
 
 sub add_admin_entry {
@@ -2741,7 +2742,7 @@ sub add_admin_entry {
 		make_json_header();
 		print $utf8_encoded_json_text;
 	} else {
-		make_http_forward(get_script_name() . "?task=bans&board=" . urlenc(encode_string(BOARD_IDENT)));
+		make_http_forward(get_script_name() . "?task=bans&board=" . get_board_id());
 	}
 }
 
@@ -2777,7 +2778,7 @@ sub remove_admin_entry {
       or make_error(S_SQLFAIL);
     $sth->execute($num) or make_error(S_SQLFAIL);
 
-    make_http_forward(get_script_name() . "?task=bans&board=" . urlenc(encode_string(BOARD_IDENT)));
+    make_http_forward(get_script_name() . "?task=bans&board=" . get_board_id());
 }
 
 sub delete_all {
@@ -2922,8 +2923,12 @@ sub make_ban {
     exit;
 }
 
+sub get_board_id {
+	return urlenc(encode_string(BOARD_IDENT));
+}
+
 sub get_script_name {
-    #return encode('utf-8', $ENV{SCRIPT_NAME});
+    #return decode_string($ENV{SCRIPT_NAME}, CHARSET); # this would have to be done in many places to support non-ASCII paths
     return $ENV{SCRIPT_NAME};
 }
 
@@ -2940,8 +2945,8 @@ sub expand_filename {
     return $filename if ( $filename =~ m!^\w+:! );
 
     my ($self_path) = $ENV{SCRIPT_NAME} =~ m!^(.*/)[^/]+$!;
-    #return decode('utf-8', $self_path) . $filename;
-    return $self_path . BOARD_IDENT . '/' . $filename;
+    #return decode_string($self_path, CHARSET) . $filename;
+    return $self_path . get_board_id() . '/' . $filename;
 }
 
 sub expand_image_filename { # TODO: remove and replace by expand_filename since load balancing is not used anymore
@@ -3447,7 +3452,7 @@ sub update_files_meta {
 	) or make_error($dbh->errstr);
     while ($row = get_decoded_hashref($sth)) {
 		if (-e $$row{image}) {
-			($info, $info_all) = get_meta_markup($$row{image});
+			($info, $info_all) = get_meta_markup($$row{image}, CHARSET);
 		} else {
 			$info = undef;
 			$info_all = "File not found";

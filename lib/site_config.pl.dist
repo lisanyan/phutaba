@@ -1,3 +1,9 @@
+#
+# Global config file for the whole site. Edit and save as site_config.pl
+#
+# You must specify ADMIN_PASS, NUKE_PASS, SECRET and the SQL_ options.
+#
+
 use constant ADMIN_PASS => '';			# Admin password. For fucks's sake, change this.
 use constant SECRET => '';				# Cryptographic secret. CHANGE THIS to something totally random, and long.
 use constant SQL_DBI_SOURCE => 'DBI:mysql:database=xxxxx;host=localhost'; # DBI data source string (mysql version, put server and database name in here)
@@ -5,7 +11,7 @@ use constant SQL_USERNAME => '';		# MySQL login name
 use constant SQL_PASSWORD => '';		# MySQL password
 use constant DEFAULT_BOARD => 'board';	# default board to redirect to from /
 use constant ABUSE_EMAIL => '';			# Abuse contact e-mail address. Shown in the footer of all pages.
-use constant BASE_URL => ""; # main url, WITHOUT trailing slash
+use constant BASE_URL => '';			# Main URL, no trailing slash e. g. 'https://example.com'
 
 use constant FILEGROUPS => (
 	image => 'Bilder',
