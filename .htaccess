@@ -25,18 +25,18 @@ RewriteBase /
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^([A-Za-z]+)$ index.pl?p=$1 [L,NS,DPI]
 
-# if a directory is requested, always try to use wakaba.pl as index-document
+# if a directory is requested, always try to call wakaba.pl
 RewriteCond %{REQUEST_FILENAME} -d
-RewriteRule ^([^/]+)/$ $1/wakaba.pl [L]
+RewriteRule ^([^/]+)/$ wakaba.pl?board=$1 [L]
 
 # requests to banner/[board] are directed to the rotate script
 RewriteRule ^banner/([^/]+)$ banner.pl?board=$1 [L,NS]
 
 # rest-paths for pages and threads
-RewriteRule ^([^/]+)/seite/(\d+)$ $1/wakaba.pl?task=show&page=$2 [L]
-RewriteRule ^([^/]+)/page/(\d+)$ $1/wakaba.pl?task=show&page=$2 [L]
-RewriteRule ^([^/]+)/faden/(\d+)$ $1/wakaba.pl?task=show&thread=$2 [L]
-RewriteRule ^([^/]+)/thread/(\d+)$ $1/wakaba.pl?task=show&thread=$2 [L]
+RewriteRule ^([^/]+)/seite/(\d+)$  wakaba.pl?task=show&board=$1&page=$2 [L]
+RewriteRule ^([^/]+)/page/(\d+)$   wakaba.pl?task=show&board=$1&page=$2 [L]
+RewriteRule ^([^/]+)/faden/(\d+)$  wakaba.pl?task=show&board=$1&thread=$2 [L]
+RewriteRule ^([^/]+)/thread/(\d+)$ wakaba.pl?task=show&board=$1&thread=$2 [L]
 
 # allow download of original filenames
 RewriteRule ^([^/]+)/src/([^/]+)/([^/]+)$ $1/src/$2 [L,NS,DPI]

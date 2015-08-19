@@ -85,15 +85,38 @@ BEGIN {
 # Import settings
 #
 
-use lib '.';
+my $query;
+use lib 'lib';
 
 BEGIN {
-    require "config.pl";
-    require "../lib/config_defaults.pl";
-    require "../lib/strings_de.pl"; # need some good replacement
-    require "../lib/wakautils.pl";
-    require "../lib/futaba_style.pl";
-    require "../captcha.pl";
+	$query = CGI->new;
+	my $board = $query->param("board");
+	# todo: this will be replaced by a global list of boards
+	$board =~ s/[\*<>|?&]//g; # remove special characters
+	$board =~ s/.*[\\\/]//; # remove any leading path
+
+	if (!$board) {
+		print "Content-Type: text/plain\n\nMissing board parameter.\n";
+		exit;
+	}
+
+	if ($board =~ m/[^\wäöü]/) {
+		print "Content-Type: text/plain\n\nInvalid board parameter.\n";
+		exit;
+	}
+
+	if (!-d $board or !-f $board . "/config.pl") {
+		print "Content-Type: text/plain\n\nUnknown board.\n";
+		exit;
+	}
+
+	require "site_config.pl";
+	require $board . "/config.pl";
+	require "config_defaults.pl";
+	require "strings_de.pl"; # need some good replacement
+	require "wakautils.pl";
+	require "futaba_style.pl";
+	require "captcha.pl";
 }
 
 #
@@ -123,7 +146,7 @@ $sth->execute() or make_error(S_SQLFAIL);
 
 return 1 if (caller);    # stop here if we're being called externally
 
-my $query = CGI->new;
+#my $query = CGI->new;
 
 my $task  = ( $query->param("task") or $query->param("action")) unless $query->param("POSTDATA");
 $task = ( $query->url_param("task") ) unless $task;
@@ -498,10 +521,10 @@ sub output_json_meta {
 		$code = 200;
 		add_images_to_row($row);
 		$data{'file'} = [
-			get_meta($$row{'files'}[0]{'image'}),
-			get_meta($$row{'files'}[1]{'image'}),
-			get_meta($$row{'files'}[2]{'image'}),
-			get_meta($$row{'files'}[3]{'image'})
+			get_meta($$row{'files'}[0]{'image'}, CHARSET),
+			get_meta($$row{'files'}[1]{'image'}, CHARSET),
+			get_meta($$row{'files'}[2]{'image'}, CHARSET),
+			get_meta($$row{'files'}[3]{'image'}, CHARSET)
 		];
 	} elsif($sth->rows eq 0) {
 		$code = 404;
@@ -967,6 +990,11 @@ sub add_images_to_thread(@) {
 
 		$$res{thumbnail} = undef if ($$res{thumbnail} =~ m|^\.\./img/|); # temporary, static thumbs are not used anymore
 
+		$$res{image} =~ s!.*/!!;                # remove any leading path that was stored in the database (for old posts)
+		$$res{thumbnail} =~ s!.*/!!;
+		$$res{image} = IMG_DIR . $$res{image};  # add directory to filenames
+		$$res{thumbnail} = THUMB_DIR . $$res{thumbnail} if ($$res{thumbnail});
+
 		push(@files, $res);
 	}
 
@@ -997,6 +1025,11 @@ sub add_images_to_array($@) {
 		$$res{displayname} = clean_string(get_displayname($uploadname));
 
 		$$res{thumbnail} = undef if ($$res{thumbnail} =~ m|^\.\./img/|); # temporary, static thumbs are not used anymore
+
+		$$res{image} =~ s!.*/!!;
+		$$res{thumbnail} =~ s!.*/!!;
+		$$res{image} = IMG_DIR . $$res{image};
+		$$res{thumbnail} = THUMB_DIR . $$res{thumbnail} if ($$res{thumbnail});
 
 		push(@$files, $res); # @$ dereferences the array to modify it in the calling sub
 	}
@@ -1356,8 +1389,12 @@ sub post_stuff {
     # copy file, do checksums, make thumbnail, etc
     my (@filename, @md5, @width, @height, @thumbnail, @tn_width, @tn_height, @info, @info_all);
 
-	($filename[0], $md5[0], $width[0], $height[0], $thumbnail[0], $tn_width[0], $tn_height[0], $info[0], $info_all[0], $file) =
-		process_file($files[0], $uploadname, $time) if ($files[0]);
+	if ($files[0]) {
+		($filename[0], $md5[0], $width[0], $height[0], $thumbnail[0], $tn_width[0], $tn_height[0], $info[0], $info_all[0], $file) =
+			process_file($files[0], $uploadname, $time);
+		$filename[0] =~ s!.*/!!; # remove leading path before writing to database
+		$thumbnail[0] =~ s!.*/!!;
+	}
 
     my $tsf1 = 0;
     my $tsf2 = 0;
@@ -1366,18 +1403,24 @@ sub post_stuff {
         $tsf1 = time() . sprintf( "%03d", int( rand(1000) ) );
 		($filename[1], $md5[1], $width[1], $height[1], $thumbnail[1], $tn_width[1], $tn_height[1], $info[1], $info_all[1], $file1) =
 			process_file($files[1], $files[1], $tsf1);
-    }
+		$filename[1] =~ s!.*/!!;
+		$thumbnail[1] =~ s!.*/!!;
+	}
 
     if ($files[2]) {
         $tsf2 = time() . sprintf( "%03d", int( rand(1000) ) );
 		($filename[2], $md5[2], $width[2], $height[2], $thumbnail[2], $tn_width[2], $tn_height[2], $info[2], $info_all[2], $file2) =
 			process_file($files[2], $files[2], $tsf2);
+		$filename[2] =~ s!.*/!!;
+		$thumbnail[2] =~ s!.*/!!;
     }
 
     if ($files[3]) {
         $tsf3 = time() . sprintf( "%03d", int( rand(1000) ) );
 		($filename[3], $md5[3], $width[3], $height[3], $thumbnail[3], $tn_width[3], $tn_height[3], $info[3], $info_all[3], $file3) =
 			process_file($files[3], $files[3], $tsf3);
+		$filename[3] =~ s!.*/!!;
+		$thumbnail[3] =~ s!.*/!!;
     }
 
     $numip = "0" if (ANONYMIZE_IP_ADDRESSES);
@@ -1511,8 +1554,8 @@ sub post_stuff {
     );    # yum!
 
 	# go back to thread or board page
-    make_http_forward("thread/" . $parent . "#" . $new_post_id) if ($c_gb2 =~ /thread/i and $parent ne '0');
-    make_http_forward("/" . urlenc(BOARD_IDENT) . "/");
+    make_http_forward(get_board_id() . "/thread/" . $parent . "#" . $new_post_id) if ($c_gb2 =~ /thread/i and $parent ne '0');
+    make_http_forward(get_board_id() . "/");
 }
 
 sub is_whitelisted {
@@ -1551,7 +1594,7 @@ sub make_kontra {
           or make_error(S_SQLFAIL);
         $sth2->execute( $kontra, $threadid ) or make_error(S_SQLFAIL);
     }
-    make_http_forward(get_script_name() . "?task=show&board=" . urlenc(BOARD_IDENT));
+    make_http_forward(get_script_name() . "?task=show&board=" . get_board_id());
 
 }
 
@@ -1792,7 +1835,7 @@ sub make_anonymous {
 
     my $string = $ip;
     $string .= "," . int( $time / 86400 ) if ( SILLY_ANONYMOUS =~ /day/i );
-    $string .= "," . $ENV{SCRIPT_NAME} if ( SILLY_ANONYMOUS =~ /board/i );
+    $string .= "," . BOARD_IDENT if ( SILLY_ANONYMOUS =~ /board/i );
 
     srand unpack "N", hide_data( $string, 4, "silly", SECRET );
 
@@ -1877,7 +1920,7 @@ sub make_id_code {
 
     my $string = "";
     $string .= "," . int( $time / 86400 ) if ( DISPLAY_ID =~ /day/i );
-    $string .= "," . $ENV{SCRIPT_NAME} if ( DISPLAY_ID =~ /board/i );
+    $string .= "," . BOARD_IDENT if ( DISPLAY_ID =~ /board/i );
 
     return mask_ip( get_remote_addr(), make_key( "mask", SECRET, 32 ) . $string )
       if ( DISPLAY_ID =~ /mask/i );
@@ -1994,8 +2037,8 @@ sub process_file {
 
     # generate random filename - fudges the microseconds
     my $filebase  = $time . sprintf( "%03d", int( rand(1000) ) );
-    my $filename  = IMG_DIR . $filebase . '.' . $ext;
-    my $thumbnail = THUMB_DIR . $filebase;
+    my $filename  = BOARD_IDENT . '/' . IMG_DIR . $filebase . '.' . $ext;
+    my $thumbnail = BOARD_IDENT . '/' . THUMB_DIR . $filebase;
 	if ( $ext eq "png" or $ext eq "svg" )
 	{
 		$thumbnail .= "s.png";
@@ -2161,7 +2204,7 @@ sub process_file {
     #		}
     #	}
 
-	my ($info, $info_all) = get_meta_markup($filename);
+	my ($info, $info_all) = get_meta_markup($filename, CHARSET);
     return ($filename, $md5, $width, $height, $thumbnail, $tn_width, $tn_height, $info, $info_all, $uploadname);
 }
 
@@ -2196,10 +2239,10 @@ sub delete_stuff {
     }
 
     if ($admin) {
-        make_http_forward(get_script_name() . "?task=show&board=" . urlenc(BOARD_IDENT));
+        make_http_forward(get_script_name() . "?task=show&board=" . get_board_id());
     } elsif ( $noko == 1 and $parent ) {
-		make_http_forward("thread/" . $parent);
-	} else { make_http_forward("/" . urlenc(BOARD_IDENT) . "/"); }
+		make_http_forward(get_board_id() . "/thread/" . $parent);
+	} else { make_http_forward(get_board_id() . "/"); }
 }
 
 sub make_locked {
@@ -2220,7 +2263,7 @@ sub make_locked {
           or make_error(S_SQLFAIL);
         $sth2->execute( $locked, $threadid ) or make_error(S_SQLFAIL);
     }
-    make_http_forward(get_script_name() . "?task=show&board=" . urlenc(BOARD_IDENT));
+    make_http_forward(get_script_name() . "?task=show&board=" . get_board_id());
 }
 
 sub make_sticky {
@@ -2242,7 +2285,7 @@ sub make_sticky {
         $sth2->execute( $sticky, $threadid, $threadid) or make_error(S_SQLFAIL);
     }
 
-    make_http_forward(get_script_name() . "?task=show&board=" . urlenc(BOARD_IDENT));
+    make_http_forward(get_script_name() . "?task=show&board=" . get_board_id());
 }
 
 sub delete_post {
@@ -2278,9 +2321,11 @@ sub delete_post {
             $sth->execute( $post, $post ) or make_error(S_SQLFAIL);
 
             while ( $res = $sth->fetchrow_hashref() ) {
+				$$res{image} =~ s!.*/!!;
+				$$res{thumbnail} =~ s!.*/!!;
 				# delete images if they exist
-				unlink $$res{image};
-				unlink $$res{thumbnail} if ( $$res{thumbnail} =~ /^$thumb/ );
+				unlink BOARD_IDENT . '/' . IMG_DIR . $$res{image};
+				unlink BOARD_IDENT . '/' . THUMB_DIR . $$res{thumbnail}; # if ( $$res{thumbnail} =~ /^$thumb/ );
             }
 
             # remove post and possible replies
@@ -2355,9 +2400,11 @@ sub delete_post {
             $sth->execute($post) or make_error(S_SQLFAIL);
 
             while ( $res = $sth->fetchrow_hashref() ) {
+				$$res{image} =~ s!.*/!!;
+				$$res{thumbnail} =~ s!.*/!!;
 				# delete images if they exist
-				unlink $$res{image};
-				unlink $$res{thumbnail} if ( $$res{thumbnail} =~ /^$thumb/ );
+				unlink BOARD_IDENT . '/' . IMG_DIR . $$res{image};
+				unlink BOARD_IDENT . '/' . THUMB_DIR . $$res{thumbnail}; # if ( $$res{thumbnail} =~ /^$thumb/ );
             }
 
 			$sth = $dbh->prepare( "UPDATE "
@@ -2477,16 +2524,31 @@ sub make_admin_orphans {
     check_password($admin, ADMIN_PASS);
 
 	# gather all files/thumbs on disk
-	my @files = glob IMG_DIR . '*';
-	my @thumbs = glob THUMB_DIR . '*';
+	my @files = glob BOARD_IDENT . '/' . IMG_DIR . '*';
+	my @thumbs = glob BOARD_IDENT . '/' . THUMB_DIR . '*';
+
+	# remove leading board path
+	foreach my $item (@files) {
+		$item =~ s!^[^/]+/!!;
+	}
+	foreach my $item (@thumbs) {
+		$item =~ s!^[^/]+/!!;
+	}
 
 	# gather all files/thumbs from database
 	$sth = $dbh->prepare("SELECT image, thumbnail FROM " . SQL_TABLE_IMG . " WHERE size > 0 ORDER by num ASC;")
 	  or make_error(S_SQLFAIL);
 	$sth->execute() or make_error(S_SQLFAIL);
 	while ($row = get_decoded_arrayref($sth)) {
+		$$row[0] =~ s!.*/!!;
+		$$row[0] = IMG_DIR . $$row[0];
 		push(@dbfiles, $$row[0]);
-		push(@dbthumbs, $$row[1]) if $$row[1];
+
+		if ($$row[1]) {
+			$$row[1] =~ s!.*/!!;
+			$$row[1] = THUMB_DIR . $$row[1];
+			push(@dbthumbs, $$row[1])
+		}
 	}
 
 	# copy all entries from the disk arrays that are not found in the database arrays to new arrays
@@ -2501,7 +2563,7 @@ sub make_admin_orphans {
 	my @t_orph;
 
 	foreach my $file (@orph_files) {
-		my $result = stat($file);
+		my $result = stat(BOARD_IDENT . '/' . $file);
 		my $entry = {};
 		$$entry{rowtype} = @f_orph % 2 + 1;
 		$$entry{name} = $file;
@@ -2511,7 +2573,7 @@ sub make_admin_orphans {
 	}
 
 	foreach my $thumb (@orph_thumbs) {
-		my $result = stat($thumb);
+		my $result = stat(BOARD_IDENT . '/' . $thumb);
 		my $entry = {};
 		$$entry{name} = $thumb;
 		$$entry{modified} = $$result[9];
@@ -2537,11 +2599,12 @@ sub move_files($$){
     foreach my $file (@files) {
 		$file = clean_string($file);
 		if ($file =~ m!^[a-zA-Z0-9]+/[a-zA-Z0-9-]+\.[a-zA-Z0-9]+$!) {
-			rename($file, ORPH_DIR . $file) or make_error(S_NOTWRITE . ' (' . decode_string(ORPH_DIR . $file, CHARSET) . ')');
+			rename(BOARD_IDENT . '/' . $file, BOARD_IDENT . '/' . ORPH_DIR . $file)
+				or make_error(S_NOTWRITE . ' (' . decode_string(ORPH_DIR . $file, CHARSET) . ')');
 		}
 	}
 
-	make_http_forward(get_script_name() . "?task=orphans&board=" . urlenc(BOARD_IDENT));
+	make_http_forward(get_script_name() . "?task=orphans&board=" . get_board_id());
 }
 
 sub make_admin_edit_panel {
@@ -2593,7 +2656,7 @@ sub save_admin_edit {
 	  or make_error(S_SQLFAIL);
 	$sth->execute($name, $subject, $comment, $postid) or make_error(S_SQLFAIL);
 
-	make_http_forward(get_script_name() . "?task=show&board=" . urlenc(BOARD_IDENT));
+	make_http_forward(get_script_name() . "?task=show&board=" . get_board_id());
 }
 
 sub do_login {
@@ -2623,14 +2686,14 @@ sub do_login {
 			-httponly => 1
             );
 
-        make_http_forward(get_script_name() . "?task=$nexttask&board=" . urlenc(BOARD_IDENT));
+        make_http_forward(get_script_name() . "?task=$nexttask&board=" . get_board_id());
     }
     else { make_admin_login() }
 }
 
 sub do_logout {
     make_cookies( wakaadmin => "", -expires => 1 );
-    make_http_forward(get_script_name() . "?task=admin&board=" . urlenc(BOARD_IDENT));
+    make_http_forward(get_script_name() . "?task=admin&board=" . get_board_id());
 }
 
 sub add_admin_entry {
@@ -2684,7 +2747,7 @@ sub add_admin_entry {
 		make_json_header();
 		print $utf8_encoded_json_text;
 	} else {
-		make_http_forward(get_script_name() . "?task=bans&board=" . urlenc(BOARD_IDENT));
+		make_http_forward(get_script_name() . "?task=bans&board=" . get_board_id());
 	}
 }
 
@@ -2720,7 +2783,7 @@ sub remove_admin_entry {
       or make_error(S_SQLFAIL);
     $sth->execute($num) or make_error(S_SQLFAIL);
 
-    make_http_forward(get_script_name() . "?task=bans&board=" . urlenc(BOARD_IDENT));
+    make_http_forward(get_script_name() . "?task=bans&board=" . get_board_id());
 }
 
 sub delete_all {
@@ -2865,8 +2928,12 @@ sub make_ban {
     exit;
 }
 
+sub get_board_id {
+	return urlenc(encode_string(BOARD_IDENT));
+}
+
 sub get_script_name {
-    #return encode('utf-8', $ENV{SCRIPT_NAME});
+    #return decode_string($ENV{SCRIPT_NAME}, CHARSET); # this would have to be done in many places to support non-ASCII paths
     return $ENV{SCRIPT_NAME};
 }
 
@@ -2876,15 +2943,26 @@ sub get_secure_script_name {
     return $ENV{SCRIPT_NAME};
 }
 
-sub expand_image_filename {
-    my $filename = shift;
+sub expand_filename {
+    my ($filename) = @_;
 
-    return expand_filename( clean_path($filename) );
+    return $filename if ( $filename =~ m!^/! );
+    return $filename if ( $filename =~ m!^\w+:! );
 
     my ($self_path) = $ENV{SCRIPT_NAME} =~ m!^(.*/)[^/]+$!;
-    my $src = IMG_DIR;
-    $filename =~ /$src(.*)/;
-    return $self_path . REDIR_DIR . clean_path($1) . '.html';
+    #return decode_string($self_path, CHARSET) . $filename;
+    return $self_path . get_board_id() . '/' . $filename;
+}
+
+sub expand_image_filename { # TODO: remove and replace by expand_filename since load balancing is not used anymore
+    my $filename = shift;
+
+    return expand_filename(clean_path($filename));
+
+    #my ($self_path) = $ENV{SCRIPT_NAME} =~ m!^(.*/)[^/]+$!;
+    #my $src = IMG_DIR;
+    #$filename =~ /$src(.*)/;
+    #return $self_path . REDIR_DIR . clean_path($1) . '.html';
 }
 
 sub get_reply_link {
@@ -3379,7 +3457,7 @@ sub update_files_meta {
 	) or make_error($dbh->errstr);
     while ($row = get_decoded_hashref($sth)) {
 		if (-e $$row{image}) {
-			($info, $info_all) = get_meta_markup($$row{image});
+			($info, $info_all) = get_meta_markup($$row{image}, CHARSET);
 		} else {
 			$info = undef;
 			$info_all = "File not found";

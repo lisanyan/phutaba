@@ -1,6 +1,7 @@
 use strict;
 
-BEGIN { require "../lib/wakautils.pl"; }
+BEGIN { require "wakautils.pl"; }
+BEGIN { require "post_view.pl"; }
 
 use constant NORMAL_HEAD_INCLUDE => q{
 
@@ -49,6 +50,7 @@ use constant NORMAL_HEAD_INCLUDE => q{
   <option value="255.255.0.0" selected="selected">/16 (IPv4 Class B)</option>
   <option value="255.255.255.0">/24 (IPv4 Class C)</option>
   <option value="255.255.255.255">/32 (IPv4 Host)</option>
+  <option disabled>&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;</option>
   <option value="ffff:ffff:ffff:0000:0000:0000:0000:0000">/48 (IPv6)</option>
   <option value="ffff:ffff:ffff:ff00:0000:0000:0000:0000">/56 (IPv6)</option>
   <option value="ffff:ffff:ffff:ffff:0000:0000:0000:0000">/64 (IPv6)</option>
@@ -93,11 +95,11 @@ use constant NORMAL_HEAD_INCLUDE => q{
 
 <nav>
 	<ul class="menu">
-} . include("../tpl/nav_boards.html") . q{
+} . include("tpl/nav_boards.html") . q{
 	</ul>
 
 	<ul class="menu right">
-} . include("../tpl/nav_pages.html") . q{
+} . include("tpl/nav_pages.html") . q{
 	</ul>
 </nav>
 
@@ -105,7 +107,7 @@ use constant NORMAL_HEAD_INCLUDE => q{
 	<div class="header">
 		<div class="banner">
 			<a href="/<const BOARD_IDENT>/">
-				<img src="/banner.pl?board=<const BOARD_IDENT>" alt="Banner" />
+				<img src="/banner.pl?board=<var get_board_id()>" alt="Banner" />
 			</a>
 		</div>
 		<div class="boardname" <if BOARD_DESC>style="margin-bottom: 5px;"</if>>/<const BOARD_IDENT>/ &ndash; <const BOARD_NAME></div>
@@ -121,12 +123,12 @@ use constant NORMAL_HEAD_INCLUDE => q{
 use constant MANAGER_HEAD_INCLUDE => NORMAL_HEAD_INCLUDE . q{
 
 <if $admin>
-	[<a href="<var expand_filename(HTML_SELF)>"><const S_MANARET></a>]
-	[<a href="<var $self>?board=<const BOARD_IDENT>&amp;task=show"><const S_MANAPANEL></a>]
-	[<a href="<var $self>?board=<const BOARD_IDENT>&amp;task=mpanel"><const S_MANATOOLS></a>]
-	[<a href="<var $self>?board=<const BOARD_IDENT>&amp;task=bans"><const S_MANABANS></a>]
-	[<a href="<var $self>?board=<const BOARD_IDENT>&amp;task=orphans"><const S_MANAORPH></a>]
-	[<a href="<var $self>?board=<const BOARD_IDENT>&amp;task=logout"><const S_MANALOGOUT></a>]
+	<!--[<a href="<var expand_filename(HTML_SELF)>"><const S_MANARET></a>]-->
+	[<a href="<var $self>?board=<var get_board_id()>&amp;task=show"><const S_MANAPANEL></a>]
+	[<a href="<var $self>?board=<var get_board_id()>&amp;task=mpanel"><const S_MANATOOLS></a>]
+	[<a href="<var $self>?board=<var get_board_id()>&amp;task=bans"><const S_MANABANS></a>]
+	[<a href="<var $self>?board=<var get_board_id()>&amp;task=orphans"><const S_MANAORPH></a>]
+	[<a href="<var $self>?board=<var get_board_id()>&amp;task=logout"><const S_MANALOGOUT></a>]
 	<div class="passvalid"><const S_MANAMODE></div>
 </if>
 };
@@ -140,7 +142,7 @@ use constant NORMAL_FOOT_INCLUDE => q{
 </footer>
 <nav>
 	<ul class="menu_bottom">
-} . include("../tpl/nav_boards.html") . q{
+} . include("tpl/nav_boards.html") . q{
 	</ul>
 </nav>
 </div>
@@ -269,7 +271,7 @@ use constant PAGE_TEMPLATE => compile_template(
 
 	<tr id="passwordField"><td class="postblock"><label for="password"><const S_DELPASS></label></td><td><input type="password" name="password" id="password" /> <const S_DELEXPL></td></tr>
 	<tr><td colspan="2">
-	<div class="rules">} . include("rules.html") . q{</div></td></tr>
+	<div class="rules">} . include(BOARD_IDENT . "/rules.html") . q{</div></td></tr>
 	</tbody>
 	</table>
 	</form>
@@ -297,7 +299,7 @@ use constant PAGE_TEMPLATE => compile_template(
 	</if>
 
 		<loop $posts>
-			} . include("../lib/post_view.inc") . q{
+			} . POST_VIEW_INCLUDE . q{
 		</loop>
 
 		</div>
@@ -393,7 +395,7 @@ use constant SEARCH_TEMPLATE => compile_template(
 	</if>
 
 	<loop $posts>
-		} . include("../lib/post_view.inc") . q{
+		} . POST_VIEW_INCLUDE . q{
 	</loop>
 
 	<p style="clear: both;"></p>
@@ -404,7 +406,7 @@ use constant SEARCH_TEMPLATE => compile_template(
 
 use constant SINGLE_POST_TEMPLATE => compile_template(q{
 <loop $posts>
-} . include("../lib/post_view.inc") . q{
+} . POST_VIEW_INCLUDE . q{
 </loop>
 });
 
@@ -474,11 +476,11 @@ use constant ERROR_HEAD_INCLUDE => q{
 
 <nav>
 	<ul class="menu">
-} . include("../tpl/nav_boards.html") . q{
+} . include("tpl/nav_boards.html") . q{
 	</ul>
 
 	<ul class="menu right">
-} . include("../tpl/nav_pages.html") . q{
+} . include("tpl/nav_pages.html") . q{
 	</ul>
 </nav>
 
@@ -700,8 +702,8 @@ use constant BAN_PANEL_TEMPLATE => compile_template(
 </td></tr></tbody></table>
 </div><br />
 
-<if $filter ne 'off'>[<a href="<var $self>?task=bans&amp;filter=off#tbl"><const S_BANSHOWALL></a>]</if>
-<if $filter eq 'off'>[<a href="<var $self>?task=bans#tbl"><const S_BANFILTER></a>]</if>
+<if $filter ne 'off'>[<a href="<var $self>?board=<var get_board_id()>&amp;task=bans&amp;filter=off#tbl"><const S_BANSHOWALL></a>]</if>
+<if $filter eq 'off'>[<a href="<var $self>?board=<var get_board_id()>&amp;task=bans#tbl"><const S_BANFILTER></a>]</if>
 <a id="tbl"></a>
 <table align="center"><tbody>
 <tr class="managehead"><const S_BANTABLE></tr>
@@ -713,7 +715,7 @@ use constant BAN_PANEL_TEMPLATE => compile_template(
 
 	<if $type eq 'ipban'>
 		<td>IP</td>
-		<td><img src="/img/flags/<var $flag>.PNG"> <var dec_to_dot($ival1)></td><td>/<var get_mask_len($ival2)> (<var dec_to_dot($ival2)>)</td>
+		<td><img src="/img/flags/<var $flag>.PNG" title="<var $flag>" /> <var dec_to_dot($ival1)></td><td>/<var get_mask_len($ival2)> (<var dec_to_dot($ival2)>)</td>
 	</if>
 	<if $type eq 'wordban'>
 		<td>Word</td>
@@ -725,7 +727,7 @@ use constant BAN_PANEL_TEMPLATE => compile_template(
 	</if>
 	<if $type eq 'whitelist'>
 		<td>Whitelist</td>
-		<td><img src="/img/flags/<var $flag>.PNG"> <var dec_to_dot($ival1)></td><td>/<var get_mask_len($ival2)> (<var dec_to_dot($ival2)>)</td>
+		<td><img src="/img/flags/<var $flag>.PNG" title="<var $flag>" /> <var dec_to_dot($ival1)></td><td>/<var get_mask_len($ival2)> (<var dec_to_dot($ival2)>)</td>
 	</if>
 	<if $type eq 'asban'>
 		<td>ASNum</td>
@@ -748,7 +750,7 @@ use constant BAN_PANEL_TEMPLATE => compile_template(
 	</if>
 	<if $type ne 'ipban'>-</if>
 	</td>
-	<td><a href="<var $self>?task=removeban&amp;board=<const BOARD_IDENT>&amp;num=<var $num>"><const S_BANREMOVE></a></td>
+	<td><a href="<var $self>?task=removeban&amp;board=<var get_board_id()>&amp;num=<var $num>"><const S_BANREMOVE></a></td>
 	</tr>
 </loop>
 

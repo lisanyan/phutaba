@@ -126,7 +126,7 @@ var context = {
   ;
 
   function loadPost(num, callback) {
-    $j.get('/' + window.board + '/wakaba.pl?task=show&board=' + window.board + '&post=' + num,
+    $j.get('/wakaba.pl?task=show&board=' + window.board + '&post=' + num,
       function (data) {
         var post = $j(data.trim());
         if (!exists(+num)) {

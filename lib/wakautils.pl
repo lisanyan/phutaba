@@ -35,7 +35,7 @@ my $url_re =
 qr{(${protocol_re}[^\s<>()"]*?(?:\([^\s<>()"]*?\)[^\s<>()"]*?)*)((?:\s|<|>|"|\.||\]|!|\?|,|&#44;|&quot;)*(?:[\s<>()"]|$))};
 
 sub get_meta {
-	my ($file, @tagList) = @_;
+	my ($file, $charset, @tagList) = @_;
 	my (%data, $exifData);
 	my $exifTool = new Image::ExifTool;
 	@tagList = qw(-FilePermissions -ExifToolVersion -Directory -FileName -Warning -FileModifyDate) unless @tagList;	
@@ -49,14 +49,14 @@ sub get_meta {
 				$val = "(Binary data; $len bytes)";
 			}
 			#$data{$_} = encode_entities(decode('utf8', $val));
-			$data{$_} = clean_string(decode_string($val, CHARSET));
+			$data{$_} = clean_string(decode_string($val, $charset));
 	}
 
 	return \%data;
 }
 
 sub get_meta_markup {
-	my ($file) = @_;
+	my ($file, $charset) = @_;
 	my ($markup, $info, $exifData, @metaOptions);
 	my %options = (	"FileSize" => "Dateigr&ouml;&szlig;e",
 			"FileType" => "Dateityp",
@@ -95,7 +95,7 @@ sub get_meta_markup {
 	foreach (keys %options) {
 		push(@metaOptions, $_);
 	}
-	$exifData = get_meta($file, @metaOptions);
+	$exifData = get_meta($file, $charset, @metaOptions);
 	foreach (keys %$exifData) {
 		if (defined($options{$_}) and $$exifData{$_} ne "") {
 			$markup = $markup . "<strong>$options{$_}:</strong> $$exifData{$_}<br />";
@@ -143,7 +143,7 @@ sub get_geolocation($) {
 	if ($ip =~ /:/ and Geo::IP->api eq 'CAPI') {
 		eval '$gi = Geo::IP->open($path . "GeoLiteCityv6.dat")';
 		unless ($@ or !$gi) {
-			$gi->set_charset(&GEOIP_CHARSET_UTF8);
+			$gi->set_charset(&GEOIP_CHARSET_UTF8) if $has_encode;
 			$city_record = $gi->record_by_addr_v6($ip);
 		} else { # fall back to country if city is not installed
 			eval '$gi = Geo::IP->open($path . "GeoIPv6.dat")';
@@ -155,7 +155,7 @@ sub get_geolocation($) {
 	if ($ip !~ /:/ and $ip =~ /\./) {
 		eval '$gi = Geo::IP->open($path . "GeoLiteCity.dat")';
 		unless ($@ or !$gi) {
-			$gi->set_charset(&GEOIP_CHARSET_UTF8);
+			$gi->set_charset(&GEOIP_CHARSET_UTF8) if $has_encode;
 			$city_record = $gi->record_by_addr($ip);
 		} else { # fall back to country if city is not installed
 			eval '$gi = Geo::IP->open($path . "GeoIP.dat")';
@@ -696,7 +696,7 @@ sub compile_template {
     my $sub =
         eval 'no strict; sub { '
       . 'my $port=$ENV{SERVER_PORT}==80?"":":$ENV{SERVER_PORT}";'
-      . 'my $self=decode("utf-8", $ENV{SCRIPT_NAME});'
+      . 'my $self=$ENV{SCRIPT_NAME};'
       . 'my $absolute_self="http://$ENV{SERVER_NAME}$port$ENV{SCRIPT_NAME}";'
       . 'my ($path)=$ENV{SCRIPT_NAME}=~m!^(.*/)[^/]+$!;'
       . 'my $absolute_path="http://$ENV{SERVER_NAME}$port$path";'
@@ -1052,16 +1052,6 @@ sub get_xhtml_content_type {
     $type .= "; charset=$charset" if ($charset);
 
     return $type;
-}
-
-sub expand_filename {
-    my ($filename) = @_;
-
-    return $filename if ( $filename =~ m!^/! );
-    return $filename if ( $filename =~ m!^\w+:! );
-
-    my ($self_path) = $ENV{SCRIPT_NAME} =~ m!^(.*/)[^/]+$!;
-    return decode('utf-8', $self_path) . $filename;
 }
 
 #
@@ -1977,8 +1967,8 @@ sub get_pretty_html($$) {
 	return $text;
 }
 
-sub get_post_info($) {
-	my ($data) = @_;
+sub get_post_info($$) {
+	my ($data, $board) = @_;
 	my @items = split(/<br \/>/, $data);
 	return '(n/a)' unless (@items);
 
@@ -1996,7 +1986,8 @@ sub get_post_info($) {
 		# as num, name and ban link
 		$items[4] =~ /^AS(\d+) /;
 		$items[4] .= ' [<a href="' . $ENV{SCRIPT_NAME}
-			. '?task=addstring&amp;type=asban&amp;string=' . $1
+			. '?task=addstring&amp;type=asban&amp;board=' . $board
+			. '&amp;string=' . $1
 			. '&amp;comment=' . urlenc($items[4]) . '">Sperren</a>]';
 
 		return $flag . $location . '<br />' . $items[4];
