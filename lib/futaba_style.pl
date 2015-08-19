@@ -95,11 +95,11 @@ use constant NORMAL_HEAD_INCLUDE => q{
 
 <nav>
 	<ul class="menu">
-} . include("../tpl/nav_boards.html") . q{
+} . include("tpl/nav_boards.html") . q{
 	</ul>
 
 	<ul class="menu right">
-} . include("../tpl/nav_pages.html") . q{
+} . include("tpl/nav_pages.html") . q{
 	</ul>
 </nav>
 
@@ -142,7 +142,7 @@ use constant NORMAL_FOOT_INCLUDE => q{
 </footer>
 <nav>
 	<ul class="menu_bottom">
-} . include("../tpl/nav_boards.html") . q{
+} . include("tpl/nav_boards.html") . q{
 	</ul>
 </nav>
 </div>
@@ -271,7 +271,7 @@ use constant PAGE_TEMPLATE => compile_template(
 
 	<tr id="passwordField"><td class="postblock"><label for="password"><const S_DELPASS></label></td><td><input type="password" name="password" id="password" /> <const S_DELEXPL></td></tr>
 	<tr><td colspan="2">
-	<div class="rules">} . include("rules.html") . q{</div></td></tr>
+	<div class="rules">} . include(BOARD_IDENT . "/rules.html") . q{</div></td></tr>
 	</tbody>
 	</table>
 	</form>
@@ -476,11 +476,11 @@ use constant ERROR_HEAD_INCLUDE => q{
 
 <nav>
 	<ul class="menu">
-} . include("../tpl/nav_boards.html") . q{
+} . include("tpl/nav_boards.html") . q{
 	</ul>
 
 	<ul class="menu right">
-} . include("../tpl/nav_pages.html") . q{
+} . include("tpl/nav_pages.html") . q{
 	</ul>
 </nav>
 
