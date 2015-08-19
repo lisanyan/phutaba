@@ -107,7 +107,7 @@ use constant NORMAL_HEAD_INCLUDE => q{
 	<div class="header">
 		<div class="banner">
 			<a href="/<const BOARD_IDENT>/">
-				<img src="/banner.pl?board=<const BOARD_IDENT>" alt="Banner" />
+				<img src="/banner.pl?board=<var get_board_id()>" alt="Banner" />
 			</a>
 		</div>
 		<div class="boardname" <if BOARD_DESC>style="margin-bottom: 5px;"</if>>/<const BOARD_IDENT>/ &ndash; <const BOARD_NAME></div>
@@ -124,11 +124,11 @@ use constant MANAGER_HEAD_INCLUDE => NORMAL_HEAD_INCLUDE . q{
 
 <if $admin>
 	<!--[<a href="<var expand_filename(HTML_SELF)>"><const S_MANARET></a>]-->
-	[<a href="<var $self>?board=<const BOARD_IDENT>&amp;task=show"><const S_MANAPANEL></a>]
-	[<a href="<var $self>?board=<const BOARD_IDENT>&amp;task=mpanel"><const S_MANATOOLS></a>]
-	[<a href="<var $self>?board=<const BOARD_IDENT>&amp;task=bans"><const S_MANABANS></a>]
-	[<a href="<var $self>?board=<const BOARD_IDENT>&amp;task=orphans"><const S_MANAORPH></a>]
-	[<a href="<var $self>?board=<const BOARD_IDENT>&amp;task=logout"><const S_MANALOGOUT></a>]
+	[<a href="<var $self>?board=<var get_board_id()>&amp;task=show"><const S_MANAPANEL></a>]
+	[<a href="<var $self>?board=<var get_board_id()>&amp;task=mpanel"><const S_MANATOOLS></a>]
+	[<a href="<var $self>?board=<var get_board_id()>&amp;task=bans"><const S_MANABANS></a>]
+	[<a href="<var $self>?board=<var get_board_id()>&amp;task=orphans"><const S_MANAORPH></a>]
+	[<a href="<var $self>?board=<var get_board_id()>&amp;task=logout"><const S_MANALOGOUT></a>]
 	<div class="passvalid"><const S_MANAMODE></div>
 </if>
 };
@@ -702,8 +702,8 @@ use constant BAN_PANEL_TEMPLATE => compile_template(
 </td></tr></tbody></table>
 </div><br />
 
-<if $filter ne 'off'>[<a href="<var $self>?board=<const BOARD_IDENT>&amp;task=bans&amp;filter=off#tbl"><const S_BANSHOWALL></a>]</if>
-<if $filter eq 'off'>[<a href="<var $self>?board=<const BOARD_IDENT>&amp;task=bans#tbl"><const S_BANFILTER></a>]</if>
+<if $filter ne 'off'>[<a href="<var $self>?board=<var get_board_id()>&amp;task=bans&amp;filter=off#tbl"><const S_BANSHOWALL></a>]</if>
+<if $filter eq 'off'>[<a href="<var $self>?board=<var get_board_id()>&amp;task=bans#tbl"><const S_BANFILTER></a>]</if>
 <a id="tbl"></a>
 <table align="center"><tbody>
 <tr class="managehead"><const S_BANTABLE></tr>
@@ -750,7 +750,7 @@ use constant BAN_PANEL_TEMPLATE => compile_template(
 	</if>
 	<if $type ne 'ipban'>-</if>
 	</td>
-	<td><a href="<var $self>?task=removeban&amp;board=<const BOARD_IDENT>&amp;num=<var $num>"><const S_BANREMOVE></a></td>
+	<td><a href="<var $self>?task=removeban&amp;board=<var get_board_id()>&amp;num=<var $num>"><const S_BANREMOVE></a></td>
 	</tr>
 </loop>
 

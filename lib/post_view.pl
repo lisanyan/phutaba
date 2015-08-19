@@ -60,43 +60,43 @@ use constant POST_VIEW_INCLUDE => q{
 	<if $isAdmin>
 		<if !$adminpost>
 		<div style="display: none; min-width: 250px;" id="postinfo_<var $num>">
-			<var get_post_info($location, BOARD_IDENT)>
+			<var get_post_info($location, get_board_id())>
 		</div>
 		<span onmouseover="TagToTip('postinfo_<var $num>', TITLE, '<const S_POSTINFO>', DELAY, 0, CLICKSTICKY, true)" onmouseout="UnTip()">[<var dec_to_dot($ip)>]</span>
 		</if>
 		<if !$parent>	
 			<if !$sticky>
-				<span onmouseover="Tip('<const S_MPSTICKY>')" onmouseout="UnTip()"><a href="<var $self>?task=sticky&amp;board=<const BOARD_IDENT>&amp;thread=<var $num>"><img src="/img/icons/sticky.png"></a></span>
+				<span onmouseover="Tip('<const S_MPSTICKY>')" onmouseout="UnTip()"><a href="<var $self>?task=sticky&amp;board=<var get_board_id()>&amp;thread=<var $num>"><img src="/img/icons/sticky.png"></a></span>
 			</if>
 
 			<if $sticky>
-				<span onmouseover="Tip('<const S_MPUNSTICKY>')" onmouseout="UnTip()"><a href="<var $self>?task=sticky&amp;board=<const BOARD_IDENT>&amp;thread=<var $num>"><img src="/img/icons/unsticky.png"></a></span>
+				<span onmouseover="Tip('<const S_MPUNSTICKY>')" onmouseout="UnTip()"><a href="<var $self>?task=sticky&amp;board=<var get_board_id()>&amp;thread=<var $num>"><img src="/img/icons/unsticky.png"></a></span>
 			</if>
 			
 			<if !$locked>
-				<span onmouseover="Tip('<const S_MPLOCK>')" onmouseout="UnTip()"><a href="<var $self>?task=lock&amp;board=<const BOARD_IDENT>&amp;thread=<var $num>"><img src="/img/icons/lock.png"></a></span>
+				<span onmouseover="Tip('<const S_MPLOCK>')" onmouseout="UnTip()"><a href="<var $self>?task=lock&amp;board=<var get_board_id()>&amp;thread=<var $num>"><img src="/img/icons/lock.png"></a></span>
 			</if>
 
 			<if $locked>
-				<span onmouseover="Tip('<const S_MPUNLOCK>')" onmouseout="UnTip()"><a href="<var $self>?task=lock&amp;board=<const BOARD_IDENT>&amp;thread=<var $num>"><img src="/img/icons/unlock.png"></a></span>
+				<span onmouseover="Tip('<const S_MPUNLOCK>')" onmouseout="UnTip()"><a href="<var $self>?task=lock&amp;board=<var get_board_id()>&amp;thread=<var $num>"><img src="/img/icons/unlock.png"></a></span>
 			</if>
 		
 			<if !$autosage>
-				<span onmouseover="Tip('<const S_MPSETSAGE>')" onmouseout="UnTip()"><a href="<var $self>?task=kontra&amp;board=<const BOARD_IDENT>&amp;thread=<var $num>"><img src="/img/icons/sage.png"></a></span>
+				<span onmouseover="Tip('<const S_MPSETSAGE>')" onmouseout="UnTip()"><a href="<var $self>?task=kontra&amp;board=<var get_board_id()>&amp;thread=<var $num>"><img src="/img/icons/sage.png"></a></span>
 			</if>
 
 			<if $autosage>
-				<span onmouseover="Tip('<const S_MPUNSETSAGE>')" onmouseout="UnTip()"><a href="<var $self>?task=kontra&amp;board=<const BOARD_IDENT>&amp;thread=<var $num>"><img src="/img/icons/unsage.png"></a></span>
+				<span onmouseover="Tip('<const S_MPUNSETSAGE>')" onmouseout="UnTip()"><a href="<var $self>?task=kontra&amp;board=<var get_board_id()>&amp;thread=<var $num>"><img src="/img/icons/unsage.png"></a></span>
 			</if>
 			
 		</if>
-		<span onmouseover="Tip('<const S_MPEDIT>')" onmouseout="UnTip()"><a href="<var $self>?task=edit&amp;board=<const BOARD_IDENT>&amp;post=<var $num>"><img src="/img/icons/edit.png"></a></span>
+		<span onmouseover="Tip('<const S_MPEDIT>')" onmouseout="UnTip()"><a href="<var $self>?task=edit&amp;board=<var get_board_id()>&amp;post=<var $num>"><img src="/img/icons/edit.png"></a></span>
 		<if !$adminpost>
-		<span onmouseover="Tip('<const S_MPBAN>')"       onmouseout="UnTip()"><a onclick="do_ban('<var dec_to_dot($ip)>', <var $num>, '<const BOARD_IDENT>')"><img src="/img/icons/ban.png"></a></span>
-		<span onmouseover="Tip('<const S_MPDELETEALL>')" onmouseout="UnTip()"><a href="<var $self>?task=deleteall&amp;board=<const BOARD_IDENT>&amp;ip=<var $ip>"><img src="/img/icons/delete_all.png"></a></span>
+		<span onmouseover="Tip('<const S_MPBAN>')"       onmouseout="UnTip()"><a onclick="do_ban('<var dec_to_dot($ip)>', <var $num>, '<var get_board_id()>')"><img src="/img/icons/ban.png"></a></span>
+		<span onmouseover="Tip('<const S_MPDELETEALL>')" onmouseout="UnTip()"><a href="<var $self>?task=deleteall&amp;board=<var get_board_id()>&amp;ip=<var $ip>"><img src="/img/icons/delete_all.png"></a></span>
 		</if>
-		<span onmouseover="Tip('<const S_MPDELFILE>')"   onmouseout="UnTip()"><a href="<var $self>?task=delete&amp;board=<const BOARD_IDENT>&amp;delete=<var $num>&amp;fileonly=on"><img src="/img/icons/delete_file.png"></a></span>
-		<span onmouseover="Tip('<const S_MPDELETE>')"    onmouseout="UnTip()"><a href="<var $self>?task=delete&amp;board=<const BOARD_IDENT>&amp;delete=<var $num>"><img src="/img/icons/delete.png"></a></span>
+		<span onmouseover="Tip('<const S_MPDELFILE>')"   onmouseout="UnTip()"><a href="<var $self>?task=delete&amp;board=<var get_board_id()>&amp;delete=<var $num>&amp;fileonly=on"><img src="/img/icons/delete_file.png"></a></span>
+		<span onmouseover="Tip('<const S_MPDELETE>')"    onmouseout="UnTip()"><a href="<var $self>?task=delete&amp;board=<var get_board_id()>&amp;delete=<var $num>"><img src="/img/icons/delete.png"></a></span>
 	</if>
 
 <if $parent>
