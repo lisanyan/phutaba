@@ -10,10 +10,10 @@ Disallow: */src/*/*
 Disallow: /img/
 
 # disallow indexing captcha images
-Disallow: /lib/captcha.pl
+Disallow: /captcha.pl
 
 # disallow indexing of non-prettified urls
-Disallow: */wakaba.pl
+Disallow: /wakaba.pl
 
 # disallow indexing stuff not for public use
 Disallow: /tmp/
