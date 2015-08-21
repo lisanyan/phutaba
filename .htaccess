@@ -1,10 +1,10 @@
 ErrorDocument 403 /index.pl?p=err403
 ErrorDocument 404 /index.pl?p=err404
 
-ErrorDocument 500 /errors/50x.html
-ErrorDocument 502 /errors/50x.html
-ErrorDocument 503 /errors/50x.html
-ErrorDocument 504 /errors/50x.html
+ErrorDocument 500 /static/err50x.html
+ErrorDocument 502 /static/err50x.html
+ErrorDocument 503 /static/err50x.html
+ErrorDocument 504 /static/err50x.html
 
 Options -MultiViews
 

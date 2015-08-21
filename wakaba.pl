@@ -36,7 +36,7 @@ use constant HANDLER_ERROR_PAGE_HEAD => q{
 <title>Phutaba &raquo; Serverfehler</title>
 <meta charset="utf-8" />
 <link rel="shortcut icon" href="/img/favicon.ico" />
-<link rel="stylesheet" type="text/css" href="/css/phutaba.css" />
+<link rel="stylesheet" type="text/css" href="/static/css/phutaba.css" />
 </head>
 <body>
 <div class="content">
@@ -1202,16 +1202,6 @@ sub find_posts($$$$) {
 #
 # Posting
 #
-sub strip_html {
-	my ($html) = @_;
-	#  my $plain;
-	# my $hs = HTML::Strip->new();
-	#$plain = $hs->parse($html);
-	#undef $hs;
-	return $html;
-
-}
-
 sub post_stuff {
     my (
         $parent,  $spam1,   $spam2,      $name,      $email,
@@ -2619,6 +2609,8 @@ sub make_admin_edit_panel {
 	$sth->execute($postid) or make_error(S_SQLFAIL);
 
 	if ($row = get_decoded_hashref($sth)) {
+		# escape ampersand so browsers show the post text like it is stored in the db
+		$$row{comment} = escamp($$row{comment});
 		# add newlines for better readability but remove them on save!
 		$$row{comment} =~ s!<br />!<br />\n!g;
 		$$row{comment} =~ s!</li>!</li>\n!g;

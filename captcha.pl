@@ -8,7 +8,6 @@ use CGI;
 use DBI;
 
 use lib 'lib';
-use lib '../lib'; # remove after wakaba.pl was moved to the same directory where captcha.pl is
 BEGIN { require "site_config.pl"; }
 BEGIN { require "config_defaults.pl"; }
 BEGIN { require "strings_de.pl"; }
@@ -174,7 +173,7 @@ sub get_captcha_word {
 sub save_captcha_word {
     my ( $dbh, $ip, $key, $word, $time, $board ) = @_;
 
-    delete_captcha_word( $dbh, $ip, $key );
+    delete_captcha_word( $dbh, $ip, $key, $board );
 
     my $sth =
       $dbh->prepare( "INSERT INTO " . SQL_CAPTCHA_TABLE . " VALUES(?,?,?,?,?);" )
