@@ -320,7 +320,7 @@ ul.rules {
 }
 
 .filebg {
-	background-image: url("../img/erna-klein.png");
+	background-image: url("/img/erna-klein.png");
 	background-position: bottom left;
 	background-repeat: no-repeat;
 }
