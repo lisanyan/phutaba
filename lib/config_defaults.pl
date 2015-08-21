@@ -173,7 +173,7 @@ eval "use constant SQL_PREFIX => 'ernstchan_';" unless ( defined &SQL_PREFIX );
     eval "use constant HTML_SELF => 'wakaba.html'"
       unless ( defined &HTML_SELF );
     eval "use constant JS_FILE => 'wakaba3.js'" unless ( defined &JS_FILE );
-    eval "use constant CSS_DIR => 'css/'"       unless ( defined &CSS_DIR );
+    eval "use constant CSS_DIR => 'static/css/'" unless ( defined &CSS_DIR );
     eval "use constant ERRORLOG => ''"          unless ( defined &ERRORLOG );
     eval "use constant CONVERT_COMMAND => 'convert'"
       unless ( defined &CONVERT_COMMAND );

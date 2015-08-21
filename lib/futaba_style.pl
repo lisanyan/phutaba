@@ -3,17 +3,42 @@ use strict;
 BEGIN { require "wakautils.pl"; }
 BEGIN { require "post_view.pl"; }
 
+use constant NETMASK_SELECT_INCLUDE => q{
+<select id="netmask" name="mask">
+  <option value="255.0.0.0">/8 (IPv4 Class A)</option>
+  <option value="255.255.0.0">/16 (IPv4 Class B)</option>
+  <option value="255.255.255.0">/24 (IPv4 Class C)</option>
+  <option value="255.255.255.255" selected="selected">/32 (IPv4 Host)</option>
+  <option disabled>&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;</option>
+  <option value="ffff:ffff:ffff:0000:0000:0000:0000:0000">/48 (IPv6)</option>
+  <option value="ffff:ffff:ffff:ff00:0000:0000:0000:0000">/56 (IPv6)</option>
+  <option value="ffff:ffff:ffff:ffff:0000:0000:0000:0000">/64 (IPv6)</option>
+  <option value="ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff">/128 (IPv6 Host)</option>
+</select>
+};
+
+use constant DURATION_SELECT_INCLUDE => q{
+<select id="duration" name="string">
+	<option value="86400">1 Tag</option>
+	<option value="259200">3 Tage</option>
+	<option value="432000">5 Tage</option>
+	<option value="604800">1 Woche</option>
+	<option value="2419200">4 Wochen</option>
+	<option value="">Permanent</option>
+</select>
+};
+
 use constant NORMAL_HEAD_INCLUDE => q{
 
 <!DOCTYPE html>
 <html lang="de">
 <head>
-<title><var strip_html(TITLE)> &raquo; <if $title><var strip_html($title)></if><if !$title>/<const BOARD_IDENT>/ - <var strip_html(BOARD_NAME)></if></title>
+<title><const TITLE> &raquo; <if $title><var $title></if><if !$title>/<const BOARD_IDENT>/ - <const BOARD_NAME></if></title>
 <meta charset="<const CHARSET>" />
 
-<link rel="stylesheet" type="text/css" href="/css/phutaba.css" />
+<link rel="stylesheet" type="text/css" href="/static/css/phutaba.css" />
 <if STYLESHEET><link rel="stylesheet" type="text/css" href="<const STYLESHEET>" /></if>
-<if test_afmod()><link rel="stylesheet" type="text/css" href="/css/af.css" /></if>
+<if test_afmod()><link rel="stylesheet" type="text/css" href="/static/css/af.css" /></if>
 <link rel="shortcut icon" type="image/x-icon" href="/img/favicon.ico" />
 <link rel="icon" type="image/x-icon" href="/img/favicon.ico" />
 <link rel="apple-touch-icon-precomposed" href="/img/favicon-152.png" />
@@ -25,10 +50,10 @@ use constant NORMAL_HEAD_INCLUDE => q{
 <meta name="application-name" content="<const TITLE> /<const BOARD_IDENT>/" />
 <meta name="apple-mobile-web-app-title" content="<const TITLE>" />
 </if>
-<script type="text/javascript" src="/js/wakaba3.js"></script>
+<script type="text/javascript" src="/static/js/wakaba3.js"></script>
 
 <if $isAdmin>
-	<link rel="stylesheet" type="text/css" href="/css/ui-lightness/jquery-ui-1.10.2.custom.css" />
+	<link rel="stylesheet" type="text/css" href="/static/vendor/jquery-ui.min.css" />
 </if>
 
 <style type="text/css">
@@ -45,27 +70,10 @@ use constant NORMAL_HEAD_INCLUDE => q{
 	<td><b><const S_BANIPLABEL></b></td><td><input id="ip" type="text" name="ip" size="40" /></td>
 </tr>
 <tr><td><b><const S_BANMASKLABEL></b></td><td>
-<select id="netmask" name="netmask">
-  <option value="255.0.0.0">/8 (IPv4 Class A)</option>
-  <option value="255.255.0.0" selected="selected">/16 (IPv4 Class B)</option>
-  <option value="255.255.255.0">/24 (IPv4 Class C)</option>
-  <option value="255.255.255.255">/32 (IPv4 Host)</option>
-  <option disabled>&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;</option>
-  <option value="ffff:ffff:ffff:0000:0000:0000:0000:0000">/48 (IPv6)</option>
-  <option value="ffff:ffff:ffff:ff00:0000:0000:0000:0000">/56 (IPv6)</option>
-  <option value="ffff:ffff:ffff:ffff:0000:0000:0000:0000">/64 (IPv6)</option>
-  <option value="ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff">/128 (IPv6 Host)</option>
-</select>
+} . NETMASK_SELECT_INCLUDE . q{
 </td></tr>
 <tr><td><b><const S_BANDURATION></b></td><td>
-<select id="duration" name="duration">
-	<option value="86400">1 Tag</option>
-	<option value="259200">3 Tage</option>
-	<option value="432000">5 Tage</option>
-	<option value="604800">1 Woche</option>
-	<option value="2419200">4 Wochen</option>
-	<option value="">Permanent</option>
-</select>
+} . DURATION_SELECT_INCLUDE . q{</select>
 </td></tr>
 <tr>
 	<td><b><const S_BANREASONLABEL></b></td><td><input id="reason" type="text" name="reason" size="40" /></td>
@@ -91,7 +99,7 @@ use constant NORMAL_HEAD_INCLUDE => q{
 
 <div class="content">
 
-<script type="text/javascript" src="/js/wz_tooltip.js"></script>
+<script type="text/javascript" src="/static/vendor/wz_tooltip.js"></script>
 
 <nav>
 	<ul class="menu">
@@ -148,17 +156,17 @@ use constant NORMAL_FOOT_INCLUDE => q{
 </div>
 <const TRACKING_CODE>
 
-<script type="text/javascript" src="/js/jquery-1.9.1.min.js"></script>
-<script type="text/javascript" src="/js/jquery/jquery.blockUI.js"></script>
+<script type="text/javascript" src="/static/vendor/jquery-1.11.3.min.js"></script>
+<script type="text/javascript" src="/static/vendor/jquery.blockUI.js"></script>
 
 <if $isAdmin>
-        <script type="text/javascript" src="/js/jquery/jquery-ui-1.10.2.custom.min.js"></script>
-        <script type="text/javascript" src="/js/admin.js"></script>
+        <script type="text/javascript" src="/static/vendor/jquery-ui.min.js"></script>
+        <script type="text/javascript" src="/static/js/admin.js"></script>
 </if>
 
 <if ENABLE_HIDE_THREADS && !$thread>
-<script type="text/javascript" src="/js/jquery/jquery.cookie.js"></script>
-<script type="text/javascript" src="/js/hidethreads.js"></script>
+<script type="text/javascript" src="/static/vendor/jquery.cookie.js"></script>
+<script type="text/javascript" src="/static/js/hidethreads.js"></script>
 </if>
 
 <script type="text/javascript">
@@ -198,8 +206,8 @@ use constant NORMAL_FOOT_INCLUDE => q{
         var msg_remove_file = '<const S_JS_REMOVEFILE>';
 </script>
 
-<if ENABLE_WEBSOCKET_NOTIFY && $thread && !$locked><script type="text/javascript" src="/js/websock.js"></script></if>
-<script type="text/javascript" src="/js/context.js"></script>
+<if ENABLE_WEBSOCKET_NOTIFY && $thread && !$locked><script type="text/javascript" src="/static/js/websock.js"></script></if>
+<script type="text/javascript" src="/static/js/context.js"></script>
 
 </body>
 </html>
@@ -461,7 +469,7 @@ use constant ERROR_HEAD_INCLUDE => q{
 <head>
 	<title><const TITLE> &raquo; <var $error_page></title>
 	<meta charset="<const CHARSET>" />
-	<link rel="stylesheet" type="text/css" href="/css/phutaba.css" />
+	<link rel="stylesheet" type="text/css" href="/static/css/phutaba.css" />
 	<link rel="shortcut icon" type="image/x-icon" href="/img/favicon.ico" />
 	<link rel="icon" type="image/x-icon" href="/img/favicon.ico" />
 	<link rel="apple-touch-icon-precomposed" href="/img/favicon-152.png" />
@@ -588,7 +596,8 @@ use constant POST_PANEL_TEMPLATE => compile_template(
 <input type="hidden" name="board" value="<const BOARD_IDENT>" />
 <table><tbody>
 <tr><td class="postblock"><const S_BANIPLABEL></td><td><input type="text" name="ip" size="24" /></td></tr>
-<tr><td class="postblock"><const S_BANMASKLABEL></td><td><input type="text" name="mask" size="24" />
+<tr><td class="postblock"><const S_BANMASKLABEL></td><td>
+} . NETMASK_SELECT_INCLUDE . q{
 <input type="submit" value="<const S_MPDELETEIP>" /></td></tr>
 </tbody></table></form>
 
@@ -635,15 +644,8 @@ use constant BAN_PANEL_TEMPLATE => compile_template(
 <input type="hidden" name="board" value="<const BOARD_IDENT>" />
 <table><tbody>
 <tr><td class="postblock"><const S_BANIPLABEL></td><td><input type="text" name="ip" size="24" /></td></tr>
-<tr><td class="postblock"><const S_BANMASKLABEL></td><td><input type="text" name="mask" size="24" /></td></tr>
-<tr><td class="postblock"><const S_BANDURATION></td><td><select name="string">
-<option value="86400">1 Tag</option>
-<option value="259200">3 Tage</option>
-<option value="432000">5 Tage</option>
-<option value="604800">1 Woche</option>
-<option value="2419200">4 Wochen</option>
-<option value="">Permanent</option>
-</select></td></tr>
+<tr><td class="postblock"><const S_BANMASKLABEL></td><td>} . NETMASK_SELECT_INCLUDE . q{</td></tr>
+<tr><td class="postblock"><const S_BANDURATION></td><td>} . DURATION_SELECT_INCLUDE . q{</td></tr>
 <tr><td class="postblock"><const S_BANREASONLABEL></td><td><input type="text" name="comment" size="16" />
 <input type="submit" value="<const S_BANIP>" /></td></tr>
 </tbody></table></form>
@@ -656,7 +658,7 @@ use constant BAN_PANEL_TEMPLATE => compile_template(
 <input type="hidden" name="board" value="<const BOARD_IDENT>" />
 <table><tbody>
 <tr><td class="postblock"><const S_BANIPLABEL></td><td><input type="text" name="ip" size="24" /></td></tr>
-<tr><td class="postblock"><const S_BANMASKLABEL></td><td><input type="text" name="mask" size="24" /></td></tr>
+<tr><td class="postblock"><const S_BANMASKLABEL></td><td>} . NETMASK_SELECT_INCLUDE . q{</td></tr>
 <tr><td class="postblock"><const S_BANCOMMENTLABEL></td><td><input type="text" name="comment" size="16" />
 <input type="submit" value="<const S_BANWHITELIST>" /></td></tr>
 </tbody></table></form>
