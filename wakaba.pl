@@ -9,7 +9,7 @@ use CGI;
 use DBI;
 use Net::DNS;
 use Net::IP qw(:PROC);
-#use HTML::Entities;
+use HTML::Entities;
 #use HTML::Strip;
 #use Math::BigInt;
 use JSON::XS;
