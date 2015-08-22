@@ -2716,6 +2716,18 @@ sub delete_all {
 	}
 }
 
+sub get_boards {
+	my $boards;
+	my @files = glob '*'; # get all files in webroot
+	foreach my $item (@files) {
+		# check for directories and if they contain a config.pl
+		if (-d $item and -f $item . "/config.pl") {
+			$boards .= ' /<a href="' . get_script_name() . '?board=' . urlenc(encode_string($item)) . '">' . $item . '</a>/ ';
+		}
+	}
+	return $boards;
+}
+
 sub check_password {
     my ( $admin, $password ) = @_;
 

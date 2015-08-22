@@ -137,6 +137,7 @@ use constant MANAGER_HEAD_INCLUDE => NORMAL_HEAD_INCLUDE . q{
 	[<a href="<var $self>?board=<var get_board_id()>&amp;task=bans"><const S_MANABANS></a>]
 	[<a href="<var $self>?board=<var get_board_id()>&amp;task=orphans"><const S_MANAORPH></a>]
 	[<a href="<var $self>?board=<var get_board_id()>&amp;task=logout"><const S_MANALOGOUT></a>]
+	[<var get_boards()>]
 	<div class="passvalid"><const S_MANAMODE></div>
 </if>
 };
