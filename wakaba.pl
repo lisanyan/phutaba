@@ -156,8 +156,8 @@ if (table_exists(SQL_TABLE)) {
 	# fill meta-data fields of all existing board files. this will run only once after schema migration.
 	# placed before migration to prevent both functions running in the same script call which could cause a timeout.
 	update_files_meta();
-	update_db_schema();  # schema migration.
-	update_db_schema2(); # schema migration 2 - change location column
+	#update_db_schema();  # schema migration.
+	#update_db_schema2(); # schema migration 2 - change location column
 }
 
 # check for admin table
@@ -182,19 +182,6 @@ elsif ($json eq "stats") {
 	my $date_format = $query->param("date_format");
 	if (defined($date_format)) {
 		output_json_stats($date_format);
-	}
-}
-elsif ($json eq "ban") {
-	my $id = $query->param("id");
-	my $admin = $query->cookie("wakaadmin");
-	if (defined($id)) {
-		output_json_ban($id, $admin);
-	}
-}
-elsif ($json eq "meta") {
-	my $id = $query->param("post");
-    if (defined($id)) {
-		output_json_meta($id);
 	}
 }
 
@@ -508,88 +495,6 @@ sub output_json_thread {
     make_json_header();
     print $JSON->encode(\%json);
 }
-
-sub output_json_meta {
-	my ($id) = @_;
-	my ($row, $error, $code, %status, %data, %json);	
-
-	$sth = $dbh->prepare("SELECT * FROM " . SQL_TABLE . " WHERE num=?;");
-	$sth->execute($id);
-	$error = encode_entities(decode('utf8', $sth->errstr));
-	$row = $sth->fetchrow_hashref();
-	if($row ne undef) {
-		$code = 200;
-		add_images_to_row($row);
-		$data{'file'} = [
-			get_meta($$row{'files'}[0]{'image'}, CHARSET),
-			get_meta($$row{'files'}[1]{'image'}, CHARSET),
-			get_meta($$row{'files'}[2]{'image'}, CHARSET),
-			get_meta($$row{'files'}[3]{'image'}, CHARSET)
-		];
-	} elsif($sth->rows eq 0) {
-		$code = 404;
-		$error = 'Element not found.';
-	} else {
-		$code = 500;
-	}
-
-	%status = (
-		"error_code" => $code,
-		"error_msg" => $error,
-	);
-	%json = (
-		"data" => \%data,
-		"status" => \%status,
-	);
-
-	make_json_header();
-	print $JSON->encode(\%json);
-}
-
-
-sub output_json_ban {
-	my ($id, $admin) = @_;
-	my ($row, $error, $code, %status, %data, %json);
-	use Net::Abuse::Utils qw( :all );
-
-	if (!check_password_silent($admin, ADMIN_PASS)) {
-		$code = 401;
-		$error = 'Unauthorized';
-	} else {
-		$sth = $dbh->prepare("SELECT `comment`, `ival1` as `ip`, `ival2` as `mask`, `date` FROM " . SQL_ADMIN_TABLE . " WHERE num=?;");
-		$sth->execute($id);
-		$error = encode_entities(decode('utf8', $sth->errstr));
-		$row = $sth->fetchrow_hashref();
-		if($row ne undef) {
-			$code = 200;
-			$$row{'ip'} = dec_to_dot($$row{'ip'});
-			$$row{'mask'} = dec_to_dot($$row{'mask'});
-			$data{'ban_info'} = $row;
-			$data{'ip_info'}{'asn_info'} = [get_asn_info($$row{'ip'})];
-			$data{'ip_info'}{'as_desc'} = encode_entities(decode('utf8', get_as_description($data{'ip_info'}{'asn_info'}[0])));
-			$data{'ip_info'}{'ptr'} = get_rdns($$row{'ip'});
-			$data{'ip_info'}{'contacts'} = [get_ipwi_contacts($$row{'ip'})];
-		} elsif($sth->rows eq 0) {
-			$code = 404;
-			$error = 'Element not found.';
-		} else {
-			$code = 500;
-		}
-	}
-
-	%status = (
-		"error_code" => $code,
-		"error_msg" => $error,
-	);
-	%json = (
-		"data" => \%data,
-		"status" => \%status,
-	);
-
-	make_json_header();
-	print $JSON->encode(\%json);
-}
-	
 
 sub output_json_post {
 	my ($id) = @_;
@@ -3447,7 +3352,9 @@ sub update_files_meta {
 	$sth2 = $dbh->prepare(
 		"UPDATE " . SQL_TABLE_IMG . " SET info=?, info_all=? WHERE num=?;"
 	) or make_error($dbh->errstr);
-    while ($row = get_decoded_hashref($sth)) {
+    while ($row = $sth->fetchrow_hashref()) {
+		$$row{image} =~ s!.*/!!;
+		$$row{image} = BOARD_IDENT . '/' . IMG_DIR . $$row{image};
 		if (-e $$row{image}) {
 			($info, $info_all) = get_meta_markup($$row{image}, CHARSET);
 		} else {
