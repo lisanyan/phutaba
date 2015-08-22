@@ -92,7 +92,7 @@ use constant POST_VIEW_INCLUDE => q{
 		</if>
 		<span onmouseover="Tip('<const S_MPEDIT>')" onmouseout="UnTip()"><a href="<var $self>?task=edit&amp;board=<var get_board_id()>&amp;post=<var $num>"><img src="/img/icons/edit.png"></a></span>
 		<if !$adminpost>
-		<span onmouseover="Tip('<const S_MPBAN>')"       onmouseout="UnTip()"><a onclick="do_ban('<var dec_to_dot($ip)>', <var $num>, '<var get_board_id()>')"><img src="/img/icons/ban.png"></a></span>
+		<span onmouseover="Tip('<const S_MPBAN>')"       onmouseout="UnTip()"><a onclick="do_ban('<var dec_to_dot($ip)>', <var $num>, '<const BOARD_IDENT>')"><img src="/img/icons/ban.png"></a></span>
 		<span onmouseover="Tip('<const S_MPDELETEALL>')" onmouseout="UnTip()"><a href="<var $self>?task=deleteall&amp;board=<var get_board_id()>&amp;ip=<var $ip>"><img src="/img/icons/delete_all.png"></a></span>
 		</if>
 		<span onmouseover="Tip('<const S_MPDELFILE>')"   onmouseout="UnTip()"><a href="<var $self>?task=delete&amp;board=<var get_board_id()>&amp;delete=<var $num>&amp;fileonly=on"><img src="/img/icons/delete_file.png"></a></span>
