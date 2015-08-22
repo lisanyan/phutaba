@@ -9,8 +9,8 @@ use CGI;
 use DBI;
 use Net::DNS;
 use Net::IP qw(:PROC);
-use HTML::Entities;
-use HTML::Strip;
+#use HTML::Entities;
+#use HTML::Strip;
 #use Math::BigInt;
 use JSON::XS;
 use JSON;
@@ -2722,7 +2722,7 @@ sub get_boards {
 	foreach my $item (@files) {
 		# check for directories and if they contain a config.pl
 		if (-d $item and -f $item . "/config.pl") {
-			$boards .= ' /<a href="' . get_script_name() . '?board=' . urlenc(encode_string($item)) . '">' . $item . '</a>/ ';
+			$boards .= ' /<a href="' . get_script_name() . '?board=' . urlenc($item) . '">' . decode_string($item, CHARSET) . '</a>/ ';
 		}
 	}
 	return $boards;
