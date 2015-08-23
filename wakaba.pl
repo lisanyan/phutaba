@@ -1378,9 +1378,9 @@ sub post_stuff {
 		if ($socket) {
 			if ( $parent and IRC_NOTIFY_ON_NEW_POST ) {
 				print $socket S_IRC_NEW_POST_PREPEND . "/"
-				  . encode('utf-8', decode_entities(BOARD_IDENT)) . "/: "
+				  . encode_string(BOARD_IDENT) . "/: "
 				  . S_IRC_BASE_BOARDURL
-				  . encode('utf-8', decode_entities(BOARD_IDENT))
+				  . encode_string(BOARD_IDENT)
 				  . S_IRC_BASE_THREADURL
 				  . $parent . "#"
 				  . $new_post_id . " ["
@@ -1388,9 +1388,9 @@ sub post_stuff {
 			}
 			elsif ( !$parent and IRC_NOTIFY_ON_NEW_THREAD ) {
 				print $socket S_IRC_NEW_THREAD_PREPEND . "/"
-				  . encode('utf-8', decode_entities(BOARD_IDENT)) . "/: "
+				  . encode_string(BOARD_IDENT) . "/: "
 				  . S_IRC_BASE_BOARDURL
-				  . encode('utf-8', decode_entities(BOARD_IDENT))
+				  . encode_string(BOARD_IDENT)
 				  . S_IRC_BASE_THREADURL
 				  . $new_post_id . " ["
 				  . get_preview($original_comment) . "]\n";
@@ -1400,7 +1400,7 @@ sub post_stuff {
     }
 
     if (ENABLE_WEBSOCKET_NOTIFY) {
-        my $ufoporno = system('/usr/local/bin/push-post', decode_entities(BOARD_IDENT), $parent, $new_post_id, "2>&1", ">/dev/null");
+        my $ufoporno = system('/usr/local/bin/push-post', BOARD_IDENT, $parent, $new_post_id, "2>&1", ">/dev/null");
     }
 
     if ($parent)    # bumping
