@@ -20,6 +20,7 @@ BEGIN {
     eval "use constant SQL_TABLE => 'comments'" unless ( defined &SQL_TABLE );
     eval "use constant SQL_ADMIN_TABLE => 'admin'"
       unless ( defined &SQL_ADMIN_TABLE );
+    eval "use constant SQL_PREFIX => 'ernstchan_';" unless (defined &SQL_PREFIX);
     eval "use constant SSL_ICON => '/img/icons/ssl.png'" unless (defined &SSL_ICON);
     eval "use constant USE_TEMPFILES => 1" unless ( defined &USE_TEMPFILES );
     eval "use constant ENABLE_LOCATION => 0"
@@ -58,6 +59,7 @@ BEGIN {
       unless ( defined &ENABLE_HIDE_THREADS );
     eval "use constant ENABLE_AFMOD => 0"
       unless ( defined &ENABLE_AFMOD );
+
     eval "use constant ENABLE_IRC_NOTIFY => 1"
       unless ( defined &ENABLE_IRC_NOTIFY );
     eval "use constant ENABLE_WEBSOCKET_NOTIFY => 1"
@@ -70,11 +72,15 @@ BEGIN {
       unless ( defined &IRC_NOTIFY_HOST );
     eval "use constant IRC_NOTIFY_PORT => 8675"
       unless ( defined &IRC_NOTIFY_PORT );
-eval "use constant SQL_PREFIX => 'ernstchan_';" unless ( defined &SQL_PREFIX );
-    use constant S_IRC_NEW_THREAD_PREPEND => "Neuer Thread auf ";
-    use constant S_IRC_BASE_BOARDURL      => "https://ernstchan.com/";
-    use constant S_IRC_BASE_THREADURL     => "/thread/";
-    use constant S_IRC_NEW_POST_PREPEND   => "Neuer Post in ";
+    eval "use constant S_IRC_BASE_BOARDURL => 'https://ernstchan.com/'"
+      unless ( defined &S_IRC_BASE_BOARDURL );
+    eval "use constant S_IRC_BASE_THREADURL => '/thread/'"
+      unless ( defined &S_IRC_BASE_THREADURL );
+    eval "use constant S_IRC_NEW_THREAD_PREPEND => 'Neuer Thread auf '"
+      unless ( defined &S_IRC_NEW_THREAD_PREPEND );
+    eval "use constant S_IRC_NEW_POST_PREPEND => 'Neuer Post in '"
+      unless ( defined &S_IRC_NEW_POST_PREPEND );
+
     eval "use constant MAX_KB => 1000"     unless ( defined &MAX_KB );
     eval "use constant MAX_W => 200"       unless ( defined &MAX_W );
     eval "use constant MAX_H => 200"       unless ( defined &MAX_H );
@@ -96,7 +102,7 @@ eval "use constant SQL_PREFIX => 'ernstchan_';" unless ( defined &SQL_PREFIX );
       unless ( defined &MAX_IMAGE_HEIGHT );
     eval "use constant MAX_IMAGE_PIXELS => 50000000"
       unless ( defined &MAX_IMAGE_PIXELS );
-	eval "use constant MAX_SEARCH_RESULTS => 200" unless (defined &MAX_SEARCH_RESULTS);
+    eval "use constant MAX_SEARCH_RESULTS => 200" unless (defined &MAX_SEARCH_RESULTS);
 
     eval "use constant CAPTCHA_MODE => 1"  unless ( defined &CAPTCHA_MODE );
     eval "use constant CAPTCHA_SKIP => ''" unless ( defined &CAPTCHA_SKIP );
@@ -161,7 +167,7 @@ eval "use constant SQL_PREFIX => 'ernstchan_';" unless ( defined &SQL_PREFIX );
     eval "use constant COOKIE_PATH => 'root'" unless ( defined &COOKIE_PATH );
     eval "use constant STYLE_COOKIE => 'wakabastyle'"
       unless ( defined &STYLE_COOKIE );
-	eval "use constant STYLESHEET => ''" unless (defined &STYLESHEET);
+    eval "use constant STYLESHEET => ''" unless (defined &STYLESHEET);
     eval "use constant FORCED_ANON => 0" unless ( defined &FORCED_ANON );
     eval "use constant USE_XHTML => 1"   unless ( defined &USE_XHTML );
 
