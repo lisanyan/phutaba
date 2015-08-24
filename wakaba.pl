@@ -3354,7 +3354,10 @@ sub update_files_meta {
 
     return unless ($sth = $dbh->prepare("SELECT 1 FROM " . SQL_TABLE_IMG . " WHERE info_all IS NOT NULL LIMIT 1;"));
 	return unless ($sth->execute()); # exit if schema was not yet updated
-	return if (($sth->fetchrow_array())[0]); # at least one info_all field was filled. update already done, exit.
+	if (($sth->fetchrow_array())[0]) { # at least one info_all field was filled. update already done, exit.
+		$sth->finish;
+		return;
+	}
 
     $sth = $dbh->prepare(
 		"SELECT num, image FROM " . SQL_TABLE_IMG . " WHERE image IS NOT NULL AND size>0 AND info_all IS NULL;"
