@@ -4,18 +4,11 @@ use strict;
 
 use Time::Local;
 use Socket;
-#use Locale::Country;
-#use Locale::Codes::Country;
-use DateTime;
-use Image::ExifTool;
-use Geo::IP;
+use DateTime;          # Used in sub get_date()
+use Image::ExifTool;   # Extract meta info from posted files
+use Geo::IP;           # Location info on IP addresses
 use Net::IP qw(:PROC); # IPv6 conversions
 
-#use Net::Abuse::Utils qw( :all ); #TODO: remove (get_rdns get_ipwi_contacts get_as_description get_asn_info)
-
-
-# add EU to the country code list
-#Locale::Codes::Country::add_country("EU", "European Union");
 my $has_md5 = 0;
 eval 'use Digest::MD5 qw(md5)';
 $has_md5 = 1 unless $@;
@@ -48,7 +41,6 @@ sub get_meta {
 				my $len = length($$val);
 				$val = "(Binary data; $len bytes)";
 			}
-			#$data{$_} = encode_entities(decode('utf8', $val));
 			$data{$_} = clean_string(decode_string($val, $charset));
 	}
 
@@ -1624,7 +1616,9 @@ sub analyze_mp4($) {
 	read($file, $buffer2, 8);
 	seek($file, 0, 0);
 
-	if ($buffer1 eq "\x00\x00\x00" and $buffer2 eq "\x66\x74\x79\x70\x6D\x70\x34\x32") {
+	if ($buffer1 eq "\x00\x00\x00"
+	  and $buffer2 eq "\x66\x74\x79\x70\x6D\x70\x34\x32"
+	  or  $buffer2 eq "\x66\x74\x79\x70\x69\x73\x6F\x6D") {
 		my $exifTool = new Image::ExifTool;
 		my $exifData = $exifTool->ImageInfo($file, 'ImageSize');
 		seek($file, 0, 0);
@@ -1920,6 +1914,8 @@ sub get_urlstring($) {
 	$filename =~ s/ /%20/g;
 	$filename =~ s/\[/%5B/g;
 	$filename =~ s/\]/%5D/g;
+	$filename =~ s/\</%3C/g;
+	$filename =~ s/\>/%3E/g;
 	return $filename;
 }
 
