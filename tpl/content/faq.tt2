@@ -9,18 +9,18 @@
 
 	<header class="title">Wo melde ich mich an?</header>
 	<section class="info">
-		<p>Auf einem klassischen Imageboard wie Ernstchan kann man sich nicht registrieren. Normalerweise tauscht man sich hier anonym aus.</p>
+		<p>Auf einem klassischen Imageboard wie Ernstchan kann man sich nicht registrieren. Normalerweise tauscht man sich hier anonym aus. Sofern auf einem Board ein Namensfeld vorhanden ist, kann (nur in diesem) ein Tripcode verwendet werden.</p>
 	</section>
 
 	<header class="title">Über welche Domains kann ich Ernstchan erreichen?</header>
 	<section class="info">
-		<p>Ernstchan kann unter <a href="//ernstchan.com">ernstchan.com</a>, <del><a href="//ernstchan.net">ernstchan.net</a></del> und <a href="//22chan.net">22chan.net</a> erreicht werden.</p>
+		<p>Ernstchan kann unter <a href="//ernstchan.com">ernstchan.com</a>, <a href="http://ernstchan.net">ernstchan.net</a> und <a href="http://22chan.net">22chan.net</a> erreicht werden.</p>
 	</section>
 
 	<header class="title">Wie kann ich in Beiträgen die Schrift formatieren?</header>
 	<section class="info">
 		<p>Folgende <a href="http://de.wikipedia.org/wiki/BBCode">BBCode</a>-Tags stehen zur Auswahl:</p>
-		<table>
+		<table style="float:left; margin-right:1em">
 			<tr>
 				<th>Eingabe</th>
 				<th>Ausgabe</th>
@@ -50,6 +50,9 @@
 				<td><pre>Code</pre></td>
 			</tr>
 		</table>
+		<br />
+		<p>Tags können geschachtelt werden. Falsche Verschachtelungen werden ignoriert. Ein Tag kann nicht mehrfach geöffnet werden, ohne vorher geschlossen zu werden. Innerhalb von Code-Blöcken werden keine Tags interpretiert.</p>
+		<div style="clear:both;"></div>
 	</section>
 
 	<header class="title">Wieso muss ich Captchas eingeben, um Posts abschicken zu k&ouml;nnen?</header>
@@ -64,12 +67,12 @@
 
 	<header class="title">Was steckt unter der Haube von Ernstchan?</header>
 	<section class="info">
-		<p>Ernstchan wird mit Phutaba, einer Modifikation von <a href="http://wakaba.c3.cx/s/web/wakaba_kareha">Wakaba</a>, auf einem niederländischen Server betrieben. Die aktuelle Version von Phutaba kann frei von <a href="https://github.com/ernstchan/phutaba1">GitHub</a> geladen werden, sie steht unter keiner bestimmten Lizenz. Einige Icons stammen von <a href="http://p.yusukekamiyamane.com/">Yusuke Kamiyamane</a> (CC BY 3.0).</p>
+		<p>Ernstchan wird mit Phutaba betrieben, einer Modifikation von <a href="http://wakaba.c3.cx/s/web/wakaba_kareha">Wakaba</a>. Die aktuelle Version von Phutaba kann frei von <a href="https://github.com/ernstchan/phutaba">GitHub</a> heruntergeladen werden, sie steht unter keiner bestimmten Lizenz. Einige Icons stammen von <a href="http://p.yusukekamiyamane.com/">Yusuke Kamiyamane</a> (CC BY 3.0). <a href="http://www.walterzorn.de/tooltip/tooltip.htm">JavaScript Tooltips</a> von Walter Zorn (LGPL). Einige Zusatzfunktionen verwenden <a href="http://jquery.com/">jQuery</a> (MIT-Lizenz).</p>
 	</section>
 
 	<header class="title">Woher bekomme ich euer Logo?</header>
 	<section class="info">
-		<p>Bitte einmal hier klicken:</p>
+		<p style="float:left; margin-right:1em">Bitte einmal hier klicken:</p>
 		<p><a href="img/logo_gross.png"><img src="img/logo_klein.png" alt="Phutaba-Logo" /></a></p>
 	</section>
 
