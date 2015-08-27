@@ -198,21 +198,41 @@ function insert(text) {
 }
 
 function expand_post(id) {
-	$j("#posttext_" + id).html($j("#posttext_full_" + id).html());
+	//$j("#posttext_" + id).html($j("#posttext_full_" + id).html());
+	document.getElementById("posttext_" + id).innerHTML = document.getElementById("posttext_full_" + id).innerHTML;
 	return false;
 }
 
-function expand_image(element, org_witdh, org_height, thumb_width, thumb_height, thumb) {
-	img = element;
-	org = img.parentNode.href;
+// http://stackoverflow.com/a/7557433/5628
+function isElementInViewport(el) {
+	var rect = el.getBoundingClientRect();
+
+	return (
+		rect.top >= 0 &&
+		rect.left >= 0 //&&
+		//rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
+		//rect.right <= (window.innerWidth || document.documentElement.clientWidth)
+	);
+}
+
+function expand_image(element, org_width, org_height, thumb_width, thumb_height, thumb) {
+	var img = element;
+	var org = img.parentNode.href;
+	var post = img.parentNode.parentNode.parentNode.parentNode.parentNode.parentNode;
+
 	if (img.src != org) {
 		img.src = org;
-		img.width = org_witdh;
-		img.height = org_height;
+		//img.style.maxWidth = "98%";
+		var maxw = (window.innerWidth || document.documentElement.clientWidth) - 100;
+		img.width = org_width < maxw ? org_width : maxw;
+		img.style.height = "auto";
+		//img.width = org_width;
+		//img.height = org_height;
 	} else {
 		img.src = thumb;
 		img.width = thumb_width;
 		img.height = thumb_height;
+		if (!isElementInViewport(post)) post.scrollIntoView();
 	}
 	UnTip();
 	return false;

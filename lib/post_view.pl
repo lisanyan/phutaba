@@ -1,18 +1,18 @@
 use constant POST_VIEW_INCLUDE => q{
 
 <if !$parent>
-	<article class="thread_OP" id="<var $num>">
+	<div class="thread_OP" id="<var $num>">
 	<header class="thread_head">
 </if>
 
 <if $parent>
-	<article class="thread_reply" id="<var $num>">
+	<div class="thread_reply" id="<var $num>">
 	<div class="doubledash">
 	<a href="<var get_reply_link($parent,0)>#<var $num>">&gt;&gt;</a>
 	</div>
 
-	<section class="post<if $single> post_new</if>">
-	<section class="post_head">
+	<div class="post<if $single> post_new</if>">
+	<div class="post_head">
 </if>
 
 	<if ENABLE_HIDE_THREADS && !$thread && !$parent>
@@ -100,20 +100,20 @@ use constant POST_VIEW_INCLUDE => q{
 	</if>
 
 <if $parent>
-	</section>
+	</div>
 </if>
 
 <if !$parent>
 	</header>
-	<section class="post">
+	<div class="post">
 </if>
 
-<section class="post_body">
+<div class="post_body">
 
 <loop $files>
 
-<if $thumbnail><section class="file"></if>
-<if !$thumbnail><section class="file filebg"></if>
+<if $thumbnail><div class="file"></if>
+<if !$thumbnail><div class="file filebg"></if>
 	<div style="display: none; min-width: 250px;" id="imageinfo_<var md5_hex($image)>">
 		<strong>Dateiname:</strong> <var $uploadname><br />
 		<hr />
@@ -149,11 +149,11 @@ use constant POST_VIEW_INCLUDE => q{
 			</if>
 		</if>		
 	</if>
-</section>
+</div>
 
 </loop>
 
-	<section class="text">
+	<div class="text">
 		<if $abbrev>
 			<div style="display: none;" id="posttext_full_<var $num>">
 				<var $comment_full>
@@ -169,11 +169,11 @@ use constant POST_VIEW_INCLUDE => q{
 			</if>
 		</div>
 		<if $banned><const S_BANNED></if>
-	</section>
+	</div>
 
-</section>
-</section>
-</article>
+</div>
+</div>
+</div>
 
 <if !$parent>
 	<if $omitmsg>

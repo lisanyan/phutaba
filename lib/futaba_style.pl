@@ -221,7 +221,7 @@ use constant PAGE_TEMPLATE => compile_template(
 <if !$locked or $isAdmin>
 <if !DISABLE_NEW_THREADS or $thread or $isAdmin>
 <if $postform>
-	<section class="postarea">
+	<div class="postarea">
 	<form id="postform" action="<var $self>" method="post" enctype="multipart/form-data">
 	<input type="hidden" name="task" value="post" />
 	<input type="hidden" name="board" value="<const BOARD_IDENT>" />
@@ -284,7 +284,7 @@ use constant PAGE_TEMPLATE => compile_template(
 	</tbody>
 	</table>
 	</form>
-	</section>
+	</div>
 	<script type="text/javascript">set_inputs("postform")</script>
 
 </if>
@@ -369,7 +369,7 @@ use constant PAGE_TEMPLATE => compile_template(
 use constant SEARCH_TEMPLATE => compile_template(
     MANAGER_HEAD_INCLUDE . q{
 
-	<section class="postarea">
+	<div class="postarea">
 	<form id="searchform" action="<var $self>" method="post">
 	<input type="hidden" name="task" value="search" />
 	<input type="hidden" name="board" value="<const BOARD_IDENT>" />
@@ -395,7 +395,7 @@ use constant SEARCH_TEMPLATE => compile_template(
 	</table>
 
 	</form>
-	</section>
+	</div>
 
 	<if $find>
 		<hr />
@@ -502,13 +502,13 @@ use constant ERROR_HEAD_INCLUDE => q{
 
 <hr />
 
-<section class="error">
+<div class="error">
 	<p><var $error_title></p>
 };
 
 use constant ERROR_FOOT_INCLUDE => q{
 
-</section>
+</div>
 <hr />
 <footer>Powered by <img src="/img/phutaba_icon.png" alt="" /> <strong>Phutaba</strong>.</footer>
 </div>
