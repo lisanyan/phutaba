@@ -109,6 +109,7 @@ use constant POST_VIEW_INCLUDE => q{
 </if>
 
 <div class="post_body">
+<div style="float: left;">
 
 <loop $files>
 
@@ -152,6 +153,7 @@ use constant POST_VIEW_INCLUDE => q{
 </div>
 
 </loop>
+</div>
 
 	<div class="text">
 		<if $abbrev>
