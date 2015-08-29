@@ -67,7 +67,7 @@ my $ttfile = "content/" . $page . ".tt2";
 
 my $tt = Template->new({
         INCLUDE_PATH => 'tpl/',
-        ENCODING     => 'utf8',
+        #ENCODING     => 'utf8', # NO!
         ERROR        => 'error.tt2',
         PRE_PROCESS  => 'header.tt2',
         POST_PROCESS => 'footer.tt2',
