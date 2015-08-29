@@ -2,22 +2,27 @@
 
 use strict;
 use CGI;
-use Template;
-use HTML::Entities;
-use Encode;
 use DBI;
+use Template;
 
 BEGIN {
         require "lib/site_config.pl";
 }
+
 my $q = CGI->new;
-my $page = encode_entities(decode('utf8', $q->param("p")));
+$q->header(-charset => 'utf-8'),
+
+my $ts    = $q->param("ts"); # /fefe/ timestamp
+my $query = $q->param("q");  # /fefe/ search query
+my $page  = $q->param("p");  # page for template system
+
+# clean up inputs
+$ts =~ s/[^\w]//;
+$page =~ s/[^\w]//;
 
 
-# /fefe/ handling
-my $ts = encode_entities(decode('utf8', $q->param("ts")));
-my $query = encode_entities(decode('utf8', $q->param("q")));
-if ($ts ne "") {
+# handle fefe timestamp
+if ($ts) {
         my $result;
         my $db_fefe = DBI->connect("dbi:SQLite:dbname=/var/db/fefe/sqlite.db", "", "");
         my $db_board = DBI->connect(SQL_DBI_SOURCE, SQL_USERNAME, SQL_PASSWORD);
@@ -43,26 +48,30 @@ if ($ts ne "") {
         $db_board->disconnect;
         exit;
 }
-if ($query ne "") {
+
+# redirect to fefe search
+if ($query) {
         print $q->redirect("https://blog.fefe.de/?q=$query");
         exit;
 }
 
-
+# no parameter was given, redirect to default board
 # redirects should have a full URL: http://ernstchan.com/b/
-# but this can be tricky if running behind some proxy
-if ($page eq "") {
-        exit print $q->redirect(BASE_URL . "/" . DEFAULT_BOARD . "/");
+if (!$page) {
+        print $q->redirect(BASE_URL . "/" . DEFAULT_BOARD . "/");
+        exit;
 }
+
+# handle template page
+my $ttfile = "content/" . $page . ".tt2";
 
 my $tt = Template->new({
         INCLUDE_PATH => 'tpl/',
-        ERROR => 'error.tt2',
+        ENCODING     => 'utf8',
+        ERROR        => 'error.tt2',
         PRE_PROCESS  => 'header.tt2',
         POST_PROCESS => 'footer.tt2',
 });
-
-my $ttfile = "content/" . $page . ".tt2";
 
 if ($page eq 'err403') {
 	tpl_make_error({
@@ -80,12 +89,18 @@ elsif ($page eq 'err404') {
 		'image' => "/img/404.png"
 	});
 }
-elsif (-e 'tpl/' . $ttfile) {
+elsif (-f 'tpl/' . $ttfile) {
 	my $output;
-	$tt->process($ttfile, {'tracking_code' => TRACKING_CODE}, \$output) or tpl_make_error({'http' => '500 Boom', 'type' => "Fehler bei Scriptausf&uuml;hrung", 'info' => $tt->error});
-	print $q->header();
-	print $output;
-
+	if ($tt->process($ttfile, {'tracking_code' => TRACKING_CODE}, \$output)) {
+		print $q->header();
+		print $output;
+	} else {
+		tpl_make_error({
+			'http' => '500 Boom',
+			'type' => "Fehler bei Skriptausf&uuml;hrung",
+			'info' => $tt->error
+		});
+	}
 }
 else {
 	tpl_make_error({
@@ -97,12 +112,10 @@ else {
 }
 
 sub tpl_make_error($) {
-	my ($error) = @_;
-	print $q->header(-status=>$$error{http});
-        $tt->process("error.tt2", {
-			'tracking_code' => TRACKING_CODE,
-			'error' => $error
-		});
+	my ($params) = @_;
+	print $q->header(-status=>$$params{http});
+	$tt->process("error.tt2", {
+		'tracking_code' => TRACKING_CODE,
+		'error' => $params
+	});
 }
-
-1;

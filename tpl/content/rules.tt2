@@ -2,17 +2,17 @@
    title   = 'Regeln'
 %]
 
-	<header class="title">1. Altersbeschränkung</header>
-	<section class="info">
-		<p>Ernstchan richtet sich an Personen, die <strong>mindestens 18 Jahre alt</strong> sind. Minderjährige haben hier nichts veloren.</p>
-	</section>
+	<header class="title">1. Altersbeschr&auml;nkung</header>
+	<div class="info">
+		<p>Ernstchan richtet sich an Personen, die <strong>mindestens 18 Jahre alt</strong> sind. Minderj&auml;hrige haben hier nichts veloren.</p>
+	</div>
 
 	<header class="title">2. Uploads</header>
-	<section class="info">
-		<p><strong>Sämtliche Dateien, die gegen das niederländische Recht verstoßen, dürfen nicht hochgeladen werden!</strong></p>
-	</section>
+	<div class="info">
+		<p><strong>S&auml;mtliche Dateien, die gegen das geltende Recht versto&szlig;en, d&uuml;rfen nicht hochgeladen werden!</strong></p>
+	</div>
 
 	<header class="title">3. IRC</header>
-	<section class="info">
-		<p>Im <a href="/irc">IRC-Channel</a> sollte man sich vernünftig unterhalten. Wer sich nicht benehmen kann, fliegt raus.</p>
-	</section>
+	<div class="info">
+		<p>Im <a href="/irc">IRC-Channel</a> sollte man sich vern&uuml;nftig unterhalten. Wer sich nicht benehmen kann, fliegt raus.</p>
+	</div>
