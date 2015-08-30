@@ -2,8 +2,8 @@
    title   = 'Fehler'
 %]
 
-	<section class="error">
+	<div class="error">
 		<p>[% error.type %]</p>
 		<p>[% error.info %]</p>
 		[% IF error.image %]<br /><img src="[% error.image %]" alt="Error" />[% END %]
-	</section>
+	</div>

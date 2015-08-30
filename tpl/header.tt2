@@ -3,7 +3,7 @@
 
 <head>
 	<title>Ernstchan [% IF template.title %]&raquo; [% template.title %][% END %]</title>
-	<!--meta charset="utf-8" /-->
+	<meta charset="utf-8" />
 	<link rel="stylesheet" type="text/css" href="/static/css/phutaba.css" />
 	<link rel="shortcut icon" type="image/x-icon" href="/img/favicon.ico" />
 	<link rel="icon" type="image/x-icon" href="/img/favicon.ico" />
