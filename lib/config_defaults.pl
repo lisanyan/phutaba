@@ -78,7 +78,7 @@ BEGIN {
       unless ( defined &S_IRC_BASE_THREADURL );
     eval "use constant S_IRC_NEW_THREAD_PREPEND => 'Neuer Thread auf '"
       unless ( defined &S_IRC_NEW_THREAD_PREPEND );
-    eval "use constant S_IRC_NEW_POST_PREPEND => 'Neuer Post in '"
+    eval "use constant S_IRC_NEW_POST_PREPEND => 'Neuer Post auf '"
       unless ( defined &S_IRC_NEW_POST_PREPEND );
 
     eval "use constant MAX_KB => 1000"     unless ( defined &MAX_KB );
