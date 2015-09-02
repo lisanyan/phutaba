@@ -265,6 +265,10 @@ elsif ($task eq "fefe") {
 		make_error("Aufruf nicht erlaubt.");
 	}
 
+	# blog post unix timestamp
+	my $ts = ($query->param("ts") or 0);
+	$ts = 0 unless ($ts =~ m/[0-9]+/);
+
 	# select a random file from fefe-dir
 	my $picdir = ($query->param("picdir") or "img/media/fefe/");
 	my ($picture, @files);
@@ -283,7 +287,7 @@ elsif ($task eq "fefe") {
     my $parent     = "";
     my $spam1      = "";
     my $spam2      = "";
-    my $name       = "Herr von Leitner";
+    my $name       = ($query->param("name") or "Herr von Leitner");
     my $email      = "";
     my $subject    = "";
     my $comment    = <STDIN>;
@@ -296,7 +300,7 @@ elsif ($task eq "fefe") {
     my $postfix    = "";
 	my $as_staff   = "";
 
-    post_stuff(
+    my $threadid = post_stuff(
 		$parent,  $spam1,   $spam2,      $name,      $email,
 		$subject, $comment, $gb2,        $captcha,   $password,
 		$admin,   $nofile,  $no_format,  $postfix,   $as_staff,
@@ -304,6 +308,14 @@ elsif ($task eq "fefe") {
     );
 
 	close($fh);
+
+	if ($ts and $threadid) {
+		# cannot use make_error() here, because post_stuff() already took care of http output
+		$sth = $dbh->prepare("UPDATE "
+			. SQL_TABLE
+			. " SET timestamp=? WHERE num=? LIMIT 1;");
+		$sth->execute($ts, $threadid);
+	}
 }
 elsif ( $task eq "delete" ) {
     my $password = $query->param("password");
@@ -1502,6 +1514,8 @@ sub post_stuff {
 	else {
 		make_http_forward(get_board_id() . "/");
 	}
+
+	return $new_post_id; # fefe hack
 }
 
 sub is_whitelisted {
