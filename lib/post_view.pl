@@ -59,7 +59,7 @@ use constant POST_VIEW_INCLUDE => q{
 
 	<if $isAdmin>
 		<if !$adminpost>
-		<div style="display: none; min-width: 250px;" id="postinfo_<var $num>">
+		<div class="hidden tooltip" id="postinfo_<var $num>">
 			<var get_post_info($location, get_board_id())>
 		</div>
 		<span onmouseover="TagToTip('postinfo_<var $num>', TITLE, '<const S_POSTINFO>', DELAY, 0, CLICKSTICKY, true)" onmouseout="UnTip()">[<var dec_to_dot($ip)>]</span>
@@ -109,13 +109,13 @@ use constant POST_VIEW_INCLUDE => q{
 </if>
 
 <div class="post_body">
-<div style="float: left;">
 
+<if $files><div class="file_container"></if>
 <loop $files>
 
 <if $thumbnail><div class="file"></if>
 <if !$thumbnail><div class="file filebg"></if>
-	<div style="display: none; min-width: 250px;" id="imageinfo_<var md5_hex($image)>">
+	<div class="hidden tooltip" id="imageinfo_<var md5_hex($image)>">
 		<strong>Dateiname:</strong> <var $uploadname><br />
 		<hr />
 		<var get_pretty_html($info_all, "\n\t\t")>
@@ -153,11 +153,11 @@ use constant POST_VIEW_INCLUDE => q{
 </div>
 
 </loop>
-</div>
+<if $files></div></if>
 
 	<div class="text">
 		<if $abbrev>
-			<div style="display: none;" id="posttext_full_<var $num>">
+			<div class="hidden" id="posttext_full_<var $num>">
 				<var $comment_full>
 			</div>
 		</if>

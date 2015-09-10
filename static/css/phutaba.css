@@ -180,8 +180,12 @@ input[type='submit']:hover {
 	cursor: pointer;
 }
 
-.trap {
+.trap, .hidden {
 	display: none;
+}
+
+.tooltip {
+	min-width: 250px;
 }
 
 ul.rules {
@@ -290,6 +294,10 @@ ul.rules {
 
 .post_body {
 	padding: 1.2em 0 0 1.2em;
+}
+
+.file_container {
+	float: left;
 }
 
 .file {

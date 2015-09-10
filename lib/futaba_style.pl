@@ -33,8 +33,8 @@ use constant NORMAL_HEAD_INCLUDE => q{
 <!DOCTYPE html>
 <html lang="de">
 <head>
-<title><const TITLE> &raquo; <if $title><var $title></if><if !$title>/<const BOARD_IDENT>/ - <const BOARD_NAME></if></title>
 <meta charset="<const CHARSET>" />
+<title><const TITLE> &raquo; <if $title><var $title></if><if !$title>/<const BOARD_IDENT>/ - <const BOARD_NAME></if></title>
 
 <link rel="stylesheet" type="text/css" href="/static/css/phutaba.css" />
 <if STYLESHEET><link rel="stylesheet" type="text/css" href="<const STYLESHEET>" /></if>
@@ -50,7 +50,6 @@ use constant NORMAL_HEAD_INCLUDE => q{
 <meta name="application-name" content="<const TITLE> /<const BOARD_IDENT>/" />
 <meta name="apple-mobile-web-app-title" content="<const TITLE>" />
 </if>
-<script type="text/javascript" src="/static/js/wakaba3.js"></script>
 
 <if $isAdmin>
 	<link rel="stylesheet" type="text/css" href="/static/vendor/jquery-ui.min.css" />
@@ -64,7 +63,7 @@ use constant NORMAL_HEAD_INCLUDE => q{
 <body>
 
 <if $isAdmin>
-<div id="modpanel" style="display: none">
+<div id="modpanel" class="hidden">
 <table>
 <tr>
 	<td><b><const S_BANIPLABEL></b></td><td><input id="ip" type="text" name="ip" size="40" /></td>
@@ -99,8 +98,6 @@ use constant NORMAL_HEAD_INCLUDE => q{
 
 <div class="content">
 
-<script type="text/javascript" src="/static/vendor/wz_tooltip.js"></script>
-
 <nav>
 	<ul class="menu">
 } . include("tpl/nav_boards.html") . q{
@@ -123,7 +120,7 @@ use constant NORMAL_HEAD_INCLUDE => q{
 	</div>
 </header>
 
-<if !DISABLE_NEW_THREADS or $isAdmin or $thread or $admin><hr /></if>
+<if $postform or $isAdmin or $admin><hr /></if>
 
 };
 
@@ -157,6 +154,8 @@ use constant NORMAL_FOOT_INCLUDE => q{
 </div>
 <const TRACKING_CODE>
 
+<script type="text/javascript" src="/static/vendor/wz_tooltip.js"></script>
+<script type="text/javascript" src="/static/js/wakaba3.js"></script>
 <script type="text/javascript" src="/static/vendor/jquery-1.11.3.min.js"></script>
 <script type="text/javascript" src="/static/vendor/jquery.blockUI.js"></script>
 
@@ -169,6 +168,9 @@ use constant NORMAL_FOOT_INCLUDE => q{
 <script type="text/javascript" src="/static/vendor/jquery.cookie.js"></script>
 <script type="text/javascript" src="/static/js/hidethreads.js"></script>
 </if>
+
+<if $postform && !$locked or $isAdmin><script type="text/javascript">set_inputs("postform")</script></if>
+<script type="text/javascript">set_delpass("delform")</script>
 
 <script type="text/javascript">
 /* <![CDATA[ */
@@ -218,9 +220,7 @@ use constant NORMAL_FOOT_INCLUDE => q{
 use constant PAGE_TEMPLATE => compile_template(
     MANAGER_HEAD_INCLUDE . q{
 
-<if !$locked or $isAdmin>
-<if !DISABLE_NEW_THREADS or $thread or $isAdmin>
-<if $postform>
+<if $postform && !$locked or $isAdmin>
 	<div class="postarea">
 	<form id="postform" action="<var $self>" method="post" enctype="multipart/form-data">
 	<input type="hidden" name="task" value="post" />
@@ -285,10 +285,6 @@ use constant PAGE_TEMPLATE => compile_template(
 	</table>
 	</form>
 	</div>
-	<script type="text/javascript">set_inputs("postform")</script>
-
-</if>
-</if>
 </if>
 
 <if $locked && !$isAdmin>
@@ -361,7 +357,6 @@ use constant PAGE_TEMPLATE => compile_template(
 </div>
 
 </form>
-<script type="text/javascript">set_delpass("delform")</script>
 
 } . NORMAL_FOOT_INCLUDE);
 
@@ -468,8 +463,8 @@ use constant ERROR_HEAD_INCLUDE => q{
 <!DOCTYPE html>
 <html lang="de">
 <head>
-	<title><const TITLE> &raquo; <var $error_page></title>
 	<meta charset="<const CHARSET>" />
+	<title><const TITLE> &raquo; <var $error_page></title>
 	<link rel="stylesheet" type="text/css" href="/static/css/phutaba.css" />
 	<link rel="shortcut icon" type="image/x-icon" href="/img/favicon.ico" />
 	<link rel="icon" type="image/x-icon" href="/img/favicon.ico" />
