@@ -26,7 +26,8 @@ use constant POST_VIEW_INCLUDE => q{
 		<span class="subject"><var $subject></span>
         <span class="postername"><var $name><if $trip><span class="tripcode"><var $trip></span></if></span>
 		<if $adminpost><span class="teampost">## Team ##</span></if>
-		<span class="date"><var encode_entities(get_date($timestamp))></span>
+		<span class="date desktop"><var get_date($timestamp)></span>
+		<span class="date mobile"><var make_date($timestamp, '2ch')></span>
 	</label>
 
 	<if SSL_ICON && $secure>
@@ -35,10 +36,10 @@ use constant POST_VIEW_INCLUDE => q{
 
 	<span class="reflink">
                 <if !$parent>
-                        <a href="<var get_reply_link($num,0)>#i<var $num>">Nr. <var $num></a>
+                        <a href="<var get_reply_link($num,0)>#i<var $num>">Nr.&nbsp;<var $num></a>
                 </if>			
                 <if $parent>
-                        <a href="<var get_reply_link($parent,0)>#i<var $num>">Nr. <var $num></a>
+                        <a href="<var get_reply_link($parent,0)>#i<var $num>">Nr.&nbsp;<var $num></a>
                 </if>
 	</span>
 
@@ -117,7 +118,6 @@ use constant POST_VIEW_INCLUDE => q{
 <if !$thumbnail><div class="file filebg"></if>
 	<div class="hidden tooltip" id="imageinfo_<var md5_hex($image)>">
 		<strong>Dateiname:</strong> <var $uploadname><br />
-		<hr />
 		<var get_pretty_html($info_all, "\n\t\t")>
 	</div>
 	<div class="filename"><const S_PICNAME><a target="_blank" title="<var $uploadname>" href="<var expand_image_filename($image)>/<var get_urlstring($uploadname)>"><var $displayname></a></div>

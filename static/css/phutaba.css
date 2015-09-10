@@ -1,3 +1,24 @@
+/* media query */
+
+@media only screen and (max-width: 480px) {
+
+.desktop {
+	display: none;
+}
+
+.mobile {
+	display: inline!important;
+}
+
+td {
+	width: 95%;
+	float: left;
+}
+
+}
+
+/* default styles */
+
 html, body, div, span, applet, object, iframe, h1, h2, h3, h4, h5, h6, p, blockquote, pre, a, abbr, acronym, address, big, cite, code, del, dfn, em, font, img, ins, kbd, q, s, samp, small, strike, strong, sub, sup, tt, var, dl, dt, dd, ol, ul, li, fieldset, form, label, legend, table, caption, tbody, tfoot, thead, tr, th, td {
 	font-size: 100%;
 	font-weight: inherit;
@@ -180,7 +201,7 @@ input[type='submit']:hover {
 	cursor: pointer;
 }
 
-.trap, .hidden {
+.trap, .hidden, .mobile {
 	display: none;
 }
 

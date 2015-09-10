@@ -34,6 +34,7 @@ use constant NORMAL_HEAD_INCLUDE => q{
 <html lang="de">
 <head>
 <meta charset="<const CHARSET>" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 <title><const TITLE> &raquo; <if $title><var $title></if><if !$title>/<const BOARD_IDENT>/ - <const BOARD_NAME></if></title>
 
 <link rel="stylesheet" type="text/css" href="/static/css/phutaba.css" />
@@ -464,6 +465,7 @@ use constant ERROR_HEAD_INCLUDE => q{
 <html lang="de">
 <head>
 	<meta charset="<const CHARSET>" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
 	<title><const TITLE> &raquo; <var $error_page></title>
 	<link rel="stylesheet" type="text/css" href="/static/css/phutaba.css" />
 	<link rel="shortcut icon" type="image/x-icon" href="/img/favicon.ico" />
@@ -525,7 +527,7 @@ use constant ERROR_TEMPLATE => compile_template(
  <if $showmask>(<var $network>/<var $setbits>)</if> wurde 
  <if $reason>mit der Begr&uuml;ndung <strong><var $reason></strong></if> gesperrt.
  <br />Diese Sperrung 
- <if $expires>l&auml;uft am <strong><var encode_entities(get_date($expires))></strong> ab.</if>
+ <if $expires>l&auml;uft am <strong><var get_date($expires)></strong> ab.</if>
  <if !$expires>gilt f&uuml;r unbestimmte Zeit.</if>
  <br />
 </loop>
