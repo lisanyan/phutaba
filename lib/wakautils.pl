@@ -55,10 +55,10 @@ sub get_meta_markup {
 			"ImageSize" => "Aufl&ouml;sung", 
 			"ModifyDate" => "&Auml;nderungdatum", 
 			"Comment" => "Kommentar", 
-			"Comment-xxx" => "Kommentar", 
+			"Comment-xxx" => "Kommentar (2)",
 			"CreatorTool" => "Erstellungstool", 
 			"Software" => "Software", 
-			"MIMEType" => "MIME", 
+			"MIMEType" => "Inhaltstyp",
 			"Producer" => "Software", 
 			"Creator" => "Generator", 
 			"Author" => "Autor", 
@@ -81,39 +81,56 @@ sub get_meta_markup {
 			"Maker" => "Hersteller",
 			"OwnerName" => "Besitzer",
 			"CanonModelID" => "Canon-eigene Modellnummer",
-			"UserComment" => "Kommentar",
+			"UserComment" => "Kommentar (3)",
 			"GPSPosition" => "Position",
 	);
 	foreach (keys %options) {
 		push(@metaOptions, $_);
 	}
 	$exifData = get_meta($file, $charset, @metaOptions);
-	foreach (keys %$exifData) {
-		if (defined($options{$_}) and $$exifData{$_} ne "") {
-			$markup = $markup . "<strong>$options{$_}:</strong> $$exifData{$_}<br />";
-			if ($_ eq "PageCount") {
-				if ($$exifData{$_} eq 1) {
-					$info = "1 Seite";
-				} else {
-					$info = $$exifData{$_} . " Seiten";
-				}
-			}
-			if ($_ eq "Duration") {
-				$info = $$exifData{$_};
-				$info =~ s/ \(approx\)$//;
-				$info =~ s/^0:0?//; # 0:01:45 -> 1:45 / 0:12:37 -> 12:37
 
-				# round and format seconds to mm:ss if only seconds are returned
-				if ($info =~ /(\d+)\.(\d\d) s/) {
-					my $sec = $1;
-					if ($2 >= 50) { $sec++ }
-					my $min = int($sec / 60);
-					$sec = $sec - $min * 60;
-					$sec = sprintf("%02d", $sec);
-					$info = $min . ':' . $sec;
-				}
-			}
+	# extract additional information for documents or animation/video/audio
+	if (defined($$exifData{PageCount})) {
+		if ($$exifData{PageCount} eq 1) {
+			$info = "1 Seite";
+		} else {
+			$info = $$exifData{PageCount} . " Seiten";
 		}
+	}
+	if (defined($$exifData{Duration})) {
+		$info = $$exifData{Duration};
+		$info =~ s/ \(approx\)$//;
+		$info =~ s/^0:0?//; # 0:01:45 -> 1:45 / 0:12:37 -> 12:37
+
+		# round and format seconds to mm:ss if only seconds are returned
+		if ($info =~ /(\d+)\.(\d\d) s/) {
+			my $sec = $1;
+			if ($2 >= 50) { $sec++ }
+			my $min = int($sec / 60);
+			$sec = $sec - $min * 60;
+			$sec = sprintf("%02d", $sec);
+			$info = $min . ':' . $sec;
+		}
+	}
+
+	# every file has this, so place it first
+	$markup .= "<strong>$options{FileSize}:</strong> " . delete($$exifData{FileSize}) . "<br />";
+	$markup .= "<strong>$options{FileType}:</strong> " . delete($$exifData{FileType}) . "<br />";
+	$markup .= "<strong>$options{MIMEType}:</strong> " . delete($$exifData{MIMEType}) . "<br />";
+
+	# replace english names with their translations
+	# tags without matching translation will be removed (e.g. ModifyDate (1))
+	foreach (keys %$exifData) {
+		if (defined($options{$_})) {
+			$$exifData{$options{$_}} = delete($$exifData{$_});
+		} else {
+			delete($$exifData{$_});
+		}
+	}
+
+	$markup .= "<hr />" if (%$exifData);
+	foreach (sort keys %$exifData) {
+		$markup .= "<strong>$_:</strong> $$exifData{$_}<br />";
 	}
 
 	return ($info, $markup);
@@ -1995,7 +2012,7 @@ sub get_date {
     DateTime->DefaultLocale("de_DE");
     my $dt = DateTime->from_epoch( epoch => $date, time_zone => 'Europe/Berlin' );
     # $day, $fullmonths[$month], $year, $days[$wday], $hour, $min, $sec
-    return $dt->strftime("%e. %B %Y (%a) %H:%M:%S %Z");
+    return clean_string($dt->strftime("%e. %B %Y (%a) %H:%M:%S %Z"));
 }
 
 1;

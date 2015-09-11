@@ -121,7 +121,7 @@ use constant POST_VIEW_INCLUDE => q{
 		<var get_pretty_html($info_all, "\n\t\t")>
 	</div>
 	<div class="filename"><const S_PICNAME><a target="_blank" title="<var $uploadname>" href="<var expand_image_filename($image)>/<var get_urlstring($uploadname)>"><var $displayname></a></div>
-	<div class="filesize"><var get_displaysize($size, DECIMAL_MARK)><if $width && $height>, <var $width>&nbsp;&times;&nbsp;<var $height></if><if $info>, <var $info></if></div>
+	<div class="filesize"><var get_displaysize($size, DECIMAL_MARK, 1)><if $width && $height>, <var $width>&nbsp;&times;&nbsp;<var $height></if><if $info>, <var $info></if></div>
 	<if $thumbnail>
 		<div class="filelink">
 		<a target="_blank" href="<var expand_image_filename($image)>">
