@@ -1,5 +1,4 @@
 /* media query */
-
 @media only screen and (max-width: 480px) {
 
 .desktop {
@@ -10,25 +9,37 @@
 	display: inline!important;
 }
 
-td {
+.postarea td {
 	width: 95%;
 	float: left;
+}
+
+.postarea textarea {
+	width: 100%;
+}
+
+.thread_reply .post {
+	margin-left: 0em!important;
+}
+
+pre {
+	white-space: pre-wrap;
+	word-wrap: break-word;
 }
 
 }
 
 /* default styles */
-
-html, body, div, span, applet, object, iframe, h1, h2, h3, h4, h5, h6, p, blockquote, pre, a, abbr, acronym, address, big, cite, code, del, dfn, em, font, img, ins, kbd, q, s, samp, small, strike, strong, sub, sup, tt, var, dl, dt, dd, ol, ul, li, fieldset, form, label, legend, table, caption, tbody, tfoot, thead, tr, th, td {
-	font-size: 100%;
+html, body, ul, ol, p, pre, table, td {
+/*	font-size: 100%;
 	font-weight: inherit;
 	font-style: inherit;
 	font-family: inherit;
-	vertical-align: baseline;
+	vertical-align: baseline; */
 	margin: 0;
 	padding: 0;
-	border: 0;
-	outline: 0;
+/*	border: 0;
+	outline: 0; */
 }
 
 *:focus {
@@ -87,6 +98,7 @@ a:active {
 	margin: 0 1em;
 }
 
+/* top and bottom navigation menus */
 ul.menu, ul.menu_bottom {
 	margin-left: 0;
 }
@@ -133,6 +145,7 @@ ul.menu li a:hover, ul.menu_bottom li a:hover {
 ul.menu li a:active, ul.menu_bottom li a:active {
 	top: 0;
 }
+/* navigation menus END */
 
 .header {
 	text-align: center;
@@ -228,30 +241,21 @@ ul.rules {
 	color: #000000;
 }
 
-.thread {
-	overflow: hidden;
-}
-
 .thread_reply {
 	float: left;
 	clear: both;
-	margin: 0.5em 0;
-	margin-left: 0;
 }
-.thread_reply + .thread_reply {
-	margin-top: 0;
+
+.thread_reply .post {
+	margin-left: 2em;
 }
 
 .post {
 	background-color: #D7CFC0;
 	border-right: 1px solid #BFB5A1;
-	margin-left: 2em;
 	border-bottom: 1px solid #BFB5A1;
+	margin-bottom: 0.5em;
 	overflow: hidden;
-}
-
-.thread_OP .post {
-	margin-left: 0;
 }
 
 .post_new {
@@ -401,7 +405,7 @@ blockquote.unkfunc, span.quote {
 }
 
 .omittedposts {
-	margin-top: 0.5em;
+	margin-bottom: 0.5em;
 }
 
 .notice img {
@@ -463,6 +467,7 @@ input[type='password'] {
 	background-color: #BFB5A1;
 }
 
+/* for static templates in tpl/ */
 .title, .info th {
 	background-color: #706B5E;
 	color: #FFFFFF;
@@ -488,10 +493,11 @@ input[type='password'] {
 	border: 1px solid #706B5E;
 	padding: 5px;
 }
+/* static templates END */
 
 .error {
 	color: #B20000;
-	font-size: 2em;
+	font-size: 1.5em;
 	text-align: center;
 }
 
@@ -507,6 +513,9 @@ footer img {
 
 /* stuff for context.js */
 #ancbox {
+	padding-top: 0.5em;
+	padding-left: 0.5em;
+	padding-right: 0.5em;
 	bottom: 0.25em;
 	box-shadow: 0 0 0 100000px rgba(112, 107, 94, 0.5);
 }
@@ -526,14 +535,8 @@ footer img {
 #preview {
 	box-shadow: 1px 2px 2px #706B5E;
 }
-.context + .thread_reply {
-	margin-top: 0;
-}
-.context .thread_reply {
-	margin-left: 0.5em;
-}
 #preview .post {
-	margin-left: 0;
+	margin-bottom: 0;
 	border-color: #BFB5A1;
 }
 #post_cache {

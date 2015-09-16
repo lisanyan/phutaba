@@ -7,7 +7,7 @@ use constant POST_VIEW_INCLUDE => q{
 
 <if $parent>
 	<div class="thread_reply" id="<var $num>">
-	<div class="doubledash">
+	<div class="doubledash desktop">
 	<a href="<var get_reply_link($parent,0)>#<var $num>">&gt;&gt;</a>
 	</div>
 
