@@ -11,7 +11,7 @@
 <link rel="alternate" type="application/rss+xml" title="RSS" href="<var Wakaba::expand_filename("board.rss", 1)>" />
 
 <if $$cfg{STYLESHEET}><link rel="stylesheet" type="text/css" href="<var $$cfg{STYLESHEET}>" /></if>
-<if test_afmod()><link rel="stylesheet" type="text/css" href="/static/css/af.css" /></if>
+<if Wakaba::test_afmod()><link rel="stylesheet" type="text/css" href="/static/css/af.css" /></if>
 
 <link rel="shortcut icon" type="image/x-icon" href="/img/favicon.ico" />
 <link rel="icon" type="image/x-icon" href="/img/favicon.ico" />
@@ -39,14 +39,14 @@
 <if $isAdmin>
 <div id="modpanel" style="display: none">
 <div style="display: none; min-width: 250px;" id="banexpireshelp">
-<const S_BANEXPIRESDESC>
+<var $$locale{S_BANEXPIRESDESC}>
 </div>
 
 <table>
 <tr>
-	<td><b><const S_BANIPLABEL></b></td><td><input id="ip" type="text" name="ip" size="40" /></td>
+	<td><b><var $$locale{S_BANIPLABEL}></b></td><td><input id="ip" type="text" name="ip" size="40" /></td>
 </tr>
-<tr><td><b><const S_BANMASKLABEL></b></td><td>
+<tr><td><b><var $$locale{S_BANMASKLABEL}></b></td><td>
 <select id="netmask" name="netmask">
   <option value="255.0.0.0">/8 (IPv4 Class A)</option>
   <option value="255.255.0.0" selected="selected">/16 (IPv4 Class B)</option>
@@ -59,19 +59,19 @@
 </select>
 </td></tr>
 <tr>
-	<td><b><const S_BANREASONLABEL></b></td><td><input id="reason" type="text" name="reason" size="40" /></td>
+	<td><b><var $$locale{S_BANREASONLABEL}></b></td><td><input id="reason" type="text" name="reason" size="40" /></td>
 </tr>
 <tr>
-	<td><label for="expires"><b<if $parsedate> class="expireshelp" onmouseover="TagToTip('banexpireshelp')" onmouseout="UnTip()"</if>><const S_BANEXPIRESLABEL></b></label></td>
+	<td><label for="expires"><b<if $parsedate> class="expireshelp" onmouseover="TagToTip('banexpireshelp')" onmouseout="UnTip()"</if>><var $$locale{S_BANEXPIRESLABEL}></b></label></td>
 	<td><if !$parsedate and scalar (BAN_DATES)>
 		<select id="expires" name="expires">
 			<loop (BAN_DATES)>
-				<option value="<var $time>"<if $default> selected="selected"</if>><var clean_string($label)></option>
+				<option value="<var $time>"<if $default> selected="selected"</if>><var Wakaba::clean_string($label)></option>
 			</loop>
 		</select>
 	<else>
 		<input type="text" id="expires" name="expires" size="16" />
-		<if !$parsedate><small><const S_BANSECONDS></small></if>
+		<if !$parsedate><small><var $$locale{S_BANSECONDS}></small></if>
 	</if>
 </td></tr>
 <tr><td><label for="blame"><b>Ban Sign</b></label></td><td><input id="blame" type="checkbox" name="blame" value="yes" /></td></tr>
@@ -104,8 +104,8 @@
 	</ul>
 
 	<ul class="menu right">
-	<li><a href="#" onclick="show_el('s-styles'); return false;"><const S_JS_STYLES></a></li>
-	<li><a href="<var %self>?task=search&amp;section=<var $$cfg{SELFPATH}>"><const S_SEARCH></a></li>
+	<li><a href="#" onclick="show_el('s-styles'); return false;"><var $$locale{S_JS_STYLES}></a></li>
+	<li><a href="<var %self>?task=search&amp;section=<var $$cfg{SELFPATH}>"><var $$locale{S_SEARCH}></a></li>
 	<include tpl/nav_pages.html>
 	</ul>
 </nav>

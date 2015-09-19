@@ -15,16 +15,16 @@
 
 	<if $$cfg{ENABLE_HIDE_THREADS} && !%thread && !$parent>
 		<span class="togglethread">
-		<img src="/img/icons/hide.png" title="<var sprintf (S_HIDE, $num)>" alt="Hide" onclick="hideThread('<var $num>', '<var $$cfg{SELFPATH}>', $j);" />
+		<img src="/img/icons/hide.png" title="<var sprintf ($$cfg{S_HIDE}, $num)>" alt="Hide" onclick="hideThread('<var $num>', '<var $$cfg{SELFPATH}>', $j);" />
 		</span>
 	</if>
 
 	<label>
 		<input type="checkbox" name="delete" value="<var $num>" />
 		<span class="subject"><var $subject></span>
-        <span class="postername"><var $name><if $trip><span class="tripcode"><var $trip></span></if><if $$cfg{DISPLAY_ID} && !$adminpost><span class="posterid">&nbsp;ID: <var  Wakaba::make_id_code(dec_to_dot($ip), $timestamp, $email)></span></if></span>
+        <span class="postername"><var $name><if $trip><span class="tripcode"><var $trip></span></if><if $$cfg{DISPLAY_ID} && !$adminpost><span class="posterid">&nbsp;ID: <var  Wakaba::make_id_code(Wakaba::dec_to_dot($ip), $timestamp, $email)></span></if></span>
 		<if $adminpost><span class="teampost">## Team ##</span></if>
-		<span class="date"><var make_date($timestamp, "futaba", S_WEEKDAYS)></span>
+		<span class="date"><var Wakaba::make_date($timestamp, "futaba", @{$$locale{S_WEEKDAYS}})></span>
 	</label>
 
 	<if $$cfg{SSL_ICON} and $secure>
@@ -32,7 +32,7 @@
 	</if>
 
 	<if $$cfg{SHOW_COUNTRIES} && !%isAdmin && !$email && !$adminpost>
-	  <var get_post_info2($location)>
+	  <var Wakaba::get_post_info2($location)>
 	</if>
 
 	<span class="reflink">
@@ -44,61 +44,60 @@
 	</span>
 
 	<if !$parent>
-		<if $sticky><span class="sticky"><img src="/img/icons/pin.png" onmouseover="Tip('<const S_STICKYTITLE>')" onmouseout="UnTip()" alt="Pin" /></span></if>
-		<if $locked><span class="locked"><img src="/img/icons/locked.png" onmouseover="Tip('<const S_LOCKEDTITLE>')" onmouseout="UnTip()" alt="Lock" /></span></if>
-		<if !$autosage><if $email><span class="sage"><const S_SAGE></span></if></if>
+		<if $sticky><span class="sticky"><img src="/img/icons/pin.png" onmouseover="Tip('<var $$locale{S_STICKYTITLE}>')" onmouseout="UnTip()" alt="Pin" /></span></if>
+		<if $locked><span class="locked"><img src="/img/icons/locked.png" onmouseover="Tip('<var $$locale{S_LOCKEDTITLE}>')" onmouseout="UnTip()" alt="Lock" /></span></if>
+		<if !$autosage><if $email><span class="sage"><var $$locale{S_SAGE}></span></if></if>
 		<if !$sticky><if $autosage><span class="sage">Bumplimit</span></if></if>
 	</if>
 
 	<if $parent>
-		<if $email><span class="sage"><const S_SAGE></span></if>
+		<if $email><span class="sage"><var $$locale{S_SAGE}></span></if>
 	</if>
 
 	<if !$parent && !%thread>	
-		<span class="replylink">[<a href="<var Wakaba::get_reply_link($num,0)>"><const S_REPLY></a>]</span>
+		<span class="replylink">[<a href="<var Wakaba::get_reply_link($num,0)>"><var $$locale{S_REPLY}></a>]</span>
 	</if>
-	<if !$parent && %thread>[<a href="#bottom"><const S_BOTTOM></a>]</if>
-
+	<if !$parent && %thread>[<a href="#bottom"><var $$locale{S_BOTTOM}></a>]</if>
 	<if %isAdmin>
 		<if !$adminpost>
 		<div style="display: none; min-width: 250px;" id="postinfo_<var $num>">
-			<var get_post_info($$cfg{SELFPATH},$location)>
+			<var Wakaba::get_post_info($$cfg{SELFPATH},$location)>
 		</div>
-		<span onmouseover="TagToTip('postinfo_<var $num>', TITLE, '<const S_POSTINFO>', DELAY, 0, CLICKSTICKY, true)" onmouseout="UnTip()">[<var dec_to_dot($ip)>]</span>
+		<span onmouseover="TagToTip('postinfo_<var $num>', TITLE, '<var $$locale{S_POSTINFO}>', DELAY, 0, CLICKSTICKY, true)" onmouseout="UnTip()">[<var Wakaba::dec_to_dot($ip)>]</span>
 		</if>
 		<if !$parent>	
 			<if !$sticky>
-				<span onmouseover="Tip('<const S_MPSTICKY>')" onmouseout="UnTip()"><a onclick="return areYouSure(this)" href="<var %self>?task=sticky&amp;thread=<var $num>&amp;section=<var $$cfg{SELFPATH}>"><img src="/img/icons/sticky.png"></a></span>
+				<span onmouseover="Tip('<var $$locale{S_MPSTICKY}>')" onmouseout="UnTip()"><a onclick="return areYouSure(this)" href="<var %self>?task=sticky&amp;thread=<var $num>&amp;section=<var $$cfg{SELFPATH}>"><img src="/img/icons/sticky.png"></a></span>
 			</if>
 
 			<if $sticky>
-				<span onmouseover="Tip('<const S_MPUNSTICKY>')" onmouseout="UnTip()"><a onclick="return areYouSure(this)" href="<var %self>?task=sticky&amp;thread=<var $num>&amp;section=<var $$cfg{SELFPATH}>"><img src="/img/icons/unsticky.png"></a></span>
+				<span onmouseover="Tip('<var $$locale{S_MPUNSTICKY}>')" onmouseout="UnTip()"><a onclick="return areYouSure(this)" href="<var %self>?task=sticky&amp;thread=<var $num>&amp;section=<var $$cfg{SELFPATH}>"><img src="/img/icons/unsticky.png"></a></span>
 			</if>
 			
 			<if !$locked>
-				<span onmouseover="Tip('<const S_MPLOCK>')" onmouseout="UnTip()"><a onclick="return areYouSure(this)" href="<var %self>?task=lock&amp;thread=<var $num>&amp;section=<var $$cfg{SELFPATH}>"><img src="/img/icons/lock.png"></a></span>
+				<span onmouseover="Tip('<var $$locale{S_MPLOCK}>')" onmouseout="UnTip()"><a onclick="return areYouSure(this)" href="<var %self>?task=lock&amp;thread=<var $num>&amp;section=<var $$cfg{SELFPATH}>"><img src="/img/icons/lock.png"></a></span>
 			</if>
 
 			<if $locked>
-				<span onmouseover="Tip('<const S_MPUNLOCK>')" onmouseout="UnTip()"><a onclick="return areYouSure(this)" href="<var %self>?task=lock&amp;thread=<var $num>&amp;section=<var $$cfg{SELFPATH}>"><img src="/img/icons/unlock.png"></a></span>
+				<span onmouseover="Tip('<var $$locale{S_MPUNLOCK}>')" onmouseout="UnTip()"><a onclick="return areYouSure(this)" href="<var %self>?task=lock&amp;thread=<var $num>&amp;section=<var $$cfg{SELFPATH}>"><img src="/img/icons/unlock.png"></a></span>
 			</if>
 		
 			<if !$autosage>
-				<span onmouseover="Tip('<const S_MPSETSAGE>')" onmouseout="UnTip()"><a onclick="return areYouSure(this)" href="<var %self>?task=kontra&amp;thread=<var $num>&amp;section=<var $$cfg{SELFPATH}>"><img src="/img/icons/sage.png"></a></span>
+				<span onmouseover="Tip('<var $$locale{S_MPSETSAGE}>')" onmouseout="UnTip()"><a onclick="return areYouSure(this)" href="<var %self>?task=kontra&amp;thread=<var $num>&amp;section=<var $$cfg{SELFPATH}>"><img src="/img/icons/sage.png"></a></span>
 			</if>
 
 			<if $autosage>
-				<span onmouseover="Tip('<const S_MPUNSETSAGE>')" onmouseout="UnTip()"><a onclick="return areYouSure(this)" href="<var %self>?task=kontra&amp;thread=<var $num>&amp;section=<var $$cfg{SELFPATH}>"><img src="/img/icons/unsage.png"></a></span>
+				<span onmouseover="Tip('<var $$locale{S_MPUNSETSAGE}>')" onmouseout="UnTip()"><a onclick="return areYouSure(this)" href="<var %self>?task=kontra&amp;thread=<var $num>&amp;section=<var $$cfg{SELFPATH}>"><img src="/img/icons/unsage.png"></a></span>
 			</if>
 			
 		</if>
 		<if !$adminpost>
-		<span onmouseover="Tip('<const S_MPBAN>')" onmouseout="UnTip()"><a onclick="do_ban('<var dec_to_dot($ip)>', <var $num>, '<var $$cfg{SELFPATH}>')"><img src="/img/icons/ban.png"></a></span>
-		<span onmouseover="Tip('<const S_MPDELETEALL>')" onmouseout="UnTip()"><a onclick="return areYouSure(this)" href="<var %self>?task=deleteall&amp;ip=<var $ip>&amp;section=<var $$cfg{SELFPATH}>"><img src="/img/icons/delete_all.png"></a></span>
+		<span onmouseover="Tip('<var $$locale{S_MPBAN}>')" onmouseout="UnTip()"><a onclick="do_ban('<var Wakaba::dec_to_dot($ip)>', <var $num>, '<var $$cfg{SELFPATH}>')"><img src="/img/icons/ban.png"></a></span>
+		<span onmouseover="Tip('<var $$locale{S_MPDELETEALL}>')" onmouseout="UnTip()"><a onclick="return areYouSure(this)" href="<var %self>?task=deleteall&amp;ip=<var $ip>&amp;section=<var $$cfg{SELFPATH}>"><img src="/img/icons/delete_all.png"></a></span>
 		</if>
-		<span onmouseover="Tip('<const S_MPDELFILE>')"   onmouseout="UnTip()"><a onclick="return areYouSure(this)" href="<var %self>?task=delete&amp;admindel=yes&amp;delete=<var $num>&amp;fileonly=on&amp;section=<var $$cfg{SELFPATH}>"><img src="/img/icons/delete_file.png"></a></span>
-		<span onmouseover="Tip('<const S_MPDELETE>')" onmouseout="UnTip()"><a onclick="return areYouSure(this)" href="<var %self>?task=delete&amp;admindel=yes&amp;delete=<var $num>&amp;section=<var $$cfg{SELFPATH}>"><img src="/img/icons/delete.png"></a></span>
-		<span onmouseover="Tip('<const S_EDITPOST>')" onmouseout="UnTip()"><a href="<var %self>?task=edit&amp;num=<var $num>&amp;section=<var $$cfg{SELFPATH}>"><img src="/img/icons/edit.png"></a></span>
+		<span onmouseover="Tip('<var $$locale{S_MPDELFILE}>')"   onmouseout="UnTip()"><a onclick="return areYouSure(this)" href="<var %self>?task=delete&amp;admindel=yes&amp;delete=<var $num>&amp;fileonly=on&amp;section=<var $$cfg{SELFPATH}>"><img src="/img/icons/delete_file.png"></a></span>
+		<span onmouseover="Tip('<var $$locale{S_MPDELETE}>')" onmouseout="UnTip()"><a onclick="return areYouSure(this)" href="<var %self>?task=delete&amp;admindel=yes&amp;delete=<var $num>&amp;section=<var $$cfg{SELFPATH}>"><img src="/img/icons/delete.png"></a></span>
+		<span onmouseover="Tip('<var $$locale{S_EDITPOST}>')" onmouseout="UnTip()"><a href="<var %self>?task=edit&amp;num=<var $num>&amp;section=<var $$cfg{SELFPATH}>"><img src="/img/icons/edit.png"></a></span>
 	</if>
 
 <if $parent>
@@ -119,22 +118,22 @@
 <if $thumbnail><div class="file"></if>
 <if !$thumbnail><div class="file filebg"></if>
 	<div style="display: none; min-width: 250px;" id="imageinfo_<var Wakaba::md5_hex($image)>">
-		<strong>Имя файла:</strong> <var clean_string($uploadname)><br />
+		<strong>Имя файла:</strong> <var Wakaba::clean_string($uploadname)><br />
 		<hr />
-		<var get_pretty_html($info_all, "\n\t\t")>
+		<var Wakaba::get_pretty_html($info_all, "\n\t\t")>
 	</div>
-	<div class="filename"><const S_PICNAME><a target="_blank" title="<var clean_string($uploadname)>" href="<var Wakaba::expand_image_filename($image)><if $image!~/^\/\/a\.pomf/>/<var get_urlstring(clean_string($uploadname))></if>"><var clean_string($displayname)></a></div>
-	<div class="filesize"><var get_displaysize($size, $$cfg{DECIMAL_MARK})><if $width && $height>, <var $width>&nbsp;&times;&nbsp;<var $height></if><if $info>, <var $info></if></div>
+	<div class="filename"><var $$locale{S_PICNAME}><a target="_blank" title="<var Wakaba::clean_string($uploadname)>" href="<var Wakaba::expand_image_filename($image)><if $image!~/^\/\/a\.pomf/>/<var Wakaba::get_urlstring(Wakaba::clean_string($uploadname))></if>"><var Wakaba::clean_string($displayname)></a></div>
+	<div class="filesize"><var Wakaba::get_displaysize($size, $$cfg{DECIMAL_MARK})><if $width && $height>, <var $width>&nbsp;&times;&nbsp;<var $height></if><if $info>, <var $info></if></div>
 	<if $thumbnail>
 		<div class="filelink" id="exlink-<var Wakaba::md5_hex($image)>">
-		<a target="_blank" href="<var Wakaba::expand_image_filename($image)>" onclick="return expand(this, <var ($width  || 0)>, <var ($height  || 0)>, <var ($tn_width  || 0)>, <var ($tn_height  || 0)>, '<var Wakaba::expand_filename($thumbnail)>', '<var get_extension($image)>')">
-			<img onmouseover="TagToTip('imageinfo_<var Wakaba::md5_hex($image)>', TITLE, '<const S_FILEINFO>', WIDTH, 300)" onmouseout="UnTip()" src="<var Wakaba::expand_filename($thumbnail)>" width="<var $tn_width>" height="<var $tn_height>" alt="<var $size>" />
+		<a target="_blank" href="<var Wakaba::expand_image_filename($image)>" onclick="return expand(this, <var ($width  || 0)>, <var ($height  || 0)>, <var ($tn_width  || 0)>, <var ($tn_height  || 0)>, '<var Wakaba::expand_filename($thumbnail)>', '<var Wakaba::get_extension($image)>')">
+			<img onmouseover="TagToTip('imageinfo_<var Wakaba::md5_hex($image)>', TITLE, '<var $$locale{S_FILEINFO}>', WIDTH, 300)" onmouseout="UnTip()" src="<var Wakaba::expand_filename($thumbnail)>" width="<var $tn_width>" height="<var $tn_height>" alt="<var $size>" />
 		</a>
 		</div>
 	</if>
 	<if !$thumbnail>
 		<if !$size>
-			<div class="filedeleted"><const S_FILEDELETED></div>
+			<div class="filedeleted"><var $$locale{S_FILEDELETED}></div>
 		</if>
 		<if $size>
 			<if $$cfg{DELETED_THUMBNAIL}>
@@ -144,8 +143,8 @@
 			</if>
 			<if !($$cfg{DELETED_THUMBNAIL})>
 				<div class="filetype">
-					<a onmouseover="TagToTip('imageinfo_<var Wakaba::md5_hex($image)>', TITLE, '<const S_FILEINFO>', WIDTH, 300)" onmouseout="UnTip()" target="_blank" href="<var Wakaba::expand_image_filename($image)>">
-						<var get_extension($uploadname)>
+					<a onmouseover="TagToTip('imageinfo_<var Wakaba::md5_hex($image)>', TITLE, '<var $$locale{S_FILEINFO}>', WIDTH, 300)" onmouseout="UnTip()" target="_blank" href="<var Wakaba::expand_image_filename($image)>">
+						<var Wakaba::get_extension($uploadname)>
 					</a>
 				</div>
 			</if>
@@ -171,7 +170,7 @@
 				</p>
 			</if>
 		</div>
-		<if $banned><const S_BANNED></if>
+		<if $banned><var $$locale{S_BANNED}></if>
 	</div>
 
 </div>

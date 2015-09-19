@@ -1418,7 +1418,7 @@ sub write_array {
 # File utilities
 #
 
-# Well, it's never used
+# Removed
 # sub analyze_file { }
 
 #

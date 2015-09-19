@@ -13,11 +13,34 @@ use lib '.';
 BEGIN { # fuck
  do "lib/site_config.pl";
  do "lib/config_defaults.pl";
- do "lib/strings_ru.pl";
- do "lib/wakautils.pl";
+ require "lib/wakautils.pl";
 }
 
 return 1 if (caller);
+
+my $locale = get_locale("ru"); # edit this to change locale
+
+sub get_locale {
+    my ($dodo) = @_;
+    my ($settings, $file);
+    
+    if ( $dodo =~ /(ru|en|de)/ ) {
+        $file = "./lib/config/strings_$1.pl";
+    }
+
+    # Grab code from config file and evaluate.
+    open (MODCONF, $file) or return 0; # Silently fail if we cannot open file.
+    binmode MODCONF, ":utf8"; # Needed for files using non-ASCII characters.
+
+    my $board_options_code = do { local $/; <MODCONF> };
+    $settings = eval $board_options_code; # Set up hash.
+
+    # Exception for bad config.
+    close MODCONF and return 0 if ($@);
+    close MODCONF;
+    
+    \%$settings;
+}
 
 my $font_height = 8;
 my %font        = (
@@ -72,7 +95,7 @@ my @background = ( 0xff, 0xff, 0xff ); #( 0xff, 0xff, 0xff );
 my $dbh =
   DBI->connect( SQL_DBI_SOURCE, SQL_USERNAME, SQL_PASSWORD,
     { AutoCommit => 1 } )
-  or die S_SQLCONF;
+  or die $$locale{S_SQLCONF};
 init_captcha_database($dbh)
   unless ( table_exists_captcha( $dbh, SQL_CAPTCHA_TABLE ) );
 
@@ -189,15 +212,15 @@ sub save_captcha_word {
 
         my $sth =
           $dbh->prepare( "INSERT INTO " . SQL_CAPTCHA_TABLE . " VALUES(?,?,?,?,?);" )
-          or die S_SQLFAIL;
-        $sth->execute( $ip, $key, $word, $time, $board ) or die S_SQLFAIL;
+          or die $$locale{S_SQLFAIL};
+        $sth->execute( $ip, $key, $word, $time, $board ) or die $$locale{S_SQLFAIL};
         $sth->finish();
 
         $dbh->commit();
     };
     if ($@) {
         eval { $dbh->rollback() };
-        die S_SQLFAIL;
+        die $$locale{S_SQLFAIL};
     }
 
     trim_captcha_database($dbh);  # only cleans up on create - good idea or not?
@@ -208,8 +231,8 @@ sub check_captcha {
 
     my $key = get_captcha_key($parent);
     my ($word) = get_captcha_word( $dbh, $ip, $key, $board );
-    make_error(S_NOCAPTCHA) unless ($word);
-    make_error(S_BADCAPTCHA) if ( $word ne lc($captcha) );
+    make_error($$locale{S_NOCAPTCHA}) unless ($word);
+    make_error($$locale{S_BADCAPTCHA}) if ( $word ne lc($captcha) );
 
     delete_captcha_word( $dbh, $ip, $key, $board )
       ; # should the captcha word be deleted on an UNSUCCESSFUL try, too, maybe?
@@ -246,8 +269,8 @@ sub init_captcha_database {
 
           #	",PRIMARY KEY(ip,key)".
           ");"
-    ) or die S_SQLFAIL;
-    $sth->execute() or die S_SQLFAIL;
+    ) or die $$locale{S_SQLFAIL};
+    $sth->execute() or die $$locale{S_SQLFAIL};
 }
 
 sub trim_captcha_database {
@@ -256,8 +279,8 @@ sub trim_captcha_database {
 
     my $sth = $dbh->prepare(
         "DELETE FROM " . SQL_CAPTCHA_TABLE . " WHERE timestamp<=$mintime;" )
-      or die S_SQLFAIL;
-    $sth->execute() or die S_SQLFAIL;
+      or die $$locale{S_SQLFAIL};
+    $sth->execute() or die $$locale{S_SQLFAIL};
 }
 
 sub table_exists_captcha {
@@ -285,7 +308,7 @@ sub find_stylesheet_color {
         $title =~ s/ ([a-z])/ \u$1/g;
         $title =~ s/([a-z])([A-Z])/$1 $2/g;
         $title eq $style;
-    } glob( "css/" . "*.css" );
+    } glob( "static/css/" . "*.css" );
     return ( 128, 0, 0 ) unless ($sheet);
 
     my $contents;

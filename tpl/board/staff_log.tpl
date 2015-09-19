@@ -15,11 +15,11 @@
 <tbody>
 <loop $log>
 	<tr class="row<var $rowtype>">
-		<td><var $user>@<var dec_to_dot($ip)></td>
+		<td><var $user>@<var Wakaba::dec_to_dot($ip)></td>
 		<td><var $action></td>
 		<td>
 			<if $action eq "delall">
-				<var dec_to_dot($object)>
+				<var Wakaba::dec_to_dot($object)>
 			</if>
 			<if $action=~/ipban$/>
 				<var $object>
@@ -32,7 +32,7 @@
 			</if>
 		</td>
 		<td>/<var $board>/</td>
-		<td><var make_date($time, "2ch")></td>
+		<td><var Wakaba::make_date($time, "2ch")></td>
 	</tr>
 </loop>
 <tr><td><br/></td></tr>
@@ -42,8 +42,8 @@
 <nav>
 	<ul class="pagelist">
 		<li>
-			<if $prevpage>[<a href="<var $prevpage>"><const S_PREV></a>]</if>
-			<if !$prevpage>[<const S_PREV>]</if>
+			<if $prevpage>[<a href="<var $prevpage>"><var $$locale{S_PREV}></a>]</if>
+			<if !$prevpage>[<var $$locale{S_PREV}>]</if>
 		</li>
 	<loop $pages>
 		<li>
@@ -52,12 +52,12 @@
 		</li>
 	</loop>
 		<li>
-			<if $nextpage>[<a href="<var $nextpage>"><const S_NEXT></a>]</if>
-			<if !$nextpage>[<const S_NEXT>]</if>
+			<if $nextpage>[<a href="<var $nextpage>"><var $$locale{S_NEXT}></a>]</if>
+			<if !$nextpage>[<var $$locale{S_NEXT}>]</if>
 		</li>
 	</ul>
 	<ul class="pagelist">
-		<li>[<a href="#top"><const S_TOP></a>]</li>
+		<li>[<a href="#top"><var $$locale{S_TOP}></a>]</li>
 	</ul>
 </nav>
 <include %TMPLDIR%foot.tpl>

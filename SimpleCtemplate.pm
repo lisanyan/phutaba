@@ -9,10 +9,8 @@ use POSIX;
 
 # fuck
 BEGIN {
- require "lib/strings_ru.pl";
  require "lib/site_config.pl";
  require "lib/config_defaults.pl";
- require "lib/wakautils.pl";
 }
 
 #<var $var> - вывод переменной

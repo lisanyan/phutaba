@@ -9,7 +9,7 @@
  <if $showmask>(<var $network>/<var $setbits>)</if> has been banned
  <if $reason>with reason <strong><var $reason></strong></if>.
  <br />This lock
- <if $expires>will expire on <strong><var make_date($expires, "2ch")></strong>.</if>
+ <if $expires>will expire on <strong><var Wakaba::make_date($expires, "2ch")></strong>.</if>
  <if !$expires>is valid for an indefinite period.</if>
  <br />
 </loop>

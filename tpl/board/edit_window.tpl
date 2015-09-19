@@ -7,7 +7,7 @@
 <input type="hidden" name="section" value="<var $$cfg{SELFPATH}>" />
 <input type="hidden" name="num" value="<var $num>" />
 <table><tbody>
-<tr><td class="postblock"><const S_BANEXPIRESLABEL></td><td>
+<tr><td class="postblock"><var $$locale{S_BANEXPIRESLABEL}></td><td>
 <select name="day">
 <option value="1"<if $day == 1> selected="selected"</if>>1</option>
 <option value="2"<if $day == 2> selected="selected"</if>>2</option>
@@ -211,8 +211,8 @@
 </select> UTC<br />
 <input type="checkbox" name="noexpire" value="noexpire"<if $expires==0> checked="checked"</if> /> No expire
 </td></tr>
-<tr><td class="postblock"><const S_BANCOMMENTLABEL></td><td><input type="text" name="comment" size="16" value="<var $comment>" />
-<input type="submit" value="<const S_UPDATE>" style="float: right; clear:none"/></td></tr>
+<tr><td class="postblock"><var $$locale{S_BANCOMMENTLABEL}></td><td><input type="text" name="comment" size="16" value="<var $comment>" />
+<input type="submit" value="<var $$locale{S_UPDATE}>" style="float: right; clear:none"/></td></tr>
 </tbody></table></form>
 </loop>
 </div>

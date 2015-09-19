@@ -57,9 +57,9 @@
 <script type="text/javascript">
 	var board = "<var $$cfg{SELFPATH}>", thread_id = <if $thread><var $thread></if><if !$thread>null</if>;
 	var filetypes = "<var Wakaba::get_filetypes()>";
-	var msg_expand_field = "<const S_JS_EXPAND>";
-	var msg_shrink_field = "<const S_JS_SHRINK>";
-	var msg_remove_file = "<const S_JS_REMOVEFILE>";
+	var msg_expand_field = "<var $$locale{S_JS_EXPAND}>";
+	var msg_shrink_field = "<var $$locale{S_JS_SHRINK}>";
+	var msg_remove_file = "<var $$locale{S_JS_REMOVEFILE}>";
 
 	window.onunload = function (e) {
 		if (style_cookie) {

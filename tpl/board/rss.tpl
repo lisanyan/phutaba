@@ -21,7 +21,7 @@
         <if $comment>
           <description><![CDATA[<var $comment>]]></description>
         </if>
-        <pubDate><var make_date($timestamp, "http")></pubDate>
+        <pubDate><var Wakaba::make_date($timestamp, "http")></pubDate>
         <link><var Wakaba::get_reply_link($num, $parent, 1)></link>
 		<guid><var Wakaba::get_reply_link($num, $parent, 1)></guid>
       </item>

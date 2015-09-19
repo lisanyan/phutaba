@@ -1,5 +1,5 @@
 my (%settings, %boards);
-use encoding 'utf8';
+use utf8;
 
 # System config
 $settings{SQL_TABLE_IMG} = 'board_img';			# Table (NOT DATABASE) used by image board for secondary images
@@ -183,5 +183,4 @@ $boards{mg} = { # Example
 	SQL_TABLE_IMG => 'mg_img',
 };
 
-no encoding;
 \%boards;
