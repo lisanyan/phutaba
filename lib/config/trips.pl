@@ -1,8 +1,8 @@
 # Supah cool tripcodes
-
-use utf8;
 my %trips;
 
+use encoding 'utf8';
 # $trips{'p4ssw0rd'} = 'EXAMPLE';
+no encoding;
 
 \%trips;
