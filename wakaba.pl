@@ -120,6 +120,8 @@ while($query=CGI::Fast->new)
     pm_pre_dispatch();
     $fcgi_counter++;
 
+    $locale = get_settings('locale_ru');
+
     $dbh = DBI->connect_cached(SQL_DBI_SOURCE,SQL_USERNAME,SQL_PASSWORD,
         {AutoCommit=>1,mysql_enable_utf8=>1} ) or make_error($$locale{S_SQLCONF});
 
@@ -129,10 +131,9 @@ while($query=CGI::Fast->new)
 
     unless (0)
     {
-        $boardSection = ($query->param("section") or "b");
-        $cfg = fetch_config($boardSection);
-        $locale = get_settings('locale_ru');
-        $moders = get_settings('mods');
+        $boardSection   = ($query->param("section") or "b");
+        $cfg            = fetch_config($boardSection);
+        $moders         = get_settings('mods');
         $$cfg{SELFPATH} = $boardSection;
 
         if( $$cfg{NOTFOUND} ) {
