@@ -1,2 +1,15 @@
-User-agent: *
-Allow: /
+User-Agent: *
+# disallow indexing thumbnails
+Disallow: */thumb/
+# disallow double indexing pictures
+Disallow: */src/*/*
+# disallow indexing static design assets
+Disallow: /img/
+# disallow indexing captcha images
+Disallow: /captcha.pl
+# disallow indexing of non-prettified urls
+Disallow: /wakaba.pl
+# disallow indexing stuff not for public use
+Disallow: /tmp/
+# disallow indexing THE SECRET BOARD
+Disallow: /beta/

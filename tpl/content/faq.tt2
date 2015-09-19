@@ -1,79 +1,134 @@
 [% META
-   title   = 'H&auml;ufig gestellte Fragen'
+   title   = 'FAQ'
 %]
 
-	<header class="title">Was ist das hier?</header>
+	<header class="title">Как я могу отформатировать текст?</header>
 	<section class="info">
-		<p>Ernstchan ist ein deutschsprachiges <a href="//de.wikipedia.org/wiki/Imageboard">Imageboard</a>, das 2010 gegr�ndet wurde. Bitte beachtet, dass ihr hier weder eine Quelle seri�ser News, noch einen Kummerkasten finden werdet. Wer nichts mit Sarkasmus und schwarzem Humor anfangen kann, geht am besten direkt wieder.</p>
-	</section>
-
-	<header class="title">Wo melde ich mich an?</header>
-	<section class="info">
-		<p>Auf einem klassischen Imageboard wie Ernstchan kann man sich nicht registrieren. Normalerweise tauscht man sich hier anonym aus.</p>
-	</section>
-
-	<header class="title">�ber welche Domains kann ich Ernstchan erreichen?</header>
-	<section class="info">
-		<p>Ernstchan kann unter <a href="//ernstchan.com">ernstchan.com</a>, <del><a href="//ernstchan.net">ernstchan.net</a></del> und <a href="//22chan.net">22chan.net</a> erreicht werden.</p>
-	</section>
-
-	<header class="title">Wie kann ich in Beitr�gen die Schrift formatieren?</header>
-	<section class="info">
-		<p>Folgende <a href="http://de.wikipedia.org/wiki/BBCode">BBCode</a>-Tags stehen zur Auswahl:</p>
+		<p>Доступны <a href="http://ru.wikipedia.org/wiki/BBCode">BBCode</a>-Теги:</p>
 		<table>
 			<tr>
-				<th>Eingabe</th>
-				<th>Ausgabe</th>
+				<th>Было</th>
+				<th>Стало</th>
 			</tr>
 			<tr>
-				<td>[i]kursiv[/i]</td>
-				<td><em>kursiv</em></td>
+				<td>[i]курсив[/i]</td>
+				<td><em>курсив</em></td>
 			</tr>
 			<tr>
-				<td>[b]fett[/b]</td>
-			 	<td><strong>fett</strong></td>
+				<td>[b]жирный[/b]</td>
+			 	<td><strong>жирный</strong></td>
 			</tr>
 			<tr>
-				<td>[u]unterstrichen[/u]</td>
-				<td><ins>unterstrichen</ins></td>
+				<td>[u]подчеркнутый[/u]</td>
+				<td><span class="underline">подчеркнутый</span></td>
 			</tr>
 			<tr>
-				<td>[s]durchgestrichen[/s]</td>
-				<td><del>durchgestrichen</del></td>
+				<td>[s]зачеркнутый[/s]</td>
+				<td><span class="strike">зачеркнутый</span></td>
 			</tr>
 			<tr>
-				<td>[spoiler]Spoiler[/spoiler]</td>
-				<td><span class="spoiler">Spoiler</span></td>
+				<td>[spoiler]Спойлер[/spoiler]</td>
+				<td><span class="spoiler">Сполйер</span></td>
 			</tr>
 			<tr>
 				<td>[code]Code[/code]</td>
 				<td><pre>Code</pre></td>
 			</tr>
 		</table>
+
+		<br /><p>Также доступна разметка WakabaMark:</p>
+		<table>
+			<tr>
+				<th>Было</th>
+				<th>Стало</th>
+			</tr>
+			<tr>
+				<td>*курсив*</td>
+				<td><em>курсив</em></td>
+			</tr>
+			<tr>
+				<td>**жирный**</td>
+			 	<td><strong>жирный</strong></td>
+			</tr>
+			<tr>
+				<td>__подчеркнутый__</td>
+				<td><span class="underline">подчеркнутый</span></td>
+			</tr>
+			<tr>
+				<td>^^зачеркнутый^^</td>
+				<td><span class="strike">зачеркнутый</span></td>
+			</tr>
+			<tr>
+				<td>%%Спойлер%%
+				<br />~~Спойлер~~</td>
+				<td><span class="spoiler">Спойлер</span></td>
+			</tr>
+			<tr>
+				<td>`Код`</td>
+				<td><pre>Код</pre></td>
+			</tr>
+		</table>
 	</section>
 
-	<header class="title">Wieso muss ich Captchas eingeben, um Posts abschicken zu k&ouml;nnen?</header>
+	<header class="title">JSON API</header>
 	<section class="info">
-		<p>Um Spam vorzubeugen, m�ssen Nutzer aus nicht deutschsprachigen L�ndern vor jedem Beitrag ein Captcha best�tigen. Falls deine IP also nicht aus Deutschland, �sterreich, der Schweiz, Liechtenstein, Belgien, D�nemark, Luxemburg (oder der Niederlande) stammt, wirst du dich wohl oder �bel damit abfinden m�ssen.</p>
+	<p>Some text&hellip;</p>
+		<table>
+			<tr>
+				<th>&nbsp;</th>
+				<th>&nbsp;</th>
+			</tr>
+			<tr>
+				<td>/board/api/threads</td>
+				<td>Возвращает треды с первой страницы доски</td>
+			</tr>
+			<tr>
+				<td>/board/api/threads?page=n</td>
+				<td>Возвращает треды с n страницы доски</td>
+			</tr>
+			<tr>
+				<td>/board/api/thread?id=n</td>
+				<td>Возвращает треды с номером n</td>
+			</tr>
+			<tr>
+				<td>/board/api/post?id=n</td>
+				<td>Вернет пост n</td>
+			</tr>
+			<tr>
+				<td>/board/api/meta?post=n</td>
+				<td>Вернет метаданные файлов поста n</td>
+			</tr>
+		</table>
+
 	</section>
 
-	<header class="title">Wie kann ich die Administratoren kontaktieren?</header>
+	<header class="title">Почему я должен вводить капчу?</header>
 	<section class="info">
-		<p>F�r allgemeine Fragen kann man uns jederzeit per E-Mail an <a href="mailto:admin@ernstchan.com">admin@ernstchan.com</a> erreichen. Zudem sind wir im <a href="/irc">IRC-Channel</a> anzutreffen.<br />Falls du unangebrachte/illegale Inhalte melden m�chtest, benutze bitte <a href="mailto:post-abuse@ernstchan.com">post-abuse@ernstchan.com</a>.</p>
+		Вы должны вводить капчу перед каждым постом, если ваш IP не из: FI EE DE NO CH AT LI BE LU DK NL RU UA BY KZ PL.
 	</section>
 
-	<header class="title">Was steckt unter der Haube von Ernstchan?</header>
+	<header class="title">Обратная связь</header>
 	<section class="info">
-		<p>Ernstchan wird mit Phutaba, einer Modifikation von <a href="http://wakaba.c3.cx/s/web/wakaba_kareha">Wakaba</a>, auf einem niederl�ndischen Server betrieben. Die aktuelle Version von Phutaba kann frei von <a href="https://github.com/ernstchan/phutaba1">GitHub</a> geladen werden, sie steht unter keiner bestimmten Lizenz. Einige Icons stammen von <a href="http://p.yusukekamiyamane.com/">Yusuke Kamiyamane</a> (CC BY 3.0).</p>
+		<p>E-mail: <a href="mailto:kawaii.nyaaaaaa@gmail.com">kawaii.nyaaaaaa@gmail.com</a></p>
+		<p>Skype: <a href="skype:nyan.anon?chat">nyan.anon</a></p>
 	</section>
 
-	<header class="title">Woher bekomme ich euer Logo?</header>
-	<section class="info">
-		<p>Bitte einmal hier klicken:</p>
-		<p><a href="img/logo_gross.png"><img src="img/logo_klein.png" alt="Phutaba-Logo" /></a></p>
-	</section>
 
-	<header class="title">Darf ich Moderator werden?</header>
+	<!--<header class="title">Some shit</header>
 	<section class="info">
-		<p>Nein.</p>
-	</section>
+	<p>Disk space [GB]</p>
+		<table>
+			<tr>
+				<th>Total</th>
+				<th>Used</th>
+				<th>Free</th>
+			</tr>
+			<tr>
+				<td>[% total_gb %]</td>
+				<td>[% used_gb %]</td>
+				<td>[% free_gb %]</td>
+			</tr>
+		</table>
+	</section>-->
+
+<!-- [Disk space] Total(GB): [% total_gb %] | Used: [% used_gb %] | Free: [% free_gb %] -->

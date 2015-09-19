@@ -1,0 +1,29 @@
+<include %TMPLDIR%head.tpl>
+<div class="dellist"><var sprintf(S_EDITHEAD,Wakaba::get_reply_link($num,$parent),$num)></div>
+
+<loop $loop>
+<div class="postarea">
+<form id="postform" action="<var %self>" method="post" enctype="multipart/form-data">
+<input type="hidden" name="section" value="<var $$cfg{SELFPATH}>" />
+<input type="hidden" name="task" value="doedit" />
+<input type="hidden" name="num" value="<var $num>" />
+<if $noformat><input type="hidden" name="noformat" value="on" /></if>
+
+<table><tbody>
+<tr><td class="postblock"><const S_NAME></td><td><input type="text" name="field1" size="28" value="<var clean_string($name)>" />
+<if $trip><label><input type="checkbox" name="notrip" value="yes" /> Kill trip (<var $trip>)</label></if>
+</td></tr>
+<tr><td class="postblock"><label for="sage"><const S_SAGE></label></td>
+<td><label><input type="checkbox" name="field2" value="sage" id="sage" <if $sage>checked="checked"</if> /> <const S_SAGEDESC></label></td></tr>
+<tr><td class="postblock"><const S_SUBJECT></td><td><input type="text" name="field3" size="35" value="<var $subject>" />
+<input type="submit" value="<const S_SUBMIT>" /></td></tr>
+<tr><td class="postblock"><const S_COMMENT></td>
+<td><textarea name="field4" cols="48" rows="6"><if $noformat><var $comment></else/><var Wakaba::tag_killa($comment)></if></textarea></td></tr>
+<tr><td class="postblock"><const S_OPTIONS></td><td>
+<label><input type="checkbox" name="capcode" value="on" <if $adminpost>checked="checked"</if> /> ## Team ## </label>
+|<label><input type="checkbox" name="admin_post" value="on" <if $admin_post>checked="checked"</if> /> Admin post </label>
+<if !$noformat>| [ <a href="<var %self>?task=edit&amp;num=<var $num>&amp;section=<var $$cfg{SELFPATH}>&amp;noformat=1">No Format</a> ]</if>
+</td></tr>
+</tbody></table></loop>
+</form></div><hr />
+<include %TMPLDIR%foot.tpl>

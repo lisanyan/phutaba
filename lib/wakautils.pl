@@ -1,19 +1,16 @@
 # wakautils.pl v8.12
 
 use strict;
+use utf8;
 
+use POSIX qw(strftime);
 use Time::Local;
-use Time::localtime;
 use Socket;
-use Locale::Country;
-use Locale::Codes::Country;
-use DateTime;
+use Image::ExifTool;
 use Geo::IP;
-use Net::Abuse::Utils qw( :all );
+use Net::IP qw(:PROC); # IPv6 conversions
+use IO::Scalar;
 
-
-# add EU to the country code list
-Locale::Codes::Country::add_country("EU", "European Union");
 my $has_md5 = 0;
 eval 'use Digest::MD5 qw(md5)';
 $has_md5 = 1 unless $@;
@@ -28,7 +25,7 @@ use constant MAX_UNICODE => 1114111;
 # HTML utilities
 #
 
-my $protocol_re = qr{(?:http://|https://|ftp://|mailto:|news:|irc:)};
+my $protocol_re = qr{(?:http://|https://|ftp://|mailto:|news:|irc:|xmpp:|skype:)};
 my $url_re =
 qr{(${protocol_re}[^\s<>()"]*?(?:\([^\s<>()"]*?\)[^\s<>()"]*?)*)((?:\s|<|>|"|\.||\]|!|\?|,|&#44;|&quot;)*(?:[\s<>()"]|$))};
 
@@ -46,8 +43,7 @@ sub get_meta {
 				my $len = length($$val);
 				$val = "(Binary data; $len bytes)";
 			}
-			#$data{$_} = encode_entities(decode('utf8', $val));
-			$data{$_} = clean_string(decode_string($val, CHARSET));
+			$data{$_} = clean_string(decode_string($val, 'utf-8'));
 	}
 
 	return \%data;
@@ -56,126 +52,165 @@ sub get_meta {
 sub get_meta_markup {
 	my ($file) = @_;
 	my ($markup, $info, $exifData, @metaOptions);
-	my %options = (	"FileSize" => "Dateigr&ouml;&szlig;e",
-			"FileType" => "Dateityp",
-			"ImageSize" => "Aufl&ouml;sung", 
-			"ModifyDate" => "&Auml;nderungdatum", 
-			"Comment" => "Kommentar", 
-			"Comment-xxx" => "Kommentar", 
-			"CreatorTool" => "Erstellungstool", 
-			"Software" => "Software", 
-			"MIMEType" => "MIME", 
-			"Producer" => "Software", 
-			"Creator" => "Generator", 
-			"Author" => "Autor", 
-			"Subject" => "Betreff", 
-			"PDFVersion" => "PDF-Version", 
-			"PageCount" => "Seiten", 
-			"Title" => "Titel", 
-			"Duration" => "L&auml;nge", 
-			"Artist" => "Interpret", 
-			"AudioBitrate" => "Bitrate", 
-			"ChannelMode" => "Kanalmodus", 
-			"Compression" => "Kompressionsverfahren", 
-			"EncodingProcess" => "Encoding-Verfahren",
+	my %options = ( "FileSize" => "File Size",
+			"FileType" => "File Type",
+			"ImageSize" => "Size",
+			"ModifyDate" => "Modified",
+			"Comment" => "Comment",
+			"Comment-xxx" => "Comment",
+			"CreatorTool" => "Creator Tool",
+			"Software" => "Software",
+			"MIMEType" => "MIME",
+			"Producer" => "Software",
+			"Creator" => "Generator",
+			"Author" => "Author",
+			"Subject" => "Subject",
+			"PDFVersion" => "PDF-Version",
+			"PageCount" => "Pages",
+			"Title" => "Title",
+			"Duration" => "Length", 
+			"Artist" => "Artist",
+			"AudioBitrate" => "Audio Bitrate", 
+			"ChannelMode" => "Channel Mode", 
+			"Compression" => "Compression", 
+			"EncodingProcess" => "Encoding Process",
 			"FrameCount" => "Frames",
-			"Vendor" => "Library-Hersteller",
+			"Vendor" => "Library Producer",
 			"Album" => "Album",
 			"Genre" => "Genre",
-			"Composer" => "Komponist",
-			"Model" => "Modell",
-			"Maker" => "Hersteller",
-			"OwnerName" => "Besitzer",
-			"CanonModelID" => "Canon-eigene Modellnummer",
-			"UserComment" => "Kommentar",
-			"GPSPosition" => "Position",
+			"Composer" => "Composer",
+			"Model" => "Model",
+			"Maker" => "Maker",
+			"OwnerName" => "Owner",
+			"CanonModelID" => "Canon-eigene No.",
+			"UserComment" => "User Comment",
+			"GPSPosition" => "Location",
 	);
 	foreach (keys %options) {
 		push(@metaOptions, $_);
 	}
 	$exifData = get_meta($file, @metaOptions);
 	foreach (keys %$exifData) {
-		if(!$options{$_} eq undef) {
-			if(!$$exifData{$_} eq "") {
-				$markup = $markup . "<strong>$options{$_}</strong>: $$exifData{$_}<br />";
-				if ($_ eq "PageCount") {
-					if ($$exifData{$_} eq 1) {
-						$info = "1 Seite";
-					} else {
-						$info = $$exifData{$_} . " Seiten";
-					}
+		if (defined($options{$_}) and $$exifData{$_} ne "") {
+			$markup = $markup . "<strong>$options{$_}:</strong> $$exifData{$_}<br />";
+			if ($_ eq "PageCount") {
+				if ($$exifData{$_} eq 1) {
+					$info = "1 Page";
+				} else {
+					$info = $$exifData{$_} . " Pages";
 				}
-				if ($_ eq "Duration") {
-					$info = $$exifData{$_};
-					$info =~ s/ \(approx\)$//;
-					$info =~ s/^0:0?//; # 0:01:45 -> 1:45 / 0:12:37 -> 12:37
+			}
+			if ($_ eq "Duration") {
+				$info = $$exifData{$_};
+				$info =~ s/ \(approx\)$//;
+				$info =~ s/^0:0?//; # 0:01:45 -> 1:45 / 0:12:37 -> 12:37
 
-					# round and format seconds to mm:ss for files < 60 s
-					if ($info =~ /(\d+)\.(\d\d) s/) {
-						my $min = 0;
-						my $sec = $1;
-						if ($2 >= 50) { $sec++ }
-						if ($sec == 60) { $sec = 0; $min++; }
-						$sec = sprintf("%02d", $sec);
-						$info = $min . ':' . $sec;
-					}
+				# round and format seconds to mm:ss if only seconds are returned
+				if ($info =~ /(\d+)\.(\d\d) s/) {
+					my $sec = $1;
+					if ($2 >= 50) { $sec++ }
+					my $min = int($sec / 60);
+					$sec = $sec - $min * 60;
+					$sec = sprintf("%02d", $sec);
+					$info = $min . ':' . $sec;
 				}
 			}
 		}
 	}
 
 	return ($info, $markup);
-}	
+}
 
 sub protocol_regexp { return $protocol_re }
 
 sub url_regexp { return $url_re }
 
+
 sub get_geolocation($) {
 	my ($ip) = @_;
+	my $loc = "unk";
 
-	# testing in a local network never requires a captcha
-	return "DE" if ($ip =~ /^192\.168\.\d{1,3}\.\d{1,3}$/);
+	my ($country_code, $country_name, $region_name, $city);
+	my ($gi, $city_record);
+	my $path = "/usr/local/share/GeoIP/";
 
-	# check for IPv6 address
-	return "v6" if ($ip =~ /:/);
-
-	my $gi = Geo::IP->new(GEOIP_MEMORY_CACHE);
-	my $loc = $gi->country_code_by_addr($ip);
-
-	return "unk" if ($loc eq "");
-	return $loc;
-}
-
-sub use_captcha($$) {
-	my ($always_on, $location) = @_;
-	my @allowed = qw(DE NO CH AT LI BE LU DK NL v6);
-
-	return 1 if ($always_on eq 1);
-
-	foreach my $country (@allowed) {
-		return 0 if ($country eq $location);
+	# IPv6 only works with CAPI
+	if ($ip =~ /:/ and Geo::IP->api eq 'CAPI') {
+		eval '$gi = Geo::IP->open($path . "GeoLiteCityv6.dat")';
+		unless ($@ or !$gi) {
+			$gi->set_charset(&GEOIP_CHARSET_UTF8);
+			$city_record = $gi->record_by_addr_v6($ip);
+		} else { # fall back to country if city is not installed
+			eval '$gi = Geo::IP->open($path . "GeoIPv6.dat")';
+			$loc = $gi->country_code_by_addr_v6($ip) unless ($@ or !$gi);
+		}
 	}
 
+	# IPv4
+	if ($ip !~ /:/ and $ip =~ /\./) {
+		eval '$gi = Geo::IP->open($path . "GeoLiteCity.dat")';
+		unless ($@ or !$gi) {
+			$gi->set_charset(&GEOIP_CHARSET_UTF8);
+			$city_record = $gi->record_by_addr($ip);
+		} else { # fall back to country if city is not installed
+			eval '$gi = Geo::IP->open($path . "GeoIP.dat")';
+			$loc = $gi->country_code_by_addr($ip) unless ($@ or !$gi);
+		}
+	}
+
+	if ($city_record) {
+		$loc = $city_record->country_code;
+		$country_name = $city_record->country_name;
+		$region_name = $city_record->region_name;
+		$city = $city_record->city;
+	}
+
+	return ($city, $region_name, $country_name, $loc);
+}
+
+sub need_captcha($$$) {
+	my ($mode, $allowed_list, $location) = @_;
+	my @allowed = split(' ', $allowed_list);
+
+	return 1 if ($mode eq 1);
+	return 0 if ($mode eq 0 or grep {$_ eq $location} @allowed);
 	return 1;
 }
 
-sub get_ip_info {
-	# 1 = ASN
-	# 2 = Countrycode
-	my ($type, $ip) = @_;
-	my (@infos);
-	$ip = dec_to_dot($ip);
-	@infos = get_asn_info($ip);
-	if($type eq 1) {	
-		return $infos[0];
+sub get_as_info($) {
+	my ($ip) = @_;
+	my ($gi, $as_num, $as_info);
+	my $path = "/usr/local/share/GeoIP/";
+
+	# IPv6 only works with CAPI
+	if ($ip =~ /:/ and Geo::IP->api eq 'CAPI') {
+		eval '$gi = Geo::IP->open($path . "GeoIPASNumv6.dat");';
+		$as_info = $gi->name_by_addr_v6($ip) unless ($@ or !$gi);
 	}
-	if($type eq 2) {
-		return $infos[2];
+
+	# IPv4
+	if ($ip !~ /:/ and $ip =~ /\./) {
+		eval '$gi = Geo::IP->open($path . "GeoIPASNum.dat");';
+		$as_info = $gi->name_by_addr($ip) unless ($@ or !$gi);
 	}
-	return 0;
+
+	$as_info =~ /^AS(\d+) /;
+	$as_num = $1;
+	return ($as_num, $as_info);
 }
 	
+
+sub count_lines($) {
+	my ($str) = @_;
+	# do not count empty lines
+	$str =~ s!(<br ?/>)+!<br />!g;
+	# do not count newlines at the end of the comment
+	$str =~ s!(<br ?/>)+$!!;
+	my $count = () = $str =~ m!<br ?/>|<p>|<blockquote!g;
+	# correct "off by one" error caused by abbreviation code
+	$count-- if ($str =~ m!<br /></blockquote>$!);
+	return $count;
+}
 
 sub abbreviate_html {
     my ( $html, $max_lines, $approx_len ) = @_;
@@ -214,6 +249,9 @@ sub abbreviate_html {
 
                 my $abbrev = substr $html, 0, pos $html;
                 while ( my $tag = pop @stack ) { $abbrev .= "</$tag>" }
+
+				# remove newlines from the end of the comment
+				$abbrev =~ s/(<br ?\/>)+$//;
 
                 return $abbrev;
             }
@@ -335,6 +373,41 @@ sub describe_allowed {
     } sort keys %tags;
 }
 
+sub do_math {
+	my ($handler, $text) = @_;
+	eval 'use Math::NumberCruncher';
+	unless($@) {
+		my $math = Math::NumberCruncher->new;
+		my $return;
+		if( $text =~ /(\d+?)d(\d+?)(\+\d+)?$/g )
+		{
+			$return  = "[$text] = ";
+			$return .= $math->Dice($1, $2, $3);
+		}
+		elsif ( $text =~ m%rand\(([\d-]+?)&#44;([\d-]+?)\)$%g )
+		{
+			$return  = "$text = ";
+			$return .= $math->RandInt($1,$2);
+		}
+		elsif ( $text =~ m%(BinomialDist|GaussianDist)\(([\d-.]+?)&#44;([\d-.]+?)&#44;([\d-.]+?)\)$%g )
+		{
+			my $type = $1;
+			$return  = "$type: ";
+			if ($type=="GaussianDist") {
+				$return .= $math->GaussianDist($2,$3,$4);
+			} else {
+				$return .= $math->Binomial($2,$3,$4);
+			}
+		}
+		else
+		{
+			return;
+		}
+
+		return $return;
+	}
+}
+
 sub do_bbcode {
 	my ($text, $handler) = @_;
 	my ($output, @opentags);
@@ -342,11 +415,16 @@ sub do_bbcode {
 	my %html = (
 		'i'         => ['<em>', '</em>'],
 		'b'         => ['<strong>', '</strong>'],
-		'u'         => ['<u>', '</u>'],
-		's'         => ['<s>', '</s>'],
-		'code'      => ['<pre>', '</pre>'],
+		'u'         => ['<span class="underline">', '</span>'],
+		's'         => ['<span class="strike">', '</span>'],
+		'inline'    => ['<code>', '</code>'],
+		'code'      => ['<pre><code>', '</code></pre>'],
+		'sup'       => ['<sup>', '</sup>'],
+		'sub'       => ['<sub>', '</sub>'],
 		'spoiler'   => ['<span class="spoiler">', '</span>'],
-		'quote'     => ['<blockquote class="unkfunc">', '</blockquote>']
+		'buttsex'   => ['<span class="redtext">', '</span>'],
+		'quote'     => ['<span class="unkfunc">', '</span>'],
+		'math'      => ['<span class="math">','</span>']
 	);
 
 	my @bbtags = keys %html;
@@ -356,6 +434,7 @@ sub do_bbcode {
 
 	my @lines = split /(?:\r\n|\n|\r)/,$text;
 	my $findtags = join '|',@bbtags;
+	my $tagsopen = 0;
 
 	while (@lines)
 	{
@@ -379,6 +458,11 @@ sub do_bbcode {
 			my $insert;    # contains [bbtag] which will be replaced by <html-equiv>
 			my $closetags; # used to close all open tags when a [code]-section begins
 
+			if( $opentags[$#opentags] eq 'math' )
+			{
+				$textpart = do_math($handler, $textpart);
+			}
+
 			# convert links and simple wakaba markup if not inside [code]
 			if ( $opentags[$#opentags] ne 'code' )
 			{
@@ -391,6 +475,7 @@ sub do_bbcode {
 
 			if ( grep {$_ eq $tag} @bbtags ) # check for a known tag
 			{
+				$tagsopen++;
 				if ( $closing )
 				{ # close the tag and pop it from the stack if it was opened last
 					if ( $opentags[$#opentags] eq $tag )
@@ -401,7 +486,7 @@ sub do_bbcode {
 				}
 				else
 				{ # open the tag if it is not already open and put it on the stack
-					if ( !grep {$_ eq $tag} @opentags )
+					if ( $tagsopen <= 5 or !grep {$_ eq $tag} @opentags )
 					{
 						# close all open tags on [code] and open <code>
 						if ( $tag eq 'code' )
@@ -417,6 +502,11 @@ sub do_bbcode {
 						}
 					}
 				}
+			}
+
+			if( $opentags[$#opentags] eq 'math' )
+			{
+				$textend = do_math($handler, $textend);
 			}
 
 			# convert links and simple wakaba markup if not inside [code]
@@ -460,7 +550,7 @@ sub detect_bbcode($@)
 {
 	my ( $text, @bbtags ) = @_;
 	my $findtags = join '|',@bbtags;
-	return 1 if ( $text =~ m/\[($findtags)\]/ );
+	return 1 if ( $text =~ m%[($findtags)]% );
 	return 0;
 }
 
@@ -539,6 +629,8 @@ sub do_wakabamark($;$$) {
         $simplify = 0;
     }
 
+	$res =~ s!<br />$!!; # remove last newline
+
     return $res;
 }
 
@@ -547,17 +639,26 @@ sub do_spans {
     return join "<br />", map {
         my $line = $_;
         my @hidden;
+
+		# anonymous array, no idea why
+		my $steamet = ['csgocross', 'csgogun', 'csgohelmet', 'csgoglobe', # cg
+					 'facepunch', 'melon', 'missing', 'balloon', 'gmod', # gmod
+					 'alwayschicken', 'evafacepalm', 'noel', 'hammer', 'VeneticaHammer', 'tbphappy',
+					 'azuki', 'bbtcat', 'cinnamon',  'cocochan', 'chocola', 'catpaw', 'maplechan', 'shigure', 'vanilla'];
+
 		my %smilies = (
-			'trollface'   => '/img/trollface.png',
-			'zahngrinsen' => '/img/zahngrinsen.png',
-			'eisfee'      => '/img/eisfee.gif',
-			'fffuuuuu'    => '/img/fu.png',
-			'fu'          => '/img/fu.png',
-			'awesome'     => '/img/awesome.png',
-			'\153\165\150\154\147\145\163\151\143\150\164' => '/img/schreikopf.png',
-			'\120\105\116\111\123'     => '/img/blau.png',
-			'\126\101\107\111\116\101' => '/img/rot.png',			
-			'\150\145\170\145'         => '/img/marisa.png'
+			'cirno' => '/img/emotes/cirno.gif',
+			'awesome' => '/img/emotes/awesome.png',
+			'nyan' => '/img/emotes/nyan.gif',
+			'popka' => '/img/emotes/popka.gif',
+			'marisa' => '/img/emotes/marisa.png',
+			'alice' => '/img/emotes/alice.png',
+			'kappa' => '/img/emotes/kappa.png',
+			'trollface' => '/img/emotes/trollface.png',
+			'coola' => '/img/emotes/trollface.png',
+			'fu'          => '/img/emotes/fu.png',
+			'zahngrinsen' => '/img/emotes/zahngrinsen.png',
+			map { $_ => '//steamcommunity-a.akamaihd.net/economy/emoticon/'.$_ } @$steamet, # Steam emotes
 		);
 
         # do h1
@@ -570,11 +671,19 @@ s{ (?<![\x80-\x9f\xe0-\xfc]) (`+) ([^<>]+?) (?<![\x80-\x9f\xe0-\xfc]) \1}{push @
 
         # make URLs into links and hide them
         $line =~
-s{$url_re}{push @hidden,"<a href=\"$1\" rel=\"nofollow\">$1\</a>"; "<!--$#hidden-->$2"}sge;
+s{$url_re}{my $name=$1;my $link=$1;if(length($name)>35){$name=substr($name,0,20)."...".substr($name,-15,15)};push @hidden,"<a href=\"$link\" target=\"_blank\" rel=\"nofollow\">$name\</a>"; "<!--$#hidden-->$2"}sge;
 
         # do <strong>
         $line =~
-s{ (?<![0-9a-zA-Z\*_\x80-\x9f\xe0-\xfc]) (\*\*|__) (?![<>\s\*_]) ([^<>]+?) (?<![<>\s\*_\x80-\x9f\xe0-\xfc]) \1 (?![0-9a-zA-Z\*_]) }{<strong>$2</strong>}gx;
+s{ (?<![0-9a-zA-Z\*_\x80-\x9f\xe0-\xfc]) (\*\*) (?![<>\s\*_]) ([^<>]+?) (?<![<>\s\*_\x80-\x9f\xe0-\xfc]) \1 (?![0-9a-zA-Z\*_]) }{<strong>$2</strong>}gx;
+
+        # do <s>
+        $line =~
+s{ (?<![0-9a-zA-Z\*_\x80-\x9f\xe0-\xfc]) (\^\^) (?![<>\s\*_]) ([^<>]+?) (?<![<>\s\*_\x80-\x9f\xe0-\xfc]) \1 (?![0-9a-zA-Z\*_]) }{<span class="strike">$2</span>}gx;
+
+        # do <u>
+        $line =~
+s{ (?<![0-9a-zA-Z\*_\x80-\x9f\xe0-\xfc]) (__) (?![<>\s\*_]) ([^<>]+?) (?<![<>\s\*_\x80-\x9f\xe0-\xfc]) \1 (?![0-9a-zA-Z\*_]) }{<span class="underline">$2</span>}gx;
 
         # do <em>
         $line =~
@@ -582,7 +691,7 @@ s{ (?<![0-9a-zA-Z\*_\x80-\x9f\xe0-\xfc]) (\*|_) (?![<>\s\*_]) ([^<>]+?) (?<![<>\
 
         # do <span class="spoiler">
         $line =~
-s{ (?<![0-9a-zA-Z\*_\x80-\x9f\xe0-\xfc]) (~~) (?![<>\s\*_]) ([^<>]+?) (?<![<>\s\*_\x80-\x9f\xe0-\xfc]) \1 (?![0-9a-zA-Z\*_]) }{<span class="spoiler">$2</span>}gx;
+s{ (?<![0-9a-zA-Z\*_\x80-\x9f\xe0-\xfc]) (~~|\%\%) (?![<>\s\*_]) ([^<>]+?) (?<![<>\s\*_\x80-\x9f\xe0-\xfc]) \1 (?![0-9a-zA-Z\*_]) }{<span class="spoiler">$2</span>}gx;
 
         # do the smilies
 		foreach my $smiley (keys %smilies) {
@@ -605,61 +714,6 @@ s{ (?<![0-9a-zA-Z\*_\x80-\x9f\xe0-\xfc]) (\:$smiley\:) (?![0-9a-zA-Z\*_]) }{<img
 
         $line;
     } @_;
-}
-
-sub compile_template {
-    my ( $str, $nostrip ) = @_;
-    my $code;
-
-    while ( $str =~ m!(.*?)(<(/?)(var|const|if|loop)(?:|\s+(.*?[^\\]))>|$)!sg )
-    {
-        my ( $html, $tag, $closing, $name, $args ) = ( $1, $2, $3, $4, $5 );
-
-        $html =~ s/(['\\])/\\$1/g;
-        $code .= "\$res.='$html';" if ( length $html );
-        $args =~ s/\\>/>/g if defined;
-
-        if ($tag) {
-            if ($closing) {
-                if ( $name eq 'if' ) { $code .= '}' }
-                elsif ( $name eq 'loop' ) {
-                    $code .= '$$_=$__ov{$_} for(keys %__ov);}}';
-                }
-            }
-            else {
-                if ( $name eq 'var' ) { $code .= '$res.=eval{' . $args . '};' }
-                elsif ( $name eq 'const' ) {
-                    my $const = eval $args;
-                    $const =~ s/(['\\])/\\$1/g;
-                    $code .= '$res.=\'' . $const . '\';';
-                }
-                elsif ( $name eq 'if' ) { $code .= 'if(eval{' . $args . '}){' }
-                elsif ( $name eq 'loop' ) {
-                    $code .=
-                        'my $__a=eval{' 
-                      . $args
-                      . '};if($__a){for(@$__a){my %__v=%{$_};my %__ov;for(keys %__v){$__ov{$_}=$$_;$$_=$__v{$_};}';
-                }
-            }
-        }
-    }
-
-    my $sub =
-        eval 'no strict; sub { '
-      . 'my $port=$ENV{SERVER_PORT}==80?"":":$ENV{SERVER_PORT}";'
-      . 'my $self=decode("utf-8", $ENV{SCRIPT_NAME});'
-      . 'my $absolute_self="http://$ENV{SERVER_NAME}$port$ENV{SCRIPT_NAME}";'
-      . 'my ($path)=$ENV{SCRIPT_NAME}=~m!^(.*/)[^/]+$!;'
-      . 'my $absolute_path="http://$ENV{SERVER_NAME}$port$path";'
-      . 'my %__v=@_;my %__ov;for(keys %__v){$__ov{$_}=$$_;$$_=$__v{$_};}'
-      . 'my $res;'
-      . $code
-      . '$$_=$__ov{$_} for(keys %__ov);'
-      . 'return $res; }';
-
-    die "Template format error" unless $sub;
-
-    return $sub;
 }
 
 sub template_for {
@@ -709,7 +763,9 @@ sub clean_string {
     $str =~ s/'/&#39;/g;
     $str =~ s/,/&#44;/g;     # clean up commas for some reason I forgot
 
-#	$str =~ s/[\x00-\x08\x0b\x0c\x0e-\x1f]//g;    # remove control chars
+    $str =~ s/[\x{202A}-\x{202E}]//g;
+
+	# $str =~ s/[\x00-\x08\x0b\x0c\x0e-\x1f]//g;    # remove control chars
 
     return $str;
 }
@@ -884,15 +940,24 @@ sub make_http_forward {
           . '</a></body></html>';
 }
 
+
 sub make_cookies {
     my (%cookies) = @_;
 
     my $charset  = $cookies{'-charset'};
-    my $expires  = ( $cookies{'-expires'} or time + 14 * 24 * 3600 );
+    my $expires  = $cookies{'-expires'};
     my $autopath = $cookies{'-autopath'};
     my $path     = $cookies{'-path'};
+    my $httponly = $cookies{'-httponly'};
 
-    my $date = make_date( $expires, "cookie" );
+	if ($expires) {
+		my $date = make_date( $expires, "cookie" );
+		$expires = " expires=$date;";
+	}
+	else
+	{
+		$expires = "";
+	}
 
     unless ($path) {
         if ( $autopath eq 'current' ) {
@@ -904,6 +969,14 @@ sub make_cookies {
         else { $path = '/'; }
     }
 
+	if ($httponly) {
+		$httponly = " HttpOnly";
+	}
+	else
+	{
+		$httponly = "";
+	}
+
     foreach my $name ( keys %cookies ) {
         next if ( $name =~ /^-/ );    # skip entries that start with a dash
 
@@ -912,7 +985,7 @@ sub make_cookies {
 
         $value = cookie_encode( $value, $charset );
 
-        print "Set-Cookie: $name=$value; path=$path; expires=$date;\n";
+        print "Set-Cookie: $name=$value; path=$path;$expires$httponly\n";
     }
 }
 
@@ -989,16 +1062,6 @@ sub get_xhtml_content_type {
     return $type;
 }
 
-sub expand_filename {
-    my ($filename) = @_;
-
-    return $filename if ( $filename =~ m!^/! );
-    return $filename if ( $filename =~ m!^\w+:! );
-
-    my ($self_path) = $ENV{SCRIPT_NAME} =~ m!^(.*/)[^/]+$!;
-    return decode('utf-8', $self_path) . $filename;
-}
-
 #
 # Network utilities
 #
@@ -1059,13 +1122,15 @@ sub process_tripcode {
     return ( clean_string( decode_string( $name, $charset ) ), "" );
 }
 
+
 sub make_date {
     my ( $time, $style, @locdays ) = @_;
-    my @days   = qw(So Mo Di Mi Do Fr Sa);
-    my @months = qw(Jan Feb Mrz Apr Mai Jun Jul Aug Sep Okt Nov Dez);
+    my @days   = qw(Sun Mon Tue Wed Thu Fri Sat);
+    my @months = qw(Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec);
     my @fullmonths =
-      qw(Januar Februar M&auml;rz April Mai Juni Juli August September Oktober November Dezember);
-    @locdays = @days unless (@locdays);
+      qw(Январь Февраль Март Апрель Май Июнь Июль Август Сентябрь Октябрь Ноябрь Декабрь);
+      # qw(January February March April May June July August September October November December);
+    @locdays = @days unless @locdays;
 
     if ( $style eq "2ch" ) {
         my @ltime = localtime($time);
@@ -1078,20 +1143,10 @@ sub make_date {
         );
     }
     elsif ( $style eq "futaba" or $style eq "0" ) {
+		my @ltime=localtime($time);
 
-#		my @ltime=localtime($time);
-#
-#		return sprintf("%02d.%02d.%02d (%s) %02d:%02d",
-#		$ltime[3],$ltime[4]+1,$ltime[5]-100,$locdays[$ltime[6]],$ltime[2],$ltime[1]);
-        my $day   = localtime->mday;
-        my $wday  = localtime->wday;
-        my $month = localtime->mon;
-        my $year  = localtime->year + 1900;
-        my $hour  = localtime->hour;
-        my $min   = localtime->min;
-        my $sec   = localtime->sec;
-        return sprintf( "%02d. %s %04d (%s) %02d:%02d:%02d",
-            $day, $fullmonths[$month], $year, $days[$wday], $hour, $min, $sec );
+		return sprintf("%s %02d %s %04d %02d:%02d:%02d",
+		$locdays[$ltime[6]],$ltime[3],$fullmonths[$ltime[4]],$ltime[5]+1900,$ltime[2],$ltime[1],$ltime[0]);
     }
     elsif ( $style eq "localtime" ) {
         return scalar( localtime($time) );
@@ -1105,6 +1160,12 @@ sub make_date {
             $ltime[3], $ltime[2], $ltime[1]
         );
     }
+	elsif($style eq "cookie")
+	{
+		my ($sec,$min,$hour,$mday,$mon,$year,$wday)=gmtime($time);
+		return sprintf("%s, %02d-%s-%04d %02d:%02d:%02d GMT",
+		$days[$wday],$mday,$months[$mon],$year+1900,$hour,$min,$sec);
+	}
     elsif ( $style eq "http" ) {
         my ( $sec, $min, $hour, $mday, $mon, $year, $wday ) = gmtime($time);
         return sprintf(
@@ -1112,22 +1173,6 @@ sub make_date {
             $days[$wday], $mday, $months[$mon], $year + 1900,
             $hour, $min, $sec
         );
-    }
-    elsif ( $style eq "cookie" ) {
-        my ( $sec, $min, $hour, $mday, $mon, $year, $wday ) = gmtime($time);
-		# cookie date has to stay in english
-		@days   = qw(Sun Mon Tue Wed Thu Fri Sat);
-		@months = qw(Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec);
-
-        return sprintf(
-            "%s, %02d-%s-%04d %02d:%02d:%02d GMT",
-            $days[$wday], $mday, $months[$mon], $year + 1900,
-            $hour, $min, $sec
-        );
-    }
-    elsif ( $style eq "month" ) {
-        my ( $sec, $min, $hour, $mday, $mon, $year, $wday ) = gmtime($time);
-        return sprintf( "%s %d", $months[$mon], $year + 1900 );
     }
     elsif ( $style eq "2ch-sep93" ) {
         my $sep93 = timelocal( 0, 0, 0, 1, 8, 93 );
@@ -1212,11 +1257,33 @@ sub decode_base64    # stolen from MIME::Base64::Perl
 }
 
 sub dot_to_dec {
-    return unpack( 'N', pack( 'C4', split( /\./, $_[0] ) ) );    # wow, magic.
+	my $ip = $_[0];
+
+	if ($ip =~ /:/) { # IPv6
+		my $iph = new Net::IP($ip) or return 0;
+		return $iph->intip();
+	}
+
+	# IPv4
+    return unpack( 'N', pack( 'C4', split( /\./, $ip ) ) );    # wow, magic.
 }
 
 sub dec_to_dot {
-    return join( '.', unpack( 'C4', pack( 'N', $_[0] ) ) );
+	my $ip = $_[0];
+
+	# IPv6
+	return ip_compress_address(ip_bintoip(ip_inttobin($ip, 6), 6), 6) if (length(pack('w', $ip)) > 5);
+
+	# IPv4
+    return join('.', unpack('C4', pack('N', $ip)));
+}
+
+sub get_mask_len {
+	my $ip = $_[0];
+	$ip = dec_to_dot($ip) if ($ip =~ /^(\d+)$/);
+	my $mask = new Net::IP($ip) or die(Net::IP::Error());
+	my ($bits) = $mask->binip() =~ /^(1+)/;
+	return length($bits);
 }
 
 sub mask_ip {
@@ -1351,41 +1418,8 @@ sub write_array {
 # File utilities
 #
 
-sub analyze_file {
-    my ( $file, $name ) = @_;
-
-    my $width  = 0;
-    my $height = 0;
-    my $ext;
-    my $known = 0;
-
-    safety_check($file);
-
-    my $exifInfo = ImageInfo($file);
-
-    my $data;
-    read( $file, $data, $File::MimeInfo::Magic::max_buffer );
-    my $io_scalar = new IO::Scalar \$data;
-    my $mimeType  = mimetype($io_scalar);
-
-    make_error($mimeType);
-    if ( $exifInfo->{width} && $exifInfo->{height} ) {
-        $width  = $exifInfo->{width};
-        $height = $exifInfo->{height};
-    }
-
-    my %filetypes = FILETYPES;
-
-    # wtf, well lets just do a linear search for now.
-    foreach my $key ( keys %filetypes ) {
-        if ( $filetypes{$key}[1] eq $mimeType ) {
-            $known = 1;
-            $ext   = $key;
-        }
-
-    }
-    return ( $known, $ext, $width, $height );
-}
+# Well, it's never used
+# sub analyze_file { }
 
 #
 # Image utilities
@@ -1403,6 +1437,7 @@ sub analyze_image {
 	return ( "pdf", @res ) if ( @res = analyze_pdf($file) );
 	return ( "svg", @res ) if ( @res = analyze_svg($file) );
 	return ( "webm", @res ) if ( @res = analyze_webm($file) );
+	return ( "mp4", @res ) if ( @res = analyze_mp4($file) );
 
     # find file extension for unknown files
     my ($ext) = $name =~ /\.([^\.]+)$/;
@@ -1547,19 +1582,64 @@ sub analyze_webm($) {
 	return();
 }
 
-sub test_afmod {
-	my $day = localtime->mday;
-	my $month = localtime->mon + 1;
+sub analyze_mp4($) {
+	my ($file) = @_;
+	my ($buffer1, $buffer2);
 
+	read($file, $buffer1, 3);
+	seek($file, 1, 1);
+	read($file, $buffer2, 8);
+	seek($file, 0, 0);
+
+	if ($buffer1 eq "\x00\x00\x00"
+	  and $buffer2 eq "\x66\x74\x79\x70\x6D\x70\x34\x32"
+	  or  $buffer2 eq "\x66\x74\x79\x70\x69\x73\x6F\x6D") {
+		my $exifTool = new Image::ExifTool;
+		my $exifData = $exifTool->ImageInfo($file, 'ImageSize');
+		seek($file, 0, 0);
+		if ($$exifData{ImageSize} =~ /(\d+)x(\d+)/) {
+			return($1, $2);
+		}
+	}
+
+	return();
+}
+
+sub test_afmod {
+	my @now = localtime;
+	my ($month, $day) = ($now[4] + 1, $now[3]);
 	return 1 if (ENABLE_AFMOD && $month == 4 && $day == 1);
 	return 0;
 }
 
-sub make_video_thumbnail {
-	my ($filename, $thumbnail, $width, $height, $command) = @_;
+sub get_thumbnail_dimensions {
+	my ($width,$height,$maxw,$maxh) = @_;
+	my ($tn_width,$tn_height);
 
-	$command = "avconv" unless ($command);
-	my $filter = "scale='gte(iw,ih)*min(${width},iw)+not(gte(iw,ih))*-1':'gte(ih,iw)*min(${height},ih)+not(gte(ih,iw))*-1'";
+	if($width <= $maxw and $height <= $maxh) {
+		$tn_width = $width;
+		$tn_height = $height;
+	}
+	else {
+		$tn_width = $maxw;
+		$tn_height = int(($height*($maxw))/$width);
+
+		if($tn_height>$maxh) {
+			$tn_width = int(($width*($maxh))/$height);
+			$tn_height = $maxh;
+		}
+	}
+
+	return ($tn_width,$tn_height);
+}
+
+sub make_video_thumbnail {
+	my ($filename, $thumbnail, $width, $height, $max_w, $max_h, $command) = @_;
+	my ($tn_width, $tn_height);
+	($tn_width, $tn_height) = get_thumbnail_dimensions($width,$height,$max_w,$max_h);
+
+	$command = "ffmpeg" unless ($command);
+	my $filter = "scale=${tn_width}:${tn_height}";
 
 	`$command -v quiet -i $filename -vframes 1 -vf $filter $thumbnail`;
 
@@ -1829,6 +1909,8 @@ sub remove_path($) {
 sub get_urlstring($) {
     my ($filename) = @_;
 	$filename =~ s/ /%20/g;
+	$filename =~ s/\[/%5B/g;
+	$filename =~ s/\]/%5D/g;
 	return $filename;
 }
 
@@ -1852,17 +1934,18 @@ sub get_displayname($) {
 	return $filename;
 }
 
-sub get_displaysize($;$) {
-	my ($size, $dec_mark) = @_;
+sub get_displaysize($;$$) {
+	my ($size, $dec_mark, $dec_places) = @_;
 	my $out;
+	$dec_places = 2 if (!defined($dec_places));
 
 	if ($size < 1024) {
 		$out = sprintf("%d Bytes", $size);
 	} elsif ($size >= 1024 && $size < 1024*1024) {
 		$out = sprintf("%.0f kB", $size/1024);
 	} else {
-		$out = sprintf("%.2f MB", $size / (1024*1024));
-		$out =~ s/00 MB$/0 MB/;
+		$out = sprintf("%.${dec_places}f MB", $size / (1024*1024));
+		$out =~ s/00 MB$/0 MB/ if ($dec_places gt 1);
 	}
 
 	$out =~ s/\./$dec_mark/e if ($dec_mark);
@@ -1875,12 +1958,74 @@ sub get_pretty_html($$) {
 	return $text;
 }
 
+sub get_post_info($$) {
+	my ($board, $data) = @_;
+	my @items = split(/<br \/>/, $data);
+	return '(n/a)' unless (@items);
+
+	# country flag
+	$items[0] = 'UNKNOWN' if ($items[0] eq 'unk');
+	my $flag = '<img alt="" src="/img/flags/' . $items[0] . '.PNG"> ';
+
+	if (scalar @items == 1) { # for legacy entries
+		return $flag . $items[0];
+	} else {
+		# geo location
+		my @loc = grep {$_} ($items[1], $items[2], $items[3]);
+		my $location = join(', ', @loc);
+
+		# as num, name and ban link
+		$items[4] =~ /^AS(\d+) /;
+		$items[4] .= ' [<a href="' . $ENV{SCRIPT_NAME}
+			. '?section='.$board.'&amp;task=addstring&amp;type=asban&amp;string=' . $1
+			. '&amp;comment=' . urlenc($items[4]) . '">Lock</a>]';
+
+		return $flag . $location . '<br />' . $items[4];
+	}
+}
+
+sub get_post_info2($;$) {
+	my ($data, $adm) = @_;
+	my @items = split(/<br \/>/, $data);
+	return '(n/a)' unless (@items);
+
+	$items[0] = 'UNKNOWN' if ($items[0] eq 'unk');
+	@items = qw/UNKNOWN/ if ($adm);
+	my $flag = '<img alt="" src="/img/flags/' . $items[0] . '.PNG"> ';
+	my $ret = $flag;
+
+	if (scalar @items == 1) { # for legacy entries
+		$ret = $items[0];
+	} else {
+		# geo location
+		my @loc = grep {$_} ($items[1], $items[2], $items[3]);
+		my $location = clean_string( join(', ', @loc));
+
+		$ret = $location;
+	}
+	$ret = sprintf('<span class="countryflag" onmouseover="Tip(\'%s\', DELAY, 0)" onmouseout="UnTip()">%s</span>', $ret, $flag);
+	return $ret;
+}
+
 sub get_date {
-    my ($date) = @_;
-    DateTime->DefaultLocale("de_DE");
-    my $dt = DateTime->from_epoch( epoch => $date, time_zone => 'Europe/Berlin' );
+    my ($date, $nya) = @_;
+    my $ret;
+	eval 'use DateTime qw(from_epoch strftime)';
+    DateTime->DefaultLocale("ru_RU");
+    my $dt = DateTime->from_epoch( epoch => $date, time_zone => 'Europe/Moscow' );
     # $day, $fullmonths[$month], $year, $days[$wday], $hour, $min, $sec
-    return $dt->strftime("%e. %B %Y (%a) %H:%M:%S %Z");
+    unless ($nya) {
+    	$ret = $dt->strftime("%e %B %Y (%a) %H:%M:%S %Z");
+    }
+    else {
+    	$ret = $dt->strftime("%d.%m.%Y %H:%M %Z");
+    }
+    return $ret;
+}
+
+sub size_in_mb {
+    my ($size_in_bytes) = @_;
+    return ($size_in_bytes / 1024) . ' MB';
 }
 
 1;

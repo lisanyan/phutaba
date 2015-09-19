@@ -1,0 +1,35 @@
+::selection {
+	background-color: #FF00CC;
+	color: #FF0000;
+	text-shadow: 1px 1px 1px #0000FF;
+}
+
+::-moz-selection {
+	background-color: #FF00CC;
+	color: #FF0000;
+	text-shadow: none;
+}
+
+img {
+	-moz-transform:rotate(180deg);
+	-webkit-transform:rotate(180deg);
+	-o-transform:rotate(180deg);
+	-ms-transform:rotate(180deg);
+	transform:rotate(180deg);
+}
+
+input[type='text']:focus, input[type='password']:focus, textarea:focus {
+	background-image: linear-gradient(bottom, rgb(255,0,0) 0%, rgb(255,255,0) 20%, rgb(0,255,0) 40%, rgb(0,255,255) 60%, rgb(0,0,255) 80%, rgb(255,0,255) 100%);
+	background-image: -o-linear-gradient(bottom, rgb(255,0,0) 0%, rgb(255,255,0) 20%, rgb(0,255,0) 40%, rgb(0,255,255) 60%, rgb(0,0,255) 80%, rgb(255,0,255) 100%);
+	background-image: -moz-linear-gradient(bottom, rgb(255,0,0) 0%, rgb(255,255,0) 20%, rgb(0,255,0) 40%, rgb(0,255,255) 60%, rgb(0,0,255) 80%, rgb(255,0,255) 100%);
+	background-image: -webkit-linear-gradient(bottom, rgb(255,0,0) 0%, rgb(255,255,0) 20%, rgb(0,255,0) 40%, rgb(0,255,255) 60%, rgb(0,0,255) 80%, rgb(255,0,255) 100%);
+	background-image: -ms-linear-gradient(bottom, rgb(255,0,0) 0%, rgb(255,255,0) 20%, rgb(0,255,0) 40%, rgb(0,255,255) 60%, rgb(0,0,255) 80%, rgb(255,0,255) 100%);
+	background-image: -webkit-gradient(linear,left bottom,left top,color-stop(0, rgb(255,0,0)),color-stop(0.2, rgb(255,255,0)),color-stop(0.4, rgb(0,255,0)),color-stop(0.6, rgb(0,255,255)),color-stop(0.8, rgb(0,0,255)),color-stop(1, rgb(255,0,255)));	
+	color: #FFFFFF;
+	text-shadow: 1px 1px 0px #000000;
+}
+
+.postername:before {
+	/*content: "Nicht-";*/
+	content: "Не-";
+}

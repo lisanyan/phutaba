@@ -1,7 +1,9 @@
 [% META
-   title   = 'Fehler'
+   title   = 'Error'
 %]
 
 	<section class="error">
-		<p>Fehler: [[% error.type %]] [% error.info %]</p>
+		<p>Error: [% error.type %]</p>
+		<p>[% error.info %]</p>
+		[% IF error.image %]<br /><img src="[% error.image %]" alt="Error" />[% END %]
 	</section>

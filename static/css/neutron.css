@@ -1,0 +1,44 @@
+body{background:#212121;color:#698CC0}
+a:link,a:visited,a:hover{color:#C9BE89}
+.reflink a,.filename a,.filetype a,.togglethread a{color:inherit}
+ul.menu a,ul.menu_bottom a{background-color:#2C2C2C;border-color:#575757}
+ul.pagelist{background-color:#2C2C2C;border-right:1px solid #575757;border-bottom:1px solid #575757}
+ul.menu_bottom li a,ul.menu li a{border-color:#575757;background-color:#2C2C2C;color:#698CC0}
+hr{border-width:0;height:3px;background:url(/img/icons/line.png) center no-repeat}
+.boardname,.caption{color:#FFAB3F}
+.postblock{background-color:#2C2C2C;color:#698CC0}
+input[type='text'],input[type='password'],textarea{border:2px solid #545454;border-radius:5px;background:#111;color:#698cc0}
+.post{background-color:#2C2C2C;border-right:1px solid #3c3c3c;border-bottom:1px solid #3c3c3c}
+.post_new{border-right:1px solid #944900;border-bottom:1px solid #944900}
+.context > div,#preview{background-color:#212121;border-color:#111}
+#preview .post{border-color:#3c3c3c}
+#preview{box-shadow:1px 2px 2px #373737}
+#ancbox{bottom:.25em;box-shadow:0 0 0 100000px rgba(65,65,65,0.5)}
+.highlight .post,:target .post{background-color:#373737}
+.highlight .post .file,:target .post .file{background-color:#3C3C3C}
+:target .filedeleted{color:inherit}
+.thread_head{background-color:#3c3c3c}
+.subject{color:#4877C0}
+.postername{color:#B4B9CD}
+.backreflink del{color:inherit}
+.teampost{color:#FFAB3F}
+.sage{color:#C27F27}
+.ban,.user_banned{color:#C27F27}
+.file{background-color:#272727}
+.filedeleted{color:inherit}
+.spoiler,.spoiler a{background:#575757;color:#575757}
+.spoiler:hover{background:#575757;color:inherit}
+.spoiler a:hover{color:#C9BE89}
+blockquote.unkfunc,,span.math,span.unkfunc,span.quote{color:#789922}
+.notice span{border-right:1px solid #944900;border-bottom:1px solid #944900}
+.passvalid{background-color:#2C2C2C;color:#006AB9;font-weight:700}
+.managehead{background-color:#2C2C2C;color:#6393CD}
+.row1{background:#2C2C2C;color:#6393CD}
+.row2{background:#575757;color:#6393CD}
+.title,.info th{background-color:#111;color:#698CC0}
+.info{background-color:#212121;border-color:#111}
+.info td{border:1px solid #111}
+dl#menu{background-color:#212121!important}
+dl.menu dt{background:#111;border:solid 1px #575757;-moz-border-radius:5px;-webkit-border-radius:5px;border-radius:5px;margin-top:1em;padding-left:.5em;cursor:pointer;color:#698CC0;font-weight:400}
+dl.menu dd{margin-left:.5em;padding-left:.5em;border-left:solid 1px #575757;background:#212121}
+dl.menu dd:hover{background:#575757}

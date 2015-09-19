@@ -1,18 +1,8 @@
 [% META
-   title   = 'Regeln'
+   title   = 'Правила'
 %]
 
-	<header class="title">1. Altersbeschr�nkung</header>
+	<header class="title">Правила</header>
 	<section class="info">
-		<p>Ernstchan richtet sich an Personen, die <strong>mindestens 18 Jahre alt</strong> sind. Minderj�hrige haben hier nichts veloren.</p>
-	</section>
-
-	<header class="title">2. Uploads</header>
-	<section class="info">
-		<p><strong>S�mtliche Dateien, die gegen das niederl�ndische Recht versto�en, d�rfen nicht hochgeladen werden!</strong></p>
-	</section>
-
-	<header class="title">3. IRC</header>
-	<section class="info">
-		<p>Im <a href="/irc">IRC-Channel</a> sollte man sich vern�nftig unterhalten. Wer sich nicht benehmen kann, fliegt raus.</p>
+		<p>No dumb rules here.</p>
 	</section>

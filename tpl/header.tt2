@@ -1,11 +1,19 @@
 <!DOCTYPE html> 
-<html lang="de"> 
+<html lang="en"> 
 
 <head>
-	<title>Ernstchan [% IF template.title %]&raquo; [% template.title %][% END %]</title>
-	<!--meta charset="utf-8" /-->
-	<link rel="stylesheet" type="text/css" href="/css/phutaba.css" />
+	<title>02ch [% IF template.title %]&raquo; [% template.title %][% END %]</title>
+	<meta charset="utf-8" />
+	<link rel="stylesheet" type="text/css" href="/static/css/phutaba.css" />
 	<link rel="shortcut icon" href="/img/favicon.ico" />
+	<link rel="alternate stylesheet" type="text/css" href="/static/css/photon.css" title="Photon" />
+	<link rel="alternate stylesheet" type="text/css" href="/static/css/futaba.css" title="Futaba" />
+	<link rel="alternate stylesheet" type="text/css" href="/static/css/neutron.css" title="Neutron" />
+	<link rel="alternate stylesheet" type="text/css" href="/static/css/kaiserchan.css" title="Kaiserchan" />
+    <script type="text/javascript" src="https://www.google.com/jsapi"></script>
+	<script type="text/javascript" src="/static/js/jquery-1.9.1.min.js"></script>
+	<script type="text/javascript">var style_cookie="wakastyle";</script>
+	<script type="text/javascript" src="/static/js/wakaba3.js"></script>
 </head>
 
 <body>
@@ -23,7 +31,9 @@
 
 <header>
 	<div class="header">
-		<div class="banner"><a href="/"><img src="/banner-redir.pl" alt="Ernstchan" /></a></div>
+		<div class="banner"><a href="/">[% UNLESS ismain %]
+			<img src="/banner.pl" alt="02ch" />
+		[% END %]</a></div>
 		<div class="boardname">[% template.title %]</div>
 	</div>
 </header>

@@ -1,0 +1,36 @@
+hr{border-top:1px solid #BBB}
+body{background:#eee;color:#333}
+a:link,a:visited,a:hover{color:#F60}
+.reflink a,.filename a,.filetype a,.togglethread a{color:inherit}
+ul.menu a,ul.menu_bottom a{background-color:#ddd;border-color:#ccc}
+ul.menu_bottom li a,ul.menu li a{border-color:#ccc;background-color:#ddd}
+ul.pagelist{background-color:#ddd;border-right:1px solid #ccc;border-bottom:1px solid #ccc}
+.boardname,.caption{color:#f60}
+.postblock{background-color:#ccc;color:#000}
+input[type='text'],input[type='password'],textarea{border:1px solid #ccc}
+.post{background-color:#DDD;border-right:1px solid #CCC;border-bottom:1px solid #CCC}
+.post_new{border-right:1px solid #944900;border-bottom:1px solid #944900}
+.highlight .post,:target .post{background-color:#EEDACB}
+.highlight .post .file,:target .post .file{background-color:#d6c4b6}
+:target .filedeleted{color:#CCC}
+.thread_head{background-color:#CCC}
+.subject{color:#024}
+.postername{color:#004A99}
+.backreflink del{color:#34345C}
+.file{background-color:#ccc}
+.filedeleted{color:#333}
+blockquote.unkfunc,span.unkfunc,span.quote,span.math{color:#789922}
+.spoiler,.spoiler a{background:#CCC;color:#CCC}
+.spoiler:hover{background:#CCC;color:#333}
+.spoiler a:hover{color:#F60}
+.notice span{border-right:1px solid #944900;border-bottom:1px solid #944900}
+.managehead{background:#ddd;color:#000;padding:0}
+.passvalid{background:#ddd;color:#024}
+.row1{background-color:#C9C9C9}
+.row2{background-color:#ABABAB}
+.title,.info th{background-color:#d3d3d3;color:#333}
+.info{background-color:#e6e6e6;border-color:#d3d3d3}
+.info td{border:1px solid #ccc}
+dl.menu dt{background:#DDD;border:solid 1px #CCC;margin-top:1em;padding-left:.5em;cursor:pointer}
+dl.menu dd{margin-left:.5em;padding-left:.5em;border-left:solid 1px #CCC}
+/*#preview {border-color: #ccc;}*/
