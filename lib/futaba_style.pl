@@ -517,12 +517,12 @@ use constant ERROR_TEMPLATE => compile_template(
 	<header class="title"><var $error_title></header>
 
 <if $error>
-<div class="info"><var $error></p></div>
+<div class="info"><var $error></div>
 </if>
 
 <if $banned or $dnsbl>
 <div class="info">
-
+<img src="/img/ernstwurf_schock.png" width="210" height="210" style="float: right;" />
 <loop $bans>
  Deine IP-Adresse <strong><var $ip></strong>
  <if $showmask>(Netz <var $network>/<var $setbits>)</if> wurde
