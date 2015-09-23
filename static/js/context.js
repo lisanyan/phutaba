@@ -13,7 +13,7 @@ var _selector = '.thread_OP, .thread_reply'; //post
 var refMap = [], postByNum = [];
 var origBtn, updBtn = $j('#updater');
 
-var lang = 'ru';
+var lang = 'en';
 var consts = {
   en: {
 	newPostsNotFound: "Now new messages found.",
