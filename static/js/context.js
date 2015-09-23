@@ -3,266 +3,321 @@ function highlight() {
   // to be here until the board doesn't hardcode it into posts anymore
 }
 
-function DAG(id) {
-  this.nodes = [];
-  if (id !== undefined) {
-    this.head = id;
-    this.nodes[id] = {
-      parents: [],
-      children: []
-    };
-  }
-}
-DAG.prototype.append = function (parents, id) {
-  var nodes = this.nodes;
-  if (nodes[id]) {
-    return false;
-  } else {
-    nodes[id] = {
-      parents : parents,
-      children : []
-    };
-    parents.forEach(function (p) {
-      nodes[p].children.push(id);
-    });
-    return true;
-  }
-};
-DAG.prototype.attach = function (parents, sub) {
-  var nodes = this.nodes;
-  if (sub.nodes.filter(function (el) {
-    return nodes[el.id] !== undefined;
-  }).length) {
-    return false;
-  } else {
-    sub.nodes.forEach(function (node, i) {
-      nodes[i] = node;
-    });
-    nodes[sub.head].parents = parents;
-    parents.forEach(function (p) {
-      nodes[p].children.push(sub.head);
-    });
-    return true;
-  }
-};
-DAG.prototype.flatten = function () {
-  // this is not a toposort!
-  return this.nodes.map(function (node, i) {
-    return i;
-  }).filter(function (node, i) {
-    return i !== undefined;
-  });
-};
-DAG.prototype.reverse = function () {
-  var out = new DAG();
-  this.nodes.forEach(function (node, i) {
-    if (out.head === undefined && !node.children.length) {
-      out.head = i;
-    }
-    out.nodes[i] = {
-      parents: node.children,
-      children: node.parents
-    };
-  });
-  return out;
-};
-DAG.prototype.descendants = function (id) {
-  var out = new DAG(id),
-    self = this;
-  self.nodes[id].children.forEach(function (child) {
-    if (out.nodes[child]) {
-      out.nodes[child].parents.push(id);
-    } else {
-      out.attach([id], self.descendants(child));
-    }
-  });
-  return out;
-};
-DAG.prototype.ancestors = function (id) {
-  return this.reverse().descendants(id);
-};
+// WARNING!! Ультраговнокод
+(function(){
+var isWindowFocused = true, newPosts = 0;
+var old_t = $j('title').text();
+var perdelki = Settings.get('context');
 
-(function () {
-var context = {
-  // works in threads only. TODO
-  show : function (num, highlight) {
-    var posts = $j('.content .thread_reply')
-      , OPid = +$j('.thread_OP').attr('id')
-      , postgraph = createPostGraph(OPid)
-      , ancwrap = exists('#ancwrap') ? $j('#ancwrap') : $j('<div id=ancwrap class=context><div id=ancbox>')
-      , deswrap = exists('#deswrap') ? $j('#deswrap') : $j('<div id=deswrap class=context><div id=desbox>')
-      , ancbox = ancwrap.find(':first-child').empty()
-      , desbox = deswrap.find(':first-child').empty()
-      , dummy = $j('<div id=dummy class=dummy>')
-      , ancestors
-      , descendants
-    ;
-    // generate the graph every time - we can optimize this later
-    posts.each(postgraph.addPost);
-    
-    descendants = exclude(postgraph.descendants(num).flatten(), [num]);
-    ancestors = exclude(postgraph.ancestors(num).flatten(), [num]);
-    
-    ancestors.forEach(function (i) {
-        ancbox.append(clonePost(i));
-    });
-    descendants.forEach(function (i) {
-        desbox.append(clonePost(i));
-    });
+var _selector = '.thread_OP, .thread_reply'; //post
+var refMap = [], postByNum = [];
+var origBtn, updBtn = $j('#updater');
 
-    ancbox.find('#c' + highlight).addClass('highlight');
-    if (ancestors.length) $j('#'+num).before(ancwrap);
-    if (descendants.length) $j('#'+num).after(deswrap);
+var lang = 'ru';
+var consts = {
+  en: {
+	newPostsNotFound: "Now new messages found.",
+	newPostsFound: " new messages",
+	pNotFound: "Post not found",
+	updthr: "Update thread",
+	load: "Loading...",
+	replies: "Replies: ",
+	done: "Success"
   },
-  hide : function () {
-    $j('#ancwrap, #deswrap')
-      .detach()
-      .find('article')
-      .removeClass('highlight');
+  ru: {
+	newPostsNotFound: "Нет новых постов.",
+	newPostsFound: "Новых постов: ",
+	pNotFound: "Пост не найден",
+	updthr: "Обновить тред",
+	load: "\u0417агрузка...",
+	replies: "Ответы: ",
+	done: "Изгнание ебсов успешно завершено."
   }
-}, postCache, preview = (function () {
-  var previewBox = $j('<div id=preview>')
-    , status = []
-  ;
-
-  function loadPost(num, callback) {
-    $j.get('/wakaba.pl?task=show&post=' + num + '&section=' + window.board,
-      function (data) {
-        var post = $j(data.trim());
-        if (!exists(+num)) {
-          postCache.append(post);
-        }
-        callback(post);
-      });
-  }
-
-  function showPost(p, pos) {
-    previewBox.empty()
-      .append( p.hasClass('thread_OP') ?
-        clonePost(p.attr('id')) :
-        p.find('.post').clone() )
-      .css({left: pos.X + 5 + 'px', top: pos.Y - p.outerHeight()/2 + 'px'})
-      .show()
-      .appendTo(document.body);
-  }
-
-  return {
-    show : function (num, pos, callback) {
-      var p = exists('#c' + num) ? $j('#c' + num) :
-          exists(+num) ? $j('#' + num) :
-          undefined
-        , isVisible = p && p.offset().top + p.outerHeight() > window.scrollY &&
-          window.scrollY + $j(window).height() > p.offset().top
-        , isEntirelyVisible = p && p.offset().top > window.scrollY &&
-          window.scrollY + $j(window).height() > p.offset().top + p.outerHeight()
-      ;
-
-      if (p) {
-        if (!isEntirelyVisible) {
-          showPost(p, pos);
-        }
-        if (isVisible) {
-          p.addClass('highlight');
-        }
-        callback();
-      } else {
-        if (!status[num]) {
-          loadPost(num, function (post) {
-            if (status[num] !== "aborted") {
-              showPost(post, pos, previewBox);
-              callback();
-              status[num] = "loaded";
-            }
-          });
-        }
-        status[num] = "loading";
-      }
-    },
-    hide : function (num) {
-      var posts = $j('#' + num + ',#c' + num);
-      status[num] = "aborted";
-      previewBox.hide().empty();
-      posts.removeClass('highlight');
-    }
-  };
-})();
-
-
-function createPostGraph(OP) {
-  var graph = new DAG(OP);
-  graph.addPost = function () {
-    var post = $j(this)
-      , refs = post.find('span.backreflink a')
-      , num = +post.attr('id')
-    ;
-    graph.append(refs.map(function () {
-      return +getTarget(this);
-    }).toArray().filter(function (x) {
-      return exists('.content #' + x);
-    }), num);
-  }
-  return graph;
 }
 
-function exclude (arr, without) {
-  return arr.filter(function (x) {
-    return !(without.indexOf(x) >= 0);
+/*------------------------------------------------------------------- COMMON CRAP -------------------------------------------------------------*/
+function $X(a,b){return document.evaluate(a,b||document,null,6,null)}
+function $x(a,b){return document.evaluate(a,b||document,null,8,null).singleNodeValue}
+function $del(a){a&&a.parentNode.removeChild(a)}
+function $each(a,b){if(a){var c=a.snapshotLength;if(0<c)for(;c--;)b(a.snapshotItem(c),c)}};
+function $offset(a,c){for(var b=0;a;)b+=a[c],a=a.offsetParent;return b}
+function $event(a,c){for(var b in c)a.addEventListener(b,c[b],!1)}
+function $new(a,c,b){a=document.createElement(a);c&&$attr(a,c);b&&$event(a,b);return a};
+function $attr(b,c){for(var a in c)"text"==a?b.textContent=c[a]:"value"==a?b.value=c[a]:"html"==a?b.innerHTML=c[a]:b.setAttribute(a,c[a]);return b};
+
+/*------------------------------------------------------------------- >>REFLINKS MAP IN POSTS -------------------------------------------------------------*/
+
+//reflink map
+function addRefLinkMap(node) {
+  $j(node||_selector).each(function(){
+	//get id
+	var p_num = $j(this).attr('id');
+	postByNum[p_num] = $j(this);
+  });
+  
+  $j('.text', (node||_selector)).each(function(){
+	var $ref = $j(this);
+	if($ref.find('.backreflink a').text().indexOf('>>') == 0) {
+
+	  $ref.find('.backreflink a').each(function() {
+		var r_num = $j(this).text().match(/\d+/);
+		
+		if(postByNum[r_num]) {
+		  getRefMap($ref.parent().parent().parent().find('.reflink a').text().match(/\d+/), r_num);
+		}
+	  });
+	}
+  });
+
+  for(var rNum in refMap)
+	showRefMap(postByNum[rNum], rNum, Boolean(node));
+}
+
+function getRefMap(pNum, rNum)
+{
+  if(!refMap[rNum]) refMap[rNum] = [];
+
+  if((',' + refMap[rNum].toString() + ',').indexOf(',' + pNum + ',') < 0)
+	refMap[rNum].push(pNum);
+}
+
+function showRefMap(post, p_num, isUpd) {
+  if(typeof refMap[p_num] !== 'object' || !post) return;
+  
+  var data = consts[lang].replies + refMap[p_num].toString().replace(/(\d+)/g, ' <span class="backreflink"><a href="#$1">>>$1</a></span>');
+  var map_b = isUpd ? $id("pidarok_refmap_"+p_num) : null;
+
+  if(!map_b) {
+	map_b = $j('<div class="pidarok_refmap" id="pidarok_refmap_'+p_num+'">'+data+'</div>');
+	$j('.post_body .text', $j(post).find('.post')).append(map_b);
+  }
+  else {
+	$j(map_b).html(data);
+  }
+}
+
+/*------------------------------------------------------------------- >>REFLINKS PREVIEW -------------------------------------------------------------*/
+
+function showPostPreview(e)
+{
+  var ref  = e.target;
+  var pNum = $j(this).text().match(/\d+/);
+  var scrW = document.body.clientWidth, scrH = window.innerHeight;
+  x = $offset(ref, 'offsetLeft') + ref.offsetWidth/2;
+  y = $offset(ref, 'offsetTop');
+
+  if(e.clientY < scrH*0.75) y += ref.offsetHeight - 10;
+
+  cln = $new('div',
+	{
+	  'id': 'pstprev_' + pNum,
+	  'class': 'thread_reply post_preview',
+	  'style':
+	  ( (x < scrW/2 ? 'left:' + x : 'right:' + parseInt(scrW - x + 2)) + 'px; '
+	  + (e.clientY < scrH*0.75 ? 'top:' + y : 'bottom:' + parseInt(scrH - y - 10)) + 'px')
+	},
+  {
+  });
+
+  var mkPreview = function(cln, html) {
+	  cln.innerHTML = html;
+	  addPreview(cln);
+  };
+
+  cln.innerHTML = consts[lang].load;
+
+  //если пост найден в дереве.
+  if($j('div[id='+pNum+']').length > 0) {
+	  var postdata = $j('div[id='+pNum+']').html();
+	  mkPreview(cln, postdata);
+  }
+  //ajax api
+  else {
+	  $j.ajax('/wakaba.pl?task=show&post='+pNum+'&section='+window.board, {async:true})
+		  .success(function(data) {
+			  var postdata = $j(data).html();
+			  mkPreview(cln, postdata);
+
+		  })//if error
+		  .error(function() {
+			  cln.innerHTML = consts[lang].pNotFound;
+		  });
+  }
+  $del($id(cln.id));
+  $j(cln).unbind('mouseout').mouseout(delPreview);
+  $j('#appendix').append(cln);
+}
+
+function delPreview(e) {
+	var pView, el = $j(e.relatedTarget).closest('div[id^="pstprev"]');
+	if(el.length) pView = el[0];
+	if(!pView)
+		$j('div[id^="pstprev"]').remove();
+	else {
+		while(pView.nextSibling) $del(pView.nextSibling)
+		$j(pView).closest('a').unbind('mouseout');
+	}
+}
+function addPreview(a){$j(a || ".thread .text").find(".backreflink a").each(function(){$event(this,{mouseover:showPostPreview,mouseout:delPreview})})};
+
+/*------------------------------------------------------------------- AJAX -------------------------------------------------------------*/
+
+//load new posts
+function getNewPosts() {
+	if(window.thread_id !== null) {
+		origBtn = updBtn.html();
+		$j(updBtn).css('display','inline').find('a').click(loadNewPosts);
+		setInterval(loadNewPosts, 45000);
+	}
+}
+
+function loadNewPosts() {
+	//last post id
+	var aft = $j(_selector, '#delform').last().attr('id');
+	var restoreButton = function () {
+	  $j(updBtn).html(origBtn).find('a').unbind('click').click(loadNewPosts);
+	}
+	$j(updBtn).html('['+consts[lang].load+']');
+
+	$j.ajax('/wakaba.pl?section='+window.board+'&task=show&thread='+window.thread_id+'&after='+aft,
+	  {async:true} )
+		.done(function(data) {
+			if(!data.error_code) {
+			  var postdata = $j(data).filter('*');
+			  postdata.each(function(){
+				newPosts++;
+				addRefLinkMap([this]);
+				addPreview([this]);
+				addPreview($j('.pidarok_refmap'));
+				$j('.thread').append($j(this).hide().fadeIn("normal"));
+			  });
+			  if (newPosts > 0 ) {
+				if(!isWindowFocused) $j('title').text('['+newPosts+'] '+old_t);
+				if (isWindowFocused) {
+				  showMessage(consts[lang].newPostsFound+newPosts, 1800);
+				  newPosts = 0;
+				  defTitle();
+				}
+			  }
+			}
+			else {
+			  if(isWindowFocused && data.error_code==400) showMessage(consts[lang].newPostsNotFound);
+			}
+			restoreButton();
+		})
+		.fail(function() {
+		  setTimeout(restoreButton, 1500);
+		  console.log('Error.');
+		});
+}
+
+function titleNewPosts() {
+  $j(window).on("blur focus", function(e) {
+	  var prevType = $j(this).data("prevType");
+
+	  if (prevType != e.type) {   //  reduce double fire issues
+		  switch (e.type) {
+			  case "blur":
+				  // do work
+				  isWindowFocused = false;
+				  break;
+			  case "focus":
+				  // do work
+				  isWindowFocused = true;
+				  if(newPosts>0){
+					showMessage(consts[lang].newPostsFound+newPosts, 1800);
+					newPosts = 0;
+					defTitle();
+				  }
+				  break;
+		  }
+	  }
+
+	  $j(this).data("prevType", e.type);
   })
 }
 
-function clonePost (id) {
-  var post = $j('#' + id).clone();
-  post.attr('id', 'c' + id);
-  post.find('span.backreflink a').attr('href', function (i, href) {
-    return href.replace('#', '#c');
-  });
-  return post
+function defTitle() {
+  $j('title').text(old_t);
+  setTimeout(function(){
+	$j('.post_new').removeClass('post_new');
+  }, 1500);
 }
 
-function getTarget (a) {
-  return (a.attr ? a.attr('href') : a.getAttribute('href')).match(/\d+/g).pop();
+/*------------------------------------------------------------------- ANALNY KOSTYLI -------------------------------------------------------------*/
+// "MOMMY IN ROOM" IMAGE HIDER
+function toggleMommy() {
+  Settings.set('mommy', (Settings.get('mommy') || 0) == 0 ? 1 : 0);
+  scriptCSS();
+  return false;
 }
 
-function exists (query) {
-  return !!(typeof query === 'number' ? document.getElementById(query) : $j(query).length);
+function hotkeyMommy(e) {
+  if(!e) e = window.event;
+  if(e.altKey && e.keyCode == 78) toggleMommy();
 }
 
+// SCRIPT CSS
+function scriptCSS() {
+  var x = [];
+  if(Settings.get('mommy') == 1)
+	x.push('img[src*="thumb"] {opacity:0.04 !important} img[src*="thumb"]:hover {opacity:1 !important}');
+  if(!$id('pidarok_css'))
+	$t('head')[0].appendChild($new('style', {
+	  'id': 'pidarok_css',
+	  'type': 'text/css',
+	  'text': x.join(' ')
+	}));
+  else $id('pidarok_css').textContent = x.join(' ');
+}
 
-$j(document).ready(function() {
-  postCache = $j('<div id=post_cache>').appendTo($j('body'));
-  $j('body').on('mouseenter', 'span.backreflink a', function (ev) {
-    var el = $j(ev.target)
-      , pos = el.offset()
-    ;
-    el.css({cursor: 'progress'});
-    preview.show(getTarget(ev.target),
-      {X: pos.left + el.outerWidth(), Y: pos.top + el.outerHeight()/2},
-      function () { el.css({cursor: ''}); });
-  });
-  $j('body').on('mouseleave', 'span.backreflink a', function (ev) {
-    var el = $j(ev.target);
-    el.css({cursor: ''});
-    preview.hide(getTarget(el));
-  });
-  $j('body').on('click', 'span.backreflink a', function (ev) {
-    var el = $j(ev.target)
-      , id = +getTarget(el)
-    ;
+// "Notifications"
+function showMessage(text, delay) {  // spizdil s inacha
+	if (delay == null) delay = 1000;
+	if ($j('#message').get() == '') {
+		$j('body').children().last().after('<div id="message" class="post"></div>');
+		$j('#message').hide();
+	}
+	$j('#message').html("<span class=\"postername\">" + text + "</span>");
+	$j('#message').fadeIn(150).delay(delay).fadeOut(300);
+}
 
-    if ($j('.content #' + id).length && window.thread_id) {
-      ev.preventDefault();
-      if (!el.is('.context *')) {
-        preview.hide(getTarget(el));
-        context.hide();
-        context.show(+el.closest('.thread_reply').attr('id'), id);
-      }
-    }
+// Js settings
+function toggleNavMenu(node) {
+  if ($id("overlay").style.display == 'block') {
+	$id("overlay").style.display = "none";
+  } else {
+	$id("overlay").style.display = "block";
+  }
+}
+
+function eventLoader() {
+  $j('#navmenu0').click(toggleNavMenu);
+  $j('#navmenu1').click(toggleNavMenu);
+  $j('#tglmommy').click(toggleMommy);
+  $j('#tglcontext').click(function(){
+	Settings.set('context', +this.checked);
+	showMessage(consts[lang].done);
   });
-  $j('body').on('click', function (ev) {
-    var el = $j(ev.target);
-    if (!el.is('.context, .context *, span.backreflink a')) {
-      context.hide();
-    }
-  });
-});
+  $id('tglcontext').checked = Settings.get('context') == 1 ? "checked" : "";
+}
+
+// Main load function.
+var slowload = function() {
+  eventLoader();
+  if (Settings.get('context')==1)
+  {
+	$j('.content').append($j('<div>', {id:'appendix'}));
+	$j(document).keydown(hotkeyMommy);
+	scriptCSS();
+	addRefLinkMap();
+	addPreview();
+	titleNewPosts();
+	getNewPosts();
+  }
+}
+
+$j(document).ready(slowload);
+
+// end scope
 })();

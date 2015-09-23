@@ -89,9 +89,31 @@
 </div>
 </if>
 
+<div id="overlay">
+ <div id="settings" class="settings">
+  <div class="settingsTitle">
+    <span><var $$locale{S_JS_STYLES}></span>
+  </div>
+  <hr />
+
+  <div class="settingsStyles">
+	<loop $stylesheets>[<a href="javascript:set_stylesheet_frame('<var $title>','list')"><var $title></a>] </loop>
+	[<a href="javascript:set_stylesheet_frame(null,'list')">Default</a>]
+  </div>
+  <hr />
+	[<a id="tglmommy" href="#" title="Alt+N/Shift+Alt+N(OPERA)">NSFW</a>]
+	[<label><input type="checkbox" value="" id="tglcontext"><var $$locale{S_JS_CONTEXT}></label>]
+  <hr />
+
+  <div class="settingsDone">
+  	[<a href="javascript:void(0)" id="navmenu1"><var $$locale{S_JS_DONE}></a>]
+  </div>
+ </div>
+</div>
+
 <div class="content">
 
-<script type="text/javascript" src="/static/js/wz_tooltip.js"></script>
+<script type="text/javascript" src="/static/vendor/wz_tooltip.js"></script>
 
 <nav>
 	<ul class="menu">
@@ -99,12 +121,11 @@
 	<include tpl/nav_boards.html>
 	</ul>
 	<ul class="menu" id="s-styles">
-	<loop $stylesheets><li> <a href="javascript:set_stylesheet_frame('<var $title>','list')"><var $title></a> </li></loop>
-	<li><a href="javascript:set_stylesheet_frame(null,'list')">Default</a></li>
 	</ul>
 
 	<ul class="menu right">
-	<li><a href="#" onclick="show_el('s-styles'); return false;"><var $$locale{S_JS_STYLES}></a></li>
+	<!-- <li><a href="#" onclick="show_el('s-styles'); return false;"><var $$locale{S_JS_STYLES}></a></li> -->
+	<li><a href="javascript:void(0)" id="navmenu0"><var $$locale{S_OPTIONS}></a></li>
 	<li><a href="<var %self>?task=search&amp;section=<var $$cfg{SELFPATH}>"><var $$locale{S_SEARCH}></a></li>
 	<include tpl/nav_pages.html>
 	</ul>

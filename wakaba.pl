@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl -X
+#!/usr/bin/perl -X
 
 use 5.16.0;
 umask 0022;    # Fix some problems
@@ -112,7 +112,7 @@ my $tpl = SimpleCtemplate->new({tmpl_dir =>'tpl/board/'});
 
 return 1 if (caller); # stop here if we're being called externally
 
-pm_manage(n_processes => 4);
+pm_manage(n_processes => 4, die_timeout => 10);
 
 # FCGI init
 while($query=CGI::Fast->new)
@@ -177,6 +177,13 @@ while($query=CGI::Fast->new)
             output_json_post($id);
         }
     }
+    if ( $json eq "newposts" ) {
+        my $id = $query->param("id");
+        my $after = $query->param("after");
+        if ( defined $id && defined $after and join('', ($id,$after)) =~ /^[+-]?\d+$/ ) {
+            output_json_newposts($after, $id);
+        }
+    }
     elsif ($json eq "threads") {
         my $page=$query->param("page");
         $page=1 unless($page and $page =~ /^[+-]?\d+$/);
@@ -223,12 +230,17 @@ while($query=CGI::Fast->new)
         my $page   = $query->param("page");
         my $thread = $query->param("thread");
         my $post   = $query->param("post");
+        my $after   = $query->param("after");
         my $admin  = $query->cookie("wakaadmin");
 
         # outputs a single post only
         if (defined($post) and $post =~ /^[+-]?\d+$/)
         {
             show_post($post, $admin);
+        }
+        elsif (defined($after) and $thread =~ /^[+-]?\d+$/ && $after =~ /^[+-]?\d+$/)
+        {
+            show_newposts($after, $thread, $admin);
         }
         # show the requested thread
         elsif (defined($thread) and $thread =~ /^[+-]?\d+$/)
@@ -528,6 +540,42 @@ sub output_json_threads {
             $threadcount++;
         }
 
+        # do abbrevations and such
+        foreach my $thread (@threads) {
+
+            # split off the parent post, and count the replies and images
+            my ( $parent, @replies ) = @{ $$thread{posts} };
+            my $size;
+            my ($replies, $size, $images) = count_posts($$parent{num});
+
+            # count files in replies - TODO: check for size == 0 for ignoring deleted files
+
+            my $curr_images = 0;
+            my $curr_replies = scalar @replies;
+            do { $curr_images +=  @{$$_{files}} if (exists $$_{files}) } for (@replies);
+
+            # write the shortened list of replies back
+            $$thread{posts}      = [ $parent, @replies ];
+            $$thread{num}        = ${$$thread{posts}}[0]{num};
+            $$thread{omit}       = ($replies-1)-$curr_replies;
+            $$thread{omitimages} = ($images-1)-$curr_images;
+
+            # abbreviate the remaining posts
+            foreach ( @{ $$thread{posts} } ) {
+                # create ref-links
+                $$_{comment} = resolve_reflinks($$_{comment});
+
+                my $abbreviation =
+                  abbreviate_html( $$_{comment}, $$cfg{MAX_LINES_SHOWN},
+                    $$cfg{APPROX_LINE_LENGTH} );
+                 if ($abbreviation) {
+                    $$_{abbrev} = get_abbrev_message(count_lines($$_{comment}) - count_lines($abbreviation));
+                    $$_{comment_full} = $$_{comment};
+                    $$_{comment} = $abbreviation;
+                }
+            }
+        }
+
         $memd->set($index_name, \@threads)
     }
     else
@@ -538,47 +586,11 @@ sub output_json_threads {
     if(scalar @threads ne 0) {
         $code = 200;
     } 
-    elsif($sth->rows eq 0) {
+    elsif($sth->rows == 0) {
         $code = 404;
         $error = 'Element not found.';
     } else {
         $code = 500;
-    }
-
-    # do abbrevations and such
-    foreach my $thread (@threads) {
-
-        # split off the parent post, and count the replies and images
-        my ( $parent, @replies ) = @{ $$thread{posts} };
-        my $size;
-        my ($replies, $size, $images) = count_posts($$parent{num});
-
-        # count files in replies - TODO: check for size == 0 for ignoring deleted files
-
-        my $curr_images = 0;
-        my $curr_replies = scalar @replies;
-        do { $curr_images +=  @{$$_{files}} if (exists $$_{files}) } for (@replies);
-
-        # write the shortened list of replies back
-        $$thread{posts}      = [ $parent, @replies ];
-        $$thread{num}        = ${$$thread{posts}}[0]{num};
-        $$thread{omit}       = ($replies-1)-$curr_replies;
-        $$thread{omitimages} = ($images-1)-$curr_images;
-
-        # abbreviate the remaining posts
-        foreach ( @{ $$thread{posts} } ) {
-            # create ref-links
-            $$_{comment} = resolve_reflinks($$_{comment});
-
-            my $abbreviation =
-              abbreviate_html( $$_{comment}, $$cfg{MAX_LINES_SHOWN},
-                $$cfg{APPROX_LINE_LENGTH} );
-             if ($abbreviation) {
-                $$_{abbrev} = get_abbrev_message(count_lines($$_{comment}) - count_lines($abbreviation));
-                $$_{comment_full} = $$_{comment};
-                $$_{comment} = $abbreviation;
-            }
-        }
     }
 
     # make the list of pages
@@ -630,17 +642,17 @@ sub output_json_thread {
                 push(@data, $row);
             # }
         }
-        add_images_to_thread(@data);
         $memd->set($index_name, \@data);
     }
     else {
         @data = @{$cached};
     }
 
+    add_images_to_thread(@data) if($data[0]);
 
     if(@data ne 0) {
         $code = 200;   
-    } elsif($sth->rows eq 0) {
+    } elsif($sth->rows == 0) {
         $code = 404;
         $error = 'Element not found.';
     } else {
@@ -695,7 +707,7 @@ sub output_json_meta {
             get_json_meta($row, 2),
             get_json_meta($row, 3)
         ];
-    } elsif($sth->rows eq 0) {
+    } elsif($sth->rows == 0) {
         $code = 404;
         $error = 'Element not found.';
     } else {
@@ -734,7 +746,7 @@ sub output_json_ban {
         $data{'ip_info'}{'as_desc'} = decode('utf8', get_as_description($data{'ip_info'}{'asn_info'}[0]));
         $data{'ip_info'}{'ptr'} = get_rdns($$row{'ip'});
         $data{'ip_info'}{'contacts'} = [get_ipwi_contacts($$row{'ip'})];
-    } elsif($sth->rows eq 0) {
+    } elsif($sth->rows == 0) {
         $code = 404;
         $error = 'Element not found.';
     } else {
@@ -770,7 +782,7 @@ sub output_json_post {
         hide_row_els($row);
         $$row{comment} = resolve_reflinks($$row{comment});
         $data{'post'} = $row;
-    } elsif($sth->rows eq 0) {
+    } elsif($sth->rows == 0) {
         $code = 404;
         $error = 'Element not found.';
     } else {
@@ -791,18 +803,54 @@ sub output_json_post {
     print $JSON->encode(\%json);
 }
 
+sub output_json_newposts {
+    my ($after, $id) = @_;
+    my ($sth, $row, $error, $code, %status, @data, %json);
+
+    $sth = $dbh->prepare("SELECT * FROM " . $$cfg{SQL_TABLE} . " FORCE INDEX(cover) WHERE parent=? and num>? ORDER BY num ASC;");
+    $sth->execute($id,$after);
+    $error = decode('utf8', $sth->errstr);
+    if($sth->rows) {
+        $code = 200;
+        while($row=get_decoded_hashref($sth)) {
+            add_images_to_row($row);
+            hide_row_els($row);
+            $$row{comment} = resolve_reflinks($$row{comment});
+            push(@data, $row);
+        }
+    } elsif($sth->rows == 0) {
+        $code = 404;
+        $error = 'Element not found.';
+    } else {
+        $code = 500;
+    }
+
+    %status = (
+        "error_code" => $code,
+        "error_msg" => $error,
+    );
+    %json = (
+        "data" => \@data,
+        "status" => \%status,
+    );
+    $sth->finish;
+
+    make_json_header();
+    print $JSON->encode(\%json);
+}
+
 sub output_json_stats {
     my ($date_format) = @_;
     my (@data, $sth, $error, $code, %status, %data, %json);
     
-    $sth = $dbh->prepare("SELECT DATE_FORMAT(FROM_UNIXTIME(`timestamp`), ?) as `datum`, COUNT(`num`) as `posts` FROM " . $$cfg{SQL_TABLE} . " GROUP BY `datum` ORDER BY timestamp ASC;");
+    $sth = $dbh->prepare("SELECT DATE_FORMAT(FROM_UNIXTIME(`timestamp`), ?) as `datum`, COUNT(`num`) as `posts` FROM " . $$cfg{SQL_TABLE} . " FORCE INDEX(cover) GROUP BY `datum` ORDER BY timestamp ASC;");
     $sth->execute(decode('utf8', $date_format));
     $error = decode('utf8', $sth->errstr);
     @data = $sth->fetchall_arrayref;
     if(defined \@data) {
         $code = 200;
         $data{'stats'} = \@data;
-    } elsif($sth->rows eq 0) {
+    } elsif($sth->rows == 0) {
         $code = 404;
         $error = 'No data available.';
     } else {
@@ -842,10 +890,10 @@ sub show_post {
             "SELECT * FROM " . $$cfg{SQL_TABLE} . " WHERE num=?;" )
       or make_error($$locale{S_SQLFAIL});
     $sth->execute( $id ) or make_error($$locale{S_SQLFAIL});
-    make_http_header();
     $row = get_decoded_hashref($sth);
 
     if ($row) {
+        make_http_header();
         add_images_to_row($row);
         $$row{comment} = resolve_reflinks($$row{comment});
         push(@thread, $row);
@@ -866,6 +914,54 @@ sub show_post {
         print($output);
     }
     else {
+        make_json_header();
+        print encode_json( { "error_code" => 400 } );
+    }
+    $sth->finish;
+}
+
+sub show_newposts {
+    my ($after, $thread, $admin) = @_;
+    my ($sth, $row, @thread);
+    my $isAdmin = 0;
+    if(defined($admin))
+    {
+        if (check_password($admin,'','silent')) { $isAdmin = 1; }
+        else { $admin = ""; }
+    }
+
+    $sth = $dbh->prepare(
+            "SELECT * FROM " . $$cfg{SQL_TABLE} . " FORCE INDEX(cover) WHERE parent=? and num>? ORDER BY num ASC;" )
+      or make_error($$locale{S_SQLFAIL});
+    $sth->execute( $thread, $after ) or make_error($$locale{S_SQLFAIL});
+    # $row = get_decoded_hashref($sth);
+
+    if ($sth->rows) {
+        make_http_header();
+        while($row = get_decoded_hashref($sth))
+        {
+            add_images_to_row($row);
+            $$row{comment} = resolve_reflinks($$row{comment});
+            push(@thread, $row);
+        }
+        my $output =
+            $tpl->single_post({
+                thread       => $thread,
+                posts        => \@thread,
+                single       => 2,
+                isAdmin      => $isAdmin,
+                admin        => $admin,
+                locked       => $thread[0]{locked},
+                stylesheets  => get_stylesheets(),
+                cfg          => $cfg,
+                locale       => $locale
+            });
+        $output =~ s/^\s+//; # remove whitespace at the beginning
+        $output =~ s/^\s+\n//mg; # remove empty lines
+        print($output);
+    }
+    else {
+        make_json_header();
         print encode_json( { "error_code" => 400 } );
     }
     $sth->finish;
@@ -928,45 +1024,45 @@ sub show_page {
             $threadcount++;
         }
 
+        # do abbrevations and such
+        foreach my $thread (@threads) {
+
+            # split off the parent post, and count the replies and images
+            my ( $parent, @replies ) = @{ $$thread{posts} };
+            my $size;
+            my ($replies, $size, $images) = count_posts($$parent{num});
+
+            # count files in replies - TODO: check for size == 0 for ignoring deleted files
+
+            my $curr_images = 0;
+            my $curr_replies = scalar @replies;
+            do { $curr_images +=  @{$$_{files}} if (exists $$_{files}) } for (@replies);
+
+            # write the shortened list of replies back
+            $$thread{posts}      = [ $parent, @replies ];
+            $$thread{omitmsg}    = get_omit_message( ($replies-1) - $curr_replies, ($images-1) - $curr_images);
+            $$thread{num}        = ${$$thread{posts}}[0]{num};
+
+            # abbreviate the remaining posts
+            foreach ( @{ $$thread{posts} } ) {
+                # create ref-links
+                $$_{comment} = resolve_reflinks($$_{comment});
+
+                my $abbreviation =
+                 abbreviate_html( $$_{comment}, $$cfg{MAX_LINES_SHOWN}, $$cfg{APPROX_LINE_LENGTH} );
+                if ($abbreviation) {
+                    $$_{abbrev} = get_abbrev_message(count_lines($$_{comment}) - count_lines($abbreviation));
+                    $$_{comment_full} = $$_{comment};
+                    $$_{comment} = $abbreviation;
+                }
+            }
+        }
+
         $memd->set($index_name, \@threads)
     }
     else
     {
         @threads = @{$cached};
-    }
-
-    # do abbrevations and such
-    foreach my $thread (@threads) {
-
-        # split off the parent post, and count the replies and images
-        my ( $parent, @replies ) = @{ $$thread{posts} };
-        my $size;
-        my ($replies, $size, $images) = count_posts($$parent{num});
-
-        # count files in replies - TODO: check for size == 0 for ignoring deleted files
-
-        my $curr_images = 0;
-        my $curr_replies = scalar @replies;
-        do { $curr_images +=  @{$$_{files}} if (exists $$_{files}) } for (@replies);
-
-        # write the shortened list of replies back
-        $$thread{posts}      = [ $parent, @replies ];
-        $$thread{omitmsg}    = get_omit_message( ($replies-1) - $curr_replies, ($images-1) - $curr_images);
-        $$thread{num}        = ${$$thread{posts}}[0]{num};
-
-        # abbreviate the remaining posts
-        foreach ( @{ $$thread{posts} } ) {
-            # create ref-links
-            $$_{comment} = resolve_reflinks($$_{comment});
-
-            my $abbreviation =
-             abbreviate_html( $$_{comment}, $$cfg{MAX_LINES_SHOWN}, $$cfg{APPROX_LINE_LENGTH} );
-            if ($abbreviation) {
-                $$_{abbrev} = get_abbrev_message(count_lines($$_{comment}) - count_lines($abbreviation));
-                $$_{comment_full} = $$_{comment};
-                $$_{comment} = $abbreviation;
-            }
-        }
     }
 
     # make the list of pages
@@ -1044,14 +1140,14 @@ sub show_thread {
             push( @thread, $row );
         }
 
-        add_images_to_thread(@thread);
-
         $memd->set($index_name, \@thread);
         $sth->finish;
     }
     else {
         @thread = @{$cached};
     }
+
+    add_images_to_thread(@thread) if($thread[0]);
 
     make_error($$locale{S_NOTHREADERR}, 1) if ( !$thread[0] or $thread[0]{parent} );
 
@@ -2107,7 +2203,7 @@ sub get_post {
     my $cached = $memd->get($index_name);
 
     unless (defined $memd && defined $cached) {
-        $sth = $dbh->prepare( "SELECT * FROM " . $$cfg{SQL_TABLE} . " FORCE INDEX(cover) WHERE num=? LIMIT 1;" )
+        $sth = $dbh->prepare( "SELECT * FROM " . $$cfg{SQL_TABLE} . " WHERE num=?;" )
           or make_error($$locale{S_SQLFAIL});
         $sth->execute($thread) or make_error($$locale{S_SQLFAIL});
 
@@ -2130,7 +2226,7 @@ sub get_parent_post {
     my $cached = $memd->get($index_name);
 
     unless (defined $memd && defined $cached) {
-        $sth = $dbh->prepare( "SELECT * FROM " . $$cfg{SQL_TABLE} . " FORCE INDEX(cover) WHERE num=? and parent=0 LIMIT 1;" )
+        $sth = $dbh->prepare( "SELECT * FROM " . $$cfg{SQL_TABLE} . " WHERE num=? and parent=0;" )
           or make_error($$locale{S_SQLFAIL});
         $sth->execute($thread) or make_error($$locale{S_SQLFAIL});
 
@@ -2575,7 +2671,7 @@ sub delete_post {
                         $sth2 =
                           $dbh->prepare( "SELECT * FROM "
                               . $$cfg{SQL_TABLE}
-                              . " WHERE num=? OR parent=? ORDER BY timestamp DESC"
+                              . " FORCE INDEX(cover) WHERE num=? OR parent=? ORDER BY timestamp DESC"
                           ) or return $$locale{S_SQLFAIL};
                         $sth2->execute( $parent, $parent );
                         my $postRow;
@@ -2664,7 +2760,7 @@ sub make_rss { # hater ktory droczit na perenosy skobok sosi xD
     my (@items);
 
     # Retrieve records to be inserted into RSS.
-    $sth=$dbh->prepare("SELECT * FROM ".$$cfg{SQL_TABLE}." ORDER BY timestamp DESC LIMIT ".RSS_LENGTH.";") or make_error($$locale{S_SQLFAIL});
+    $sth=$dbh->prepare("SELECT * FROM ".$$cfg{SQL_TABLE}." FORCE INDEX(cover) ORDER BY timestamp DESC LIMIT ".RSS_LENGTH.";") or make_error($$locale{S_SQLFAIL});
     $sth->execute() or make_error($$locale{S_SQLFAIL});
 
     while ($row = get_decoded_hashref($sth))
@@ -3489,8 +3585,8 @@ sub clear_log {
 
 sub make_http_header {
     my ($not_found) = @_;
-    print $query->header(-type=>'text/html', -status=>'404 Not found', -charset=>CHARSET) if ($not_found);
-    print $query->header(-type=>'text/html', -charset=>CHARSET) if (!$not_found);
+    print $query->header(-type=>'text/html', -expires => '-1d',  -status=>'404 Not found', -charset=>CHARSET) if ($not_found);
+    print $query->header(-type=>'text/html', -expires => '-1d', -charset=>CHARSET) if (!$not_found);
 }
 
 sub make_rss_header {
@@ -3499,7 +3595,7 @@ sub make_rss_header {
 
 sub make_json_header {
     print "Cache-Control: no-cache, no-store, must-revalidate\n";
-    print "Expires: Mon, 12 Apr 2010 05:00:00 GMT\n";
+    print "Expires: Mon, 12 Apr 1997 05:00:00 GMT\n";
     print "Content-Type: application/json\n";
     print "Access-Control-Allow-Origin: *\n";
     print "\n";
@@ -3624,8 +3720,9 @@ sub get_stylesheets()
 
 sub get_reply_link {
     my ( $reply, $parent, $force_http ) = @_;
-    my $brd = $$cfg{SELFPATH};
+    # my $brd = $$cfg{SELFPATH};
 
+    # return expand_filename( "thread/" . $reply, $force_http ) . '#' . $reply if (!$parent and $sprolo);
     return expand_filename( "thread/" . $parent, $force_http ) . '#' . $reply if ($parent);
     return expand_filename( "thread/" . $reply, $force_http );
 }
@@ -3788,7 +3885,8 @@ sub init_database {
         "locked INTEGER," .     # Thread is locked (applied to parent post only)
         "sticky INTEGER," .     # Thread is sticky (applied to all posts of a thread)
         "location TEXT," .      # Geo::IP information for the IP address if available
-        "secure TEXT" .         # Cipher information if posted using SSL connection
+        "secure TEXT," .        # Cipher information if posted using SSL connection
+        "INDEX cover(parent,num)" . # table index
 
         ");"
     ) or make_error($$locale{S_SQLFAIL});
@@ -3818,7 +3916,8 @@ sub init_files_database {
         "uploadname TEXT," .   # Original filename supplied by the user agent
         "info TEXT," .         # Short file information displayed in the post
         "info_all TEXT," .      # Full file information displayed in the tooltip
-        "info_json TEXT" .      # Full file information encoded into json format
+        "info_json TEXT," .      # Full file information encoded into json format
+        "INDEX cover(post,thread)" .
 
         ");"
     ) or make_error($$locale{S_SQLFAIL});
@@ -3949,7 +4048,7 @@ sub trim_database {
         $sth =
           $dbh->prepare( "SELECT * FROM "
               . $$cfg{SQL_TABLE}
-              . " WHERE parent=0 AND (sticky=0 OR sticky IS NULL) ORDER BY $order LIMIT 1;"
+              . " FORCE INDEX(cover) WHERE parent=0 AND (sticky=0 OR sticky IS NULL) ORDER BY $order LIMIT 1;"
           ) or make_error($$locale{S_SQLFAIL});
         $sth->execute() or make_error($$locale{S_SQLFAIL});
 
@@ -4071,13 +4170,13 @@ sub thread_exists {
 
 sub get_decoded_hashref {
     my ($sth)=@_;
-    # !! no need to encode since we turned on mysql_enable_utf8
+    # !! no need to encode since we turned mysql_enable_utf8 on and not using super-old versions of perl
     $sth->fetchrow_hashref();
 }
 
 sub get_decoded_arrayref {
     my ($sth)=@_;
-    # !! no need to encode since we turned mysql_enable_utf8 on
+    # !! no need to encode since we turned mysql_enable_utf8 on and not using super-old versions of perl
     $sth->fetchrow_arrayref();
 }
 

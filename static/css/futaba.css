@@ -37,3 +37,4 @@ blockquote.unkfunc,span.unkfunc,span.quote,span.math{color:#789922}
 dl.menu{margin:.5em}
 dl.menu dt{background:#F0E0D6;border:solid 1px #DDCCC5;margin-top:1em;padding-left:.5em;cursor:pointer}
 dl.menu dd{margin-left:.5em;padding-left:.5em;border-left:solid 1px #DDCCC5}
+#settings { border-color: #DDCCC5; background: #F0E0D6; }

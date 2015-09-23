@@ -67,7 +67,7 @@ $translation{S_SEARCHFOUND} = 'Найдено:';
 $translation{S_OPTIONS} = 'Опции';
 $translation{S_MINLENGTH} = '(мин. 3 символа)';
 
-$translation{S_WEEKDAYS} => ['Вс','Пн','Вт','Ср','Чт','Пт','Сб']; # Defines abbreviated weekday names.
+$translation{S_WEEKDAYS} = ['Вс','Пн','Вт','Ср','Чт','Пт','Сб']; # Defines abbreviated weekday names.
 
 $translation{S_STICKYTITLE} = 'Тред прикреплен';    # Defines the title of the tiny sticky image on a thread if it is sticky
 $translation{S_LOCKEDTITLE} = 'Тред закрыт';    # Defines the title of the tiny locked image on a thread if it is locked
@@ -77,6 +77,9 @@ $translation{S_JS_EXPAND} = 'Expand textfield';
 $translation{S_JS_SHRINK} = 'Shrink textfield';
 $translation{S_JS_REMOVEFILE} = 'Remove file';
 $translation{S_JS_STYLES} = 'Стили';
+$translation{S_JS_DONE} = 'Готово';
+$translation{S_JS_CONTEXT} = 'Свистоперделки';
+$translation{S_JS_UPDATE} = 'Обновить тред';
 # javascript strings END
 
 $translation{S_MANARET} = 'Назад';    # Returns to HTML file instead of PHP--thus no log/SQLDB update occurs
@@ -175,40 +178,40 @@ $translation{S_LOCKED} = 'Тред закрыт';
 $translation{S_BADIP} = 'Incorrect IP address';
 $translation{S_BADDELIP} = 'Wrong IP.';
     # Returns error for wrong ip (when user tries to delete file)
-$translation{S_INVALID_PAGE} = "Ошибка: страницы не существует.";
+$translation{S_INVALID_PAGE} = "страницы не существует.";
 $translation{S_STOP_FOOLING} = "Lass das sein, Kevin!";
 
 $translation{S_TOOBIG} = 'Это изображение слишком велико. Добавь что-то поменьше.';
 $translation{S_TOOBIGORNONE} = 'Либо это изображение слишком велико либо изображения нет вообще. Такие дела.';
-$translation{S_REPORTERR} = 'Ошибка: не удается найти ответ.';
-$translation{S_UPFAIL} = 'Ошибка: Сбой при загрузке.';
-$translation{S_NOREC} = 'Ошибка: Не удается найти запись.';
-$translation{S_NOCAPTCHA} = 'Ошибка: Капча протухла, so slow';
-$translation{S_BADCAPTCHA} = 'Ошибка: Неверно введена капча';
-$translation{S_BADFORMAT} = 'Ошибка: Формат файла не поддерживается.';
-$translation{S_STRREF} = 'Ошибка: строка отклонена.';
-$translation{S_UNJUST} = 'Ошибка: неверное сообщение.';
-$translation{S_NOPIC} = 'Ошибка: Файл не выбран. Вы забыли нажать на кнопку "Ответить"?';
-$translation{S_NOTEXT} = 'Ошибка: Текст не введен';
-$translation{S_TOOLONG} = 'Ошибка: Слишком много символов в текстовом поле.';
-$translation{S_NOTALLOWED} = 'Ошибка: Сообщения без изображений запрещены.';
-$translation{S_NONEWTHREADS} = 'Ошибка: Нельзя создавать новые треды.';
-$translation{S_UNUSUAL} = 'Ошибка: Неверный ответ.';
-$translation{S_BADHOST} = 'Ошибка: хост забанен.';
-$translation{S_BADHOSTPROXY} = 'Ошибка: прокси забанен.';
-$translation{S_RENZOKU} = 'Ошибка: Обнаружен флуд, сообщение отклонено.';
-$translation{S_RENZOKU2} = 'Ошибка: Обнаружен флуд, файл отклонён.';
-$translation{S_RENZOKU3} = 'Ошибка: Обнаружен флуд.';
-$translation{S_RENZOKU4} = 'Ошибка: Период ожидания удаления поста еще не истек.';
-$translation{S_RENZOKU5} = 'Ошибка: Обнаружен флуд. Жди 10 минут.';
-$translation{S_PROXY} = 'Ошибка: Обнаружена открытая прокси.';
-$translation{S_DUPE} = 'Ошибка: Этот файл уже размещен <a href="%s">тут</a>.';
-$translation{S_DUPENAME} = 'Ошибка: файл с таким же именем уже существует.';
-$translation{S_NOTHREADERR} = 'Ошибка: Тред не существует.';
+$translation{S_REPORTERR} = 'Не удается найти ответ.';
+$translation{S_UPFAIL} = 'Сбой при загрузке.';
+$translation{S_NOREC} = 'Не удается найти запись.';
+$translation{S_NOCAPTCHA} = 'Капча протухла, so slow';
+$translation{S_BADCAPTCHA} = 'Неверно введена капча';
+$translation{S_BADFORMAT} = 'Формат файла не поддерживается.';
+$translation{S_STRREF} = 'Строка отклонена.';
+$translation{S_UNJUST} = 'Неверное сообщение.';
+$translation{S_NOPIC} = 'Файл не выбран. Вы забыли нажать на кнопку "Ответить"?';
+$translation{S_NOTEXT} = 'Текст не введен';
+$translation{S_TOOLONG} = 'Слишком много символов в текстовом поле.';
+$translation{S_NOTALLOWED} = 'Сообщения без изображений запрещены.';
+$translation{S_NONEWTHREADS} = 'Нельзя создавать новые треды.';
+$translation{S_UNUSUAL} = 'Неверный ответ.';
+$translation{S_BADHOST} = 'Хост забанен.';
+$translation{S_BADHOSTPROXY} = 'Прокси забанен.';
+$translation{S_RENZOKU} = 'Обнаружен флуд, сообщение отклонено.';
+$translation{S_RENZOKU2} = 'Обнаружен флуд, файл отклонён.';
+$translation{S_RENZOKU3} = 'Обнаружен флуд.';
+$translation{S_RENZOKU4} = 'Период ожидания удаления поста еще не истек.';
+$translation{S_RENZOKU5} = 'Обнаружен флуд. Жди 10 минут.';
+$translation{S_PROXY} = 'Обнаружена открытая прокси.';
+$translation{S_DUPE} = 'Этот файл уже размещен <a href="%s">тут</a>.';
+$translation{S_DUPENAME} = 'файл с таким же именем уже существует.';
+$translation{S_NOTHREADERR} = 'Тред не существует.';
 $translation{S_BADDELPASS} = 'Неверный пароль для удаления.';
-$translation{S_WRONGPASS} = 'Ошибка: Неверный пароль.';
-$translation{S_VIRUS} = 'Ошибка: Возможно зараженный вирусом файл.';
-$translation{S_NOTWRITE} = 'Ошибка: не удалось записать в директорию.';
+$translation{S_WRONGPASS} = 'Неверный пароль.';
+$translation{S_VIRUS} = 'Возможно зараженный вирусом файл.';
+$translation{S_NOTWRITE} = 'Не удалось записать в директорию.';
 $translation{S_SPAM} = 'Спамерам здесь не рады.';
 $translation{S_NOBOARDACC} = 'You don\'t have access to this board, accessible: %s<br /><a href="%s?task=logout">Logout</a>';
 $translation{S_NOPRIVILEGES} = 'Insufficient privileges';

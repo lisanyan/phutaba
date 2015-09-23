@@ -9,7 +9,7 @@
 	<a href="<var Wakaba::get_reply_link($parent,0)>#<var $num>">&gt;&gt;</a>
 	</div>
 
-	<div class="post<if $single> post_new</if>">
+	<div class="post<if %single> post_new</if>">
 	<div class="post_head">
 </if>
 

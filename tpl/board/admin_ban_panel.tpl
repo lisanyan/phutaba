@@ -146,7 +146,7 @@
 
 	<if $type eq "ipban">
 		<td>IP</td>
-		<td><img src="/img/flags/<var $flag>.PNG"> <var Wakaba::dec_to_dot($ival1)></td><td>/<var Wakaba::get_mask_len($ival2)> (<var Wakaba::dec_to_dot($ival2)>)</td>
+		<td><img style="vertical-align:top" src="/img/flags/<var $flag>.PNG"> <var Wakaba::dec_to_dot($ival1)></td><td>/<var Wakaba::get_mask_len($ival2)> (<var Wakaba::dec_to_dot($ival2)>)</td>
 	</if>
 	<if $type eq "wordban">
 		<td>Word</td>
@@ -158,7 +158,7 @@
 	</if>
 	<if $type eq "whitelist">
 		<td>Whitelist</td>
-		<td><img src="/img/flags/<var $flag>.PNG"> <var Wakaba::dec_to_dot($ival1)></td><td>/<var Wakaba::get_mask_len($ival2)> (<var Wakaba::dec_to_dot($ival2)>)</td>
+		<td><img style="vertical-align:top" src="/img/flags/<var $flag>.PNG"> <var Wakaba::dec_to_dot($ival1)></td><td>/<var Wakaba::get_mask_len($ival2)> (<var Wakaba::dec_to_dot($ival2)>)</td>
 	</if>
 	<if $type eq "asban">
 		<td>ASNum</td>

@@ -1,6 +1,5 @@
 <footer>
-	<perleval %fcounter=Wakaba::get_fcgicounter() />
-	<p>Powered by <img src="/img/phutaba_icon.png" alt="" /> <strong>Phutaba</strong>.<br />FCGI Loops: <var %fcounter></p>
+	<p>Powered by <img src="/img/phutaba_icon.png" alt="" /> <strong>Phutaba</strong>.<br /><span id="fcgi_counter">FCGI Loops: <var Wakaba::get_fcgicounter()></span></p>
 	<p>Зеркало <a href="https://02ch.info">02ch.info</a></p>
 	<p><em>Report illegal material to <a href="mailto:<var $$cfg{ADMIN_EMAIL}>"><var $$cfg{ADMIN_EMAIL}></a>.</em></p>
 </footer>
@@ -12,18 +11,18 @@
 </div>
 <const TRACKING_CODE>
 
-<script type="text/javascript" src="/static/js/jquery-1.9.1.min.js"></script>
-<script type="text/javascript" src="/static/js/jquery/jquery.blockUI.js"></script>
+<script type="text/javascript" src="/static/vendor/jquery-1.11.3.min.js"></script>
+<script type="text/javascript" src="/static/vendor/jquery.blockUI.js"></script>
 
-<if $isAdmin>
-<link rel="stylesheet" type="text/css" href="/static/css/ui-lightness/jquery-ui-1.10.2.custom.css" />
-<script type="text/javascript" src="/static/js/jquery/jquery-ui-1.10.2.custom.min.js"></script>
+<if %isAdmin>
+<link rel="stylesheet" type="text/css" href="/static/vendor/jquery-ui.min.css" />
+<script type="text/javascript" src="/static/vendor/jquery-ui.min.js"></script>
 <script type="text/javascript" src="/static/js/admin.js"></script>
 </if>
 
 <if $$cfg{ENABLE_HIDE_THREADS} && !$thread>
 <script type="text/javascript" src="/static/js/hidethreads.js"></script>
-<script type="text/javascript" src="/static/js/jquery/jquery.cookie.js"></script>
+<script type="text/javascript" src="/static/vendor/jquery.cookie.js"></script>
 </if>
 <script type="text/javascript">
 /* <![CDATA[ */
@@ -76,7 +75,7 @@
 	}
 </script>
 
-<if $$cfg{ENABLE_WEBSOCKET_NOTIFY} && $thread && !$locked><script type="text/javascript" src="/static/js/websock.js"></script></if>
+<!-- <if $$cfg{ENABLE_WEBSOCKET_NOTIFY} && $thread && !$locked><script type="text/javascript" src="/static/js/websock.js"></script></if> -->
 <script type="text/javascript" src="/static/js/context.js"></script>
 
 </body>

@@ -9,7 +9,7 @@ hr{border-width:0;height:3px;background:url(/img/icons/line.png) center no-repea
 .postblock{background-color:#2C2C2C;color:#698CC0}
 input[type='text'],input[type='password'],textarea{border:2px solid #545454;border-radius:5px;background:#111;color:#698cc0}
 .post{background-color:#2C2C2C;border-right:1px solid #3c3c3c;border-bottom:1px solid #3c3c3c}
-.post_new{border-right:1px solid #944900;border-bottom:1px solid #944900}
+.post_new{border-color:#944900}
 .context > div,#preview{background-color:#212121;border-color:#111}
 #preview .post{border-color:#3c3c3c}
 #preview{box-shadow:1px 2px 2px #373737}
@@ -42,3 +42,4 @@ dl#menu{background-color:#212121!important}
 dl.menu dt{background:#111;border:solid 1px #575757;-moz-border-radius:5px;-webkit-border-radius:5px;border-radius:5px;margin-top:1em;padding-left:.5em;cursor:pointer;color:#698CC0;font-weight:400}
 dl.menu dd{margin-left:.5em;padding-left:.5em;border-left:solid 1px #575757;background:#212121}
 dl.menu dd:hover{background:#575757}
+#settings { border-color: #2C2C2C; background: #2C2C2C; }

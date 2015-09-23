@@ -458,11 +458,6 @@ sub do_bbcode {
 			my $insert;    # contains [bbtag] which will be replaced by <html-equiv>
 			my $closetags; # used to close all open tags when a [code]-section begins
 
-			if( $opentags[$#opentags] eq 'math' )
-			{
-				$textpart = do_math($handler, $textpart);
-			}
-
 			# convert links and simple wakaba markup if not inside [code]
 			if ( $opentags[$#opentags] ne 'code' )
 			{
@@ -472,6 +467,11 @@ sub do_bbcode {
 			# if the tag is unknown or not properly nested, it will be added back to the output
 			$insert = '[' . $closing . $tag . ']' if ( $tag );
 			$closetags = '';
+
+			if( $opentags[$#opentags] eq 'math' )
+			{
+				$textpart = do_math($handler, $textpart);
+			}
 
 			if ( grep {$_ eq $tag} @bbtags ) # check for a known tag
 			{
@@ -486,7 +486,7 @@ sub do_bbcode {
 				}
 				else
 				{ # open the tag if it is not already open and put it on the stack
-					if ( $tagsopen <= 5 or !grep {$_ eq $tag} @opentags )
+					if ( !grep {$_ eq $tag} @opentags )
 					{
 						# close all open tags on [code] and open <code>
 						if ( $tag eq 'code' )
@@ -504,15 +504,15 @@ sub do_bbcode {
 				}
 			}
 
-			if( $opentags[$#opentags] eq 'math' )
-			{
-				$textend = do_math($handler, $textend);
-			}
-
 			# convert links and simple wakaba markup if not inside [code]
 			if ( $opentags[$#opentags] ne 'code' )
 			{
 				$textend = do_spans( $handler, $textend );
+			}
+
+			if( $opentags[$#opentags] eq 'math' )
+			{
+				$textend = do_math($handler, $textend);
 			}
 
 			$output .= $textpart . $closetags . $insert . $textend;
@@ -600,7 +600,7 @@ sub do_wakabamark($;$$) {
                 push @code, $1;
                 shift @lines;
             }
-            $res .= "<pre><code>" . ( join "<br />", @code ) . "</code></pre>";
+            $res .= "<pre>" . ( join "<br />", @code ) . "</pre>";
         }
         elsif (/^&gt;/)           # quoted sections
         {
@@ -1965,7 +1965,7 @@ sub get_post_info($$) {
 
 	# country flag
 	$items[0] = 'UNKNOWN' if ($items[0] eq 'unk');
-	my $flag = '<img alt="" src="/img/flags/' . $items[0] . '.PNG"> ';
+	my $flag = '<img style="vertical-align:bottom;width:19px" alt="" src="/img/flags/' . $items[0] . '.PNG"> ';
 
 	if (scalar @items == 1) { # for legacy entries
 		return $flag . $items[0];
@@ -1991,7 +1991,7 @@ sub get_post_info2($;$) {
 
 	$items[0] = 'UNKNOWN' if ($items[0] eq 'unk');
 	@items = qw/UNKNOWN/ if ($adm);
-	my $flag = '<img alt="" src="/img/flags/' . $items[0] . '.PNG"> ';
+	my $flag = '<img style="vertical-align:baseline" alt="" src="/img/flags/' . $items[0] . '.PNG"> ';
 	my $ret = $flag;
 
 	if (scalar @items == 1) { # for legacy entries

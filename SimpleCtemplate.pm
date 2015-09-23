@@ -19,7 +19,6 @@ BEGIN {
 #<loop $hashref> вывод данных используя переменные </loop> - цикл
 #<aloop $arrayref> вывод данных используя переменные </loop> - цикл перебора массива. Текущее значение находится в $_
 #<perleval perl_код  /> - выполнение кода
-#<time $var> - читаемая строка из таймстампа
 #<pagination $var> - листалка страниц
 #<include %TMPLDIR%/head.tpl> подгрузка кода из другого файла
 
@@ -35,10 +34,6 @@ sub new {
 	my $self = $_[1]? $_[1] : {};
 
 	$self->{globals}={} unless $self->{globals};
-	
-	$self->{days}=[qw(Вск Пнд Втр Срд Чтв Птн Сбт)] unless($self->{days});
-	$self->{months}=[qw(Янв Фев Мар Апр Май Июн Июл Авг Сен Окт Ноя Дек)] unless($self->{months});
-	$self->{datestyle} ='%s %02d %s %04d %02d:%02d:%02d' unless($self->{datestyle});
 	$self->{range} = 5 unless($self->{range});
 	
 	$self->{die_if_compile_error}=1 unless(defined $self->{die_if_compile_error});

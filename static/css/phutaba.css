@@ -298,19 +298,13 @@ ul.rules {
 	color: #702802;
 }
 
-.sticky {
-}
-
-.locked {
-}
-
 .sage {
 	color: #B20000;
 }
 
 .post_body {
 	padding: 1.2em 0 0 1.2em;
-	/*float: lef*/t;
+	/*float: left*/;
 }
 
 .file {
@@ -517,44 +511,71 @@ footer img {
 }
 
 /* stuff for context.js */
-#ancbox {
-	bottom: 0.25em;
-	box-shadow: 0 0 0 100000px rgba(112, 107, 94, 0.5);
+.pidarok_refmap {
+	font-style:italic;
+	font-size:11px;
+	margin-top:16px;
 }
-#desbox {
-	top: -0.25em;
+.post_preview {
+    z-index: 300;
+    position: absolute;
+    border: dashed 1px #666;
 }
-.context {
+.post_preview .post {
+	margin-left:0;
+	border: none;
+}
+.post_preview .doubledash {
+	display: none;
+}
+#settings {
+	background: #D7CFC0;
+	display: inline-block;
+	box-sizing: border-box;
+	padding-bottom: 5px;
 	position: relative;
-	clear: left;
-	z-index: 4;
-}
-.context > div, #preview {
-	border: 1px solid rgb(99, 85, 55);
-	background-color: rgb(236, 233, 226);
-	position: absolute;
-	left: 10em;
-}
-#preview {
-	box-shadow: 1px 2px 2px #706B5E;
-}
-.context + .thread_reply {
-	margin-top: 0;
-}
-.context .thread_reply {
-	margin-left: 0.5em;
-	padding-right: 0.5em;
-}
-#preview .post {
-	margin-left: 0;
+	text-align: left;
+	vertical-align: middle;
+	width: 320px;
+	height: auto;
+	border: 1px solid rgba(0, 0, 0, .25); border-left: none; border-top: none; padding: 5px;
 	border-color: #BFB5A1;
 }
-#post_cache {
-	visibility: hidden;
-	position: absolute;
-	top: -100000px;
+#overlay, .overlay {
+	display: none;
+	position: fixed;
+	top: 0;
+	left: 0; 
+	width: 100%;
+	height: 100%;
+	text-align: center;
+	background: rgba(0, 0, 0, .5);
+	z-index: 1; 
 }
-
+#overlay::after {
+	content: "";
+	display: inline-block;
+	height: 100%;
+	vertical-align: middle;
+}
+.settingsTitle {
+	font-weight: bold;
+}
+#message {
+	position: fixed;
+	border-color: #666;
+	border-radius: 5px 5px 5px 5px;
+	top: 50px;
+	padding: 20px;
+	width: 40%;
+	left: 30%;
+	text-align: center;
+	-webkit-box-shadow: #666 0px 0px 10px;
+	z-index: 400;
+}
+#updater {
+	display: none;
+}
 /* TODO integrate colours into specific stylesheets */
 .highlight .post, :target .post {
 	background-color: #BFB5A1;
@@ -565,13 +586,17 @@ footer img {
 }
 
 /* webm */
-a.close-webm { position:absolute; top:-15px; right:10px;}
-a.close-webm:active { top:-14px; }
+a.close-webm {
+	position:absolute;
+	top:-15px;
+	right:10px;
+}
+a.close-webm:active {
+	top:-14px;
+}
 
 .filelink img, .filelink video {
   max-width: 100%;
-  /*width: 100%;*/
-  /*height: auto;*/
 }
 
 audio, canvas, progress, video {
@@ -598,7 +623,7 @@ dl.menu dd.hidden {
 	display: none;
 }
 
-/* dollscript */
+/* Dollchan Extension Tools */
 .de-pview .post {
 	margin-left: 16px;
 }
@@ -606,22 +631,20 @@ dl.menu dd.hidden {
 	padding: 0.4em 0.4em 0.1em 0em;
 }
 .de-pview .doubledash {
-	padding-left: .2em;
+	display: none;
 }
-
+.de-pview .post {
+	margin-left:0;
+	border: none;
+}
+form[de-form] .pidarok_refmap {
+	display: none
+}
 #de-pform img[src^="/img/icons/expand.png"] {
 	display: none;
 }
 
-#s-styles{display: none;}
-
 /* custom */
-.greeting {
-	text-align: center;
-	font-weight: bold;
-}
-
-.greeting img { max-height: 500px; }
-
-/*.tracking { display: none; }*/
-.tracking img { width: 0px; }
+.greeting { text-align: center; font-weight: bold }
+.greeting img { max-height: 500px }
+.tracking img { width: 0px }

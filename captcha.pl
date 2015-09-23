@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl -X
+#!/usr/bin/perl -X
 
 # package Captcha;
 

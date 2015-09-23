@@ -27,3 +27,4 @@ ul.pagelist{background-color:#C9C9C9;border-right:1px solid #ABABAB;border-botto
 .title,.info th{background-color:#333;color:#FFF}
 .info{background-color:#C9C9C9;border-right:1px solid #ABABAB;border-bottom:1px solid #ABABAB;border-left:1px solid #ABABAB}
 .info td{border:1px solid #333}
+#settings { border-color: #ABABAB; background: #C9C9C9; }

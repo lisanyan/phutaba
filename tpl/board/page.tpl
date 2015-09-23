@@ -12,7 +12,7 @@
 		<input type="hidden" name="admin_post" value="yes" />
 	</if>
 	<if $thread><input type="hidden" name="parent" value="<var $thread>" /></if>
-	<if !$image_inp and !$thread and $$cfg{ALLOW_TEXTONLY}>
+	<if !$isAdmin and !$image_inp and !$thread and $$cfg{ALLOW_TEXTONLY}>
 		<input type="hidden" name="nofile" value="1" />
 	</if>
 
@@ -47,14 +47,14 @@
 	<td><textarea id="field4" name="nya4" cols="48" rows="6"></textarea> <img onclick="resizeCommentfield('field4', this)" src="/img/icons/expand.png" alt="<var $$locale{S_IMGEXPAND}>" title="<var $$locale{S_IMGEXPAND}>" />
 	</td></tr>
 
-	<if $image_inp>
+	<if $image_inp or $isAdmin>
 		<tr id="fileUploadField"><td class="postblock"><var $$locale{S_UPLOADFILE}> (max. 4)</td>
 		<td id="fileInput"><div><input type="file" name="file" onchange="file_input_change(4)" /></div>
 		<if $textonly_inp>[<label><input type="checkbox" name="nofile" value="on" /><var $$locale{S_NOFILE}> ]</label></if>
 		</td></tr>
 	</if>
 
-	<if scalar @{$$cfg{POMF_EXTENSIONS}} && $image_inp>
+	<if $isAdmin or scalar @{$$cfg{POMF_EXTENSIONS}} && $image_inp>
 	<tr><td class="postblock"><label for="nopomf"><var $$locale{S_NOPOMF}></label></td>
 	<td><label><input type="checkbox" name="no_pomf" value="on" id="nopomf" onclick="Settings.set('nopomf', +this.checked);" /> <var $$locale{S_NOPOMFDESC}></label></td>
 	</tr>
@@ -137,6 +137,7 @@
 	<nav>
 		<ul class="pagelist">
 			<li>[<a href="#top" id="bottom"><var $$locale{S_TOP}></a>]</li>
+			<li id="updater">[<a href="javascript:void(0)" id="updater_href"><var $$locale{S_JS_UPDATE}></a>]</li>
 		</ul>
 	</nav>
 </if>
