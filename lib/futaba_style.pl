@@ -498,14 +498,10 @@ use constant ERROR_HEAD_INCLUDE => q{
 </header>
 
 <hr />
-
-<div class="error">
-	<p><var $error_title></p>
 };
 
 use constant ERROR_FOOT_INCLUDE => q{
 
-</div>
 <hr />
 <footer>Powered by <img src="/img/phutaba_icon.png" alt="" /> <strong>Phutaba</strong>.</footer>
 </div>
@@ -517,29 +513,39 @@ use constant ERROR_FOOT_INCLUDE => q{
 use constant ERROR_TEMPLATE => compile_template(
     ERROR_HEAD_INCLUDE . q{
 
+<div class="error">
+	<header class="title"><var $error_title></header>
+
 <if $error>
-<p><var $error></p>
+<div class="info"><var $error></div>
 </if>
-<if $banned>
+
+<if $banned or $dnsbl>
+<div class="info">
+<img src="/img/ernstwurf_schock.png" width="210" height="210" style="float: right;" />
 <loop $bans>
- <br />
- <p>Deine IP <strong><var $ip></strong>
- <if $showmask>(<var $network>/<var $setbits>)</if> wurde 
- <if $reason>mit der Begr&uuml;ndung <strong><var $reason></strong></if> gesperrt.
- <br />Diese Sperrung 
+ Deine IP-Adresse <strong><var $ip></strong>
+ <if $showmask>(Netz <var $network>/<var $setbits>)</if> wurde
+ <if $reason>mit folgender Begr&uuml;ndung gesperrt:<br /><strong><var $reason></strong></if>
+ <if !$reason>gesperrt.</if>
+ <br /><br />Diese Sperrung 
  <if $expires>l&auml;uft am <strong><var get_date($expires)></strong> ab.</if>
  <if !$expires>gilt f&uuml;r unbestimmte Zeit.</if>
  <br />
 </loop>
- <br />Bitte kontaktiere uns im IRC, wenn du wieder posten willst!</p>
-</if>
+
 <if $dnsbl>
-<p>Deine IP <strong><var $ip></strong> wurde in der Blacklist <strong><var $dnsbl></strong> gelistet.
- Aufgrund dieser Tatsache ist es dir nicht gestattet zu posten. Bitte kontaktiere uns im IRC, wenn du wieder posten willst!</p>
+Deine IP-Adresse <strong><var $ip></strong> wurde in der Blacklist <strong><var $dnsbl></strong> gefunden.
+Aufgrund dieser Tatsache ist es dir nicht gestattet zu posten.<br />
 </if>
 
-} . ERROR_FOOT_INCLUDE
-);
+ <br />Bitte kontaktiere uns im IRC, wenn du wieder posten willst!
+</div>
+</if>
+
+</div>
+
+} . ERROR_FOOT_INCLUDE);
 
 #
 # Admin pages
