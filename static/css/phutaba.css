@@ -241,6 +241,10 @@ ul.rules {
 	color: #000000;
 }
 
+.thread {
+	overflow: hidden;
+}
+
 .thread_reply {
 	float: left;
 	clear: both;

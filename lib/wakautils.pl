@@ -83,6 +83,8 @@ sub get_meta_markup {
 			"CanonModelID" => "Canon-eigene Modellnummer",
 			"UserComment" => "Kommentar (3)",
 			"GPSPosition" => "Position",
+			"Publisher" => "Herausgeber",
+			"Language" => "Sprache",
 	);
 	foreach (keys %options) {
 		push(@metaOptions, $_);
@@ -1959,7 +1961,7 @@ sub get_displayname($) {
 sub get_displaysize($;$$) {
 	my ($size, $dec_mark, $dec_places) = @_;
 	my $out;
-	$dec_places = 2 if (!defined($dec_places));
+	$dec_places = 1 unless (defined($dec_places));
 
 	if ($size < 1024) {
 		$out = sprintf("%d Bytes", $size);
