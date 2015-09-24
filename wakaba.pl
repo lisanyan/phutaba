@@ -251,7 +251,7 @@ elsif ( $task eq "post" ) {
     my $no_format  = $query->param("no_format");
     my $postfix    = $query->param("postfix");
 	my $as_staff   = $query->param("as_staff");
-	my @files = $query->param("file"); # multiple uploads
+	my @files = $query->param("file"); # multiple uploads. add $query->upload()?
 
     post_stuff(
         $parent,  $spam1,   $spam2,      $name,      $email,
@@ -259,6 +259,63 @@ elsif ( $task eq "post" ) {
         $admin,   $nofile,  $no_format,  $postfix,   $as_staff,
         @files
     );
+}
+elsif ($task eq "fefe") {
+	if (defined($ENV{REMOTE_ADDR})) {
+		make_error("Aufruf nicht erlaubt.");
+	}
+
+	# blog post unix timestamp
+	my $ts = ($query->param("ts") or 0);
+	$ts = 0 unless ($ts =~ m/[0-9]+/);
+
+	# select a random file from fefe-dir
+	my $picdir = ($query->param("picdir") or "img/media/fefe/");
+	my ($picture, @files);
+	while (glob $picdir . "*") {
+		push(@files, $_) if (-f $_);
+	}
+	$picture = $files[rand @files] if (@files);
+	make_error("Could not find a picture in directory $picdir for posting.") if (!$picture);
+
+	open(my $fh, "<", $picture)
+		or make_error("Cannot open $picture: $!");
+	binmode($fh);
+
+	$ENV{REMOTE_ADDR} = "0.0.0.0";
+
+    my $parent     = "";
+    my $spam1      = "";
+    my $spam2      = "";
+    my $name       = ($query->param("name") or "Herr von Leitner");
+    my $email      = "";
+    my $subject    = "";
+    my $comment    = <STDIN>;
+    my $gb2        = "thread";
+    my $captcha    = "";
+    my $password   = "";
+    my $admin      = crypt_password(ADMIN_PASS);
+    my $nofile     = "";
+    my $no_format  = "1";
+    my $postfix    = "";
+	my $as_staff   = "";
+
+    my $threadid = post_stuff(
+		$parent,  $spam1,   $spam2,      $name,      $email,
+		$subject, $comment, $gb2,        $captcha,   $password,
+		$admin,   $nofile,  $no_format,  $postfix,   $as_staff,
+		$fh
+    );
+
+	close($fh);
+
+	if ($ts and $threadid) {
+		# cannot use make_error() here, because post_stuff() already took care of http output
+		$sth = $dbh->prepare("UPDATE "
+			. SQL_TABLE
+			. " SET timestamp=? WHERE num=? LIMIT 1;");
+		$sth->execute($ts, $threadid);
+	}
 }
 elsif ( $task eq "delete" ) {
     my $password = $query->param("password");
@@ -1164,10 +1221,10 @@ sub post_stuff {
     make_error(S_TOOLONG) if ( length($name) > MAX_FIELD_LENGTH );
     make_error(S_TOOLONG) if ( length($email) > MAX_FIELD_LENGTH );
     make_error(S_TOOLONG) if ( length($subject) > MAX_FIELD_LENGTH );
-    make_error(S_TOOLONG) if ( length($comment) > MAX_COMMENT_LENGTH );
+    make_error(S_TOOLONG) if ( length($comment) > MAX_COMMENT_LENGTH and !$admin ); # fefe hack
 
     # check to make sure the user selected a file, or clicked the checkbox
-    make_error(S_NOPIC) if ( !$parent and !$file and !$nofile and !$as_staff );
+    make_error(S_NOPIC) if ( !$parent and !$file and !$nofile and !$admin );
 
     # check for empty reply or empty text-only post
     make_error(S_NOTEXT) if ( $comment =~ /^\s*$/ and !$file );
@@ -1276,8 +1333,9 @@ sub post_stuff {
     $comment = S_ANOTEXT                    unless $comment;
     $original_comment = "empty"		    unless $original_comment;
 #    $original_comment =~ s/\n/ /gm;
+
     # flood protection - must happen after inputs have been cleaned up
-    flood_check( $numip, $time, $comment, $file );
+    flood_check( $numip, $time, $comment, $file ) unless $admin; # fefe hack
 
     # Manager and deletion stuff - duuuuuh?
 
@@ -1449,8 +1507,15 @@ sub post_stuff {
     );    # yum!
 
 	# go back to thread or board page
-    make_http_forward(get_board_id() . "/thread/" . $parent . "#" . $new_post_id) if ($c_gb2 =~ /thread/i and $parent ne '0');
-    make_http_forward(get_board_id() . "/");
+	if ($c_gb2 =~ /thread/i) {
+		make_http_forward(get_board_id() . "/thread/" . $parent . "#" . $new_post_id) if ($parent);
+		make_http_forward(get_board_id() . "/thread/" . $new_post_id) if (!$parent);
+	}
+	else {
+		make_http_forward(get_board_id() . "/");
+	}
+
+	return $new_post_id; # fefe hack
 }
 
 sub is_whitelisted {
@@ -1907,6 +1972,8 @@ sub process_file {
 
 # make sure to read file in binary mode on platforms that care about such things
     binmode $file;
+
+	$uploadname = 'fefe' if ref($file) eq 'GLOB'; # fefe hack - other files have 'CGI::File::Temp'
 
     # analyze file and check that it's in a supported format
     my ( $ext, $width, $height ) = analyze_image( $file, $uploadname );
