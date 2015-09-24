@@ -2,6 +2,7 @@ use constant POST_VIEW_INCLUDE => q{
 
 <if !$parent>
 	<div class="thread_OP" id="<var $num>">
+	<div class="post">
 	<header class="thread_head">
 </if>
 
@@ -106,7 +107,6 @@ use constant POST_VIEW_INCLUDE => q{
 
 <if !$parent>
 	</header>
-	<div class="post">
 </if>
 
 <div class="post_body">
@@ -121,7 +121,7 @@ use constant POST_VIEW_INCLUDE => q{
 		<var get_pretty_html($info_all, "\n\t\t")>
 	</div>
 	<div class="filename"><const S_PICNAME><a target="_blank" title="<var $uploadname>" href="<var expand_image_filename($image)>/<var get_urlstring($uploadname)>"><var $displayname></a></div>
-	<div class="filesize"><var get_displaysize($size, DECIMAL_MARK, 1)><if $width && $height>, <var $width>&nbsp;&times;&nbsp;<var $height></if><if $info>, <var $info></if></div>
+	<div class="filesize"><var get_displaysize($size, DECIMAL_MARK)><if $width && $height>, <var $width>&nbsp;&times;&nbsp;<var $height></if><if $info>, <var $info></if></div>
 	<if $thumbnail>
 		<div class="filelink">
 		<a target="_blank" href="<var expand_image_filename($image)>">
@@ -142,8 +142,8 @@ use constant POST_VIEW_INCLUDE => q{
 				</a>
 			</if>
 			<if !DELETED_THUMBNAIL>
-				<div class="filetype">
-					<a onmouseover="TagToTip('imageinfo_<var md5_hex($image)>', TITLE, '<const S_FILEINFO>', WIDTH, 300)" onmouseout="UnTip()" target="_blank" href="<var expand_image_filename($image)>">
+				<div class="filetype" onmouseover="TagToTip('imageinfo_<var md5_hex($image)>', TITLE, '<const S_FILEINFO>', WIDTH, 300)" onmouseout="UnTip()">
+					<a target="_blank" href="<var expand_image_filename($image)>">
 						<var get_extension($uploadname)>
 					</a>
 				</div>

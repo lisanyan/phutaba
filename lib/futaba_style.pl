@@ -73,7 +73,7 @@ use constant NORMAL_HEAD_INCLUDE => q{
 } . NETMASK_SELECT_INCLUDE . q{
 </td></tr>
 <tr><td><b><const S_BANDURATION></b></td><td>
-} . DURATION_SELECT_INCLUDE . q{</select>
+} . DURATION_SELECT_INCLUDE . q{
 </td></tr>
 <tr>
 	<td><b><const S_BANREASONLABEL></b></td><td><input id="reason" type="text" name="reason" size="40" /></td>
@@ -297,11 +297,11 @@ use constant PAGE_TEMPLATE => compile_template(
 <loop $threads>
 	<hr />
 	<if !$thread>
-		<div id="thread_<var $num>">
+		<div id="thread_<var $num>" class="thread">
 	</if>
 
 	<if $thread>
-		<div id="thread_<var $thread>">
+		<div id="thread_<var $thread>" class="thread">
 	</if>
 
 		<loop $posts>
@@ -309,7 +309,6 @@ use constant PAGE_TEMPLATE => compile_template(
 		</loop>
 
 		</div>
-	<p style="clear: both;"></p>
 </loop>
 
 <if $thread>
@@ -401,9 +400,9 @@ use constant SEARCH_TEMPLATE => compile_template(
 
 	<loop $posts>
 		} . POST_VIEW_INCLUDE . q{
+	<p style="clear: both;"></p>
 	</loop>
 
-	<p style="clear: both;"></p>
 	<hr />
 
 } . NORMAL_FOOT_INCLUDE);
