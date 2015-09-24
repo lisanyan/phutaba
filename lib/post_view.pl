@@ -7,7 +7,7 @@ use constant POST_VIEW_INCLUDE => q{
 
 <if $parent>
 	<div class="thread_reply" id="<var $num>">
-	<div class="doubledash">
+	<div class="doubledash desktop">
 	<a href="<var get_reply_link($parent,0)>#<var $num>">&gt;&gt;</a>
 	</div>
 
@@ -26,7 +26,8 @@ use constant POST_VIEW_INCLUDE => q{
 		<span class="subject"><var $subject></span>
         <span class="postername"><var $name><if $trip><span class="tripcode"><var $trip></span></if></span>
 		<if $adminpost><span class="teampost">## Team ##</span></if>
-		<span class="date"><var encode_entities(get_date($timestamp))></span>
+		<span class="date desktop"><var get_date($timestamp)></span>
+		<span class="date mobile"><var make_date($timestamp, '2ch')></span>
 	</label>
 
 	<if SSL_ICON && $secure>
@@ -35,10 +36,10 @@ use constant POST_VIEW_INCLUDE => q{
 
 	<span class="reflink">
                 <if !$parent>
-                        <a href="<var get_reply_link($num,0)>#i<var $num>">Nr. <var $num></a>
+                        <a href="<var get_reply_link($num,0)>#i<var $num>">Nr.&nbsp;<var $num></a>
                 </if>			
                 <if $parent>
-                        <a href="<var get_reply_link($parent,0)>#i<var $num>">Nr. <var $num></a>
+                        <a href="<var get_reply_link($parent,0)>#i<var $num>">Nr.&nbsp;<var $num></a>
                 </if>
 	</span>
 
@@ -59,7 +60,7 @@ use constant POST_VIEW_INCLUDE => q{
 
 	<if $isAdmin>
 		<if !$adminpost>
-		<div style="display: none; min-width: 250px;" id="postinfo_<var $num>">
+		<div class="hidden tooltip" id="postinfo_<var $num>">
 			<var get_post_info($location, get_board_id())>
 		</div>
 		<span onmouseover="TagToTip('postinfo_<var $num>', TITLE, '<const S_POSTINFO>', DELAY, 0, CLICKSTICKY, true)" onmouseout="UnTip()">[<var dec_to_dot($ip)>]</span>
@@ -109,19 +110,18 @@ use constant POST_VIEW_INCLUDE => q{
 </if>
 
 <div class="post_body">
-<div style="float: left;">
 
+<if $files><div class="file_container"></if>
 <loop $files>
 
 <if $thumbnail><div class="file"></if>
 <if !$thumbnail><div class="file filebg"></if>
-	<div style="display: none; min-width: 250px;" id="imageinfo_<var md5_hex($image)>">
+	<div class="hidden tooltip" id="imageinfo_<var md5_hex($image)>">
 		<strong>Dateiname:</strong> <var $uploadname><br />
-		<hr />
 		<var get_pretty_html($info_all, "\n\t\t")>
 	</div>
 	<div class="filename"><const S_PICNAME><a target="_blank" title="<var $uploadname>" href="<var expand_image_filename($image)>/<var get_urlstring($uploadname)>"><var $displayname></a></div>
-	<div class="filesize"><var get_displaysize($size, DECIMAL_MARK)><if $width && $height>, <var $width>&nbsp;&times;&nbsp;<var $height></if><if $info>, <var $info></if></div>
+	<div class="filesize"><var get_displaysize($size, DECIMAL_MARK, 1)><if $width && $height>, <var $width>&nbsp;&times;&nbsp;<var $height></if><if $info>, <var $info></if></div>
 	<if $thumbnail>
 		<div class="filelink">
 		<a target="_blank" href="<var expand_image_filename($image)>">
@@ -153,11 +153,11 @@ use constant POST_VIEW_INCLUDE => q{
 </div>
 
 </loop>
-</div>
+<if $files></div></if>
 
 	<div class="text">
 		<if $abbrev>
-			<div style="display: none;" id="posttext_full_<var $num>">
+			<div class="hidden" id="posttext_full_<var $num>">
 				<var $comment_full>
 			</div>
 		</if>
