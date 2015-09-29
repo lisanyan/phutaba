@@ -31,29 +31,55 @@ sub get_meta {
 	my ($file, $charset, @tagList) = @_;
 	my (%data, $exifData);
 	my $exifTool = new Image::ExifTool;
-	@tagList = qw(-FilePermissions -ExifToolVersion -Directory -FileName -Warning -FileModifyDate) unless @tagList;	
-	$exifData = $exifTool->ImageInfo($file, @tagList) if $file;
+	@tagList = qw(-Directory -FileName -FileAccessDate -FileCreateDate -FileModifyDate -FilePermissions -Warning -ExifToolVersion) unless (@tagList);
+	$exifData = $exifTool->ImageInfo($file, \@tagList) if ($file);
 	foreach (keys %$exifData) {
 		my $val = $$exifData{$_};
-			if (ref $val eq 'ARRAY') {
-				$val = join(', ', @$val);
-			} elsif (ref $val eq 'SCALAR') {
-				my $len = length($$val);
-				$val = "(Binary data; $len bytes)";
-			}
-			$data{$_} = clean_string(decode_string($val, $charset));
+		if (ref $val eq 'ARRAY') {
+			$val = join(', ', @$val);
+		} elsif (ref $val eq 'SCALAR') {
+			my $len = length($$val);
+			$val = "(Binary data; $len bytes)";
+		}
+		$data{$_} = clean_string(decode_string($val, $charset)) if ($val);
 	}
 
 	return \%data;
 }
 
+sub get_archive_content {
+	my ($hashref) = @_;
+	my ($filetag, $sizetag, $find_filetag, $find_sizetag, $fname, $fsize, @filelist);
+	if (defined($$hashref{ArchivedFileName})) { # rar
+		$filetag = 'ArchivedFileName';
+		$sizetag = 'UncompressedSize';
+	} else { # zip
+		$filetag = 'ZipFileName';
+		$sizetag = 'ZipUncompressedSize';
+	}
+	for (my $i = 0; ; $i++) {
+		$find_filetag = $filetag;
+		$find_sizetag = $sizetag;
+		$find_filetag .= " ($i)" if ($i);
+		$find_sizetag .= " ($i)" if ($i);
+		last unless ($$hashref{$find_filetag});
+		$fname = delete($$hashref{$find_filetag});
+		$fsize = delete($$hashref{$find_sizetag});
+		push(@filelist, $fname . " (" . get_displaysize($fsize) . ")")
+			if ($fname !~ m!/$!); # ignore directories in zip files
+	}
+	# ModifyDate is of the first file in a rar archive and not of the whole archive
+	delete($$hashref{ModifyDate}) if ($$hashref{ModifyDate});
+	return @filelist;
+}
+
 sub get_meta_markup {
 	my ($file, $charset) = @_;
-	my ($markup, $info, $exifData, @metaOptions);
+	my ($exifData, $info, $archive, $markup, @metaOptions);
 	my %options = (	"FileSize" => "Dateigr&ouml;&szlig;e",
 			"FileType" => "Dateityp",
 			"ImageSize" => "Aufl&ouml;sung", 
-			"ModifyDate" => "&Auml;nderungdatum", 
+			"ModifyDate" => "&Auml;nderungsdatum",
 			"Comment" => "Kommentar", 
 			"Comment-xxx" => "Kommentar (2)",
 			"CreatorTool" => "Erstellungstool", 
@@ -71,7 +97,6 @@ sub get_meta_markup {
 			"AudioBitrate" => "Bitrate", 
 			"ChannelMode" => "Kanalmodus", 
 			"Compression" => "Kompressionsverfahren", 
-			"EncodingProcess" => "Encoding-Verfahren",
 			"FrameCount" => "Frames",
 			"Vendor" => "Library-Hersteller",
 			"Album" => "Album",
@@ -85,13 +110,24 @@ sub get_meta_markup {
 			"GPSPosition" => "Position",
 			"Publisher" => "Herausgeber",
 			"Language" => "Sprache",
+			"AudioChannels" => "Audio-Kan&auml;le",
+			"Channels" => "Kan&auml;le",
+			"VideoFrameRate" => "Bildrate",
 	);
 	foreach (keys %options) {
 		push(@metaOptions, $_);
 	}
+
+	# file names and file sizes inside archives (rar, zip)
+	push(@metaOptions, qw(ArchivedFileName UncompressedSize ZipFileName ZipUncompressedSize));
+
+	# codec information for media files (webm, mp4)
+	my @codec_tags = qw(CodecID AudioCodecID VideoCodecID CompressorID);
+	push(@metaOptions, @codec_tags);
+
 	$exifData = get_meta($file, $charset, @metaOptions);
 
-	# extract additional information for documents or animation/video/audio
+	# extract additional information for documents or animation/video/audio or archives
 	if (defined($$exifData{PageCount})) {
 		if ($$exifData{PageCount} eq 1) {
 			$info = "1 Seite";
@@ -114,11 +150,32 @@ sub get_meta_markup {
 			$info = $min . ':' . $sec;
 		}
 	}
+	if (defined($$exifData{ArchivedFileName}) or defined($$exifData{ZipFileName})) {
+		# cutoff will happen after +2 files because one line is added for the cutoff message.
+		# instead of adding a line that ONE file is not shown, just show the file.
+		my $max_visible = 10;
+		my @filelist = get_archive_content($exifData);
+		my $filecount = @filelist;
+		if ($filecount == 1) {
+			$info = "1 Datei"
+		} else {
+			$info = $filecount . " Dateien";
+		}
+		splice(@filelist, $max_visible, $filecount - $max_visible,
+			"<em>(" . ($filecount - $max_visible) . " weitere nicht angezeigt)</em>")
+			if ($filecount > $max_visible + 1);
+		my $header = "<hr /><strong>Archiv mit $info:</strong>";
+		$archive = join("<br />", $header, @filelist);
+	}
 
 	# every file has this, so place it first
-	$markup .= "<strong>$options{FileSize}:</strong> " . delete($$exifData{FileSize}) . "<br />";
+	$markup  = "<strong>$options{FileSize}:</strong> " . delete($$exifData{FileSize}) . "<br />";
 	$markup .= "<strong>$options{FileType}:</strong> " . delete($$exifData{FileType}) . "<br />";
 	$markup .= "<strong>$options{MIMEType}:</strong> " . delete($$exifData{MIMEType}) . "<br />";
+
+	# merge all codec values into one array
+	my @codec_list = map { my $tag = $_; grep {/^$tag/} keys $exifData } @codec_tags;
+	my @codecs = map { delete($$exifData{$_}) } @codec_list;
 
 	# replace english names with their translations
 	# tags without matching translation will be removed (e.g. ModifyDate (1))
@@ -130,10 +187,13 @@ sub get_meta_markup {
 		}
 	}
 
+	$$exifData{Codec} = join(", ", @codecs) if (@codecs);
+
 	$markup .= "<hr />" if (%$exifData);
 	foreach (sort keys %$exifData) {
 		$markup .= "<strong>$_:</strong> $$exifData{$_}<br />";
 	}
+	$markup .= $archive;
 
 	return ($info, $markup);
 }	
