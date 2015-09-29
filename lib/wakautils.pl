@@ -49,7 +49,7 @@ sub get_meta {
 
 sub get_archive_content {
 	my ($hashref) = @_;
-	my ($filetag, $sizetag, $find_filetag, $find_sizetag, @filelist);
+	my ($filetag, $sizetag, $find_filetag, $find_sizetag, $fname, $fsize, @filelist);
 	if (defined($$hashref{ArchivedFileName})) { # rar
 		$filetag = 'ArchivedFileName';
 		$sizetag = 'UncompressedSize';
@@ -58,16 +58,17 @@ sub get_archive_content {
 		$sizetag = 'ZipUncompressedSize';
 	}
 	for (my $i = 0; ; $i++) {
-		$find_filetag = $filetag unless ($i);
-		$find_sizetag = $sizetag unless ($i);
-		$find_filetag = "$filetag ($i)" if ($i);
-		$find_sizetag = "$sizetag ($i)" if ($i);
+		$find_filetag = $filetag;
+		$find_sizetag = $sizetag;
+		$find_filetag .= " ($i)" if ($i);
+		$find_sizetag .= " ($i)" if ($i);
 		last unless ($$hashref{$find_filetag});
-		push(@filelist, delete($$hashref{$find_filetag})
-			. " (" . get_displaysize(delete($$hashref{$find_sizetag})) . ")");
+		$fname = delete($$hashref{$find_filetag});
+		$fsize = delete($$hashref{$find_sizetag});
+		push(@filelist, $fname . " (" . get_displaysize($fsize) . ")")
+			if ($fname !~ m!/$!); # ignore directories in zip files
 	}
-	# remove tag because it is the modification date of the first file in rar archives
-	# and not the modification date of the whole archive
+	# ModifyDate is of the first file in a rar archive and not of the whole archive
 	delete($$hashref{ModifyDate}) if ($$hashref{ModifyDate});
 	return @filelist;
 }
@@ -96,7 +97,6 @@ sub get_meta_markup {
 			"AudioBitrate" => "Bitrate", 
 			"ChannelMode" => "Kanalmodus", 
 			"Compression" => "Kompressionsverfahren", 
-			"EncodingProcess" => "Encoding-Verfahren",
 			"FrameCount" => "Frames",
 			"Vendor" => "Library-Hersteller",
 			"Album" => "Album",
@@ -110,16 +110,21 @@ sub get_meta_markup {
 			"GPSPosition" => "Position",
 			"Publisher" => "Herausgeber",
 			"Language" => "Sprache",
-			"CodecID" => "Codec",
-			"CompressorID" => "Kompressor",
 			"AudioChannels" => "Audio-Kan&auml;le",
 			"Channels" => "Kan&auml;le",
+			"VideoFrameRate" => "Bildrate",
 	);
 	foreach (keys %options) {
 		push(@metaOptions, $_);
 	}
+
 	# file names and file sizes inside archives (rar, zip)
 	push(@metaOptions, qw(ArchivedFileName UncompressedSize ZipFileName ZipUncompressedSize));
+
+	# codec information for media files (webm, mp4)
+	my @codec_tags = qw(CodecID AudioCodecID VideoCodecID CompressorID);
+	push(@metaOptions, @codec_tags);
+
 	$exifData = get_meta($file, $charset, @metaOptions);
 
 	# extract additional information for documents or animation/video/audio or archives
@@ -157,7 +162,7 @@ sub get_meta_markup {
 			$info = $filecount . " Dateien";
 		}
 		splice(@filelist, $max_visible, $filecount - $max_visible,
-			"<em>(" . ($filecount - $max_visible) . " weitere ausgeblendet)</em>")
+			"<em>(" . ($filecount - $max_visible) . " weitere nicht angezeigt)</em>")
 			if ($filecount > $max_visible + 1);
 		my $header = "<hr /><strong>Archiv mit $info:</strong>";
 		$archive = join("<br />", $header, @filelist);
@@ -168,6 +173,10 @@ sub get_meta_markup {
 	$markup .= "<strong>$options{FileType}:</strong> " . delete($$exifData{FileType}) . "<br />";
 	$markup .= "<strong>$options{MIMEType}:</strong> " . delete($$exifData{MIMEType}) . "<br />";
 
+	# merge all codec values into one array
+	my @codec_list = map { my $tag = $_; grep {/^$tag/} keys $exifData } @codec_tags;
+	my @codecs = map { delete($$exifData{$_}) } @codec_list;
+
 	# replace english names with their translations
 	# tags without matching translation will be removed (e.g. ModifyDate (1))
 	foreach (keys %$exifData) {
@@ -177,6 +186,8 @@ sub get_meta_markup {
 			delete($$exifData{$_});
 		}
 	}
+
+	$$exifData{Codec} = join(", ", @codecs) if (@codecs);
 
 	$markup .= "<hr />" if (%$exifData);
 	foreach (sort keys %$exifData) {
