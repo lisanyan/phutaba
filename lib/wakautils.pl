@@ -160,7 +160,7 @@ sub get_meta_markup {
 			"<em>(" . ($filecount - $max_visible) . " weitere ausgeblendet)</em>")
 			if ($filecount > $max_visible + 1);
 		my $header = "<hr /><strong>Archiv mit $info:</strong>";
-		$archive = join("<br />\n", $header, @filelist);
+		$archive = join("<br />", $header, @filelist);
 	}
 
 	# every file has this, so place it first
