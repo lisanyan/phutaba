@@ -61,7 +61,7 @@ use constant POST_VIEW_INCLUDE => q{
 
 	<if $isAdmin>
 		<if !$adminpost>
-		<div class="hidden tooltip" id="postinfo_<var $num>">
+		<div class="hidden" id="postinfo_<var $num>">
 			<var get_post_info($location, get_board_id())>
 		</div>
 		<span onmouseover="TagToTip('postinfo_<var $num>', TITLE, '<const S_POSTINFO>', DELAY, 0, CLICKSTICKY, true)" onmouseout="UnTip()">[<var dec_to_dot($ip)>]</span>
@@ -116,7 +116,7 @@ use constant POST_VIEW_INCLUDE => q{
 
 <if $thumbnail><div class="file"></if>
 <if !$thumbnail><div class="file filebg"></if>
-	<div class="hidden tooltip" id="imageinfo_<var md5_hex($image)>">
+	<div class="hidden" id="imageinfo_<var md5_hex($image)>">
 		<strong>Dateiname:</strong> <var $uploadname><br />
 		<var get_pretty_html($info_all, "\n\t\t")>
 	</div>
@@ -125,7 +125,7 @@ use constant POST_VIEW_INCLUDE => q{
 	<if $thumbnail>
 		<div class="filelink">
 		<a target="_blank" href="<var expand_image_filename($image)>">
-			<img onmouseover="TagToTip('imageinfo_<var md5_hex($image)>', TITLE, '<const S_FILEINFO>', WIDTH, 300)" onmouseout="UnTip()"
+			<img onmouseover="TagToTip('imageinfo_<var md5_hex($image)>', TITLE, '<const S_FILEINFO>', WIDTH, -450)" onmouseout="UnTip()"
 				<if get_extension($image) eq 'JPG' or get_extension($image) eq 'PNG' or get_extension($image) eq 'GIF'>onclick="return expand_image(this, <var $width>, <var $height>, <var $tn_width>, <var $tn_height>, '<var expand_filename($thumbnail)>')"</if>
 				src="<var expand_filename($thumbnail)>" width="<var $tn_width>" height="<var $tn_height>" alt="<var $size>" />
 		</a>
@@ -142,7 +142,7 @@ use constant POST_VIEW_INCLUDE => q{
 				</a>
 			</if>
 			<if !DELETED_THUMBNAIL>
-				<div class="filetype" onmouseover="TagToTip('imageinfo_<var md5_hex($image)>', TITLE, '<const S_FILEINFO>', WIDTH, 300)" onmouseout="UnTip()">
+				<div class="filetype" onmouseover="TagToTip('imageinfo_<var md5_hex($image)>', TITLE, '<const S_FILEINFO>', WIDTH, -450)" onmouseout="UnTip()">
 					<a target="_blank" href="<var expand_image_filename($image)>">
 						<var get_extension($uploadname)>
 					</a>

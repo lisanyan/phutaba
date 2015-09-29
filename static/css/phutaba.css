@@ -30,16 +30,10 @@ pre {
 }
 
 /* default styles */
-html, body, ul, ol, p, pre, table, td {
-/*	font-size: 100%;
-	font-weight: inherit;
-	font-style: inherit;
-	font-family: inherit;
-	vertical-align: baseline; */
+html, body, ul, ol, p, pre, table, td, img {
 	margin: 0;
 	padding: 0;
-/*	border: 0;
-	outline: 0; */
+	border: 0;
 }
 
 *:focus {
@@ -82,7 +76,7 @@ body {
 
 a:link, a:visited, a:hover {
 	color: #702802;
-	text-decoration: underline;
+	/*text-decoration: underline;*/
 }
 
 a:hover {
@@ -218,10 +212,6 @@ input[type='submit']:hover {
 	display: none;
 }
 
-.tooltip {
-	min-width: 250px;
-}
-
 ul.rules {
 	margin-top: 1em;
 	margin-left: 1.6em;
@@ -342,8 +332,9 @@ ul.rules {
 	font-size: 0.85em;
 }
 
-.filelink {
-	line-height: 0;
+.filelink a img {
+	display: block;
+	margin: 0 auto;
 }
 
 .filelink a:active {
