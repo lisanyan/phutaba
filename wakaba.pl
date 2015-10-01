@@ -152,16 +152,16 @@ my $task  = ( $query->param("task") or $query->param("action")) unless $query->p
 $task = ( $query->url_param("task") ) unless $task;
 my $json  = ( $query->param("json") or "" );
 
-if (table_exists(SQL_TABLE)) {
-	# fill meta-data fields of all existing board files. this will run only once after schema migration.
-	# placed before migration to prevent both functions running in the same script call which could cause a timeout.
+# create an empty file in the board directory to let migration code run
+if (-f BOARD_IDENT . "/migrate_sql") {
+	# fill meta-data fields of all existing board files.
 	update_files_meta();
 	#update_db_schema();  # schema migration.
 	#update_db_schema2(); # schema migration 2 - change location column
 }
 
 # check for admin table
-init_admin_database() if ( !table_exists(SQL_ADMIN_TABLE) );
+init_admin_database() if (!-f BOARD_IDENT . "/sql_created" and !table_exists(SQL_ADMIN_TABLE));
 
 if ( $json eq "post" ) {
     my $id = $query->param("id");
@@ -175,9 +175,6 @@ elsif ($json eq "thread") {
         output_json_thread($id);
     }
 }
-elsif ($json eq "threads") {
-    output_json_threads();
-}
 elsif ($json eq "stats") {
 	my $date_format = $query->param("date_format");
 	if (defined($date_format)) {
@@ -185,8 +182,7 @@ elsif ($json eq "stats") {
 	}
 }
 
-if ( !table_exists(SQL_TABLE) )    # check for comments table
-{
+if (!-f BOARD_IDENT . "/sql_created" and !table_exists(SQL_TABLE)) { # check for comments table
     init_database();
 	init_files_database() unless table_exists(SQL_TABLE_IMG);
 
@@ -494,35 +490,6 @@ sub do_paint {
 
 }
 
-sub output_json_threads {
-    my ($row, $error, $code, %status, @data, %json);
-    $sth = $dbh->prepare("SELECT num FROM " . SQL_TABLE . " WHERE parent = 0 ORDER BY sticky DESC,lasthit DESC,CASE parent WHEN 0 THEN num ELSE parent END ASC,num ASC");
-    $sth->execute();
-    $error = encode_entities(decode('utf8', $sth->errstr));
-    while($row = $sth->fetch()) {
-        push(@data, $$row[0]);
-    }
-    if(@data ne 0) {
-        $code = 200;   
-    } elsif($sth->rows eq 0) {
-        $code = 404;
-        $error = 'Element not found.';
-    } else {
-        $code = 500;
-    }
-    %status = (
-        "error_code" => $code,
-        "error_msg" => $error,
-    );
-    %json = (
-        "data" => \@data,
-        "status" => \%status,
-    );
-
-    make_json_header();
-    print $JSON->encode(\%json);
-}
-
 sub output_json_thread {
     my ($id) = @_;
     my ($row, $error, $code, %status, @data, %json);
@@ -671,8 +638,7 @@ sub show_post {
 
 sub show_page {
     my ($pageToShow, $admin) = @_;
-    my $page = 1;
-    my ( $sth, $row, @thread );
+    my ($sth, $row, $sth2, $row2, @thread);
 	# if we try to call show_page with admin parameter
 	# the admin password will be checked and this
 	# variable will be 1
@@ -683,72 +649,46 @@ sub show_page {
 		if (check_password_silent($admin, ADMIN_PASS)) { $isAdmin = 1; } else { $admin = ""; }
 	}
 
-    # grab all posts, in thread order (ugh, ugly kludge)
-    $sth = $dbh->prepare(
-            "SELECT * FROM "
-          . SQL_TABLE
-          . " ORDER BY sticky DESC,lasthit DESC,CASE parent WHEN 0 THEN num ELSE parent END ASC,num ASC"
-    ) or make_error(S_SQLFAIL);
-    $sth->execute() or make_error(S_SQLFAIL);
+    my $total_threads = count_threads();
+    my $total_pages = get_page_count($total_threads, $isAdmin);
 
-    $row = get_decoded_hashref($sth);
-
-    if ( !$row )    # no posts on the board!
-    {
-        output_page( 1, 1, $isAdmin, $admin, () );    # make an empty page 1
+    if ($total_threads == 0) {                      # no posts on the board
+        output_page( 1, 1, $isAdmin, $admin, () );  # make an empty page 1
     }
     else {
-        my $threadcount = 0;
-        my @threads;
+		make_error(S_INVALID_PAGE, 1) if ($pageToShow > $total_pages or $pageToShow <= 0);
 
-        my @thread = ($row);
+		my @threads, @thread;
 
-        my $totalThreadCount = count_threads();
-        my $total;
-		if($isAdmin) {
-			$total = get_page_count_real($totalThreadCount);
+		# grab all threads for the current page in sticky and bump order
+		$sth = $dbh->prepare(
+			    "SELECT * FROM "
+			  . SQL_TABLE
+			  . " WHERE parent=0 ORDER BY sticky DESC,lasthit DESC,num ASC"
+			  . " LIMIT ?,?"
+		) or make_error(S_SQLFAIL);
+		$sth->execute(IMAGES_PER_PAGE * ($pageToShow - 1), IMAGES_PER_PAGE) or make_error(S_SQLFAIL);
+
+		while ($row = get_decoded_hashref($sth)) {
+			@thread = ($row);
+
+			# add posts to thread
+			$sth2 = $dbh->prepare(
+				    "SELECT * FROM "
+				  . SQL_TABLE
+				  . " WHERE parent=? ORDER BY num ASC"
+			) or make_error(S_SQLFAIL);
+			$sth2->execute($$row{num}) or make_error(S_SQLFAIL);
+
+			while ($row2 = get_decoded_hashref($sth2)) {
+				push @thread, $row2;
+			}
+
+			push @threads, { posts => [@thread] };
 		}
-		else {
-			$total = get_page_count($totalThreadCount);
-		}
-        if ( $pageToShow > ( $total ) ) {
-            make_error(S_INVALID_PAGE, 1);
-        }
 
-        while ( $row = get_decoded_hashref($sth)
-            and $threadcount <= ( IMAGES_PER_PAGE * ( $pageToShow ) ) )
-        {
-            if ( !$$row{parent} ) {
-                push @threads, { posts => [@thread] };
-                @thread = ($row);    # start new thread
-                $threadcount++;
-            }
-            else {
-                push @thread, $row;
-            }
-        }
-        push @threads, { posts => [@thread] };
-
-        my @pagethreads;
-        my $built_page = 0;
-        while ( @pagethreads = splice @threads, 0, IMAGES_PER_PAGE
-            and $built_page == 0 )
-        {
-            if ( $page == $pageToShow ) {
-                output_page( $page, $total, $isAdmin, $admin, @pagethreads);
-                $built_page = 1;
-            }
-            $page++;
-        }
-        if ( $built_page == 0 ) {
-            make_error(S_INVALID_PAGE, 1);
-        }
+		output_page($pageToShow, $total_pages, $isAdmin, $admin, @threads);
     }
-}
-
-sub get_page_count_real {
-    my ($total) = @_;
-    return int( ( $total + IMAGES_PER_PAGE- 1 ) / IMAGES_PER_PAGE );
 }
 
 sub output_page {
@@ -2949,8 +2889,8 @@ sub get_reply_link {
 }
 
 sub get_page_count {
-    my ($total) = @_;
-    if ( $total > MAX_SHOWN_THREADS ) {
+    my ($total, $isAdmin) = @_;
+    if ( !$isAdmin and $total > MAX_SHOWN_THREADS ) {
         $total = MAX_SHOWN_THREADS;
     }
     return int( ( $total + IMAGES_PER_PAGE- 1 ) / IMAGES_PER_PAGE );
@@ -3080,6 +3020,11 @@ sub init_database {
 		");"
     ) or make_error(S_SQLFAIL);
     $sth->execute() or make_error(S_SQLFAIL);
+
+	$sth = $dbh->prepare(
+		"CREATE INDEX parent ON " . SQL_TABLE . " (parent);"
+    ) or make_error(S_SQLFAIL);
+    $sth->execute() or make_error(S_SQLFAIL);
 }
 
 sub init_files_database {
@@ -3109,6 +3054,22 @@ sub init_files_database {
 		");"
     ) or make_error(S_SQLFAIL);
     $sth->execute() or make_error(S_SQLFAIL);
+
+	$sth = $dbh->prepare(
+		"CREATE INDEX thread ON " . SQL_TABLE_IMG . " (thread);"
+    ) or make_error(S_SQLFAIL);
+    $sth->execute() or make_error(S_SQLFAIL);
+
+	$sth = $dbh->prepare(
+		"CREATE INDEX post ON " . SQL_TABLE_IMG . " (post);"
+    ) or make_error(S_SQLFAIL);
+    $sth->execute() or make_error(S_SQLFAIL);
+
+	# temporary flag to indicate that all sql tables have been created.
+	# will be replaced by board management code.
+	open(DONE, ">" . BOARD_IDENT . "/sql_created") or make_error(S_NOTWRITE);
+	print DONE "1";
+	close DONE;
 }
 
 sub init_admin_database {
