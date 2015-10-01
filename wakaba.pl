@@ -658,7 +658,7 @@ sub show_page {
     else {
 		make_error(S_INVALID_PAGE, 1) if ($pageToShow > $total_pages or $pageToShow <= 0);
 
-		my @threads, @thread;
+		my (@threads, @thread);
 
 		# grab all threads for the current page in sticky and bump order
 		$sth = $dbh->prepare(
