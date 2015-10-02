@@ -5,5 +5,7 @@ if [ -s /tmp/gay.pid ]; then
     kill $(cat /tmp/gay.pid)
 fi
 sleep 1
-# use -s and -u -g if you want to use unix sockets
-/usr/bin/spawn-fcgi -a 127.0.0.1 -p 9912 -P /tmp/gay.pid ./wakaba.pl
+# tcp socket
+# /usr/bin/spawn-fcgi -a 127.0.0.1 -p 9912 -P /tmp/gay.pid ./wakaba.pl
+# unix socket
+/usr/bin/spawn-fcgi -s /tmp/phutaba.sock -u www-data -g www-data -P /tmp/gay.pid ./wakaba.pl
