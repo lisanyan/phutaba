@@ -920,13 +920,6 @@ sub show_newposts {
     $sth->finish;
 }
 
-sub rev
-{
-    my @r;
-    push @r, pop @_ while @_;
-    @r
-}
-
 sub show_page {
     my ($pageToShow, $admin) = @_;
     my ( $sth, $row, @threads, @thread, @session );
