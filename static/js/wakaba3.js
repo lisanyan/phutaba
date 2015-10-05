@@ -47,7 +47,7 @@ function get_password(name) {
 
 function set_inputs(id) {
 	with (document.getElementById(id)) {
-		if ((typeof nya1 == "object") && (!nya1.value)) nya1.value = get_cookie("name");
+		if (typeof nya1 == "object" && !nya1.value) nya1.value = get_cookie("name");
 		/* if (!nya2.value) nya2.value = get_cookie("email"); */
 		if (typeof gb2 == "object")	gb2[1].checked = (get_cookie("gb2") == "thread");
 		if (typeof no_pomf == "object") no_pomf.checked = Settings.get("nopomf") == 1 ? "checked" : "";
@@ -269,9 +269,9 @@ function expand(el, org_width, org_height, thumb_width, thumb_height, thumb, ext
 	var img = ( el.firstElementChild || el.children[0] );
 	var org = el.href;
 	var parent = el.parentNode;
-	var post = img.parentNode.parentNode.parentNode.parentNode.parentNode.parentNode;
+	var post = img.parentNode.parentNode.parentNode.parentNode.parentNode.parentNode; // lol parentNode hell
 
-	if(ext=='WEBM'||ext=='MP4') { // Anal workaround on expanding videos
+	if (ext=='WEBM' || ext=='MP4') { // Anal workaround on expanding videos
     	var orightml = parent.innerHTML;
         var filetag = '<a href="' + org + '" class="close-webm">[Close]</a>';
         filetag += '<div><video controls="" autoplay="" '+ (Settings.get('webmVolume') === 0 ? 'muted ' : '') +'loop="1" name="media"><source src="'+org+'" type="video/'+ext.toLowerCase()+'" class="video"></video></div>';
@@ -426,6 +426,13 @@ var Settings = function() {
             }
         };
 }();
+
+if(style_cookie)
+{
+	var cookie=get_cookie(style_cookie);
+	var title=cookie?cookie:set_preferred_stylesheet();
+	set_stylesheet(title);
+}
 
 // ============================================================================================
 // TEH END

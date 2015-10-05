@@ -10,21 +10,21 @@ use CGI;
 use DBI;
 
 use lib '.';
-BEGIN { # fuck
+BEGIN {
  do "lib/site_config.pl";
  do "lib/config_defaults.pl";
- require "lib/wakautils.pl";
+ do "lib/wakautils.pl";
 }
 
 return 1 if (caller);
 
-my $locale = get_locale("ru"); # edit this to change locale
+my $locale = get_locale("locale_ru"); # edit this to change locale
 
 sub get_locale {
     my ($dodo) = @_;
     my ($settings, $file);
     
-    if ( $dodo =~ /(ru|en|de)/ ) {
+    if ( $dodo =~ /locale_(ru|en|de)/g ) {
         $file = "./lib/config/strings_$1.pl";
     }
 
@@ -227,7 +227,7 @@ sub save_captcha_word {
 }
 
 sub check_captcha {
-    my ( $dbh, $captcha, $ip, $parent, $board ) = @_;
+    my ( $dbh, $captcha, $ip, $parent, $locale, $board ) = @_;
 
     my $key = get_captcha_key($parent);
     my ($word) = get_captcha_word( $dbh, $ip, $key, $board );

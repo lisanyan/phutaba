@@ -1,9 +1,9 @@
 #!/usr/bin/perl -X
 
-use 5.16.0;
-umask 0022;    # Fix some problems
-
 package Wakaba;
+
+# use 5.16.0;
+umask 0022;    # Fix some problems
 
 use lib '.';
 use strict;
@@ -22,9 +22,8 @@ use Net::DNS;
 use Net::IP qw(:PROC);
 use SimpleCtemplate;
 
-my $JSON = JSON::XS->new->pretty->utf8;
-
 $CGI::LIST_CONTEXT_WARN = 0; # UFOPORNO
+my $JSON = JSON::XS->new->pretty->utf8;
 
 use constant HANDLER_ERROR_PAGE_HEAD => q{
 <!DOCTYPE html>
@@ -55,7 +54,7 @@ use constant HANDLER_ERROR_PAGE_FOOTER => q{
 </p>
 </div> 
 <p style="text-align: center;margin-top: 50px;">
-<span style="font-size: small; font-style: italic;">This is a <strong>fatal error</strong> in the <em>request/response handler</em>. Please contact the administrator of this site via <a href="mailto:kawaii.nyaaaaaa@gmail.com">email</a> and ask him to fix this error
+<span style="font-size: small; font-style: italic;">This is a <strong>fatal error</strong> in the <em>request/response handler</em>. Please contact the administrator of this site via <a href="mailto:admin@02ch.in">email</a> and ask him to fix this error
 </span></p>
 
     <hr />
@@ -112,7 +111,7 @@ my $tpl = SimpleCtemplate->new({tmpl_dir =>'tpl/board/'});
 
 return 1 if (caller); # stop here if we're being called externally
 
-pm_manage(n_processes => 4, die_timeout => 10);
+pm_manage(n_processes => 4, die_timeout => 10, pm_title => '02ch-fcgi-pm');
 
 # FCGI init
 while($query=CGI::Fast->new)
@@ -153,14 +152,14 @@ while($query=CGI::Fast->new)
     $memd = new Cache::Memcached::Fast({
           servers => [ { address => '127.0.0.1:11211', weight => 1 } ],
           namespace => 'memes:',
-          connect_timeout => 0.2,
-          io_timeout => 0.3,
+          connect_timeout => 0.4,
+          io_timeout => 0.7,
           close_on_error => 0,
           compress_threshold => -1,
           max_failures => 3,
           failure_timeout => 2,
           ketama_points => 150,
-          hash_namespace => 1,
+          # hash_namespace => 1,
           nowait => 1,
           serialize_methods => [ \&Storable::freeze, \&Storable::thaw ],
           max_size => 512 * 62500,
@@ -169,7 +168,7 @@ while($query=CGI::Fast->new)
 
     # check for admin table
     init_admin_database() if ( !table_exists($$cfg{SQL_ADMIN_TABLE}) );
-    init_log_database() if ( !table_exists(SQL_LOG_TABLE) );
+    init_log_database() if ( !table_exists($$cfg{SQL_LOG_TABLE}) );
 
     if ( $json eq "post" ) {
         my $id = $query->param("id");
@@ -501,9 +500,7 @@ sub output_json_threads {
 
     my $threadcount;
     my $totalThreadCount = count_threads();
-    my $total;
-    if($isAdmin) { $total = get_page_count_real($totalThreadCount); }
-    else         { $total = get_page_count($totalThreadCount); }
+    my $total = get_page_count($totalThreadCount);
 
     if ( $page > ( $total ) ) {
         $error = $$locale{S_INVALID_PAGE};
@@ -636,19 +633,16 @@ sub output_json_thread {
 
     unless ( defined $memd && defined $cached ) {
         while ( $row=get_decoded_hashref($sth) ) {
-            # foreach (@$row) {
-                hide_row_els($row);
-                $$row{comment} = resolve_reflinks($$row{comment});
-                push(@data, $row);
-            # }
+            hide_row_els($row);
+            $$row{comment} = resolve_reflinks($$row{comment});
+            push(@data, $row);
         }
+        add_images_to_thread(@data) if($data[0]);
         $memd->set($index_name, \@data);
     }
     else {
         @data = @{$cached};
     }
-
-    add_images_to_thread(@data) if($data[0]);
 
     if(@data ne 0) {
         $code = 200;   
@@ -686,7 +680,7 @@ sub get_json_meta {
     my $json_info = $JSON->decode(encode('utf-8', $$row{'files'}[$i]{'info_json'}) or '{}');
     my $filename = $$cfg{SELFPATH} . '/' . $$row{'files'}[$i]{'image'};
     return $json_info if %$json_info;
-    return get_meta($filename) if -f $filename;
+    return get_meta($filename, &CHARSET) if -f $filename;
     return $JSON->decode('{}');
 }
 
@@ -871,6 +865,43 @@ sub output_json_stats {
     print $JSON->encode(\%json);
 }
 
+# clean memd cache
+# fucking slow
+sub clear_caches {
+    my ($sth,$row);
+
+    $sth=$dbh->prepare("SELECT num FROM ".$$cfg{SQL_TABLE}." FORCE INDEX(cover) WHERE parent=0;") or make_error($$locale{S_SQLFAIL});
+    $sth->execute() or make_error($$locale{S_SQLFAIL});
+
+    while($row=$sth->fetchrow_arrayref()) {
+        my $i1 = sprintf( "jsonthreads_%s:%d", $$cfg{SELFPATH}, $$row[0] );
+        my $i2 = sprintf( "threads_%s:%d", $$cfg{SELFPATH}, $$row[0] );
+
+        $memd->delete_multi($i1, $i2);
+    }
+
+    $sth = $dbh->prepare( "SELECT count(`num`) FROM " . $$cfg{SQL_TABLE} . " WHERE parent=0;" )
+      or make_error($$locale{S_SQLFAIL});
+    $sth->execute();
+    
+    my $total = get_page_count(($sth->fetchrow_array())[0]);
+    foreach (1..$total) {
+        my $i1 = sprintf( "jsonthreads_%s:p%d", $$cfg{SELFPATH}, $_ );
+        my $i2 = sprintf( "threads_%s:p%d", $$cfg{SELFPATH}, $_ );
+        $memd->delete_multi($i1, $i2);
+    }
+
+    $sth = $dbh->prepare( "SELECT post FROM " . $$cfg{SQL_TABLE_IMG} . " FORCE INDEX(cover);" )
+      or make_error($$locale{S_SQLFAIL});
+    $sth->execute();
+    while($row=$sth->fetchrow_arrayref()) {
+        my $i1 = sprintf "post_images_%s:%d", $$cfg{SELFPATH}, $$row[0];
+        my $i2 = sprintf "images_%s:%d", $$cfg{SELFPATH}, $$row[0];
+        $memd->delete_multi($i1, $i2);
+    }
+
+    $sth->finish();
+}
 
 # sub show_post
 # shows a single post out of a thread, essential for the reloadless view of threads
@@ -934,7 +965,6 @@ sub show_newposts {
             "SELECT * FROM " . $$cfg{SQL_TABLE} . " FORCE INDEX(cover) WHERE parent=? and num>? ORDER BY num ASC;" )
       or make_error($$locale{S_SQLFAIL});
     $sth->execute( $thread, $after ) or make_error($$locale{S_SQLFAIL});
-    # $row = get_decoded_hashref($sth);
 
     if ($sth->rows) {
         make_http_header();
@@ -967,18 +997,25 @@ sub show_newposts {
     $sth->finish;
 }
 
+sub rev
+{
+    my @r;
+    push @r, pop @_ while @_;
+    @r
+}
+
 sub show_page {
     my ($pageToShow, $admin) = @_;
+    my ( $sth, $row, @threads, @thread, @session );
     my $page = $pageToShow <=0 ? 1 : $pageToShow;
-    my ( $sth, $row, @threads );
-    my @session;
+
     my $index_name = sprintf( "threads_%s:p%d", $$cfg{SELFPATH}, $page );
     my $cached = $memd->get($index_name);
+
     # if we try to call show_page with admin parameter
     # the admin password will be checked and this
     # variable will be 1
     my $isAdmin = 0;
-    my @thread;
     if(defined($admin))
     {
         @session = check_password($admin, '', 'silent');
@@ -986,40 +1023,39 @@ sub show_page {
         else { $admin = ""; }
     }
 
-    my $offset = ceil($page*$$cfg{IMAGES_PER_PAGE}-$$cfg{IMAGES_PER_PAGE});
-
     my $threadcount;
     my $totalThreadCount = count_threads();
-    my $total;
-    if($isAdmin) { $total = get_page_count_real($totalThreadCount); }
-    else         { $total = get_page_count($totalThreadCount); }
+    my $total = get_page_count($totalThreadCount);
 
     $sth = $dbh->prepare(
             "SELECT * FROM "
           . $$cfg{SQL_TABLE}
-          . " FORCE INDEX(cover) WHERE parent IS NULL or parent=0 ORDER BY sticky DESC,lasthit DESC LIMIT ?,?"
+          . " FORCE INDEX(cover) WHERE parent=0 ORDER BY sticky DESC,lasthit DESC LIMIT ?,?"
     ) or make_error($$locale{S_SQLFAIL});
-    $sth->execute($offset,$$cfg{IMAGES_PER_PAGE}) or make_error($$locale{S_SQLFAIL});
+    $sth->execute( ceil( $page * $$cfg{IMAGES_PER_PAGE} - $$cfg{IMAGES_PER_PAGE} ), $$cfg{IMAGES_PER_PAGE} )
+      or make_error($$locale{S_SQLFAIL});
 
     $total = 1 if ($sth && !$sth->rows && !$total);
 
     unless (defined $memd && defined $cached) {
 
-        my $posts = $dbh->prepare("SELECT * FROM ".$$cfg{SQL_TABLE}." FORCE INDEX(cover) WHERE parent=? ORDER BY num DESC LIMIT ?;") or make_error($$locale{S_SQLFAIL});
+        my $posts =
+          $dbh->prepare(
+            "SELECT * FROM ".$$cfg{SQL_TABLE}." FORCE INDEX(cover) WHERE parent=? ORDER BY num DESC LIMIT ?;"
+        ) or make_error($$locale{S_SQLFAIL});
 
-        while ($row = get_decoded_hashref($sth)
-            and $threadcount <= ( $$cfg{IMAGES_PER_PAGE} * ( $page ) ) )
+        while ( $row = get_decoded_hashref($sth) )
         {
-            add_images_to_row($row);
             $posts->execute($$row{num}, count_maxreplies($row));
+            add_images_to_row($row);
 
             @thread=($row);
             my @replies;
             while( my $post=get_decoded_hashref($posts) ) {
                 add_images_to_row($post);
-                push(@replies, $post) if(defined $post);
+                push(@replies, $post) if defined($post);
             }
-            push @thread, reverse @replies;
+            push @thread, rev(@replies);
             push @threads, {posts=>[@thread]};
             $threadcount++;
         }
@@ -1058,7 +1094,7 @@ sub show_page {
             }
         }
 
-        $memd->set($index_name, \@threads)
+        $memd->set($index_name, \@threads);
     }
     else
     {
@@ -1140,14 +1176,14 @@ sub show_thread {
             push( @thread, $row );
         }
 
+        add_images_to_thread(@thread) if($thread[0]);
+
         $memd->set($index_name, \@thread);
         $sth->finish;
     }
     else {
         @thread = @{$cached};
     }
-
-    add_images_to_thread(@thread) if($thread[0]);
 
     make_error($$locale{S_NOTHREADERR}, 1) if ( !$thread[0] or $thread[0]{parent} );
 
@@ -1189,8 +1225,8 @@ sub add_images_to_thread {
     unless (defined $memd && defined $cached) {
     # get all files of a thread with one query
         $sthfiles = $dbh->prepare(
-            "SELECT post,image,size,width,height,thumbnail,tn_width,tn_height,info,info_all,uploadname FROM "
-            . $$cfg{SQL_TABLE_IMG} . " FORCE INDEX(cover) WHERE thread=? OR post=? ORDER BY post ASC, num ASC;")
+            # post,image,size,width,height,thumbnail,tn_width,tn_height,info,info_all,info_json,uploadname
+            "SELECT * FROM " . $$cfg{SQL_TABLE_IMG} . " FORCE INDEX(cover) WHERE thread=? OR post=? ORDER BY post ASC, num ASC;")
             or $errcounter++;
         $sthfiles->execute($parent, $parent) or $errcounter++;
         while ( $res = get_decoded_hashref($sthfiles) ) {
@@ -1221,8 +1257,8 @@ sub add_images_to_array($@) {
     $size = 0;
 
     unless (defined $memd && defined $cached) {
-        $sth = $dbh->prepare("SELECT post,image,size,width,height,thumbnail,tn_width,tn_height,info,info_all,uploadname FROM "
-            . $$cfg{SQL_TABLE_IMG} . " FORCE INDEX(cover) WHERE post=? ORDER BY num ASC;")
+        $sth = $dbh->prepare(
+            "SELECT * FROM " . $$cfg{SQL_TABLE_IMG} . " FORCE INDEX(cover) WHERE post=? ORDER BY num ASC;")
             or $errcounter++;
         $sth->execute($postid);
         while ( $res = get_decoded_hashref($sth) ) {
@@ -1263,11 +1299,6 @@ sub resolve_reflinks($) {
     |ge;
 
     return $comment;
-}
-
-sub get_page_count_real {
-    my ($total) = @_;
-    return int( ( $total + ( $$cfg{IMAGES_PER_PAGE})- 1 ) / $$cfg{IMAGES_PER_PAGE} );
 }
 
 sub get_omit_message($$) {
@@ -1318,10 +1349,9 @@ sub dnsbl_check {
     my ($ip) = @_;
     my @errors;
 
-    foreach my $dnsbl_info ( @{&DNSBL_INFOS} ) {
+    foreach my $dnsbl_info ( @{$$cfg{DNSBL_INFOS}} ) {
         my $dnsbl_host   = @$dnsbl_info[0];
-        my $dnsbl_answer = @$dnsbl_info[1];
-        my $dnsbl_error  = @$dnsbl_info[2];
+        my $dnsbl_answers = @$dnsbl_info[1];
         my ($result, $resolver);
         my $reverse_ip    = join( '.', reverse split /\./, $ip );
         my $dnsbl_request = join( '.', $reverse_ip,        $dnsbl_host );
@@ -1330,7 +1360,7 @@ sub dnsbl_check {
         my $bgsock = $resolver->bgsend($dnsbl_request);
         my $sel    = IO::Select->new($bgsock);
 
-        my @ready = $sel->can_read(DNSBL_TIMEOUT);
+        my @ready = $sel->can_read($$cfg{DNSBL_TIMEOUT});
         if (@ready) {
             foreach my $sock (@ready) {
                 if ( $sock == $bgsock ) {
@@ -1349,11 +1379,13 @@ sub dnsbl_check {
             }
         }
 
-        if ( $result eq $dnsbl_answer ) {
-            push @errors, $dnsbl_error;
+        foreach (@{$dnsbl_answers}) {
+            if ( $result eq $_ ) {
+                push @errors, $dnsbl_host;
+            }
         }
     }
-    make_ban( $ip, shift(@errors), 1 ) if @errors;
+    make_ban( $ip, shift(@errors), 1 ) if scalar @errors;
 }
 
 
@@ -1528,8 +1560,7 @@ sub post_stuff {
 
     # check if IP is whitelisted
     my $whitelisted = is_whitelisted($numip);
-    dnsbl_check($ip) if ( !$whitelisted and ENABLE_DNSBL_CHECK );
-
+    dnsbl_check($ip) if ( !$whitelisted and $$cfg{ENABLE_DNSBL_CHECK} );
 
     # process the tripcode - maybe the string should be decoded later
     my $trip;
@@ -1574,7 +1605,7 @@ sub post_stuff {
     $city = clean_string($city);
     
     # check captcha
-    check_captcha( $dbh, $captcha, $ip, $parent, $$cfg{SELFPATH} )
+    check_captcha( $dbh, $captcha, $ip, $parent, $locale, $$cfg{SELFPATH} )
       if ( (need_captcha($$cfg{CAPTCHA_MODE}, $$cfg{CAPTCHA_SKIP}, $loc) and !$admin_post) or ($$cfg{ENABLE_CAPTCHA} and !$admin_post and !is_trusted($trip)) );
 
     $loc = join("<br />", $loc, $country_name, $region_name, $city, $as_info);
@@ -1659,7 +1690,7 @@ sub post_stuff {
             process_file($files[3], $files[3], $tsf3, $no_pomf);
     }
 
-    $numip = "0" if (ANONYMIZE_IP_ADDRESSES);
+    $numip = "0" if ($$cfg{ANONYMIZE_IP_ADDRESSES} && $admin_post);
     if ($as_staff) { $as_staff = 1; }
     else           { $as_staff = 0; }
 
@@ -1691,7 +1722,7 @@ sub post_stuff {
     $sth->execute() or make_error($$locale{S_SQLFAIL});
     my $new_post_id = ($sth->fetchrow_array())[0];
 
-    # Wipe out all cached data.
+    # Wipe out cached data.
     $memd->flush_all if(defined $new_post_id);
 
     # log admin post
@@ -1750,36 +1781,20 @@ sub post_stuff {
         and $$cfg{MAX_RES} ne 0
             or $autosage )
         {
-            eval {
-                $dbh->begin_work();
-                $sth =
-                  $dbh->prepare( "UPDATE "
-                      . $$cfg{SQL_TABLE}
-                      . " SET lasthit=$time WHERE num=? OR parent=?;" )
-                  ;    # or make_error($$locale{S_SQLFAIL});
-                $sth->execute( $parent, $parent ) or make_error($$locale{S_SQLFAIL});
-                $dbh->commit();
-            };
-            if ($@) {
-                eval { $dbh->rollback() };
-                make_error($$locale{S_SQLFAIL});
-            }
+            $sth =
+              $dbh->prepare( "UPDATE "
+                  . $$cfg{SQL_TABLE}
+                  . " SET lasthit=$time WHERE num=? OR parent=?;" )
+              ;    # or make_error($$locale{S_SQLFAIL});
+            $sth->execute( $parent, $parent ) or make_error($$locale{S_SQLFAIL});
         }
         if ( sage_count($parent_res) > ($$cfg{MAX_RES} - 1) and $$cfg{MAX_RES} ne 0) {
-            eval {
-                $dbh->begin_work();
-                $sth =
-                  $dbh->prepare( "UPDATE "
-                      . $$cfg{SQL_TABLE}
-                      . " SET autosage=1 WHERE num=? OR parent=?;" )
-                  ;    # or make_error($$locale{S_SQLFAIL});
-                $sth->execute( $parent, $parent ) or make_error($$locale{S_SQLFAIL});
-                $dbh->commit();
-            };
-            if ($@) {
-                eval { $dbh->rollback() };
-                make_error($$locale{S_SQLFAIL});
-            }
+            $sth =
+              $dbh->prepare( "UPDATE "
+                  . $$cfg{SQL_TABLE}
+                  . " SET autosage=1 WHERE num=? OR parent=?;" )
+              ;    # or make_error($$locale{S_SQLFAIL});
+            $sth->execute( $parent, $parent ) or make_error($$locale{S_SQLFAIL});
         }
     }
 
@@ -1793,7 +1808,8 @@ sub post_stuff {
         gb2       => $c_gb2,
         password  => $c_password,
         -charset  => CHARSET,
-        -autopath => $$cfg{COOKIE_PATH}
+        -autopath => $$cfg{COOKIE_PATH},
+        -expires  => time+14*24*3600
     );    # yum!
     $sth->finish;
 
@@ -2199,22 +2215,12 @@ sub get_post {
     my ($thread) = @_;
     my ($sth,$ret);
 
-    my $index_name = sprintf( "post_single%s:%d", $$cfg{SELFPATH}, $thread );
-    my $cached = $memd->get($index_name);
+    $sth = $dbh->prepare( "SELECT * FROM " . $$cfg{SQL_TABLE} . " FORCE INDEX(cover) WHERE num=? LIMIT 1;" )
+      or make_error($$locale{S_SQLFAIL});
+    $sth->execute($thread) or make_error($$locale{S_SQLFAIL});
+    $ret = $sth->fetchrow_hashref();
+    $sth->finish;
 
-    unless (defined $memd && defined $cached) {
-        $sth = $dbh->prepare( "SELECT * FROM " . $$cfg{SQL_TABLE} . " WHERE num=?;" )
-          or make_error($$locale{S_SQLFAIL});
-        $sth->execute($thread) or make_error($$locale{S_SQLFAIL});
-
-        $ret = $sth->fetchrow_hashref();
-        $sth->finish;
-
-        $memd->set($index_name, \$ret)
-    }
-    else {
-        $ret = ${$cached};
-    }
     return $ret;
 }
 
@@ -2222,22 +2228,12 @@ sub get_parent_post {
     my ($thread) = @_;
     my ($sth,$ret);
 
-    my $index_name = sprintf( "post_single%s:%d", $$cfg{SELFPATH}, $thread );
-    my $cached = $memd->get($index_name);
+    $sth = $dbh->prepare( "SELECT * FROM " . $$cfg{SQL_TABLE} . " FORCE INDEX(cover) WHERE num=? and parent=0 LIMIT 1;" )
+      or make_error($$locale{S_SQLFAIL});
+    $sth->execute($thread) or make_error($$locale{S_SQLFAIL});
+    $ret = $sth->fetchrow_hashref();
+    $sth->finish;
 
-    unless (defined $memd && defined $cached) {
-        $sth = $dbh->prepare( "SELECT * FROM " . $$cfg{SQL_TABLE} . " WHERE num=? and parent=0;" )
-          or make_error($$locale{S_SQLFAIL});
-        $sth->execute($thread) or make_error($$locale{S_SQLFAIL});
-
-        $ret = $sth->fetchrow_hashref();
-        $sth->finish;
-
-        $memd->set($index_name, \$ret)
-    }
-    else {
-        $ret = ${$cached};
-    }
     return $ret;
 }
 
@@ -2419,7 +2415,7 @@ sub process_file {
                         $filename,         $thumbnail,
                         $tn_width,         $tn_height,
                         $$cfg{MAX_W},     $$cfg{MAX_H},
-                        VIDEO_CONVERT_COMMAND
+                        $$cfg{VIDEO_CONVERT_COMMAND}
                     )
                   );
             }
@@ -2429,7 +2425,8 @@ sub process_file {
                     make_thumbnail(
                         $filename,         $thumbnail,
                         $tn_width,         $tn_height,
-                        $$cfg{THUMBNAIL_QUALITY}, CONVERT_COMMAND
+                        $$cfg{THUMBNAIL_QUALITY},
+                        $$cfg{CONVERT_COMMAND}
                     )
                   );
             }
@@ -2449,8 +2446,8 @@ sub process_file {
         $thumbnail = $filename;
     }
 
-    my ($info, $info_all) = get_meta_markup($filename);
-    my $info_json = encode_json(get_meta($filename));
+    my ($info, $info_all) = get_meta_markup($filename, &CHARSET);
+    my $info_json = encode_json(get_meta($filename, &CHARSET));
 
     chmod 0644, $filename; # Make file world-readable
     chmod 0644, $thumbnail if defined($thumbnail); # Make thumbnail (if any) world-readable
@@ -2512,40 +2509,30 @@ sub thread_control {
 
     if ( $row = $sth->fetchrow_hashref() ) {
         my $check;
-        eval {
-            $dbh->begin_work();
-
-            if($action eq "sticky") {
-                $check = $$row{sticky} ? 0 : get_max_sticky();
-                $sth = $dbh->prepare( "UPDATE " . $$cfg{SQL_TABLE} . " SET sticky=? WHERE num=? OR parent=?;" )
-                  or make_error($$locale{S_SQLFAIL});
-            }
-            elsif($action eq "locked") {
-                $check = $$row{locked} eq 1 ? 0 : 1;
-                $sth = $dbh->prepare( "UPDATE " . $$cfg{SQL_TABLE} . " SET locked=? WHERE num=? OR parent=?;" )
-                  or make_error($$locale{S_SQLFAIL});
-            }
-            elsif($action eq "autosage") {
-                $check = $$row{autosage} eq 1 ? 0 : 1;
-                $sth = $dbh->prepare( "UPDATE " . $$cfg{SQL_TABLE} . " SET autosage=? WHERE num=? OR parent=?;" )
-                  or make_error($$locale{S_SQLFAIL});
-            }
-            else {
-                make_error("dildo dodo");
-            }
-            $sth->execute( $check, $threadid, $threadid) or make_error($$locale{S_SQLFAIL});
-            $sth->finish();
-
-            $dbh->commit();
-        };
-        if ($@) {
-            eval { $dbh->rollback() };
-            make_error($$locale{S_SQLFAIL});
+        if($action eq "sticky") {
+            $check = $$row{sticky} ? 0 : get_max_sticky();
+            $sth = $dbh->prepare( "UPDATE " . $$cfg{SQL_TABLE} . " SET sticky=? WHERE num=? OR parent=?;" )
+              or make_error($$locale{S_SQLFAIL});
         }
+        elsif($action eq "locked") {
+            $check = $$row{locked} eq 1 ? 0 : 1;
+            $sth = $dbh->prepare( "UPDATE " . $$cfg{SQL_TABLE} . " SET locked=? WHERE num=? OR parent=?;" )
+              or make_error($$locale{S_SQLFAIL});
+        }
+        elsif($action eq "autosage") {
+            $check = $$row{autosage} eq 1 ? 0 : 1;
+            $sth = $dbh->prepare( "UPDATE " . $$cfg{SQL_TABLE} . " SET autosage=? WHERE num=? OR parent=?;" )
+              or make_error($$locale{S_SQLFAIL});
+        }
+        else {
+            make_error("dildo dodo");
+        }
+        $sth->execute( $check, $threadid, $threadid) or make_error($$locale{S_SQLFAIL});
+        $sth->finish();
     }
     log_action($action,$threadid,$admin);
 
-    # Wipe out all cached data.
+    # Wipe out cached data.
     $memd->flush_all;
 
     # make_http_forward( get_script_name() . "?task=show&section=".$$cfg{SELFPATH});
@@ -2688,26 +2675,15 @@ sub delete_post {
                             }
                         }
                         if ($foundLastNonSage) {
-                            # var now contains the timestamp we have to update lasthit to
-                            eval {
-                                $dbh->begin_work();
-
-                                my $upd;
-                                $upd =
-                                  $dbh->prepare( "UPDATE "
-                                      . $$cfg{SQL_TABLE}
-                                      . " SET lasthit=? WHERE parent=? OR num=?;" )
-                                  or return $$locale{S_SQLFAIL};
-                                $upd->execute( $foundLastNonSage, $parent, $parent )
-                                  or return ($$locale{S_SQLFAIL} . " " . $dbh->errstr() );
-                                $upd->finish();
-
-                                $dbh->commit();
-                            };
-                            if ($@) {
-                                eval { $dbh->rollback() };
-                                return $$locale{S_SQLFAIL};
-                            }
+                            my $upd;
+                            $upd =
+                              $dbh->prepare( "UPDATE "
+                                  . $$cfg{SQL_TABLE}
+                                  . " SET lasthit=? WHERE parent=? OR num=?;" )
+                              or return $$locale{S_SQLFAIL};
+                            $upd->execute( $foundLastNonSage, $parent, $parent )
+                              or return ($$locale{S_SQLFAIL} . " " . $dbh->errstr() );
+                            $upd->finish();
                         }
                     }
                 }
@@ -2729,24 +2705,16 @@ sub delete_post {
                 unlink $$cfg{SELFPATH}.'/'.$$res{thumbnail} if ( $$res{thumbnail} =~ /^$thumb/ );
             }
 
-            eval {
-                $dbh->begin_work();
-                $sth = $dbh->prepare( "UPDATE "
-                      . $$cfg{SQL_TABLE_IMG}
-                      . " SET size=0,md5=null,thumbnail=null,info=null,info_all=null,info_json=null WHERE post=?;" )
-                    or return $$locale{S_SQLFAIL};
-                $sth->execute($post) or return $$locale{S_SQLFAIL};
-                $dbh->commit();
-            };
-            if ($@) {
-                eval { $dbh->rollback() };
-                return $$locale{S_SQLFAIL};
-            }
+            $sth = $dbh->prepare( "UPDATE "
+                  . $$cfg{SQL_TABLE_IMG}
+                  . " SET size=0,md5=null,thumbnail=null,info=null,info_all=null,info_json=null WHERE post=?;" )
+                or return $$locale{S_SQLFAIL};
+            $sth->execute($post) or return $$locale{S_SQLFAIL};
         }
         $postinfo = dec_to_dot($$row{ip});
     }
     $sth->finish;
-    # Wipe out all cached data.
+    # Wipe out cached data.
     $memd->flush_all;
     return $postinfo;
 }
@@ -2760,7 +2728,7 @@ sub make_rss { # hater ktory droczit na perenosy skobok sosi xD
     my (@items);
 
     # Retrieve records to be inserted into RSS.
-    $sth=$dbh->prepare("SELECT * FROM ".$$cfg{SQL_TABLE}." FORCE INDEX(cover) ORDER BY timestamp DESC LIMIT ".RSS_LENGTH.";") or make_error($$locale{S_SQLFAIL});
+    $sth=$dbh->prepare("SELECT * FROM ".$$cfg{SQL_TABLE}." FORCE INDEX(cover) ORDER BY timestamp DESC LIMIT ".$$cfg{RSS_LENGTH}.";") or make_error($$locale{S_SQLFAIL});
     $sth->execute() or make_error($$locale{S_SQLFAIL});
 
     while ($row = get_decoded_hashref($sth))
@@ -2788,7 +2756,11 @@ sub make_rss { # hater ktory droczit na perenosy skobok sosi xD
 
 sub make_admin_login {
     make_http_header();
-    print $tpl->admin_login({ cfg => $cfg, locale => $locale, stylesheets  => get_stylesheets() });
+    print $tpl->admin_login({
+        cfg => $cfg,
+        locale => $locale,
+        stylesheets  => get_stylesheets()
+    });
 }
 
 sub make_admin_post_panel {
@@ -2875,7 +2847,14 @@ sub make_admin_ban_edit # generating ban editing window
     }
     $sth->finish;
     make_http_header();
-    print $tpl->edit_window({admin=>$admin, modclass => $session[1], hash=>\@hash, stylesheets=>get_stylesheets(), cfg=>$cfg, locale=>$locale});
+    print $tpl->edit_window({
+        admin=>$admin,
+        modclass => $session[1],
+        hash=>\@hash,
+        stylesheets=>get_stylesheets(),
+        cfg=>$cfg,
+        locale=>$locale
+    });
 }
 
 sub make_admin_ban_panel {
@@ -2913,7 +2892,16 @@ sub make_admin_ban_panel {
     $sth->finish;
 
     make_http_header();
-    print $tpl->admin_ban_panel({ admin => $admin, modclass => $session[1], filter => $filter, cfg => $cfg, locale => $locale, bans => \@bans, parsedate => $use_parsedate, stylesheets => get_stylesheets(), dates => BAN_DATES });
+    print $tpl->admin_ban_panel({
+        admin => $admin,
+        modclass => $session[1],
+        filter => $filter,
+        cfg => $cfg,
+        locale => $locale,
+        bans => \@bans,
+        parsedate => $use_parsedate,
+        stylesheets => get_stylesheets()
+    });
 }
 
 sub make_admin_orphans {
@@ -3081,18 +3069,10 @@ sub add_admin_entry {
             $sth->execute( $type, $comment, $ival1, $ival2, $sval1, $time, $expires )
               or make_error($$locale{S_SQLFAIL});
             if ($postid and $ban_sign) {
-                eval {
-                    $dbh->begin_work();
-                    $sth = $dbh->prepare( "UPDATE " . $$cfg{SQL_TABLE} . " SET banned=? WHERE num=? LIMIT 1;" )
-                      or make_error($$locale{S_SQLFAIL});
-                    $sth->execute($time, $postid) or make_error($$locale{S_SQLFAIL});
-                    $dbh->commit();
-                };
-                if ($@) {
-                    eval { $dbh->rollback() };
-                    make_error($$locale{S_SQLFAIL});
-                }
-                # Wipe out all cached data.
+                $sth = $dbh->prepare( "UPDATE " . $$cfg{SQL_TABLE} . " SET banned=? WHERE num=? LIMIT 1;" )
+                  or make_error($$locale{S_SQLFAIL});
+                $sth->execute($time, $postid) or make_error($$locale{S_SQLFAIL});
+                # Wipe out cached data.
                 $memd->flush_all;
             }
 
@@ -3176,18 +3156,10 @@ sub edit_admin_entry # subroutine for editing entries in the admin table
     $verify->finish;
 
     # Revise database entry
-    eval {
-        $dbh->begin_work();
-        $sth=$dbh->prepare("UPDATE ".$$cfg{SQL_ADMIN_TABLE}." SET comment=?, expires=? WHERE num=?")  
-            or make_error($$locale{S_SQLFAIL});
-        $sth->execute($comment, $expiration, $num) or make_error($$locale{S_SQLFAIL});
-        $sth->finish;
-        $dbh->commit();
-    };
-    if ($@) {
-        eval { $dbh->rollback() };
-        make_error($$locale{S_SQLFAIL});
-    }
+    $sth=$dbh->prepare("UPDATE ".$$cfg{SQL_ADMIN_TABLE}." SET comment=?, expires=? WHERE num=?")  
+        or make_error($$locale{S_SQLFAIL});
+    $sth->execute($comment, $expiration, $num) or make_error($$locale{S_SQLFAIL});
+    $sth->finish;
     
     # Add log entry
     log_action("editadminentry",$num,$admin);
@@ -3221,24 +3193,35 @@ sub delete_all {
     {
         my ($pcount, $tcount);
 
-        $sth = $dbh->prepare("SELECT count(`num`) FROM ".$$cfg{SQL_TABLE}." WHERE ip & ? = ? & ?;") or make_error($$locale{S_SQLFAIL});
-        $sth->execute($mask, $ip, $mask) or make_error($$locale{S_SQLFAIL});
+        $sth = $dbh->prepare("SELECT count(`num`) FROM ".$$cfg{SQL_TABLE}." WHERE ip=? OR ip & ? = ? & ?;") or make_error($$locale{S_SQLFAIL});
+        $sth->execute($ip, $mask, $ip, $mask) or make_error($$locale{S_SQLFAIL});
         $pcount = ($sth->fetchrow_array())[0];
+        $sth->finish;
 
-        $sth = $dbh->prepare("SELECT count(`num`) FROM ".$$cfg{SQL_TABLE}." WHERE ip & ? = ? & ? AND parent=0;") or make_error($$locale{S_SQLFAIL});
-        $sth->execute($mask, $ip, $mask) or make_error($$locale{S_SQLFAIL});
+        $sth = $dbh->prepare("SELECT count(`num`) FROM ".$$cfg{SQL_TABLE}." WHERE parent=0 AND (ip=? OR ip & ? = ? & ?);") or make_error($$locale{S_SQLFAIL});
+        $sth->execute($ip, $mask, $ip, $mask) or make_error($$locale{S_SQLFAIL});
         $tcount = ($sth->fetchrow_array())[0];
         $sth->finish;
 
         make_http_header();
-        print $tpl->delete_panel({admin=>$admin, modclass=>$session[1], ip=>$ip, mask=>$mask, posts=>$pcount, threads=>$tcount, cfg=>$cfg, locale=>$locale, stylesheets=>get_stylesheets()});
+        print $tpl->delete_panel({
+            admin=>$admin,
+            modclass=>$session[1],
+            ip=>$ip,
+            mask=>$mask,
+            posts=>$pcount,
+            threads=>$tcount,
+            cfg=>$cfg,
+            locale=>$locale,
+            stylesheets=>get_stylesheets()
+        });
     }
     else
     {
         $sth =
-          $dbh->prepare( "SELECT num FROM " . $$cfg{SQL_TABLE} . " WHERE ip & ? = ? & ?;" )
+          $dbh->prepare( "SELECT num FROM " . $$cfg{SQL_TABLE} . " WHERE ip<>0 AND ip IS NOT NULL ip=? OR ip & ? = ? & ?);" )
           or make_error($$locale{S_SQLFAIL});
-        $sth->execute( $mask, $ip, $mask ) or make_error($$locale{S_SQLFAIL});
+        $sth->execute( $ip, $mask, $ip, $mask ) or make_error($$locale{S_SQLFAIL});
         while ( $row = $sth->fetchrow_hashref() ) { push( @posts, $$row{num} ); }
         $sth->finish;
 
@@ -3304,7 +3287,7 @@ sub make_expiration_date {
     if($use_parsedate) { $expires=parsedate($expires); } # Sexy date parsing
     else
     {
-        my ($date)=grep { $$_{label} eq $expires } @{BAN_DATES()};
+        my ($date)=grep { $$_{label} eq $expires } @{$$cfg{BAN_DATES}};
 
         if(defined $date->{time})
         {
@@ -3453,21 +3436,13 @@ sub edit_post {
     $name = make_anonymous( $ip, time() ) unless $name or $trip;
 
     # finally, update
-    eval {
-        $dbh->begin_work();
-        $sth=$dbh->prepare("UPDATE ".$$cfg{SQL_TABLE}." SET name=?,email=?,trip=?,subject=?,comment=?,adminpost=?,admin_post=? WHERE num=?;") or make_error($$locale{S_SQLFAIL});
-        $sth->execute($name,$email,($killtrip ? undef : $trip),$subject,$comment,$adminpost,$admin_post,$num) or make_error($$locale{S_SQLFAIL});
-        $sth->finish;
-        $dbh->commit();
-    };
-    if ($@) {
-        eval { $dbh->rollback() };
-        make_error($$locale{S_SQLFAIL});
-    }
+    $sth=$dbh->prepare("UPDATE ".$$cfg{SQL_TABLE}." SET name=?,email=?,trip=?,subject=?,comment=?,adminpost=?,admin_post=? WHERE num=?;") or make_error($$locale{S_SQLFAIL});
+    $sth->execute($name,$email,($killtrip ? undef : $trip),$subject,$comment,$adminpost,$admin_post,$num) or make_error($$locale{S_SQLFAIL});
+    $sth->finish;
 
     log_action("editpost",$num,$admin);
 
-    # Wipe out all cached data.
+    # Wipe out cached data.
     $memd->flush_all;
 
     # Go to thread
@@ -3491,7 +3466,7 @@ sub log_action {
     eval {
         $dbh->begin_work();
 
-        $sth=$dbh->prepare("INSERT INTO ".SQL_LOG_TABLE." VALUES(null,?,?,?,?,?,?);") or make_error($dbh->errstr);
+        $sth=$dbh->prepare("INSERT INTO ".$$cfg{SQL_LOG_TABLE}." VALUES(null,?,?,?,?,?,?);") or make_error($dbh->errstr);
         $sth->execute(@neko[0],$action,$object,($$cfg{SELFPATH}),$time,dot_to_dec(get_remote_addr())) or make_error($dbh->errstr);
         $sth->finish;
 
@@ -3510,7 +3485,7 @@ sub make_view_log {
     my @session = check_password($admin, '');
     make_error($$locale{S_NOPRIVILEGES}) if $session[1] ne 'admin';
     
-    $sth = $dbh->prepare("SELECT * FROM ".SQL_LOG_TABLE." ORDER BY num DESC;") or make_error($$locale{S_SQLFAIL});
+    $sth = $dbh->prepare("SELECT * FROM ".$$cfg{SQL_LOG_TABLE}." ORDER BY num DESC;") or make_error($$locale{S_SQLFAIL});
     $sth->execute() or make_error($$locale{S_SQLFAIL});
 
     my $emin=($page-1)*$$cfg{ENTRIES_PER_LOGPAGE};
@@ -3530,7 +3505,7 @@ sub make_view_log {
     $totalCount = 1 if ($sth && !$sth->rows);
     my @pages = map +{ page => $_ }, ( 1 .. $totalCount );
     foreach my $p (@pages) {
-        $$p{filename} = get_script_name(). "?task=viewlog&amp;page=" . $$p{page};
+        $$p{filename} = get_script_name(). "?task=viewlog&amp;section=".$$cfg{SELFPATH}."&amp;page=" . $$p{page};
         if ( $$p{page} == $page ) { $$p{current} = 1 }   # current page, no link
     }
 
@@ -3567,11 +3542,11 @@ sub clear_log {
 
     my $board_path = $$cfg{SELFPATH};
     if ($where) {
-        $sth=$dbh->prepare("DELETE FROM ".SQL_LOG_TABLE." WHERE board=?;") or make_error($$locale{S_SQLFAIL});
+        $sth=$dbh->prepare("DELETE FROM ".$$cfg{SQL_LOG_TABLE}." WHERE board=?;") or make_error($$locale{S_SQLFAIL});
         $sth->bind_param(1, $board_path);
     }
     else {
-        $sth=$dbh->prepare("DELETE FROM ".SQL_LOG_TABLE.";") or make_error($$locale{S_SQLFAIL});
+        $sth=$dbh->prepare("DELETE FROM ".$$cfg{SQL_LOG_TABLE}.";") or make_error($$locale{S_SQLFAIL});
     }
     $sth->execute() or "";
     $sth->finish;
@@ -3606,7 +3581,7 @@ sub make_error {
 
     make_http_header(defined $not_found ? $not_found : undef);
 
-    print $tpl->error({
+    my $out = $tpl->error({
         error          => $error,
         error_page     => 'Error occurred',
         error_title    => 'Error occurred',
@@ -3614,6 +3589,9 @@ sub make_error {
         cfg            => $cfg,
         locale         => $locale
     });
+    $out =~ s/^\s+//; # remove whitespace at the beginning
+    $out =~ s/^\s+\n//mg; # remove empty lines
+    print $out;
 
     if (ERRORLOG)    # could print even more data, really.
     {
@@ -3633,10 +3611,11 @@ sub make_error {
 
 sub make_ban {
     my ($ip, $reason, $mode, @bans) = @_;
+    my $out;
 
     make_http_header();
     if ( $mode == 1 ) {
-        print $tpl->error({
+        $out = $tpl->error({
                 ip             => $ip,
                 dnsbl          => $reason,
                 error_page     => 'HTTP 403 - Proxy found',
@@ -3648,7 +3627,7 @@ sub make_ban {
         });
     }
     else {
-        print $tpl->error({
+        $out = $tpl->error({
                 bans           => \@bans,
                 error_page     => 'Banned',
                 #error_subtitle => 'GEH ZUR&Uuml;CK NACH KRAUTKANAL!',
@@ -3659,6 +3638,11 @@ sub make_ban {
                 locale         => $locale
         });
     }
+
+    $out =~ s/^\s+//; # remove whitespace at the beginning
+    $out =~ s/^\s+\n//mg; # remove empty lines
+    print $out;
+
     eval { next; };
     if ($@) {
         exit(0);
@@ -3729,9 +3713,9 @@ sub get_reply_link {
 
 sub get_page_count {
     my ($total) = @_;
-    if ( $total > $$cfg{MAX_SHOWN_THREADS} ) {
-        $total = $$cfg{MAX_SHOWN_THREADS};
-    }
+    # if ( $total > $$cfg{MAX_SHOWN_THREADS} ) {
+    #     $total = $$cfg{MAX_SHOWN_THREADS};
+    # }
     return int( ( $total + ($$cfg{IMAGES_PER_PAGE}) - 1 ) / $$cfg{IMAGES_PER_PAGE} );
 }
 
@@ -3927,9 +3911,9 @@ sub init_files_database {
 sub init_log_database {
     my ($sth);
     
-    $sth=$dbh->do("DROP TABLE ".SQL_LOG_TABLE.";") if(table_exists(SQL_LOG_TABLE));
+    $sth=$dbh->do("DROP TABLE ".$$cfg{SQL_LOG_TABLE}.";") if(table_exists($$cfg{SQL_LOG_TABLE}));
     $sth=$dbh->prepare(
-        "CREATE TABLE ".SQL_LOG_TABLE." (".
+        "CREATE TABLE ".$$cfg{SQL_LOG_TABLE}." (".
         "num ".get_sql_autoincrement().",".
         "user TEXT,".
         "action TEXT,".
@@ -3980,19 +3964,11 @@ sub repair_database {
     # fix lasthit
     my ($upd);
 
-    eval {
-        $dbh->begin_work();
-        $upd = $dbh->prepare(
-            "UPDATE " . $$cfg{SQL_TABLE} . " SET lasthit=? WHERE parent=?;" )
-          or make_error($$locale{S_SQLFAIL});
-        $upd->execute( $$_{lasthit}, $$_{num} )
-            or make_error( $$locale{S_SQLFAIL} . " " . $dbh->errstr()) for (@threads);
-        $dbh->commit();
-    };
-    if ($@) {
-        eval { $dbh->rollback() };
-        make_error($$locale{S_SQLFAIL});
-    }
+    $upd = $dbh->prepare(
+        "UPDATE " . $$cfg{SQL_TABLE} . " SET lasthit=? WHERE parent=?;" )
+      or make_error($$locale{S_SQLFAIL});
+    $upd->execute( $$_{lasthit}, $$_{num} )
+        or make_error( $$locale{S_SQLFAIL} . " " . $dbh->errstr()) for (@threads);
 }
 
 sub get_sql_autoincrement {

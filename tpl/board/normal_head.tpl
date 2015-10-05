@@ -62,18 +62,9 @@
 	<td><b><var $$locale{S_BANREASONLABEL}></b></td><td><input id="reason" type="text" name="reason" size="40" /></td>
 </tr>
 <tr>
-	<td><label for="expires"><b<if $parsedate> class="expireshelp" onmouseover="TagToTip('banexpireshelp')" onmouseout="UnTip()"</if>><var $$locale{S_BANEXPIRESLABEL}></b></label></td>
-	<td><if !$parsedate and scalar (BAN_DATES)>
-		<select id="expires" name="expires">
-			<loop (BAN_DATES)>
-				<option value="<var $time>"<if $default> selected="selected"</if>><var Wakaba::clean_string($label)></option>
-			</loop>
-		</select>
-	<else>
-		<input type="text" id="expires" name="expires" size="16" />
-		<if !$parsedate><small><var $$locale{S_BANSECONDS}></small></if>
-	</if>
-</td></tr>
+	<td><label for="expires"><b<if $parsedate> class="expireshelp" onmouseover="TagToTip('banexpireshelp')" onmouseout="UnTip()"</if>><var $$locale{S_BANEXPIRESLABEL}>&nbsp;</b></label></td>
+	<td><include %TMPLDIR%duration_select.tpl></td>
+</tr>
 <tr><td><label for="blame"><b>Ban Sign</b></label></td><td><input id="blame" type="checkbox" name="blame" value="yes" /></td></tr>
 </table>
 <div id="infobox" style="display: none">
@@ -120,8 +111,6 @@
 	<!-- we do not need nav_boards_admin anymore -->
 	<include tpl/nav_boards.html>
 	</ul>
-	<ul class="menu" id="s-styles">
-	</ul>
 
 	<ul class="menu right">
 	<!-- <li><a href="#" onclick="show_el('s-styles'); return false;"><var $$locale{S_JS_STYLES}></a></li> -->
@@ -143,4 +132,4 @@
 	</div>
 </header>
 
-<if !DISABLE_NEW_THREADS or $isAdmin or $thread or $admin><hr /></if>
+<if !$$cfg{DISABLE_NEW_THREADS} or $isAdmin or $thread or $admin><hr /></if>

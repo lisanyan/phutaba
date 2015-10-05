@@ -36,4 +36,4 @@
 <hr />
 
 <div class="error">
-	<p><var $error_title></p>
+	<div class="title"><var $error_title></div>

@@ -19,10 +19,7 @@ function do_ban(ip, postid, board) {
 	}
 
 	function disable_controls() {
-		$j("#ip").attr('disabled', true);
-		$j("#netmask").attr('disabled', true);
-		$j("#duration").attr('disabled', true);
-		$j("#reason").attr('disabled', true);
+		$j("#ip, #netmask, #reason, #expires, #blame").attr('disabled', true);
 	}
 
 	buttons = {
@@ -38,7 +35,7 @@ function do_ban(ip, postid, board) {
 			duration = $j("#expires").val() ? $j("#expires").val() : "";
 			reason = $j("#reason").val() ? $j("#reason").val() : "no reason";
 			blame = $j('#blame').prop("checked") ? $j("#blame").val() : '';
-			url = "/" + board + "/?task=addip&ajax=1&type=ipban&ip=" + ip + "&postid=" + postid + "&mask=" + mask + "&comment=" + reason + "&expires=" + duration + "&blame=" + blame;
+			url = "/wakaba.pl?section=" + board + "&task=addip&ajax=1&type=ipban&ip=" + ip + "&postid=" + postid + "&mask=" + mask + "&comment=" + reason + "&expires=" + duration + "&blame=" + blame;
 
 			$j("#infobox").hide('normal');
 			$j("#error").hide('normal');
@@ -93,7 +90,6 @@ function do_ban(ip, postid, board) {
 	} else {
 		$j("#netmask").val("255.255.0.0");
 	}
-	$j("#expires").val("2 Days");
 
 	disable_controls();
 	$j("#infobox").hide('normal');
@@ -101,13 +97,14 @@ function do_ban(ip, postid, board) {
 	show_info("Retrieving Data ...");
 
 	$j.ajax({
-		url: "/" + board + "/?task=checkban&ip=" + ip,
+		url: "/wakaba.pl?task=checkban&ip=" + ip + "&section=" + board,
 		dataType: 'json',
 		success: function (data) {
 			if (data['results'] == 0) {
 				$j("#ip").attr('disabled', false);
 				$j("#netmask").attr('disabled', false);
-				$j("#duration").attr('disabled', false);
+				$j("#expires").attr('disabled', false);
+				$j("#blame").attr('disabled', false);
 				$j("#reason").attr('disabled', false).focus();
 				$j("#info").hide('normal');
 			} else if (data['results'] >= 1) {

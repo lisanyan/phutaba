@@ -1,11 +1,12 @@
 <if !$parent>
 	<div class="thread_OP" id="<var $num>">
+	<div class="post">
 	<header class="thread_head">
 </if>
 
 <if $parent>
 	<div class="thread_reply" id="<var $num>">
-	<div class="doubledash">
+	<div class="doubledash desktop">
 	<a href="<var Wakaba::get_reply_link($parent,0)>#<var $num>">&gt;&gt;</a>
 	</div>
 
@@ -24,7 +25,8 @@
 		<span class="subject"><var $subject></span>
         <span class="postername"><var $name><if $trip><span class="tripcode"><var $trip></span></if><if $$cfg{DISPLAY_ID} && !$adminpost><span class="posterid">&nbsp;ID: <var  Wakaba::make_id_code(Wakaba::dec_to_dot($ip), $timestamp, $email)></span></if></span>
 		<if $adminpost><span class="teampost">## Team ##</span></if>
-		<span class="date"><var Wakaba::make_date($timestamp, "futaba", @{$$locale{S_WEEKDAYS}})></span>
+		<span class="date desktop"><var Wakaba::make_date($timestamp, "futaba", $$locale{S_DATENAMES})></span>
+		<span class="date mobile"><var Wakaba::make_date($timestamp, "2ch", $$locale{S_DATENAMES})></span>
 	</label>
 
 	<if $$cfg{SSL_ICON} and $secure>
@@ -60,10 +62,10 @@
 	<if !$parent && %thread>[<a href="#bottom"><var $$locale{S_BOTTOM}></a>]</if>
 	<if %isAdmin>
 		<if !$adminpost>
-		<div style="display: none; min-width: 250px;" id="postinfo_<var $num>">
+		<div class="hidden" id="postinfo_<var $num>">
 			<var Wakaba::get_post_info($$cfg{SELFPATH},$location)>
 		</div>
-		<span onmouseover="TagToTip('postinfo_<var $num>', TITLE, '<var $$locale{S_POSTINFO}>', DELAY, 0, CLICKSTICKY, true)" onmouseout="UnTip()">[<var Wakaba::dec_to_dot($ip)>]</span>
+		<span onmouseover="TagToTip('postinfo_<var $num>', TITLE, '<var $$locale{S_POSTINFO}>', DELAY, 0, CLICKSTICKY, true, WIDTH, -450)" onmouseout="UnTip()">[<var Wakaba::dec_to_dot($ip)>]</span>
 		</if>
 		<if !$parent>	
 			<if !$sticky>
@@ -106,7 +108,6 @@
 
 <if !$parent>
 	</header>
-	<div class="post">
 </if>
 
 <div class="post_body">
@@ -117,7 +118,7 @@
 
 <if $thumbnail><div class="file"></if>
 <if !$thumbnail><div class="file filebg"></if>
-	<div style="display: none; min-width: 250px;" id="imageinfo_<var Wakaba::md5_hex($image)>">
+	<div class="hidden" id="imageinfo_<var Wakaba::md5_hex($image)>">
 		<strong>Имя файла:</strong> <var Wakaba::clean_string($uploadname)><br />
 		<hr />
 		<var Wakaba::get_pretty_html($info_all, "\n\t\t")>
@@ -127,7 +128,7 @@
 	<if $thumbnail>
 		<div class="filelink" id="exlink-<var Wakaba::md5_hex($image)>">
 		<a target="_blank" href="<var Wakaba::expand_image_filename($image)>" onclick="return expand(this, <var ($width  || 0)>, <var ($height  || 0)>, <var ($tn_width  || 0)>, <var ($tn_height  || 0)>, '<var Wakaba::expand_filename($thumbnail)>', '<var Wakaba::get_extension($image)>')">
-			<img onmouseover="TagToTip('imageinfo_<var Wakaba::md5_hex($image)>', TITLE, '<var $$locale{S_FILEINFO}>', WIDTH, 300)" onmouseout="UnTip()" src="<var Wakaba::expand_filename($thumbnail)>" width="<var $tn_width>" height="<var $tn_height>" alt="<var $size>" />
+			<img onmouseover="TagToTip('imageinfo_<var Wakaba::md5_hex($image)>', TITLE, '<var $$locale{S_FILEINFO}>', WIDTH, -450)" onmouseout="UnTip()" src="<var Wakaba::expand_filename($thumbnail)>" width="<var $tn_width>" height="<var $tn_height>" alt="<var $size>" />
 		</a>
 		</div>
 	</if>
@@ -143,7 +144,7 @@
 			</if>
 			<if !($$cfg{DELETED_THUMBNAIL})>
 				<div class="filetype">
-					<a onmouseover="TagToTip('imageinfo_<var Wakaba::md5_hex($image)>', TITLE, '<var $$locale{S_FILEINFO}>', WIDTH, 300)" onmouseout="UnTip()" target="_blank" href="<var Wakaba::expand_image_filename($image)>">
+					<a onmouseover="TagToTip('imageinfo_<var Wakaba::md5_hex($image)>', TITLE, '<var $$locale{S_FILEINFO}>', WIDTH, -450)" onmouseout="UnTip()" target="_blank" href="<var Wakaba::expand_image_filename($image)>">
 						<var Wakaba::get_extension($uploadname)>
 					</a>
 				</div>
@@ -157,7 +158,7 @@
 
 	<div class="text">
 		<if $abbrev>
-			<div style="display: none;" id="posttext_full_<var $num>">
+			<div class="hidden" id="posttext_full_<var $num>">
 				<var $comment_full>
 			</div>
 		</if>

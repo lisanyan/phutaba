@@ -91,6 +91,10 @@
 				<td>Возвращает треды с номером n</td>
 			</tr>
 			<tr>
+				<td>/board/api/newposts?id=n&amp;after=p</td>
+				<td>Возвращает новые посты в треде n после поста p</td>
+			</tr>
+			<tr>
 				<td>/board/api/post?id=n</td>
 				<td>Вернет пост n</td>
 			</tr>

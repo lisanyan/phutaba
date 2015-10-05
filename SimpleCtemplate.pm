@@ -7,10 +7,10 @@ use utf8;
 use Data::Dumper;
 use POSIX;
 
-# fuck
-BEGIN {
- require "lib/site_config.pl";
- require "lib/config_defaults.pl";
+use lib '.';
+BEGIN { # fuck
+ do "lib/site_config.pl";
+ do "lib/config_defaults.pl";
 }
 
 #<var $var> - вывод переменной
@@ -34,6 +34,7 @@ sub new {
 	my $self = $_[1]? $_[1] : {};
 
 	$self->{globals}={} unless $self->{globals};
+
 	$self->{range} = 5 unless($self->{range});
 	
 	$self->{die_if_compile_error}=1 unless(defined $self->{die_if_compile_error});
@@ -118,12 +119,7 @@ sub new {
 			$code=~s|<else>|';}else{ \$text.='|g; 
 			$code=~s|</if>|';}; \$text.='|g; 
 			
-			# $code=~s/#time +([^,]*?)(,.*?)?#/'.\$self->do_time($1$2).'/g;#время
-			# $code=~s/#pagination +(.*?)#/'.\$self->_pagination($1).'/g;#листалка
 			$code=~s|#perleval +(.*?)/#|'; $1 ;\$text.='|sg; #выполнение кода
-			
-			# $code=~s/<time +([^,]*?)(,.*?)?>/'.\$self->do_time($1$2).'/g;#время
-			# $code=~s/<pagination +(.*?)>/'.\$self->_pagination($1).'/g;#листалка
 			$code=~s|<perleval +(.*?)/>|'; $1 ;\$text.='|sg; #выполнение кода
 			
 		##Компилируем в анонимную функцию

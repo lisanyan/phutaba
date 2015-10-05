@@ -35,8 +35,8 @@
 
 	<loop $posts>
 		<include %TMPLDIR%post_view.tpl>
+		<p style="clear: both;"></p>
 	</loop>
 
-	<p style="clear: both;"></p>
 	<hr />
 <include %TMPLDIR%foot.tpl>

@@ -1,7 +1,7 @@
 <include %TMPLDIR%/head.tpl>
 <perleval %isAdmin=$isAdmin; %thread=$thread />
 <if !$locked or $isAdmin>
-<if !DISABLE_NEW_THREADS or $thread or $isAdmin>
+<if !$$cfg{DISABLE_NEW_THREADS} or $thread or $isAdmin>
 <if $postform>
 	<div class="postarea">
 	<form id="postform" action="<var %self>" method="post" enctype="multipart/form-data">
@@ -101,7 +101,7 @@
 		<loop $posts><include %TMPLDIR%/post_view.tpl></loop>
 
 		</div>
-	<p style="clear: both;"></p>
+	<!-- <p style="clear: both;"></p> -->
 </loop>
 
 <if $thread>

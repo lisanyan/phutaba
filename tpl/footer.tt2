@@ -2,5 +2,21 @@
 
 <footer>Powered by <img src="/img/phutaba_icon.png" alt="" /> <strong>Phutaba</strong>.</footer>
 </div>
+
+<script type="text/javascript">
+	window.onunload = function (e) {
+		if (style_cookie) {
+			var title = get_active_stylesheet();
+			set_cookie(style_cookie, title, 365);
+		}
+	}
+
+	if(style_cookie)
+	{
+		var cookie=get_cookie(style_cookie);
+		var title=cookie?cookie:null;
+		set_stylesheet(title);
+	}
+</script>
 </body>
 </html>

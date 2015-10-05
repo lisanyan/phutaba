@@ -1,10 +1,44 @@
-html, body, div, span, applet, object, iframe, h1, h2, h3, h4, h5, h6, p, blockquote, pre, a, abbr, acronym, address, big, cite, code, del, dfn,
+/* media query */
+@media only screen and (max-width: 480px) {
+
+.desktop {
+	display: none;
+}
+
+.mobile {
+	display: inline!important;
+}
+
+.postarea td {
+	width: 95%;
+	float: left;
+}
+
+.postarea textarea {
+	width: 100%;
+}
+
+.thread_reply .post {
+	margin-left: 0em!important;
+}
+
+pre {
+	white-space: pre-wrap;
+	word-wrap: break-word;
+}
+
+ul.right { float: none !important; /* clear: both */ }
+ul.menu li a, ul.menu_bottom li a { border-radius: 0.5em; margin: 2px 0px 1px }
+ul.menu, ul.menu_bottom { padding: 0.2em }
+ul.pagelist { margin: 0px 1em 3px 0px !important }
+
+}
+
+/* default styles */
+/*html, body, div, span, applet, object, iframe, h1, h2, h3, h4, h5, h6, p, blockquote, pre, a, abbr, acronym, address, big, cite, code, del, dfn,
  em, font, img, ins, kbd, q, s, samp, small, strike, strong, sub, sup, tt, var, dl, dt, dd, ol, ul, li, 
- fieldset, form, label, legend, table, caption, tbody, tfoot, thead, tr, th, td {
-	font-size: 100%;
-	font-weight: inherit;
-	font-style: inherit;
-	font-family: inherit;
+ fieldset, form, label, legend, table, caption, tbody, tfoot, thead, tr, th, td */
+html, body, ul, ol, p, pre, table, td, img {
 	vertical-align: baseline;
 	margin: 0;
 	padding: 0;
@@ -14,6 +48,12 @@ html, body, div, span, applet, object, iframe, h1, h2, h3, h4, h5, h6, p, blockq
 
 *:focus {
 	outline: 0;
+}
+
+body {
+	background-color: #ECE9E2;
+	color: #000000;
+	font: normal 0.8em sans-serif;
 }
 
 strong, b, .boardname, .caption, .subject, .postblock, .postername, .teampost, .sage, .ban, .user_banned, .title, .info th, .dellist {
@@ -48,20 +88,16 @@ ul {
 	list-style-type: square;
 }
 
+sup { vertical-align: super; font-size: smaller; }
+sub { vertical-align: sub; font-size: smaller; }
+
 td, th {
 	display: table-cell;
 	vertical-align: middle;
 }
 
-
 table[align="center"] {
 	margin: 0 auto;
-}
-
-body {
-	background-color: #ECE9E2;
-	color: #000000;
-	font: normal 0.8em sans-serif;
 }
 
 a:link, a:visited, a:hover {
@@ -78,15 +114,13 @@ a:active {
 	top: 1px;
 }
 
-sup { vertical-align: super; font-size: smaller; }
-sub { vertical-align: sub; font-size: smaller; }
-
 .dellist { text-align: center }
 
 .content {
 	margin: 0 1em;
 }
 
+/* top and bottom navigation menus */
 ul.menu, ul.menu_bottom {
 	margin-left: 0;
 }
@@ -133,9 +167,12 @@ ul.menu li a:hover, ul.menu_bottom li a:hover {
 ul.menu li a:active, ul.menu_bottom li a:active {
 	top: 0;
 }
+/* navigation menus END */
 
-.header {
-	text-align: center;
+.boardname, .caption {
+	color: #333333;
+	font-size: 2em;
+	margin-top: 0.5em;
 }
 
 .banner {
@@ -148,15 +185,13 @@ ul.menu li a:active, ul.menu_bottom li a:active {
 	height: 100px;
 }
 
+.header {
+	text-align: center;
+}
+
 .teampost img, .sticky img, .locked img {
 	width: 16px; 
 	height: 16px; 
-}
-
-.boardname, .caption {
-	color: #333333;
-	font-size: 2em;
-	margin-top: 0.5em;
 }
 
 .postarea {
@@ -187,9 +222,6 @@ ul.menu li a:active, ul.menu_bottom li a:active {
 	width: 20em;
 }
 
-.comment img {
-}
-
 input[type='text'], input[type='password'], textarea {
 	background-color: #FFFFFF;
 	font-family: monospace;
@@ -201,7 +233,7 @@ input[type='submit']:hover {
 	cursor: pointer;
 }
 
-.trap {
+.trap, .hidden, .mobile {
 	display: none;
 }
 
@@ -377,6 +409,9 @@ blockquote.unkfunc, span.unkfunc, span.quote, span.math {
 	color: #000;
 }
 
+.spoiler img { opacity: 0; filter: alpha(opacity=0) }
+.spoiler img:hover { opacity: 1.0; filter: alpha(opacity=100) }
+
 span.strike { text-decoration: line-through; }
 span.underline { text-decoration: underline; }
 
@@ -402,6 +437,7 @@ span.underline { text-decoration: underline; }
 
 .omittedposts {
 	margin-top: 0.5em;
+	clear: both;
 }
 
 .notice img {
@@ -435,15 +471,6 @@ input[type='password'] {
 	width: 8em;
 }
 
-.passvalid {
-	background-color: #706B5E;
-	color: #FFFFFF;
-	font-weight: bold;
-	text-align: center;
-	padding: 5px;
-	margin: 5px 0;
-}
-
 .managehead th, .row1 td, .row2 td {
 	padding: 5px;
 }
@@ -455,6 +482,15 @@ input[type='password'] {
 	text-align: center;
 }
 
+.passvalid {
+	background-color: #706B5E;
+	color: #FFFFFF;
+	font-weight: bold;
+	text-align: center;
+	padding: 5px;
+	margin: 5px 0;
+}
+
 .row1 {
 	background-color: #D7CFC0;
 }
@@ -463,6 +499,7 @@ input[type='password'] {
 	background-color: #BFB5A1;
 }
 
+/* for static templates in tpl/ */
 .title, .info th {
 	background-color: #706B5E;
 	color: #FFFFFF;
@@ -488,11 +525,17 @@ input[type='password'] {
 	border: 1px solid #706B5E;
 	padding: 5px;
 }
+/* end static templates */
 
 .error {
 	color: #B20000;
 	font-size: 2em;
 	text-align: center;
+}
+
+.expireshelp {
+	border-bottom:1px dashed;
+	cursor: help;
 }
 
 footer {
@@ -505,12 +548,36 @@ footer img {
 	vertical-align: middle;
 }
 
-.expireshelp {
-	border-bottom:1px dashed;
-	cursor: help;
-}
-
 /* stuff for context.js */
+#message {
+	position: fixed;
+	border-color: #666;
+	border-radius: 5px 5px 5px 5px;
+	top: 50px;
+	padding: 20px;
+	width: 40%;
+	left: 30%;
+	text-align: center;
+	-webkit-box-shadow: #666 0px 0px 10px;
+	z-index: 400;
+}
+#overlay, .overlay {
+	display: none;
+	position: fixed;
+	top: 0;
+	left: 0; 
+	width: 100%;
+	height: 100%;
+	text-align: center;
+	background: rgba(0, 0, 0, .5);
+	z-index: 1; 
+}
+#overlay::after {
+	content: "";
+	display: inline-block;
+	height: 100%;
+	vertical-align: middle;
+}
 .pidarok_refmap {
 	font-style:italic;
 	font-size:11px;
@@ -541,41 +608,13 @@ footer img {
 	border: 1px solid rgba(0, 0, 0, .25); border-left: none; border-top: none; padding: 5px;
 	border-color: #BFB5A1;
 }
-#overlay, .overlay {
-	display: none;
-	position: fixed;
-	top: 0;
-	left: 0; 
-	width: 100%;
-	height: 100%;
-	text-align: center;
-	background: rgba(0, 0, 0, .5);
-	z-index: 1; 
-}
-#overlay::after {
-	content: "";
-	display: inline-block;
-	height: 100%;
-	vertical-align: middle;
-}
 .settingsTitle {
 	font-weight: bold;
-}
-#message {
-	position: fixed;
-	border-color: #666;
-	border-radius: 5px 5px 5px 5px;
-	top: 50px;
-	padding: 20px;
-	width: 40%;
-	left: 30%;
-	text-align: center;
-	-webkit-box-shadow: #666 0px 0px 10px;
-	z-index: 400;
 }
 #updater {
 	display: none;
 }
+
 /* TODO integrate colours into specific stylesheets */
 .highlight .post, :target .post {
 	background-color: #BFB5A1;
@@ -586,6 +625,10 @@ footer img {
 }
 
 /* webm */
+audio, canvas, progress, video {
+	display: inline-block;
+	vertical-align: baseline;
+}
 a.close-webm {
 	position:absolute;
 	top:-15px;
@@ -594,14 +637,12 @@ a.close-webm {
 a.close-webm:active {
 	top:-14px;
 }
-
 .filelink img, .filelink video {
   max-width: 100%;
 }
-
-audio, canvas, progress, video {
-	display: inline-block;
-	vertical-align: baseline;
+.filelink video, .post_preview img[src*="/src/"] {
+  width: 100%;
+  height: auto;
 }
 
 /* frame */
@@ -624,25 +665,13 @@ dl.menu dd.hidden {
 }
 
 /* Dollchan Extension Tools */
-.de-pview .post {
-	margin-left: 16px;
-}
-.de-pview .post_head {
-	padding: 0.4em 0.4em 0.1em 0em;
-}
-.de-pview .doubledash {
-	display: none;
-}
-.de-pview .post {
-	margin-left:0;
-	border: none;
-}
-form[de-form] .pidarok_refmap {
-	display: none
-}
-#de-pform img[src^="/img/icons/expand.png"] {
-	display: none;
-}
+/* Will remove this later */
+.de-pview .post { margin-left:0; border:none }
+#de-pform img[src^="/img/icons/expand.png"] { display: none }
+#de-win-reply { float:left; margin-left:2em }
+.de-mp3, .de-video-obj { clear: both }
+.de-alert-msg, .de-popup-msg { white-space: nowrap !important }
+.de-alert-msg > div, .de-popup-msg > div { white-space: pre-wrap; word-wrap: break-word }
 
 /* custom */
 .greeting { text-align: center; font-weight: bold }

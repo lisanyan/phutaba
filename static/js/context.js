@@ -13,7 +13,7 @@ var _selector = '.thread_OP, .thread_reply'; //post
 var refMap = [], postByNum = [];
 var origBtn, updBtn = $j('#updater');
 
-var lang = 'en';
+var lang = 'ru';
 var consts = {
   en: {
 	newPostsNotFound: "Now new messages found.",
@@ -22,6 +22,7 @@ var consts = {
 	updthr: "Update thread",
 	load: "Loading...",
 	replies: "Replies: ",
+	reply: "Replying to thread №",
 	done: "Success"
   },
   ru: {
@@ -31,6 +32,7 @@ var consts = {
 	updthr: "Обновить тред",
 	load: "\u0417агрузка...",
 	replies: "Ответы: ",
+	reply: "Ответ в тред №",
 	done: "Изгнание ебсов успешно завершено."
   }
 }
@@ -272,7 +274,7 @@ function scriptCSS() {
 }
 
 // "Notifications"
-function showMessage(text, delay) {  // spizdil s inacha
+function showMessage(text, delay, hold) {  // spizdil s inacha
 	if (delay == null) delay = 1000;
 	if ($j('#message').get() == '') {
 		$j('body').children().last().after('<div id="message" class="post"></div>');
