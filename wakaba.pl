@@ -8,7 +8,6 @@ umask 0022;    # Fix some problems
 use lib '.';
 use strict;
 use POSIX;
-use Cache::Memcached::Fast;
 use CGI::Carp qw(fatalsToBrowser set_message);
 use CGI::Fast;
 use DBI;
@@ -102,7 +101,7 @@ use Pomf qw(pomf_upload);
 my $protocol_re = qr/(?:http|https|ftp|mailto|nntp|irc|xmpp|skype)/;
 my $pomf_domain = "a.pomf.cat";
 
-my ($dbh, $query, $boardSection, $moders, $memd);
+my ($dbh, $query, $boardSection, $moders);
 
 my $cfg = my $locale = {};
 my $fcgi_counter = 0;
@@ -148,23 +147,6 @@ while($query=CGI::Fast->new)
     my $task  = ( $query->param("task") or $query->param("action")) unless $query->param("POSTDATA");
     my $json  = ( $query->param("json") or "" );
     $task = ( $query->url_param("task") ) unless $task;
-
-    $memd = new Cache::Memcached::Fast({
-          servers => [ { address => '127.0.0.1:11211', weight => 1 } ],
-          namespace => 'memes:',
-          connect_timeout => 0.4,
-          io_timeout => 0.7,
-          close_on_error => 0,
-          compress_threshold => -1,
-          max_failures => 3,
-          failure_timeout => 2,
-          ketama_points => 150,
-          # hash_namespace => 1,
-          nowait => 1,
-          serialize_methods => [ \&Storable::freeze, \&Storable::thaw ],
-          max_size => 512 * 62500,
-          utf8 => ($^V ge v5.8.1 ? 1 : 0),
-    });
 
     # check for admin table
     init_admin_database() if ( !table_exists($$cfg{SQL_ADMIN_TABLE}) );
@@ -483,9 +465,6 @@ sub output_json_threads {
     my ( $code, $error );
     my @session;
 
-    my $index_name = sprintf( "jsonthreads_%s:p%d", $$cfg{SELFPATH}, $page );
-    my $cached = $memd->get($index_name);
-
     my $offset = ceil($page*$$cfg{IMAGES_PER_PAGE}-$$cfg{IMAGES_PER_PAGE});
     # if we try to call show_page with admin parameter
     # the admin password will be checked and this
@@ -514,70 +493,61 @@ sub output_json_threads {
     $sth->execute($offset,$$cfg{IMAGES_PER_PAGE}) or make_error($$locale{S_SQLFAIL});
 
     my @thread;
-    unless (defined $memd && defined $cached) {
 
-        my $posts = $dbh->prepare("SELECT * FROM ".$$cfg{SQL_TABLE}." FORCE INDEX(cover) WHERE parent=? ORDER BY num DESC LIMIT ?;") or make_error($$locale{S_SQLFAIL});
+    my $posts = $dbh->prepare("SELECT * FROM ".$$cfg{SQL_TABLE}." FORCE INDEX(cover) WHERE parent=? ORDER BY num DESC LIMIT ?;") or make_error($$locale{S_SQLFAIL});
 
-        while ($row = get_decoded_hashref($sth)
+    while ($row = get_decoded_hashref($sth)
             and $threadcount <= ( $$cfg{IMAGES_PER_PAGE} * ( $page ) ) )
-        {
-            add_images_to_row($row);
-            hide_row_els($row);
-            $posts->execute($$row{num}, count_maxreplies($row));
-
-            @thread=($row);
-            my @replies;
-            while( my $post=get_decoded_hashref($posts) ) {
-                hide_row_els($post);
-                add_images_to_row($post);
-                push(@replies, $post) if(defined $post);
-            }
-            push @thread, reverse @replies;
-            push @threads, {posts=>[@thread]};
-            $threadcount++;
-        }
-
-        # do abbrevations and such
-        foreach my $thread (@threads) {
-
-            # split off the parent post, and count the replies and images
-            my ( $parent, @replies ) = @{ $$thread{posts} };
-            my $size;
-            my ($replies, $size, $images) = count_posts($$parent{num});
-
-            # count files in replies - TODO: check for size == 0 for ignoring deleted files
-
-            my $curr_images = 0;
-            my $curr_replies = scalar @replies;
-            do { $curr_images +=  @{$$_{files}} if (exists $$_{files}) } for (@replies);
-
-            # write the shortened list of replies back
-            $$thread{posts}      = [ $parent, @replies ];
-            $$thread{num}        = ${$$thread{posts}}[0]{num};
-            $$thread{omit}       = ($replies-1)-$curr_replies;
-            $$thread{omitimages} = ($images-1)-$curr_images;
-
-            # abbreviate the remaining posts
-            foreach ( @{ $$thread{posts} } ) {
-                # create ref-links
-                $$_{comment} = resolve_reflinks($$_{comment});
-
-                my $abbreviation =
-                  abbreviate_html( $$_{comment}, $$cfg{MAX_LINES_SHOWN},
-                    $$cfg{APPROX_LINE_LENGTH} );
-                 if ($abbreviation) {
-                    $$_{abbrev} = get_abbrev_message(count_lines($$_{comment}) - count_lines($abbreviation));
-                    $$_{comment_full} = $$_{comment};
-                    $$_{comment} = $abbreviation;
-                }
-            }
-        }
-
-        $memd->set($index_name, \@threads)
-    }
-    else
     {
-        @threads = @{$cached};
+        add_images_to_row($row);
+        hide_row_els($row);
+        $posts->execute($$row{num}, count_maxreplies($row));
+        @thread=($row);
+        my @replies;
+        while( my $post=get_decoded_hashref( $posts ) ) {
+            hide_row_els( $post );
+            add_images_to_row( $post );
+            push( @replies, $post ) if(defined $post);
+        }
+        push @thread, rev(@replies);
+        push @threads, { posts => [@thread] };
+        $threadcount++;
+    }
+
+    # do abbrevations and such
+    foreach my $thread (@threads) {
+
+        # split off the parent post, and count the replies and images
+        my ( $parent, @replies ) = @{ $$thread{posts} };
+        my $size;
+        my ($replies, $size, $images) = count_posts($$parent{num});
+
+        # count files in replies - TODO: check for size == 0 for ignoring deleted files
+
+        my $curr_images = 0;
+        my $curr_replies = scalar @replies;
+        do { $curr_images +=  @{$$_{files}} if (exists $$_{files}) } for (@replies);
+
+        # write the shortened list of replies back
+        $$thread{posts}      = [ $parent, @replies ];
+        $$thread{num}        = ${$$thread{posts}}[0]{num};
+        $$thread{omit}       = ($replies-1)-$curr_replies;
+        $$thread{omitimages} = ($images-1)-$curr_images;
+
+        # abbreviate the remaining posts
+        foreach ( @{ $$thread{posts} } ) {
+            # create ref-links
+            $$_{comment} = resolve_reflinks($$_{comment});
+
+            my $abbreviation =
+              abbreviate_html( $$_{comment}, $$cfg{MAX_LINES_SHOWN},
+                $$cfg{APPROX_LINE_LENGTH} );
+             if ($abbreviation) {
+                $$_{abbrev} = get_abbrev_message(count_lines($$_{comment}) - count_lines($abbreviation));
+                $$_{comment_full} = $$_{comment};
+                $$_{comment} = $abbreviation;
+            }
+        }
     }
 
     if(scalar @threads ne 0) {
@@ -628,21 +598,12 @@ sub output_json_thread {
     $sth->execute($id, $id);
     $error = decode('utf8', $sth->errstr);
 
-    my $index_name = sprintf( "jsonthreads_%s:%d", $$cfg{SELFPATH}, $id );
-    my $cached = $memd->get($index_name);
-
-    unless ( defined $memd && defined $cached ) {
-        while ( $row=get_decoded_hashref($sth) ) {
-            hide_row_els($row);
-            $$row{comment} = resolve_reflinks($$row{comment});
-            push(@data, $row);
-        }
-        add_images_to_thread(@data) if($data[0]);
-        $memd->set($index_name, \@data);
+    while ( $row=get_decoded_hashref($sth) ) {
+        hide_row_els($row);
+        $$row{comment} = resolve_reflinks($$row{comment});
+        push(@data, $row);
     }
-    else {
-        @data = @{$cached};
-    }
+    add_images_to_thread(@data) if($data[0]);
 
     if(@data ne 0) {
         $code = 200;   
@@ -865,44 +826,6 @@ sub output_json_stats {
     print $JSON->encode(\%json);
 }
 
-# clean memd cache
-# fucking slow
-sub clear_caches {
-    my ($sth,$row);
-
-    $sth=$dbh->prepare("SELECT num FROM ".$$cfg{SQL_TABLE}." FORCE INDEX(cover) WHERE parent=0;") or make_error($$locale{S_SQLFAIL});
-    $sth->execute() or make_error($$locale{S_SQLFAIL});
-
-    while($row=$sth->fetchrow_arrayref()) {
-        my $i1 = sprintf( "jsonthreads_%s:%d", $$cfg{SELFPATH}, $$row[0] );
-        my $i2 = sprintf( "threads_%s:%d", $$cfg{SELFPATH}, $$row[0] );
-
-        $memd->delete_multi($i1, $i2);
-    }
-
-    $sth = $dbh->prepare( "SELECT count(`num`) FROM " . $$cfg{SQL_TABLE} . " WHERE parent=0;" )
-      or make_error($$locale{S_SQLFAIL});
-    $sth->execute();
-    
-    my $total = get_page_count(($sth->fetchrow_array())[0]);
-    foreach (1..$total) {
-        my $i1 = sprintf( "jsonthreads_%s:p%d", $$cfg{SELFPATH}, $_ );
-        my $i2 = sprintf( "threads_%s:p%d", $$cfg{SELFPATH}, $_ );
-        $memd->delete_multi($i1, $i2);
-    }
-
-    $sth = $dbh->prepare( "SELECT post FROM " . $$cfg{SQL_TABLE_IMG} . " FORCE INDEX(cover);" )
-      or make_error($$locale{S_SQLFAIL});
-    $sth->execute();
-    while($row=$sth->fetchrow_arrayref()) {
-        my $i1 = sprintf "post_images_%s:%d", $$cfg{SELFPATH}, $$row[0];
-        my $i2 = sprintf "images_%s:%d", $$cfg{SELFPATH}, $$row[0];
-        $memd->delete_multi($i1, $i2);
-    }
-
-    $sth->finish();
-}
-
 # sub show_post
 # shows a single post out of a thread, essential for the reloadless view of threads
 # takes an integer as argument
@@ -1009,9 +932,6 @@ sub show_page {
     my ( $sth, $row, @threads, @thread, @session );
     my $page = $pageToShow <=0 ? 1 : $pageToShow;
 
-    my $index_name = sprintf( "threads_%s:p%d", $$cfg{SELFPATH}, $page );
-    my $cached = $memd->get($index_name);
-
     # if we try to call show_page with admin parameter
     # the admin password will be checked and this
     # variable will be 1
@@ -1037,68 +957,59 @@ sub show_page {
 
     $total = 1 if ($sth && !$sth->rows && !$total);
 
-    unless (defined $memd && defined $cached) {
 
-        my $posts =
-          $dbh->prepare(
-            "SELECT * FROM ".$$cfg{SQL_TABLE}." FORCE INDEX(cover) WHERE parent=? ORDER BY num DESC LIMIT ?;"
-        ) or make_error($$locale{S_SQLFAIL});
+    my $posts =
+      $dbh->prepare(
+        "SELECT * FROM ".$$cfg{SQL_TABLE}." FORCE INDEX(cover) WHERE parent=? ORDER BY num DESC LIMIT ?;"
+    ) or make_error($$locale{S_SQLFAIL});
 
-        while ( $row = get_decoded_hashref($sth) )
-        {
-            $posts->execute($$row{num}, count_maxreplies($row));
-            add_images_to_row($row);
-
-            @thread=($row);
-            my @replies;
-            while( my $post=get_decoded_hashref($posts) ) {
-                add_images_to_row($post);
-                push(@replies, $post) if defined($post);
-            }
-            push @thread, rev(@replies);
-            push @threads, {posts=>[@thread]};
-            $threadcount++;
-        }
-
-        # do abbrevations and such
-        foreach my $thread (@threads) {
-
-            # split off the parent post, and count the replies and images
-            my ( $parent, @replies ) = @{ $$thread{posts} };
-            my $size;
-            my ($replies, $size, $images) = count_posts($$parent{num});
-
-            # count files in replies - TODO: check for size == 0 for ignoring deleted files
-
-            my $curr_images = 0;
-            my $curr_replies = scalar @replies;
-            do { $curr_images +=  @{$$_{files}} if (exists $$_{files}) } for (@replies);
-
-            # write the shortened list of replies back
-            $$thread{posts}      = [ $parent, @replies ];
-            $$thread{omitmsg}    = get_omit_message( ($replies-1) - $curr_replies, ($images-1) - $curr_images);
-            $$thread{num}        = ${$$thread{posts}}[0]{num};
-
-            # abbreviate the remaining posts
-            foreach ( @{ $$thread{posts} } ) {
-                # create ref-links
-                $$_{comment} = resolve_reflinks($$_{comment});
-
-                my $abbreviation =
-                 abbreviate_html( $$_{comment}, $$cfg{MAX_LINES_SHOWN}, $$cfg{APPROX_LINE_LENGTH} );
-                if ($abbreviation) {
-                    $$_{abbrev} = get_abbrev_message(count_lines($$_{comment}) - count_lines($abbreviation));
-                    $$_{comment_full} = $$_{comment};
-                    $$_{comment} = $abbreviation;
-                }
-            }
-        }
-
-        $memd->set($index_name, \@threads);
-    }
-    else
+    while ( $row = get_decoded_hashref($sth) )
     {
-        @threads = @{$cached};
+        $posts->execute($$row{num}, count_maxreplies($row));
+        add_images_to_row($row);
+        @thread=($row);
+
+        my @replies;
+        while( my $post=get_decoded_hashref($posts) ) {
+            add_images_to_row($post);
+            push(@replies, $post) if defined($post);
+        }
+        push @thread, rev(@replies);
+        push @threads, {posts=>[@thread]};
+        $threadcount++;
+    }
+
+    # do abbrevations and such
+    foreach my $thread (@threads) {
+
+        # split off the parent post, and count the replies and images
+        my ( $parent, @replies ) = @{ $$thread{posts} };
+        my $size;
+        my ($replies, $size, $images) = count_posts($$parent{num});
+
+        # count files in replies - TODO: check for size == 0 for ignoring deleted files
+        my $curr_images = 0;
+        my $curr_replies = scalar @replies;
+        do { $curr_images +=  @{$$_{files}} if (exists $$_{files}) } for (@replies);
+
+        # write the shortened list of replies back
+        $$thread{posts}      = [ $parent, @replies ];
+        $$thread{omitmsg}    = get_omit_message( ($replies-1) - $curr_replies, ($images-1) - $curr_images);
+        $$thread{num}        = ${$$thread{posts}}[0]{num};
+
+        # abbreviate the remaining posts
+        foreach ( @{ $$thread{posts} } ) {
+            # create ref-links
+            $$_{comment} = resolve_reflinks($$_{comment});
+
+            my $abbreviation =
+             abbreviate_html( $$_{comment}, $$cfg{MAX_LINES_SHOWN}, $$cfg{APPROX_LINE_LENGTH} );
+            if ($abbreviation) {
+                $$_{abbrev} = get_abbrev_message(count_lines($$_{comment}) - count_lines($abbreviation));
+                $$_{comment_full} = $$_{comment};
+                $$_{comment} = $abbreviation;
+            }
+        }
     }
 
     # make the list of pages
@@ -1151,8 +1062,6 @@ sub show_thread {
     my ( $sth, $row, @thread );
     my ( $filename, $tmpname );
     my @session;
-    my $index_name = sprintf( "threads_%s:%d", $$cfg{SELFPATH}, $thread );
-    my $cached = $memd->get($index_name);
 
     # if we try to call show_thread with admin parameter
     # the admin password will be checked and this
@@ -1165,25 +1074,18 @@ sub show_thread {
         else { $admin = ""; }
     }
 
-    unless (defined $memd && defined $cached) {
-        $sth = $dbh->prepare(
-                "SELECT * FROM " . $$cfg{SQL_TABLE} . " FORCE INDEX(cover) WHERE num=? OR parent=? ORDER BY num ASC;" )
-          or make_error($$locale{S_SQLFAIL});
-        $sth->execute( $thread, $thread ) or make_error($$locale{S_SQLFAIL});
+    $sth = $dbh->prepare(
+            "SELECT * FROM " . $$cfg{SQL_TABLE} . " FORCE INDEX(cover) WHERE num=? OR parent=? ORDER BY num ASC;" )
+      or make_error($$locale{S_SQLFAIL});
+    $sth->execute( $thread, $thread ) or make_error($$locale{S_SQLFAIL});
 
-        while ( $row = get_decoded_hashref($sth) ) {
-            $$row{comment} = resolve_reflinks($$row{comment});
-            push( @thread, $row );
-        }
-
-        add_images_to_thread(@thread) if($thread[0]);
-
-        $memd->set($index_name, \@thread);
-        $sth->finish;
+    while ( $row = get_decoded_hashref($sth) ) {
+        $$row{comment} = resolve_reflinks($$row{comment});
+        push( @thread, $row );
     }
-    else {
-        @thread = @{$cached};
-    }
+    $sth->finish;
+
+    add_images_to_thread(@thread) if($thread[0]);
 
     make_error($$locale{S_NOTHREADERR}, 1) if ( !$thread[0] or $thread[0]{parent} );
 
@@ -1219,27 +1121,18 @@ sub add_images_to_thread {
 
     $parent = $posts[0]{num};
 
-    my $index_name = sprintf "images_%s:%d", $$cfg{SELFPATH}, $parent;
-    my $cached = $memd->get($index_name);
-
-    unless (defined $memd && defined $cached) {
     # get all files of a thread with one query
-        $sthfiles = $dbh->prepare(
-            # post,image,size,width,height,thumbnail,tn_width,tn_height,info,info_all,info_json,uploadname
-            "SELECT * FROM " . $$cfg{SQL_TABLE_IMG} . " FORCE INDEX(cover) WHERE thread=? OR post=? ORDER BY post ASC, num ASC;")
-            or $errcounter++;
-        $sthfiles->execute($parent, $parent) or $errcounter++;
-        while ( $res = get_decoded_hashref($sthfiles) ) {
-            $$res{displayname} = get_displayname($$res{uploadname});
-            $$res{thumbnail} = undef if ($$res{thumbnail} =~ m|^\.\./img/|); # temporary, static thumbs are not used anymore
-            push(@files, $res);
-        }
-        $sthfiles->finish;
-        $memd->set($index_name, \@files);
+    $sthfiles = $dbh->prepare(
+        # post,image,size,width,height,thumbnail,tn_width,tn_height,info,info_all,info_json,uploadname
+        "SELECT * FROM " . $$cfg{SQL_TABLE_IMG} . " FORCE INDEX(cover) WHERE thread=? OR post=? ORDER BY post ASC, num ASC;")
+        or $errcounter++;
+    $sthfiles->execute($parent, $parent) or $errcounter++;
+    while ( $res = get_decoded_hashref($sthfiles) ) {
+        $$res{displayname} = get_displayname($$res{uploadname});
+        $$res{thumbnail} = undef if ($$res{thumbnail} =~ m|^\.\./img/|); # temporary, static thumbs are not used anymore
+        push(@files, $res);
     }
-    else {
-        @files = @{$cached};
-    }
+    $sthfiles->finish;
 
     return if $errcounter>0;
     return unless $files[0];
@@ -1251,29 +1144,21 @@ sub add_images_to_array($@) {
     my ($postid, $files) = @_;
     my ($sth, $res, $uploadname, $count, $size);
     my $errcounter = 0;
-    my $index_name = sprintf "post_images_%s:%d", $$cfg{SELFPATH}, $postid;
-    my $cached = $memd->get($index_name);
     $count = 0;
     $size = 0;
 
-    unless (defined $memd && defined $cached) {
-        $sth = $dbh->prepare(
-            "SELECT * FROM " . $$cfg{SQL_TABLE_IMG} . " FORCE INDEX(cover) WHERE post=? ORDER BY num ASC;")
-            or $errcounter++;
-        $sth->execute($postid);
-        while ( $res = get_decoded_hashref($sth) ) {
-            $count++; $size += $$res{size};
-            $uploadname = clean_string($$res{uploadname});
-            $$res{displayname} = clean_string(get_displayname($uploadname));
-            $$res{thumbnail} = undef if ($$res{thumbnail} =~ m|^\.\./img/|); # temporary, static thumbs are not used anymore
-            push(@$files, $res);
-        }
-        $sth->finish;
-        $memd->set($index_name, $files);
+    $sth = $dbh->prepare(
+        "SELECT * FROM " . $$cfg{SQL_TABLE_IMG} . " FORCE INDEX(cover) WHERE post=? ORDER BY num ASC;")
+        or $errcounter++;
+    $sth->execute($postid);
+    while ( $res = get_decoded_hashref($sth) ) {
+        $count++; $size += $$res{size};
+        $uploadname = clean_string($$res{uploadname});
+        $$res{displayname} = clean_string(get_displayname($uploadname));
+        $$res{thumbnail} = undef if ($$res{thumbnail} =~ m|^\.\./img/|); # temporary, static thumbs are not used anymore
+        push(@$files, $res);
     }
-    else {
-        @$files = @{$cached};
-    }
+    $sth->finish;
 
     return ($count, $size);
 }
@@ -1721,9 +1606,6 @@ sub post_stuff {
     $sth = $dbh->prepare("SELECT " . get_sql_lastinsertid() . ";") or make_error($$locale{S_SQLFAIL});
     $sth->execute() or make_error($$locale{S_SQLFAIL});
     my $new_post_id = ($sth->fetchrow_array())[0];
-
-    # Wipe out cached data.
-    $memd->flush_all if(defined $new_post_id);
 
     # log admin post
     log_action("adminpost",$new_post_id,$admin) if($admin_post and $no_format || $as_staff);
@@ -2532,9 +2414,6 @@ sub thread_control {
     }
     log_action($action,$threadid,$admin);
 
-    # Wipe out cached data.
-    $memd->flush_all;
-
     # make_http_forward( get_script_name() . "?task=show&section=".$$cfg{SELFPATH});
     make_http_forward( urlenc($$cfg{SELFPATH}) . "/thread/" . $threadid );
 }
@@ -2714,8 +2593,7 @@ sub delete_post {
         $postinfo = dec_to_dot($$row{ip});
     }
     $sth->finish;
-    # Wipe out cached data.
-    $memd->flush_all;
+
     return $postinfo;
 }
 
@@ -3072,8 +2950,6 @@ sub add_admin_entry {
                 $sth = $dbh->prepare( "UPDATE " . $$cfg{SQL_TABLE} . " SET banned=? WHERE num=? LIMIT 1;" )
                   or make_error($$locale{S_SQLFAIL});
                 $sth->execute($time, $postid) or make_error($$locale{S_SQLFAIL});
-                # Wipe out cached data.
-                $memd->flush_all;
             }
 
             $sth->finish;
@@ -3441,9 +3317,6 @@ sub edit_post {
     $sth->finish;
 
     log_action("editpost",$num,$admin);
-
-    # Wipe out cached data.
-    $memd->flush_all;
 
     # Go to thread
     if($$post{parent}) { make_http_forward( urlenc($$cfg{SELFPATH}) . "/thread/" . $$post{parent} . ($num?"#$num":"")); }

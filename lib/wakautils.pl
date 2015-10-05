@@ -29,35 +29,61 @@ my $protocol_re = qr{(?:http://|https://|ftp://|mailto:|news:|irc:|xmpp:|skype:)
 my $url_re =
 qr{(${protocol_re}[^\s<>()"]*?(?:\([^\s<>()"]*?\)[^\s<>()"]*?)*)((?:\s|<|>|"|\.||\]|!|\?|,|&#44;|&quot;)*(?:[\s<>()"]|$))};
 
+sub get_archive_content {
+	my ($hashref) = @_;
+	my ($filetag, $sizetag, $find_filetag, $find_sizetag, $fname, $fsize, @filelist);
+	if (defined($$hashref{ArchivedFileName})) { # rar
+		$filetag = 'ArchivedFileName';
+		$sizetag = 'UncompressedSize';
+	} else { # zip
+		$filetag = 'ZipFileName';
+		$sizetag = 'ZipUncompressedSize';
+	}
+	for (my $i = 0; ; $i++) {
+		$find_filetag = $filetag;
+		$find_sizetag = $sizetag;
+		$find_filetag .= " ($i)" if ($i);
+		$find_sizetag .= " ($i)" if ($i);
+		last unless ($$hashref{$find_filetag});
+		$fname = delete($$hashref{$find_filetag});
+		$fsize = delete($$hashref{$find_sizetag});
+		push(@filelist, $fname . " (" . get_displaysize($fsize) . ")")
+			if ($fname !~ m!/$!); # ignore directories in zip files
+	}
+	# ModifyDate is of the first file in a rar archive and not of the whole archive
+	delete($$hashref{ModifyDate}) if ($$hashref{ModifyDate});
+	return @filelist;
+}
+
 sub get_meta {
-	my ($file, @tagList) = @_;
+	my ($file, $charset, @tagList) = @_;
 	my (%data, $exifData);
 	my $exifTool = new Image::ExifTool;
-	@tagList = qw(-FilePermissions -ExifToolVersion -Directory -FileName -Warning -FileModifyDate) unless @tagList;	
-	$exifData = $exifTool->ImageInfo($file, @tagList) if $file;
+	@tagList = qw(-Directory -FileName -FileAccessDate -FileCreateDate -FileModifyDate -FilePermissions -Warning -ExifToolVersion) unless (@tagList);
+	$exifData = $exifTool->ImageInfo($file, \@tagList) if ($file);
 	foreach (keys %$exifData) {
 		my $val = $$exifData{$_};
-			if (ref $val eq 'ARRAY') {
-				$val = join(', ', @$val);
-			} elsif (ref $val eq 'SCALAR') {
-				my $len = length($$val);
-				$val = "(Binary data; $len bytes)";
-			}
-			$data{$_} = clean_string(decode_string($val, 'utf-8'));
+		if (ref $val eq 'ARRAY') {
+			$val = join(', ', @$val);
+		} elsif (ref $val eq 'SCALAR') {
+			my $len = length($$val);
+			$val = "(Binary data; $len bytes)";
+		}
+		$data{$_} = clean_string(decode_string($val, $charset)) if ($val);
 	}
 
 	return \%data;
 }
 
 sub get_meta_markup {
-	my ($file) = @_;
-	my ($markup, $info, $exifData, @metaOptions);
-	my %options = ( "FileSize" => "File Size",
+	my ($file, $charset) = @_;
+	my ($exifData, $info, $archive, $markup, @metaOptions);
+	my %options = (	"FileSize" => "File Size",
 			"FileType" => "File Type",
 			"ImageSize" => "Size",
 			"ModifyDate" => "Modified",
 			"Comment" => "Comment",
-			"Comment-xxx" => "Comment",
+			"Comment-xxx" => "Comment (1)",
 			"CreatorTool" => "Creator Tool",
 			"Software" => "Software",
 			"MIMEType" => "MIME",
@@ -71,7 +97,8 @@ sub get_meta_markup {
 			"Duration" => "Length", 
 			"Artist" => "Artist",
 			"AudioBitrate" => "Audio Bitrate", 
-			"ChannelMode" => "Channel Mode", 
+			"ChannelMode" => "Channel Mode",
+			"LameMethod" => "Codec Profile",
 			"Compression" => "Compression", 
 			"EncodingProcess" => "Encoding Process",
 			"FrameCount" => "Frames",
@@ -83,40 +110,91 @@ sub get_meta_markup {
 			"Maker" => "Maker",
 			"OwnerName" => "Owner",
 			"CanonModelID" => "Canon-eigene No.",
-			"UserComment" => "User Comment",
+			"UserComment" => "Comment (3)",
 			"GPSPosition" => "Location",
+			"Publisher" => "Publisher",
+			"Language" => "Language"
 	);
 	foreach (keys %options) {
 		push(@metaOptions, $_);
 	}
-	$exifData = get_meta($file, @metaOptions);
-	foreach (keys %$exifData) {
-		if (defined($options{$_}) and $$exifData{$_} ne "") {
-			$markup = $markup . "<strong>$options{$_}:</strong> $$exifData{$_}<br />";
-			if ($_ eq "PageCount") {
-				if ($$exifData{$_} eq 1) {
-					$info = "1 Page";
-				} else {
-					$info = $$exifData{$_} . " Pages";
-				}
-			}
-			if ($_ eq "Duration") {
-				$info = $$exifData{$_};
-				$info =~ s/ \(approx\)$//;
-				$info =~ s/^0:0?//; # 0:01:45 -> 1:45 / 0:12:37 -> 12:37
 
-				# round and format seconds to mm:ss if only seconds are returned
-				if ($info =~ /(\d+)\.(\d\d) s/) {
-					my $sec = $1;
-					if ($2 >= 50) { $sec++ }
-					my $min = int($sec / 60);
-					$sec = $sec - $min * 60;
-					$sec = sprintf("%02d", $sec);
-					$info = $min . ':' . $sec;
-				}
-			}
+	# file names and file sizes inside archives (rar, zip)
+	push(@metaOptions, qw(ArchivedFileName UncompressedSize ZipFileName ZipUncompressedSize));
+
+	# codec information for media files (webm, mp4)
+	my @codec_tags = qw(CodecID AudioCodecID VideoCodecID CompressorID);
+	push(@metaOptions, @codec_tags);
+
+	$exifData = get_meta($file, $charset, @metaOptions);
+
+	# extract additional information for documents or animation/video/audio or archives
+	if (defined($$exifData{PageCount})) {
+		if ($$exifData{PageCount} eq 1) {
+			$info = "1 Page";
+		} else {
+			$info = $$exifData{PageCount} . " Pages";
 		}
 	}
+	if (defined($$exifData{Duration})) {
+		$info = $$exifData{Duration};
+		$info =~ s/ \(approx\)$//;
+		$info =~ s/^0:0?//; # 0:01:45 -> 1:45 / 0:12:37 -> 12:37
+
+		# round and format seconds to mm:ss if only seconds are returned
+		if ($info =~ /(\d+)\.(\d\d) s/) {
+			my $sec = $1;
+			if ($2 >= 50) { $sec++ }
+			my $min = int($sec / 60);
+			$sec = $sec - $min * 60;
+			$sec = sprintf("%02d", $sec);
+			$info = $min . ':' . $sec;
+		}
+	}
+	if (defined($$exifData{ArchivedFileName}) or defined($$exifData{ZipFileName})) {
+		# cutoff will happen after +2 files because one line is added for the cutoff message.
+		# instead of adding a line that ONE file is not shown, just show the file.
+		my $max_visible = 10;
+		my @filelist = get_archive_content($exifData);
+		my $filecount = @filelist;
+		if ($filecount == 1) {
+			$info = "1 File"
+		} else {
+			$info = $filecount . " Files";
+		}
+		splice(@filelist, $max_visible, $filecount - $max_visible,
+			"<em>(" . ($filecount - $max_visible) . " more not shown)</em>")
+			if ($filecount > $max_visible + 1);
+		my $header = "<hr /><strong>Archive with $info:</strong>";
+		$archive = join("<br />", $header, @filelist);
+	}
+
+	# every file has this, so place it first
+	$markup  = "<strong>$options{FileSize}:</strong> " . delete($$exifData{FileSize}) . "<br />";
+	$markup .= "<strong>$options{FileType}:</strong> " . delete($$exifData{FileType}) . "<br />";
+	$markup .= "<strong>$options{MIMEType}:</strong> " . delete($$exifData{MIMEType}) . "<br />";
+
+	# merge all codec values into one array
+	my @codec_list = map { my $tag = $_; grep {/^$tag/} keys $exifData } @codec_tags;
+	my @codecs = map { delete($$exifData{$_}) } @codec_list;
+
+	# replace english names with their translations
+	# tags without matching translation will be removed (e.g. ModifyDate (1))
+	foreach (keys %$exifData) {
+		if (defined($options{$_})) {
+			$$exifData{$options{$_}} = delete($$exifData{$_});
+		} else {
+			delete($$exifData{$_});
+		}
+	}
+
+	$$exifData{Codec} = join(", ", @codecs) if (@codecs);
+
+	$markup .= "<hr />" if (%$exifData);
+	foreach (sort keys %$exifData) {
+		$markup .= "<strong>$_:</strong> $$exifData{$_}<br />";
+	}
+	$markup .= $archive;
 
 	return ($info, $markup);
 }
@@ -645,20 +723,35 @@ sub do_spans {
 					 'facepunch', 'melon', 'missing', 'balloon', 'gmod', # gmod
 					 'alwayschicken', 'evafacepalm', 'noel', 'hammer', 'VeneticaHammer', 'tbphappy',
 					 'azuki', 'bbtcat', 'cinnamon',  'cocochan', 'chocola', 'catpaw', 'maplechan', 'shigure', 'vanilla'];
+		my %steamemotes = map { $_ => '//steamcommunity-a.akamaihd.net/economy/emoticon/'.$_ } @$steamet; # Steam emotes
 
 		my %smilies = (
+			# "board" emotes
 			'cirno' => '/img/emotes/cirno.gif',
 			'awesome' => '/img/emotes/awesome.png',
 			'nyan' => '/img/emotes/nyan.gif',
 			'popka' => '/img/emotes/popka.gif',
 			'marisa' => '/img/emotes/marisa.png',
 			'alice' => '/img/emotes/alice.png',
-			'kappa' => '/img/emotes/kappa.png',
 			'trollface' => '/img/emotes/trollface.png',
 			'coola' => '/img/emotes/trollface.png',
 			'fu'          => '/img/emotes/fu.png',
 			'zahngrinsen' => '/img/emotes/zahngrinsen.png',
-			map { $_ => '//steamcommunity-a.akamaihd.net/economy/emoticon/'.$_ } @$steamet, # Steam emotes
+			# VK emotes
+			'kudah' => '/img/emotes/kudah.png',
+			'kudahshock' => '/img/emotes/kudahschock.png',
+			'sun' => '/img/emotes/sun.png',
+			'halfsun' => '/img/emotes/sun2.png',
+			'luna' => '/img/emotes/luna.png',
+			# Twitch emotes
+			'BibleThump' => '/img/emotes/biblethump.png',
+			'Kappa' => '/img/emotes/kappa.png',
+			'KappaHD' => '/img/emotes/kappahd.png',
+			'KappaPride' => '/img/emotes/kappapride.png',
+			'Keepo' => '/img/emotes/keepo.png',
+			'OpieOP' => '/img/emotes/opieop.png',
+			'PJSalt' => '/img/emotes/pjsalt.png',
+			%steamemotes
 		);
 
         # do h1
@@ -696,7 +789,7 @@ s{ (?<![0-9a-zA-Z\*_\x80-\x9f\xe0-\xfc]) (~~|\%\%) (?![<>\s\*_]) ([^<>]+?) (?<![
         # do the smilies
 		foreach my $smiley (keys %smilies) {
 			$line =~
-s{ (?<![0-9a-zA-Z\*_\x80-\x9f\xe0-\xfc]) (\:$smiley\:) (?![0-9a-zA-Z\*_]) }{<img src="$smilies{$smiley}" alt="" style="vertical-align: bottom;" />}gx;
+s{ (?<![0-9a-zA-Z\*_\x80-\x9f\xe0-\xfc]) (\:$smiley\:) (?![0-9a-zA-Z\*_]) }{<img src="$smilies{$smiley}" alt="" style="vertical-align: bottom;" />}gxi;
 		}
 
    # do ^H
@@ -1124,13 +1217,13 @@ sub process_tripcode {
 
 
 sub make_date {
-    my ( $time, $style, @locdays ) = @_;
+    my ( $time, $style, $locnames ) = @_;
     my @days   = qw(Sun Mon Tue Wed Thu Fri Sat);
     my @months = qw(Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec);
-    my @fullmonths =
-      qw(Январь Февраль Март Апрель Май Июнь Июль Август Сентябрь Октябрь Ноябрь Декабрь);
-      # qw(January February March April May June July August September October November December);
-    @locdays = @days unless @locdays;
+    unless ($locnames) {
+	    $$locnames{months} = \@months;
+	    $$locnames{weekdays} = \@days;
+    }
 
     if ( $style eq "2ch" ) {
         my @ltime = localtime($time);
@@ -1146,7 +1239,7 @@ sub make_date {
 		my @ltime=localtime($time);
 
 		return sprintf("%s %02d %s %04d %02d:%02d:%02d",
-		$locdays[$ltime[6]],$ltime[3],$fullmonths[$ltime[4]],$ltime[5]+1900,$ltime[2],$ltime[1],$ltime[0]);
+		@{$$locnames{weekdays}}[$ltime[6]],$ltime[3],@{$$locnames{months}}[$ltime[4]],$ltime[5]+1900,$ltime[2],$ltime[1],$ltime[0]);
     }
     elsif ( $style eq "localtime" ) {
         return scalar( localtime($time) );
@@ -1606,9 +1699,10 @@ sub analyze_mp4($) {
 }
 
 sub test_afmod {
+	my ($afmod) = @_;
 	my @now = localtime;
 	my ($month, $day) = ($now[4] + 1, $now[3]);
-	return 1 if (ENABLE_AFMOD && $month == 4 && $day == 1);
+	return 1 if ($afmod && $month == 4 && $day == 1);
 	return 0;
 }
 
@@ -1937,7 +2031,7 @@ sub get_displayname($) {
 sub get_displaysize($;$$) {
 	my ($size, $dec_mark, $dec_places) = @_;
 	my $out;
-	$dec_places = 2 if (!defined($dec_places));
+	$dec_places = 1 if (!defined($dec_places));
 
 	if ($size < 1024) {
 		$out = sprintf("%d Bytes", $size);
@@ -1965,7 +2059,7 @@ sub get_post_info($$) {
 
 	# country flag
 	$items[0] = 'UNKNOWN' if ($items[0] eq 'unk');
-	my $flag = '<img style="vertical-align:bottom;width:19px" alt="" src="/img/flags/' . $items[0] . '.PNG"> ';
+	my $flag = '<img style="vertical-align:initial" alt="" src="/img/flags/' . $items[0] . '.PNG"> ';
 
 	if (scalar @items == 1) { # for legacy entries
 		return $flag . $items[0];
@@ -1991,7 +2085,7 @@ sub get_post_info2($;$) {
 
 	$items[0] = 'UNKNOWN' if ($items[0] eq 'unk');
 	@items = qw/UNKNOWN/ if ($adm);
-	my $flag = '<img style="vertical-align:baseline" alt="" src="/img/flags/' . $items[0] . '.PNG"> ';
+	my $flag = '<img style="vertical-align:text-top" alt="" src="/img/flags/' . $items[0] . '.PNG"> ';
 	my $ret = $flag;
 
 	if (scalar @items == 1) { # for legacy entries
@@ -2003,7 +2097,7 @@ sub get_post_info2($;$) {
 
 		$ret = $location;
 	}
-	$ret = sprintf('<span class="countryflag" onmouseover="Tip(\'%s\', DELAY, 0)" onmouseout="UnTip()">%s</span>', $ret, $flag);
+	$ret = sprintf('<span class="countryflag" onmouseover="Tip(\'%s\', DELAY, 0, WIDTH, -450)" onmouseout="UnTip()">%s</span>', $ret, $flag);
 	return $ret;
 }
 
@@ -2023,9 +2117,11 @@ sub get_date {
     return $ret;
 }
 
-sub size_in_mb {
-    my ($size_in_bytes) = @_;
-    return ($size_in_bytes / 1024) . ' MB';
+sub rev {
+    my @r;
+    push @r, pop @_ while @_;
+    @r
 }
+
 
 1;

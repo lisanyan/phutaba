@@ -67,7 +67,10 @@ $translation{S_SEARCHFOUND} = 'Найдено:';
 $translation{S_OPTIONS} = 'Опции';
 $translation{S_MINLENGTH} = '(мин. 3 символа)';
 
-$translation{S_WEEKDAYS} = ['Вс','Пн','Вт','Ср','Чт','Пт','Сб']; # Defines abbreviated weekday names.
+$translation{S_DATENAMES} = {
+  weekdays => [qw/Вс Пн Вт Ср Чт Пт Сб/], # Defines abbreviated weekday names.
+  months => [qw/Январь Февраль Март Апрель Май Июнь Июль Август Сентябрь Октябрь Ноябрь Декабрь/] # Defines full month names
+};
 
 $translation{S_STICKYTITLE} = 'Тред прикреплен';    # Defines the title of the tiny sticky image on a thread if it is sticky
 $translation{S_LOCKEDTITLE} = 'Тред закрыт';    # Defines the title of the tiny locked image on a thread if it is locked
@@ -80,6 +83,7 @@ $translation{S_JS_STYLES} = 'Стили';
 $translation{S_JS_DONE} = 'Готово';
 $translation{S_JS_CONTEXT} = 'Свистоперделки';
 $translation{S_JS_UPDATE} = 'Обновить тред';
+# $translation{S_JS_OPENFORM} = '[Открыть форму]';
 # javascript strings END
 
 $translation{S_MANARET} = 'Назад';    # Returns to HTML file instead of PHP--thus no log/SQLDB update occurs
@@ -190,7 +194,7 @@ $translation{S_NOCAPTCHA} = 'Капча протухла, so slow';
 $translation{S_BADCAPTCHA} = 'Неверно введена капча';
 $translation{S_BADFORMAT} = 'Формат файла не поддерживается.';
 $translation{S_STRREF} = 'Строка отклонена.';
-$translation{S_UNJUST} = 'Неверное сообщение.';
+$translation{S_UNJUST} = 'Не POST запрос.';
 $translation{S_NOPIC} = 'Файл не выбран. Вы забыли нажать на кнопку "Ответить"?';
 $translation{S_NOTEXT} = 'Текст не введен';
 $translation{S_TOOLONG} = 'Слишком много символов в текстовом поле.';
