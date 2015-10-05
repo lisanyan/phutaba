@@ -121,14 +121,14 @@ use constant NORMAL_HEAD_INCLUDE => q{
 	</div>
 </header>
 
-<if $postform or $isAdmin or $admin><hr /></if>
+<if $postform or $locked><hr /></if>
 
 };
 
 
 use constant MANAGER_HEAD_INCLUDE => NORMAL_HEAD_INCLUDE . q{
 
-<if $admin>
+<if $isAdmin>
 	<!--[<a href="<var expand_filename(HTML_SELF)>"><const S_MANARET></a>]-->
 	[<a href="<var $self>?board=<var get_board_id()>&amp;task=show"><const S_MANAPANEL></a>]
 	[<a href="<var $self>?board=<var get_board_id()>&amp;task=mpanel"><const S_MANATOOLS></a>]
@@ -170,7 +170,7 @@ use constant NORMAL_FOOT_INCLUDE => q{
 <script type="text/javascript" src="/static/js/hidethreads.js"></script>
 </if>
 
-<if $postform && !$locked or $isAdmin><script type="text/javascript">set_inputs("postform")</script></if>
+<if $postform><script type="text/javascript">set_inputs("postform")</script></if>
 <script type="text/javascript">set_delpass("delform")</script>
 
 <script type="text/javascript">
@@ -221,7 +221,7 @@ use constant NORMAL_FOOT_INCLUDE => q{
 use constant PAGE_TEMPLATE => compile_template(
     MANAGER_HEAD_INCLUDE . q{
 
-<if $postform && !$locked or $isAdmin>
+<if $postform>
 	<div class="postarea">
 	<form id="postform" action="<var $self>" method="post" enctype="multipart/form-data">
 	<input type="hidden" name="task" value="post" />
@@ -267,12 +267,11 @@ use constant PAGE_TEMPLATE => compile_template(
 		</td></tr>
 	</if>
 
-	<if $thread><tr id="trgetback"><td class="postblock"><const S_NOKO></td>
+	<tr id="trgetback"><td class="postblock"><const S_NOKO></td>
 	<td>
 	<label><input name="gb2" value="board" checked="checked" type="radio" /> <const S_NOKOOFF></label>
 	<label><input name="gb2" value="thread" type="radio" /> <const S_NOKOON></label>
 	</td></tr>
-	</if>
 
 	<if !$isAdmin && need_captcha(CAPTCHA_MODE, CAPTCHA_SKIP, $loc)>
 		<tr><td class="postblock"><label for="captcha"><const S_CAPTCHA></label> (<a href="/faq">?</a>) (<var $loc>)</td>
@@ -519,9 +518,10 @@ use constant ERROR_TEMPLATE => compile_template(
 <div class="info"><var $error></div>
 </if>
 
-<if $banned or $dnsbl>
+<if $banned>
 <div class="info">
 <img src="/img/ernstwurf_schock.png" width="210" height="210" style="float: right;" />
+
 <loop $bans>
  Deine IP-Adresse <strong><var $ip></strong>
  <if $showmask>(Netz <var $network>/<var $setbits>)</if> wurde
@@ -532,11 +532,6 @@ use constant ERROR_TEMPLATE => compile_template(
  <if !$expires>gilt f&uuml;r unbestimmte Zeit.</if>
  <br />
 </loop>
-
-<if $dnsbl>
-Deine IP-Adresse <strong><var $ip></strong> wurde in der Blacklist <strong><var $dnsbl></strong> gefunden.
-Aufgrund dieser Tatsache ist es dir nicht gestattet zu posten.<br />
-</if>
 
  <br />Bitte kontaktiere uns im IRC, wenn du wieder posten willst!
 </div>

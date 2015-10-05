@@ -16,7 +16,6 @@ BEGIN {
     die S_NOSQL    unless ( defined &SQL_PASSWORD );
     eval "use constant ABUSE_EMAIL => ''" unless (defined &ABUSE_EMAIL);
     eval "use constant TRACKING_CODE => ''" unless (defined &TRACKING_CODE);
-    eval "use constant DISABLE_NEW_THREADS => 0" unless (defined &DISABLE_NEW_THREADS);
     eval "use constant SQL_TABLE => 'comments'" unless ( defined &SQL_TABLE );
     eval "use constant SQL_ADMIN_TABLE => 'admin'"
       unless ( defined &SQL_ADMIN_TABLE );
@@ -185,6 +184,12 @@ BEGIN {
       unless ( defined &CONVERT_COMMAND );
     eval "use constant VIDEO_CONVERT_COMMAND => 'avconv'"
       unless ( defined &VIDEO_CONVERT_COMMAND );
+
+    eval "use constant ENABLE_DNSBL_CHECK => 0"
+      unless (defined &ENABLE_DNSBL_CHECK);
+    eval "use constant DNSBL_TIMEOUT => 0.1"
+      unless (defined &DNSBL_TIMEOUT);
+    eval "use constant DNSBL_INFOS => []"      unless (defined &DNSBL_INFOS);
 
     eval "use constant RANDOM_NAMES => qw(Adolf Anna Anneliese Alex Alexander Arne Berta Bertha Burkhard Charlotte Clara Klara Edith Elfriede Elisabeth Ella Else Emma Erika Erna Ernst Ernsthard Frieda Frida Felix Gerda Gertrud Gisela Hedwig Helene Helga Herta Hertha Hildegard Ida Ilse Ingeborg Irmgard Johanna Kaete Kaethe Lieselotte Liselotte Louise Luise Margarethe Margarete Margot Maria Marie Marta Martha Ruth Ursula Waltraud Waltraut Alfred Arthur Artur Bruno Carl Christian Claus Curt Erich Ernst Franz Friedrich Fritz Georg Gerhard Guenther Guenter Hans Harry Heinz Helmut Helmuth Herbert Hermann Horst Joachim Karl Carl Karlheinz Kai Karl-Heinz Klaus Claus Kurt Curt Manfred Max Otto Paul Richard Rudolf Walter Werner Wilhelm Willi Willy Wolfgang Andrea Angelika Anja Anke Anna Anne Annett Antje Barbara Birgit Brigitte Christin Christina Christine Cindy Claudia Daniela Diana Doreen Franziska Gabriele Heike Ines Jana Janina Jennifer Jessica Jessika Julia Juliane Karin Karolin Katharina Kathrin Katrin Katja Kerstin Klaudia Claudia Klemens Kristin Christin Laura Lea Lena Lisa Mandy Manuela Maria Marie Marina Martina Melanie Monika Nadine Nicole Petra Sabine Sabrina Sandra Sara Sarah Sascha  Silke Simone Sophia Sophie Stefanie Stephanie Susanne Tanja Ulrike Ursula Uta Ute Vanessa Yvonne Alexander Andreas Benjamin Bernd Christian Daniel David Dennis Dieter Dirk Dominik Eric Erik Felix Florian Frank Jan Jens Jonas Joerg Juergen Kevin Klaus Kristian Christian Leon Lukas Marcel Marco Marko Mario Marion Markus Martin Matthias Max Maximilian Michael Mike Maik Niklas Patrick Paul Peter Philipp Phillipp Ralf Ralph René Robert Sebastian Stefan Stephan Steffen Sven Swen Siegfried Thomas Thorsten Torsten Tim Tobias Tom Ulrich Uwe Vinzent Wolfgang Edeltraud)" unless ( defined &RANDOM_NAMES );
     eval "use constant ENABLE_RANDOM_NAMES => 0" unless ( defined &ENABLE_RANDOM_NAMES );

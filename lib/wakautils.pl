@@ -248,8 +248,8 @@ sub need_captcha($$$) {
 	my ($mode, $allowed_list, $location) = @_;
 	my @allowed = split(' ', $allowed_list);
 
-	return 0 if ($mode eq 0);
-	return 1 if ($mode eq 1);
+	return 0 if ($mode == 0);
+	return 1 if ($mode == 1);
 
 	foreach my $country (@allowed) {
 		return 0 if ($country eq $location);
@@ -829,7 +829,7 @@ sub clean_string {
     $str =~ s/'/&#39;/g;
     $str =~ s/,/&#44;/g;     # clean up commas for some reason I forgot
 
-#	$str =~ s/[\x00-\x08\x0b\x0c\x0e-\x1f]//g;    # remove control chars
+	$str =~ s/[\x00-\x08\x0b\x0c\x0e-\x1f]//g;    # remove control chars
 
     return $str;
 }
@@ -1765,12 +1765,6 @@ sub make_thumbnail {
 
     # if that fails, try pnmtools instead
 
-    if ( $filename =~ /\.svg$/ ) {
-        $convert = "convert" unless ($convert);
-        `$convert -size 200x200 $magickname $thumbnail`;
-
-    }
-
     if ( $filename =~ /\.jpg$/ ) {
 `djpeg $filename | pnmscale -width $width -height $height | cjpeg -quality $quality > $thumbnail`;
 
@@ -1839,11 +1833,11 @@ sub make_thumbnail {
         $thumb->copyResized( $src, 0, 0, 0, 0, $width, $height, $img_w,
             $img_h );
         my $jpg = $thumb->jpeg($quality);
-        open THUMBNAIL, ">$thumbnail";
+        open THUMBNAIL, ">$thumbnail" or return 0;
         binmode THUMBNAIL;
         print THUMBNAIL $jpg;
         close THUMBNAIL;
-        return 1 unless ($!);
+        return 1;# unless ($!);
     }
 
     return 0;
