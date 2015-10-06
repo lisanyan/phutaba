@@ -59,7 +59,7 @@ use constant POST_VIEW_INCLUDE => q{
 		<span class="replylink">[<a href="<var get_reply_link($num,0)>"><const S_REPLY></a>]</span>
 	</if>
 
-	<if $isAdmin>
+	<if $admin>
 		<if !$adminpost>
 		<div class="hidden" id="postinfo_<var $num>">
 			<var get_post_info($location, get_board_id())>

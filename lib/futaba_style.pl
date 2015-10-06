@@ -52,7 +52,7 @@ use constant NORMAL_HEAD_INCLUDE => q{
 <meta name="apple-mobile-web-app-title" content="<const TITLE>" />
 </if>
 
-<if $isAdmin>
+<if $admin>
 	<link rel="stylesheet" type="text/css" href="/static/vendor/jquery-ui.min.css" />
 </if>
 
@@ -63,7 +63,7 @@ use constant NORMAL_HEAD_INCLUDE => q{
 
 <body>
 
-<if $isAdmin>
+<if $admin>
 <div id="modpanel" class="hidden">
 <table>
 <tr>
@@ -121,14 +121,14 @@ use constant NORMAL_HEAD_INCLUDE => q{
 	</div>
 </header>
 
-<if $postform or $locked><hr /></if>
+<if $postform or $locked or $admin><hr /></if>
 
 };
 
 
 use constant MANAGER_HEAD_INCLUDE => NORMAL_HEAD_INCLUDE . q{
 
-<if $isAdmin>
+<if $admin>
 	<!--[<a href="<var expand_filename(HTML_SELF)>"><const S_MANARET></a>]-->
 	[<a href="<var $self>?board=<var get_board_id()>&amp;task=show"><const S_MANAPANEL></a>]
 	[<a href="<var $self>?board=<var get_board_id()>&amp;task=mpanel"><const S_MANATOOLS></a>]
@@ -160,7 +160,7 @@ use constant NORMAL_FOOT_INCLUDE => q{
 <script type="text/javascript" src="/static/vendor/jquery-1.11.3.min.js"></script>
 <script type="text/javascript" src="/static/vendor/jquery.blockUI.js"></script>
 
-<if $isAdmin>
+<if $admin>
         <script type="text/javascript" src="/static/vendor/jquery-ui.min.js"></script>
         <script type="text/javascript" src="/static/js/admin.js"></script>
 </if>
@@ -238,13 +238,13 @@ use constant PAGE_TEMPLATE => compile_template(
 
 	<table>
 	<tbody id="postTableBody">
-		<if $isAdmin>
+		<if $admin>
 			<tr><td class="postblock">## Team ##</td>
 			<td><label><input type="checkbox" name="as_staff" value="1" />  <const S_POSTASADMIN></label></td></tr>
 			<tr><td class="postblock">HTML</td>
 			<td><label><input type="checkbox" name="no_format" value="1" /> <const S_NOTAGS2></label></td></tr>
 		</if>
-	<if !FORCED_ANON or $isAdmin><tr><td class="postblock"><label for="name"><const S_NAME></label></td><td><input type="text" name="field1" id="name" /></td></tr></if>
+	<if !FORCED_ANON or $admin><tr><td class="postblock"><label for="name"><const S_NAME></label></td><td><input type="text" name="field1" id="name" /></td></tr></if>
 
 	<tr><td class="postblock"><label for="subject"><const S_SUBJECT></label></td><td><input type="text" name="field3" id="subject" />
 	<input type="submit" id="postform_submit" value="<if $thread><const S_BTREPLY> /<var BOARD_IDENT>/<var $thread></if><if !$thread><const S_BTNEWTHREAD></if>" /></td>
@@ -273,7 +273,7 @@ use constant PAGE_TEMPLATE => compile_template(
 	<label><input name="gb2" value="thread" type="radio" /> <const S_NOKOON></label>
 	</td></tr>
 
-	<if !$isAdmin && need_captcha(CAPTCHA_MODE, CAPTCHA_SKIP, $loc)>
+	<if $captcha_inp>
 		<tr><td class="postblock"><label for="captcha"><const S_CAPTCHA></label> (<a href="/faq">?</a>) (<var $loc>)</td>
 		<td><input type="text" name="captcha" id="captcha" size="10" /> <img alt="" src="/captcha.pl?key=<var get_captcha_key($thread)>&amp;dummy=<var $dummy>&amp;board=<var BOARD_IDENT>" /></td></tr>
 	</if>
@@ -287,7 +287,7 @@ use constant PAGE_TEMPLATE => compile_template(
 	</div>
 </if>
 
-<if $locked && !$isAdmin>
+<if $locked && !$admin>
 <p class="locked"><var sprintf S_THREADLOCKED, $thread></p>
 </if>
 

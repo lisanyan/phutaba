@@ -126,6 +126,17 @@ if (CONVERT_CHARSETS) {
     $has_encode = 1 unless ($@);
 }
 
+## temporary debug profiling
+my ($has_timer, $has_timer_start);
+BEGIN {
+	eval 'use Time::HiRes';
+	unless ($@) {
+		$has_timer = Time::HiRes::gettimeofday();
+		$has_timer_start = $has_timer;
+	}
+}
+
+
 #
 # Global init
 #
@@ -516,10 +527,9 @@ sub show_post {
     my ($id, $admin) = @_;
     my ($sth, $row, @thread);
     my $isAdmin = 0;
-    if(defined($admin))
-    {
+    if (defined($admin)) {
 		#check_password($admin, ADMIN_PASS);
-		if (check_password_silent($admin, ADMIN_PASS)) { $isAdmin = 1; } else { $admin = ""; }
+		if (check_password_silent($admin, ADMIN_PASS)) { $isAdmin = 1; }
     }
 
     $sth = $dbh->prepare(
@@ -541,7 +551,7 @@ sub show_post {
 					thread	     => $id,
 					posts        => \@thread,
 					single	     => 1,
-					isAdmin      => $isAdmin,
+					admin        => $isAdmin,
 					locked       => $thread[0]{locked}
 				)
 			);
@@ -561,17 +571,19 @@ sub show_page {
 	# the admin password will be checked and this
 	# variable will be 1
 	my $isAdmin = 0;
-	if(defined($admin))
-	{
+	if (defined($admin)) {
 		#check_password($admin, ADMIN_PASS);
-		if (check_password_silent($admin, ADMIN_PASS)) { $isAdmin = 1; } else { $admin = ""; }
+		if (check_password_silent($admin, ADMIN_PASS)) { $isAdmin = 1; }
 	}
+
+	my $exec_time;
+	$exec_time = get_exec_time('init') if ($isAdmin);
 
     my $total_threads = count_threads();
     my $total_pages = get_page_count($total_threads, $isAdmin);
 
-    if ($total_threads == 0) {                      # no posts on the board
-        output_page( 1, 1, $isAdmin, () );  # make an empty page 1
+    if ($total_threads == 0) {              # no posts on the board
+        output_page(1, 1, $isAdmin, $exec_time, ());  # make an empty page 1
     }
     else {
 		make_error(S_INVALID_PAGE, 1) if ($pageToShow > $total_pages or $pageToShow <= 0);
@@ -605,12 +617,12 @@ sub show_page {
 			push @threads, { posts => [@thread] };
 		}
 
-		output_page($pageToShow, $total_pages, $isAdmin, @threads);
+		output_page($pageToShow, $total_pages, $isAdmin, $exec_time, @threads);
     }
 }
 
 sub output_page {
-    my ( $page, $total, $isAdmin, @threads) = @_;
+    my ( $page, $total, $isAdmin, $exec_time, @threads) = @_;
     my ( $filename, $tmpname );
 
     # do abbrevations and such
@@ -699,22 +711,30 @@ sub output_page {
 
     make_http_header();
 	my $loc = get_geolocation(get_remote_addr());
+
+	$exec_time .= get_exec_time('+ show_page') if ($isAdmin);
+
 	my $output =
 		encode_string(
             PAGE_TEMPLATE->(
 				postform     => (ALLOW_TEXTONLY or ALLOW_IMAGES or $isAdmin),
 				image_inp    => ALLOW_IMAGES,
 				textonly_inp => (ALLOW_IMAGES and ALLOW_TEXTONLY),
+				captcha_inp  => (!$isAdmin and need_captcha(CAPTCHA_MODE, CAPTCHA_SKIP, $loc)),
 				prevpage     => $prevpage,
 				nextpage     => $nextpage,
 				pages        => \@pages,
 				loc          => $loc,
 				threads      => \@threads,
-				isAdmin      => $isAdmin
+				admin        => $isAdmin
             )
 		);
 
 	$output =~ s/^\s+\n//mg;
+
+	$exec_time .= get_exec_time('+ template', 1) if ($isAdmin);
+	$output =~ s/(<\/body>\n<\/html>)$/$exec_time$1/ if ($isAdmin);
+
 	print($output);
 }
 
@@ -747,11 +767,13 @@ sub show_thread {
 	# the admin password will be checked and this
 	# variable will be 1
 	my $isAdmin = 0;
-	if(defined($admin))
-	{
+	if (defined($admin)) {
 		#check_password($admin, ADMIN_PASS);
-		if (check_password_silent($admin, ADMIN_PASS)) { $isAdmin = 1; } else { $admin = ""; }
+		if (check_password_silent($admin, ADMIN_PASS)) { $isAdmin = 1; }
 	}
+
+	my $exec_time;
+	$exec_time = get_exec_time('init') if ($isAdmin);
 
     $sth = $dbh->prepare(
             "SELECT * FROM "
@@ -762,6 +784,20 @@ sub show_thread {
 
     while ( $row = get_decoded_hashref($sth) ) {
 		$$row{comment} = resolve_reflinks($$row{comment});
+
+		## temporary debug code for testing sub count_lines()
+		if ($isAdmin) {
+			my $abbreviation = abbreviate_html(
+				$$row{comment}, MAX_LINES_SHOWN, APPROX_LINE_LENGTH
+			);
+			my $all_lines = count_lines($$row{comment});
+			my $abbrev_lines = count_lines($abbreviation);
+			$$row{comment} .= "<br /><div class=\"omittedposts\">Line Count: "
+				. "$all_lines - $abbrev_lines = "
+				. ($all_lines-$abbrev_lines) . "</div>" if ($all_lines);
+		}
+		## ## ##
+
         push( @thread, $row );
     }
     make_error(S_NOTHREADERR, 1) if ( !$thread[0] or $thread[0]{parent} );
@@ -771,6 +807,9 @@ sub show_thread {
     make_http_header();
 	my $loc = get_geolocation(get_remote_addr());
 	my $locked = $thread[0]{locked};
+
+	$exec_time .= get_exec_time('+ show_thread') if ($isAdmin);
+
 	my $output =
         encode_string(
             PAGE_TEMPLATE->(
@@ -780,13 +819,18 @@ sub show_thread {
 				postform     => ((ALLOW_TEXT_REPLIES or ALLOW_IMAGE_REPLIES) and !$locked or $isAdmin),
 				image_inp    => ALLOW_IMAGE_REPLIES,
 				textonly_inp => 0,
+				captcha_inp  => (!$isAdmin and need_captcha(CAPTCHA_MODE, CAPTCHA_SKIP, $loc)),
 				dummy        => $thread[$#thread]{num},
 				loc          => $loc,
 				threads      => [ { posts => \@thread } ],
-				isAdmin      => $isAdmin
+				admin        => $isAdmin
             )
         );
 	$output =~ s/^\s+\n//mg;
+
+	$exec_time .= get_exec_time('+ template', 1) if ($isAdmin);
+	$output =~ s/(<\/body>\n<\/html>)$/$exec_time$1/ if ($isAdmin);
+
 	print($output);
 }
 
@@ -1011,8 +1055,7 @@ sub find_posts($$$$) {
 				filenames	=> $in_filenames,
 				comment		=> $in_comment,
 				count		=> $count,
-				isAdmin		=> 0,
-				admin		=> ''
+				admin		=> 0
 			)
 		);
 
@@ -1150,14 +1193,18 @@ sub post_stuff {
 	$loc = join("<br />", $loc, $country_name, $region_name, $city, $as_info);
 
     # check if thread exists, and get lasthit value
-    my ( $parent_res, $lasthit );
+    my ($parent_res, $lasthit, $autosage, $sticky);
     if ($parent) {
         $parent_res = get_parent_post($parent) or make_error(S_NOTHREADERR);
         $lasthit = $$parent_res{lasthit};
+        $autosage = $$parent_res{autosage};
+        $sticky = $$parent_res{sticky};
 		make_error(S_LOCKED) if ($$parent_res{locked} and !$admin);
     }
     else {
         $lasthit = $time;
+		undef($autosage);
+		undef($sticky),
     }
 
     # kill the name if anonymous posting is being enforced
@@ -1204,8 +1251,9 @@ sub post_stuff {
 	if ($files[0]) {
 		($filename[0], $md5[0], $width[0], $height[0], $thumbnail[0], $tn_width[0], $tn_height[0], $info[0], $info_all[0], $file) =
 			process_file($files[0], $uploadname, $time);
-		$filename[0] =~ s!.*/!!; # remove leading path before writing to database
-		$thumbnail[0] =~ s!.*/!!;
+# disabled because would break STUPID_THUMBNAILING => 1
+#		$filename[0] =~ s!.*/!!; # remove leading path before writing to database
+#		$thumbnail[0] =~ s!.*/!!;
 	}
 
     my $tsf1 = 0;
@@ -1215,24 +1263,18 @@ sub post_stuff {
         $tsf1 = time() . sprintf( "%03d", int( rand(1000) ) );
 		($filename[1], $md5[1], $width[1], $height[1], $thumbnail[1], $tn_width[1], $tn_height[1], $info[1], $info_all[1], $file1) =
 			process_file($files[1], $files[1], $tsf1);
-		$filename[1] =~ s!.*/!!;
-		$thumbnail[1] =~ s!.*/!!;
 	}
 
     if ($files[2]) {
         $tsf2 = time() . sprintf( "%03d", int( rand(1000) ) );
 		($filename[2], $md5[2], $width[2], $height[2], $thumbnail[2], $tn_width[2], $tn_height[2], $info[2], $info_all[2], $file2) =
 			process_file($files[2], $files[2], $tsf2);
-		$filename[2] =~ s!.*/!!;
-		$thumbnail[2] =~ s!.*/!!;
     }
 
     if ($files[3]) {
         $tsf3 = time() . sprintf( "%03d", int( rand(1000) ) );
 		($filename[3], $md5[3], $width[3], $height[3], $thumbnail[3], $tn_width[3], $tn_height[3], $info[3], $info_all[3], $file3) =
 			process_file($files[3], $files[3], $tsf3);
-		$filename[3] =~ s!.*/!!;
-		$thumbnail[3] =~ s!.*/!!;
     }
 
     $numip = "0" if (ANONYMIZE_IP_ADDRESSES);
@@ -1247,7 +1289,7 @@ sub post_stuff {
     $sth->execute(
 		$parent,    $time,     $lasthit,   $numip,
 		$name,      $trip,     $email,     $subject,
-		$password,  $comment,  $as_staff,  $$parent_res{sticky},
+		$password,  $comment,  $as_staff,  $sticky,
 		$loc,       $ssl
     ) or make_error(S_SQLFAIL);
 
@@ -1320,11 +1362,9 @@ sub post_stuff {
         my $ufoporno = system('/usr/local/bin/push-post', BOARD_IDENT, $parent, $new_post_id, "2>&1", ">/dev/null");
     }
 
-    if ($parent)    # bumping
+    if ($parent and !$autosage)    # bumping
     {
-        my $autosage = $$parent_res{autosage};
-		# if parent has autosage set, the sage_count SQL query does not need to be executed
-		my $bumplimit = ($autosage or MAX_RES and sage_count($parent_res) > MAX_RES);
+		my $bumplimit = (MAX_RES and sage_count($parent_res) > MAX_RES);
 
         # check for sage, or too many replies
         unless ($email =~ /sage/i or $bumplimit) {
@@ -1337,7 +1377,7 @@ sub post_stuff {
         }
 
 		# bumplimit reached, set flag in thread OP
-        if ($bumplimit and !$autosage) {
+        if ($bumplimit) {
             $sth =
               $dbh->prepare( "UPDATE "
                   . SQL_TABLE
@@ -1939,19 +1979,19 @@ sub process_file {
         }
 
 		if ($ext eq 'pdf' or $ext eq 'svg') { # cannot determine dimensions for these files
-			$width = undef;
-			$height = undef;
+			undef($width);
+			undef($height);
 			$tn_width = MAX_W;
 			$tn_height = MAX_H;				
 		}
 
         if (STUPID_THUMBNAILING) {
 			$thumbnail = $filename;
-			$thumbnail = undef if($ext eq 'pdf' or $ext eq 'svg' or $ext eq 'webm' or $ext eq 'mp4');
+			undef($thumbnail) if($ext eq 'pdf' or $ext eq 'svg' or $ext eq 'webm' or $ext eq 'mp4');
 		}
         else {
 			if ($ext eq 'webm' or $ext eq 'mp4') {
-				$thumbnail = undef
+				undef($thumbnail)
 				  unless (
 					make_video_thumbnail(
 						$filename,         $thumbnail,
@@ -1961,7 +2001,7 @@ sub process_file {
 				  );
 			}
 			else {
-				$thumbnail = undef
+				undef($thumbnail)
 				  unless (
 					make_thumbnail(
 						$filename,         $thumbnail,
@@ -2115,10 +2155,7 @@ sub delete_post {
     my ( $post, $password, $fileonly, $deletebyip, $admin ) = @_;
     my ( $sth, $row, $res, $reply );
 
-	if($admin)
-	{
-		check_password($admin, ADMIN_PASS);
-	}
+	check_password($admin, ADMIN_PASS) if ($admin);
 
     my $thumb   = THUMB_DIR;
     my $src     = IMG_DIR;
@@ -2289,7 +2326,7 @@ sub make_admin_post_panel {
     make_http_header();
     print encode_string(
         POST_PANEL_TEMPLATE->(
-            admin    => $admin,
+            admin    => 1,
             posts    => $posts,
             threads  => $threads,
             files    => $files,
@@ -2336,7 +2373,7 @@ sub make_admin_ban_panel {
 
     make_http_header();
     print encode_string(
-        BAN_PANEL_TEMPLATE->( admin => $admin, filter => $filter, bans => \@bans ) );
+        BAN_PANEL_TEMPLATE->( admin => 1, filter => $filter, bans => \@bans ) );
 }
 
 sub make_admin_orphans {
@@ -2408,10 +2445,10 @@ sub make_admin_orphans {
 
 	make_http_header();
 	print encode_string(ADMIN_ORPHANS_TEMPLATE->(
-		admin => $admin,
-		files => \@f_orph,
-		thumbs => \@t_orph,
-		file_count => $file_count,
+		admin       => 1,
+		files       => \@f_orph,
+		thumbs      => \@t_orph,
+		file_count  => $file_count,
 		thumb_count => $thumb_count
 	));
 }
@@ -2451,9 +2488,9 @@ sub make_admin_edit_panel {
 
 		make_http_header();
 		print encode_string(ADMIN_EDIT_TEMPLATE->(
-			admin => 1,
-			postid => $postid,
-			name => $$row{name},
+			admin   => 1,
+			postid  => $postid,
+			name    => $$row{name},
 			subject => $$row{subject},
 			comment => $$row{comment}
 		));
@@ -2529,7 +2566,7 @@ sub add_admin_entry {
     check_password( $admin, ADMIN_PASS ) if (!$ajax);
 
 	# checks password a second time on non-ajax call to make sure $authorized is always correct.
-    $authorized = check_password_silent( $admin, ADMIN_PASS );
+    $authorized = check_password_silent($admin, ADMIN_PASS);
 
 	if (!$authorized) {
 		$utf8_encoded_json_text = encode_json({
@@ -2579,7 +2616,7 @@ sub add_admin_entry {
 sub check_admin_entry {
     my ($admin, $ival1) = @_;
     my ($sth, $utf8_encoded_json_text, $results);
-    if (!check_password_silent( $admin, ADMIN_PASS )) {
+    if (!check_password_silent($admin, ADMIN_PASS)) {
 		$utf8_encoded_json_text = encode_json({"error_code" => 401, "error_msg" => 'Unauthorized'});
 	} else {
 		if (!$ival1) {
@@ -2621,16 +2658,26 @@ sub delete_all {
 	{
 		my ($pcount, $tcount);
 
-		$sth = $dbh->prepare("SELECT count(*) FROM ".SQL_TABLE." WHERE ip & ? = ? & ?;") or make_error(S_SQLFAIL);
+		$sth = $dbh->prepare(
+			"SELECT count(*) FROM " . SQL_TABLE . " WHERE ip & ? = ? & ?;"
+		) or make_error(S_SQLFAIL);
 		$sth->execute($mask, $ip, $mask) or make_error(S_SQLFAIL);
 		$pcount = ($sth->fetchrow_array())[0];
 
-		$sth = $dbh->prepare("SELECT count(*) FROM ".SQL_TABLE." WHERE ip & ? = ? & ? AND parent=0;") or make_error(S_SQLFAIL);
+		$sth = $dbh->prepare(
+			"SELECT count(*) FROM " . SQL_TABLE . " WHERE ip & ? = ? & ? AND parent=0;"
+		) or make_error(S_SQLFAIL);
 		$sth->execute($mask, $ip, $mask) or make_error(S_SQLFAIL);
 		$tcount = ($sth->fetchrow_array())[0];
 
 		make_http_header();
-		print encode_string(DELETE_PANEL_TEMPLATE->(admin=>$admin, ip=>$ip, mask=>$mask, posts=>$pcount, threads=>$tcount));
+		print encode_string(DELETE_PANEL_TEMPLATE->(
+			admin   => 1,
+			ip      => $ip,
+			mask    => $mask,
+			posts   => $pcount,
+			threads => $tcount
+		));
 	}
 	else
 	{
@@ -2796,10 +2843,10 @@ sub get_reply_link {
 
 sub get_page_count {
     my ($total, $isAdmin) = @_;
-    if ( !$isAdmin and $total > MAX_SHOWN_THREADS ) {
+    if (!$isAdmin and $total > MAX_SHOWN_THREADS) {
         $total = MAX_SHOWN_THREADS;
     }
-    return int( ( $total + IMAGES_PER_PAGE- 1 ) / IMAGES_PER_PAGE );
+    return int(($total + IMAGES_PER_PAGE - 1) / IMAGES_PER_PAGE);
 }
 
 sub get_filetypes_hash {
@@ -3195,6 +3242,16 @@ sub get_decoded_arrayref {
 
 }
 
+sub get_exec_time {
+	my ($label, $show_total) = @_;
+	return undef unless($has_timer);
+	my $end = Time::HiRes::gettimeofday();
+	my $result = $label . sprintf(": %.4f\n", $end - $has_timer);
+	$result .= sprintf("= total: %.4f\n", $end - $has_timer_start) if ($show_total);
+	$has_timer = Time::HiRes::gettimeofday(); # reset timer
+	return $result;
+}
+
 sub update_db_schema2 {  # mysql-specific. will be removed after migration is done.
 	$sth = $dbh->prepare("SHOW COLUMNS FROM " . SQL_TABLE . " WHERE field = 'location';");
 	if ($sth->execute()) {
@@ -3307,7 +3364,7 @@ sub update_files_meta {
 		if (-e $$row{image}) {
 			($info, $info_all) = get_meta_markup($$row{image}, CHARSET);
 		} else {
-			$info = undef;
+			undef($info);
 			$info_all = "File not found";
 		}
 		$sth2->execute($info, $info_all, $$row{num}) or make_error($dbh->errstr);
