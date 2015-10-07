@@ -127,12 +127,13 @@ if (CONVERT_CHARSETS) {
 }
 
 ## temporary debug profiling
-my ($has_timer, $has_timer_start);
+my ($has_timer, $has_timer_start, $has_timer_output);
 BEGIN {
 	eval 'use Time::HiRes';
 	unless ($@) {
 		$has_timer = Time::HiRes::gettimeofday();
 		$has_timer_start = $has_timer;
+		$has_timer_output = '';
 	}
 }
 
@@ -538,7 +539,6 @@ sub show_post {
           . " WHERE num=?;" )
       or make_error(S_SQLFAIL);
     $sth->execute( $id ) or make_error(S_SQLFAIL);
-    make_http_header();
 	$row = get_decoded_hashref($sth);
 
     if ($row) {
@@ -557,10 +557,14 @@ sub show_post {
 			);
 		$output =~ s/^\s+//; # remove whitespace at the beginning
 		$output =~ s/^\s+\n//mg; # remove empty lines
+		make_http_header();
 		print($output);
     }
     else {
-        print encode_json( { "error_code" => 400, "error_msg" => 'Bad Request' } );
+		make_http_header();
+		print encode_string(
+			'<div id="' . $id . '"><div class="post_head post">' . S_NOREC . '</div></div>'
+		);
     }
 }
 
@@ -576,14 +580,13 @@ sub show_page {
 		if (check_password_silent($admin, ADMIN_PASS)) { $isAdmin = 1; }
 	}
 
-	my $exec_time;
-	$exec_time = get_exec_time('init') if ($isAdmin);
+	debug_exec_time('init') if ($isAdmin);
 
     my $total_threads = count_threads();
     my $total_pages = get_page_count($total_threads, $isAdmin);
 
-    if ($total_threads == 0) {              # no posts on the board
-        output_page(1, 1, $isAdmin, $exec_time, ());  # make an empty page 1
+    if ($total_threads == 0) {            # no posts on the board
+        output_page(1, 1, $isAdmin, ());  # make an empty page 1
     }
     else {
 		make_error(S_INVALID_PAGE, 1) if ($pageToShow > $total_pages or $pageToShow <= 0);
@@ -617,12 +620,12 @@ sub show_page {
 			push @threads, { posts => [@thread] };
 		}
 
-		output_page($pageToShow, $total_pages, $isAdmin, $exec_time, @threads);
+		output_page($pageToShow, $total_pages, $isAdmin, @threads);
     }
 }
 
 sub output_page {
-    my ( $page, $total, $isAdmin, $exec_time, @threads) = @_;
+    my ( $page, $total, $isAdmin, @threads) = @_;
     my ( $filename, $tmpname );
 
     # do abbrevations and such
@@ -678,6 +681,9 @@ sub output_page {
 			# create ref-links
 			$$post{comment} = resolve_reflinks($$post{comment});
 
+			## temporary debug code for testing sub count_lines()
+			my $debug_comment = $$post{comment};
+
             my $abbreviation =
               abbreviate_html( $$post{comment}, MAX_LINES_SHOWN,
                 APPROX_LINE_LENGTH );
@@ -686,6 +692,9 @@ sub output_page {
                 $$post{comment_full} = $$post{comment};
                 $$post{comment} = $abbreviation;
             }
+
+			## temporary debug code for testing sub count_lines()
+			$$post{comment} .= debug_line_count($debug_comment) if ($isAdmin);
         }
     }
 
@@ -709,10 +718,9 @@ sub output_page {
     $prevpage = $pages[ $page - 2 ]{filename} if ( $page != 1 );
     $nextpage = $pages[ $page     ]{filename} if ( $page != $total );
 
-    make_http_header();
 	my $loc = get_geolocation(get_remote_addr());
 
-	$exec_time .= get_exec_time('+ show_page') if ($isAdmin);
+	debug_exec_time('show_page') if ($isAdmin);
 
 	my $output =
 		encode_string(
@@ -732,9 +740,12 @@ sub output_page {
 
 	$output =~ s/^\s+\n//mg;
 
-	$exec_time .= get_exec_time('+ template', 1) if ($isAdmin);
-	$output =~ s/(<\/body>\n<\/html>)$/$exec_time$1/ if ($isAdmin);
+	if ($isAdmin) {
+		my $exec_time = debug_exec_time('output', 1);
+		$output =~ s!(</body>\n</html>)$!${exec_time}$1!;
+	}
 
+	make_http_header();
 	print($output);
 }
 
@@ -772,8 +783,7 @@ sub show_thread {
 		if (check_password_silent($admin, ADMIN_PASS)) { $isAdmin = 1; }
 	}
 
-	my $exec_time;
-	$exec_time = get_exec_time('init') if ($isAdmin);
+	debug_exec_time('init') if ($isAdmin);
 
     $sth = $dbh->prepare(
             "SELECT * FROM "
@@ -786,17 +796,7 @@ sub show_thread {
 		$$row{comment} = resolve_reflinks($$row{comment});
 
 		## temporary debug code for testing sub count_lines()
-		if ($isAdmin) {
-			my $abbreviation = abbreviate_html(
-				$$row{comment}, MAX_LINES_SHOWN, APPROX_LINE_LENGTH
-			);
-			my $all_lines = count_lines($$row{comment});
-			my $abbrev_lines = count_lines($abbreviation);
-			$$row{comment} .= "<br /><div class=\"omittedposts\">Line Count: "
-				. "$all_lines - $abbrev_lines = "
-				. ($all_lines-$abbrev_lines) . "</div>" if ($all_lines);
-		}
-		## ## ##
+		$$row{comment} .= debug_line_count($$row{comment}) if ($isAdmin);
 
         push( @thread, $row );
     }
@@ -804,11 +804,10 @@ sub show_thread {
 
 	add_images_to_thread(@thread);
 
-    make_http_header();
 	my $loc = get_geolocation(get_remote_addr());
 	my $locked = $thread[0]{locked};
 
-	$exec_time .= get_exec_time('+ show_thread') if ($isAdmin);
+	debug_exec_time('show_thread') if ($isAdmin);
 
 	my $output =
         encode_string(
@@ -828,42 +827,68 @@ sub show_thread {
         );
 	$output =~ s/^\s+\n//mg;
 
-	$exec_time .= get_exec_time('+ template', 1) if ($isAdmin);
-	$output =~ s/(<\/body>\n<\/html>)$/$exec_time$1/ if ($isAdmin);
+	if ($isAdmin) {
+		my $exec_time = debug_exec_time('output', 1);
+		$output =~ s!(</body>\n</html>)$!${exec_time}$1!;
+	}
 
+	make_http_header();
 	print($output);
 }
 
-sub add_images_to_thread(@) {
-	my (@posts) = @_;
-	my ($parent, $sthfiles, $res, @files, $uploadname, $post);
+sub get_files($$$) {
+	my ($threadid, $postid, $files) = @_;
+	my ($sth, $res, $where, $uploadname);
 
-	$parent = $posts[0]{num};
+	if ($threadid) {
+		# get all files of a thread with one query
+		$where = " WHERE thread=? OR post=? ORDER BY post ASC, num ASC;";
+	} else {
+		# get all files of one post only
+		$where = " WHERE post=? ORDER BY num ASC;";
+	}
 
-	@files = ();
-	# get all files of a thread with one query
-	$sthfiles = $dbh->prepare(
+	$sth = $dbh->prepare(
 		  "SELECT * FROM "
 		. SQL_TABLE_IMG .
-		  " WHERE thread=? OR post=? ORDER BY post ASC, num ASC;"
+		  $where
 	) or make_error(S_SQLFAIL);
-	$sthfiles->execute($parent, $parent) or make_error(S_SQLFAIL);
-	while ($res = get_decoded_hashref($sthfiles)) {
+
+	if ($threadid) {
+		$sth->execute($threadid, $threadid) or make_error(S_SQLFAIL);
+	} else {
+		$sth->execute($postid) or make_error(S_SQLFAIL);
+	}
+
+	while ($res = get_decoded_hashref($sth)) {
 		$uploadname = remove_path($$res{uploadname});
 		$$res{uploadname} = clean_string($uploadname);
 		$$res{displayname} = clean_string(get_displayname($uploadname));
 
-		$$res{thumbnail} = undef if ($$res{thumbnail} =~ m|^\.\./img/|); # temporary, static thumbs are not used anymore
+		# static thumbs are not used anymore (for old posts)
+		$$res{thumbnail} = undef if ($$res{thumbnail} =~ m|^\.\./img/|);
 
-		$$res{image} =~ s!.*/!!;                # remove any leading path that was stored in the database (for old posts)
-		$$res{thumbnail} =~ s!.*/!!;
-		$$res{image} = IMG_DIR . $$res{image};  # add directory to filenames
-		$$res{thumbnail} = THUMB_DIR . $$res{thumbnail} if ($$res{thumbnail});
+		# true if STUPID_THUMBNAILING is/was enabeld, do not change any paths
+		unless ($$res{image} eq $$res{thumbnail}) {
+			# remove any leading path that was stored in the database (for old posts)
+			$$res{image} =~ s!.*/!!;
+			$$res{thumbnail} =~ s!.*/!!;
 
-		push(@files, $res);
+			$$res{image} = IMG_DIR . $$res{image};  # add directory to filenames
+			$$res{thumbnail} = THUMB_DIR . $$res{thumbnail} if ($$res{thumbnail});
+		}
+
+		push($files, $res);
 	}
+}
 
-	return unless @files;
+sub add_images_to_thread(@) {
+	my (@posts) = @_;
+	my ($sthfiles, $res, @files, $uploadname, $post);
+
+	@files = ();
+	get_files($posts[0]{num}, 0, \@files);
+	return unless (@files);
 
 	foreach $post (@posts) {
 		while (@files and $$post{num} == $files[0]{post}) {
@@ -872,45 +897,12 @@ sub add_images_to_thread(@) {
 	}
 }
 
-sub add_images_to_array($@) {
-	my ($postid, $files) = @_;
-	my ($sth, $res, $uploadname, $count, $size);
-	$count = 0;
-	$size = 0;
-
-	$sth = $dbh->prepare("SELECT * FROM " . SQL_TABLE_IMG . " WHERE post=? ORDER BY num ASC;")
-		or make_error(S_SQLFAIL);
-	$sth->execute($postid);
-	while ($res = get_decoded_hashref($sth)) {  # $sth->fetchrow_hashref();
-		$count++;
-		$size += $$res{size};
-
-		$uploadname = remove_path($$res{uploadname});
-		$$res{uploadname} = clean_string($uploadname);
-		$$res{displayname} = clean_string(get_displayname($uploadname));
-
-		$$res{thumbnail} = undef if ($$res{thumbnail} =~ m|^\.\./img/|); # temporary, static thumbs are not used anymore
-
-		$$res{image} =~ s!.*/!!;
-		$$res{thumbnail} =~ s!.*/!!;
-		$$res{image} = IMG_DIR . $$res{image};
-		$$res{thumbnail} = THUMB_DIR . $$res{thumbnail} if ($$res{thumbnail});
-
-		push(@$files, $res); # @$ dereferences the array to modify it in the calling sub
-	}
-
-	return ($count, $size);
-}
-
-sub add_images_to_row {
+sub add_images_to_row($) {
     my ($row) = @_;
+	my @files = (); # all files of one post for loop-processing in the template
 
-	my @files; # this array holds all files of one post for loop-processing in the template
-	@files = ();
-
-	($$row{imagecount}, $$row{total_imagesize}) = add_images_to_array($$row{num}, \@files);
-
-	$row->{'files'}=[@files] if @files; # add the hashref with files to the post	
+	get_files(0, $$row{num}, \@files);
+	$$row{files} = [@files] if (@files); # copy the array to an arrayref in the post
 }
 
 sub resolve_reflinks($) {
@@ -1043,7 +1035,6 @@ sub find_posts($$$$) {
 		$sth->finish(); # Clean up the record set
 	}
 
-	make_http_header();
 	my $output =
 		encode_string(
 			SEARCH_TEMPLATE->(
@@ -1060,6 +1051,7 @@ sub find_posts($$$$) {
 		);
 
 	$output =~ s/^\s+\n//mg;
+	make_http_header();
 	print($output);
 }
 
@@ -1069,17 +1061,14 @@ sub find_posts($$$$) {
 #
 sub post_stuff {
     my (
-        $parent,  $spam1,   $spam2,      $name,      $email,
-        $subject, $comment, $gb2,        $captcha,   $password,
-        $admin,   $nofile,  $no_format,  $postfix,   $as_staff,
+        $parent,  $spam1,   $spam2,     $name,    $email,
+        $subject, $comment, $gb2,       $captcha, $password,
+        $admin,   $nofile,  $no_format, $postfix, $as_staff,
         @files
     ) = @_;
 
 	my $file = $files[0];
-	my $uploadname = $files[0];
-	my $file1 = $files[1];
-	my $file2 = $files[2];
-	my $file3 = $files[3];
+	#my $uploadname = $files[0];
 
     my $original_comment = $comment;
     # get a timestamp for future use
@@ -1132,10 +1121,10 @@ sub post_stuff {
     make_error(S_NOTEXT) if ( $comment =~ /^\s*$/ and !$file );
 
     # get file size, and check for limitations.
-    my $size  = get_file_size($files[0]) if ($files[0]);
-    my $size1 = get_file_size($files[1]) if ($files[1]);
-    my $size2 = get_file_size($files[2]) if ($files[2]);
-    my $size3 = get_file_size($files[3]) if ($files[3]);
+	my @size;
+	for (my $i = 0; $i < MAX_FILES; $i++) {
+		$size[$i] = get_file_size($files[$i]) if ($files[$i]);
+	}
 
     # find IP
     #my $ip  = $ENV{REMOTE_ADDR};
@@ -1246,36 +1235,24 @@ sub post_stuff {
     # Manager and deletion stuff - duuuuuh?
 
     # copy file, do checksums, make thumbnail, etc
-    my (@filename, @md5, @width, @height, @thumbnail, @tn_width, @tn_height, @info, @info_all);
+    my (@filename, @md5, @width, @height, @thumbnail, @tn_width, @tn_height, @info, @info_all, @uploadname);
 
-	if ($files[0]) {
-		($filename[0], $md5[0], $width[0], $height[0], $thumbnail[0], $tn_width[0], $tn_height[0], $info[0], $info_all[0], $file) =
-			process_file($files[0], $uploadname, $time);
-# disabled because would break STUPID_THUMBNAILING => 1
-#		$filename[0] =~ s!.*/!!; # remove leading path before writing to database
-#		$thumbnail[0] =~ s!.*/!!;
+	for (my $i = 0; $i < MAX_FILES; $i++) {
+		if ($files[$i]) {
+			# TODO: replace by $time when open_unique works
+			my $file_ts = time() . sprintf("-%03d", int(rand(1000)));
+			$file_ts = $time unless ($i);
+
+			($filename[$i], $md5[$i], $width[$i], $height[$i],
+				$thumbnail[$i], $tn_width[$i], $tn_height[$i],
+				$info[$i], $info_all[$i], $uploadname[$i])
+				= process_file($files[$i], $files[$i], $file_ts);
+
+			# disabled because it breaks STUPID_THUMBNAILING => 1
+			#$filename[$i] =~ s!.*/!!; # remove leading path before writing to database
+			#$thumbnail[0] =~ s!.*/!!;
+		}
 	}
-
-    my $tsf1 = 0;
-    my $tsf2 = 0;
-    my $tsf3 = 0;
-    if ($files[1]) {
-        $tsf1 = time() . sprintf( "%03d", int( rand(1000) ) );
-		($filename[1], $md5[1], $width[1], $height[1], $thumbnail[1], $tn_width[1], $tn_height[1], $info[1], $info_all[1], $file1) =
-			process_file($files[1], $files[1], $tsf1);
-	}
-
-    if ($files[2]) {
-        $tsf2 = time() . sprintf( "%03d", int( rand(1000) ) );
-		($filename[2], $md5[2], $width[2], $height[2], $thumbnail[2], $tn_width[2], $tn_height[2], $info[2], $info_all[2], $file2) =
-			process_file($files[2], $files[2], $tsf2);
-    }
-
-    if ($files[3]) {
-        $tsf3 = time() . sprintf( "%03d", int( rand(1000) ) );
-		($filename[3], $md5[3], $width[3], $height[3], $thumbnail[3], $tn_width[3], $tn_height[3], $info[3], $info_all[3], $file3) =
-			process_file($files[3], $files[3], $tsf3);
-    }
 
     $numip = "0" if (ANONYMIZE_IP_ADDRESSES);
 	if ($as_staff) { $as_staff = 1; }
@@ -1306,27 +1283,13 @@ sub post_stuff {
 		my $thread_id = $parent;
 		$thread_id = $new_post_id if (!$parent);
 
-		$sth->execute(
-			$thread_id, $new_post_id, $filename[0], $size, $md5[0], $width[0], $height[0],
-			$thumbnail[0], $tn_width[0], $tn_height[0], $file, $info[0], $info_all[0]
-		) or make_error(S_SQLFAIL);
-
-		($sth->execute(
-			$thread_id, $new_post_id, $filename[1], $size1, $md5[1], $width[1], $height[1],
-			$thumbnail[1], $tn_width[1], $tn_height[1], $file1, $info[1], $info_all[1]
-		) or make_error(S_SQLFAIL)) if ($files[1]);
-
-		($sth->execute(
-			$thread_id, $new_post_id, $filename[2], $size2, $md5[2], $width[2], $height[2],
-			$thumbnail[2], $tn_width[2], $tn_height[2], $file2, $info[2], $info_all[2]
-		) or make_error(S_SQLFAIL)) if ($files[2]);
-
-		($sth->execute(
-			$thread_id, $new_post_id, $filename[3], $size3, $md5[3], $width[3], $height[3],
-			$thumbnail[3], $tn_width[3], $tn_height[3], $file3, $info[3], $info_all[3]
-		) or make_error(S_SQLFAIL)) if ($files[3]);
+		for (my $i = 0; $i < MAX_FILES; $i++) {
+			($sth->execute(
+				$thread_id, $new_post_id, $filename[$i], $size[$i], $md5[$i], $width[$i], $height[$i],
+				$thumbnail[$i], $tn_width[$i], $tn_height[$i], $uploadname[$i], $info[$i], $info_all[$i]
+			) or make_error(S_SQLFAIL)) if ($files[$i]);
+		}
 	}
-
 
     if (ENABLE_IRC_NOTIFY) {
 		my $socket = new IO::Socket::INET(
@@ -1877,7 +1840,7 @@ sub process_file {
 	$uploadname .= "." . $ext if (lc($uploadext) ne $ext);
 
     # generate random filename - fudges the microseconds
-    my $filebase  = $time . sprintf( "%03d", int( rand(1000) ) );
+    my $filebase  = $time . sprintf("-%03d", int(rand(1000)));
     my $filename  = BOARD_IDENT . '/' . IMG_DIR . $filebase . '.' . $ext;
     my $thumbnail = BOARD_IDENT . '/' . THUMB_DIR . $filebase;
 	if ( $ext eq "png" or $ext eq "svg" )
@@ -3239,16 +3202,33 @@ sub get_decoded_arrayref {
     }
 
     return $row;
-
 }
 
-sub get_exec_time {
-	my ($label, $show_total) = @_;
-	return undef unless($has_timer);
-	my $end = Time::HiRes::gettimeofday();
-	my $result = $label . sprintf(": %.4f\n", $end - $has_timer);
-	$result .= sprintf("= total: %.4f\n", $end - $has_timer_start) if ($show_total);
-	$has_timer = Time::HiRes::gettimeofday(); # reset timer
+sub debug_exec_time {
+	my ($label, $done) = @_;
+	return unless($has_timer);
+
+	my $lap = Time::HiRes::gettimeofday();
+	$has_timer_output .= sprintf("%.4f %s ", $lap - $has_timer, $label);
+	$has_timer_output .= "+ " unless ($done);
+
+	if ($done) {
+		$has_timer_output .= sprintf("= %.4f total", $lap - $has_timer_start);
+		my $result = '<div class="omittedposts">' . $has_timer_output . "</div>\n";
+		return $result;
+	}
+	$has_timer = Time::HiRes::gettimeofday(); # lap reset timer
+}
+
+sub debug_line_count {
+	my ($comment) = @_;
+	my $abbreviation = abbreviate_html($comment, MAX_LINES_SHOWN, APPROX_LINE_LENGTH);
+	my $all_lines = count_lines($comment);
+	my $abbrev_lines = count_lines($abbreviation);
+	my $result = '';
+	$result = '<div class="omittedposts tldr" style="margin-left:0">Line Count: '
+		. "$all_lines - $abbrev_lines = "
+		. ($all_lines - $abbrev_lines) . "</div>" if ($all_lines);
 	return $result;
 }
 

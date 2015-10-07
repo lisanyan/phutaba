@@ -261,8 +261,8 @@ use constant PAGE_TEMPLATE => compile_template(
 	</td></tr>
 
 	<if $image_inp>
-		<tr id="fileUploadField"><td class="postblock"><const S_UPLOADFILE> (max. 4)</td>
-		<td id="fileInput"><div><input type="file" name="file" onchange="file_input_change(4)" /></div>
+		<tr id="fileUploadField"><td class="postblock"><const S_UPLOADFILE> (max. <const MAX_FILES>)</td>
+		<td id="fileInput"><div><input type="file" name="file" onchange="file_input_change(<const MAX_FILES>)" /></div>
 		<if $textonly_inp>[<label><input type="checkbox" name="nofile" value="on" /><const S_NOFILE> ]</label></if>
 		</td></tr>
 	</if>

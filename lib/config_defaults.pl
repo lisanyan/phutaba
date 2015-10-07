@@ -101,6 +101,7 @@ BEGIN {
       unless ( defined &MAX_IMAGE_HEIGHT );
     eval "use constant MAX_IMAGE_PIXELS => 50000000"
       unless ( defined &MAX_IMAGE_PIXELS );
+    eval "use constant MAX_FILES => 4" unless (defined &MAX_FILES);
     eval "use constant MAX_SEARCH_RESULTS => 200" unless (defined &MAX_SEARCH_RESULTS);
 
     eval "use constant CAPTCHA_MODE => 1"  unless ( defined &CAPTCHA_MODE );
