@@ -83,7 +83,7 @@ $translation{S_JS_STYLES} = 'Стили';
 $translation{S_JS_DONE} = 'Готово';
 $translation{S_JS_CONTEXT} = 'Свистоперделки';
 $translation{S_JS_UPDATE} = 'Обновить тред';
-# $translation{S_JS_OPENFORM} = '[Открыть форму]';
+$translation{S_JS_BOTTOMFORM} = 'Форма внизу';
 # javascript strings END
 
 $translation{S_MANARET} = 'Назад';    # Returns to HTML file instead of PHP--thus no log/SQLDB update occurs
@@ -128,7 +128,6 @@ $translation{S_NOPOMFDESC} = 'Не загружать файлы на внешн
 $translation{S_THREADLOCKED} = '<strong>Тред %s</strong> закрыт. Вы не можете отвечать в этот тред.';
 $translation{S_FILEINFO} = 'Информация';
 $translation{S_FILEDELETED} = 'Файл удален';
-
 
 $translation{S_POSTINFO} = 'IP-Informationen';
 $translation{S_MPDELETEIP} = 'Уд.&nbsp;все';
@@ -180,8 +179,7 @@ $translation{S_MANASHOW} = 'Show';
 
 $translation{S_LOCKED} = 'Тред закрыт';
 $translation{S_BADIP} = 'Incorrect IP address';
-$translation{S_BADDELIP} = 'Wrong IP.';
-    # Returns error for wrong ip (when user tries to delete file)
+$translation{S_BADDELIP} = 'Wrong IP.'; # Returns error for wrong ip (when user tries to delete file)
 $translation{S_INVALID_PAGE} = "страницы не существует.";
 $translation{S_STOP_FOOLING} = "Lass das sein, Kevin!";
 
@@ -206,7 +204,7 @@ $translation{S_BADHOSTPROXY} = 'Прокси забанен.';
 $translation{S_RENZOKU} = 'Обнаружен флуд, сообщение отклонено.';
 $translation{S_RENZOKU2} = 'Обнаружен флуд, файл отклонён.';
 $translation{S_RENZOKU3} = 'Обнаружен флуд.';
-$translation{S_RENZOKU4} = 'Период ожидания удаления поста еще не истек.';
+$translation{S_RENZOKU4} = 'Период ожидания перед удалением поста еще не истек.';
 $translation{S_RENZOKU5} = 'Обнаружен флуд. Жди 10 минут.';
 $translation{S_PROXY} = 'Обнаружена открытая прокси.';
 $translation{S_DUPE} = 'Этот файл уже размещен <a href="%s">тут</a>.';
@@ -220,8 +218,8 @@ $translation{S_SPAM} = 'Спамерам здесь не рады.';
 $translation{S_NOBOARDACC} = 'You don\'t have access to this board, accessible: %s<br /><a href="%s?task=logout">Logout</a>';
 $translation{S_NOPRIVILEGES} = 'Insufficient privileges';
 
-$translation{S_SQLCONF} = 'MySQL-Database error'; # Database connection failure
-$translation{S_SQLFAIL} = 'MySQL-Database error ufoporno'; # SQL Failure
+$translation{S_SQLCONF} = 'MySQL-Database connect error'; # Database connection failure
+$translation{S_SQLFAIL} = 'MySQL-Database query error'; # SQL Failure
 
 $translation{S_EDITPOST} = 'Редактировать';
 $translation{S_EDITHEAD} = 'Editing No.<a href="%s">%d</a>';

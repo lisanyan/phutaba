@@ -1,4 +1,3 @@
-<include %TMPLDIR%head.tpl>
 <?xml version="1.0"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:dc="http://purl.org/dc/elements/1.1/">
   <channel>
@@ -28,4 +27,3 @@
     </loop>
   </channel>
 </rss>
-<include %TMPLDIR%foot.tpl>

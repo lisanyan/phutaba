@@ -22,6 +22,10 @@
 	margin-left: 0em!important;
 }
 
+.post {
+	word-wrap: break-word;
+}
+
 pre {
 	white-space: pre-wrap;
 	word-wrap: break-word;
@@ -78,10 +82,6 @@ code, pre {
 pre {
     white-space: pre-wrap;
    	overflow-x: auto;
-}
-
-ul, ol {
-	margin-left: 1.6em;
 }
 
 ul {
@@ -239,6 +239,7 @@ input[type='submit']:hover {
 
 ul.rules {
 	margin-top: 1em;
+	margin-left: 1.6em;
 }
 
 .doubledash {
@@ -339,6 +340,10 @@ ul.rules {
 	/*float: left*/;
 }
 
+.files {
+	float: left;
+}
+
 .file {
 	background-color: #BFB5A1;
 	text-align: center;
@@ -380,10 +385,6 @@ ul.rules {
 .text {
 	margin: 0 2em 1.2em 1.2em;
 	word-wrap: break-word;
-}
-
-.text ul, .text ol {
-	margin-left: 0;
 }
 
 .text ul li, .text ol li {
@@ -550,16 +551,16 @@ footer img {
 
 /* stuff for context.js */
 #message {
-	position: fixed;
 	border-color: #666;
 	border-radius: 5px 5px 5px 5px;
-	top: 50px;
+	margin: 0;
 	padding: 20px;
-	width: 40%;
-	left: 30%;
+	position: fixed;
 	text-align: center;
-	-webkit-box-shadow: #666 0px 0px 10px;
+	top: 50px;
+	width: 40%;
 	z-index: 400;
+	-webkit-box-shadow: #666 0px 0px 10px;
 }
 #overlay, .overlay {
 	display: none;
@@ -594,6 +595,9 @@ footer img {
 }
 .post_preview .doubledash {
 	display: none;
+}
+#postform2 {
+	clear:both;
 }
 #settings {
 	background: #D7CFC0;

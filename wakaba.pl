@@ -14,10 +14,9 @@ use DBI;
 use Digest::MD5 qw(md5 md5_hex md5_base64);
 use FCGI::ProcManager qw(pm_manage pm_pre_dispatch 
                          pm_post_dispatch);
-use File::stat;
 use JSON::XS;
 use List::Util qw(first);
-use Net::DNS;
+use Net::DNS; # DNSBL request
 use Net::IP qw(:PROC);
 use SimpleCtemplate;
 
@@ -78,7 +77,12 @@ BEGIN {
 #
 # Import settings
 #
-BEGIN { require "captcha.pl"; }
+BEGIN {
+    require "lib/site_config.pl";
+    require "lib/config_defaults.pl";
+    require "lib/wakautils.pl";
+    require "captcha.pl";
+}
 
 # fancy date-parsing module
 # in persistent environments, this won't be run more than once
@@ -118,20 +122,13 @@ while($query=CGI::Fast->new)
     pm_pre_dispatch();
     $fcgi_counter++;
 
-    $locale = get_settings('locale_ru');
-
-    $dbh = DBI->connect_cached(SQL_DBI_SOURCE,SQL_USERNAME,SQL_PASSWORD,
-        {AutoCommit=>1,mysql_enable_utf8=>1} ) or make_error($$locale{S_SQLCONF});
-
-    my $sth = $dbh->prepare("SET NAMES 'utf8'") or make_error("SPODRO BORDO");
-    $sth->execute();
-    $sth->finish;
-
     unless (0)
     {
         $boardSection   = ($query->param("section") or "b");
         $cfg            = fetch_config($boardSection);
         $moders         = get_settings('mods');
+        $locale         = get_settings($$cfg{BOARD_LOCALE})
+                            unless ($$cfg{NOTFOUND});
         $$cfg{SELFPATH} = $boardSection;
 
         if( $$cfg{NOTFOUND} ) {
@@ -143,6 +140,13 @@ while($query=CGI::Fast->new)
             next;
         }
     }
+
+    $dbh = DBI->connect_cached(SQL_DBI_SOURCE,SQL_USERNAME,SQL_PASSWORD,
+        {AutoCommit => 1,mysql_enable_utf8 => 1} ) or make_error($$locale{S_SQLCONF});
+
+    my $sth = $dbh->prepare("SET NAMES 'utf8'") or make_error("SPODRO BORDO");
+    $sth->execute();
+    $sth->finish;
 
     my $task  = ( $query->param("task") or $query->param("action")) unless $query->param("POSTDATA");
     my $json  = ( $query->param("json") or "" );
@@ -596,7 +600,7 @@ sub output_json_thread {
     my ($sth, $row, $error, $code, %status, @data, %boardinfo, %json);
     $sth = $dbh->prepare("SELECT * FROM " . $$cfg{SQL_TABLE} . " FORCE INDEX(cover) WHERE num=? OR parent=? ORDER BY num ASC;");
     $sth->execute($id, $id);
-    $error = decode('utf8', $sth->errstr);
+    $error = decode(CHARSET, $sth->errstr);
 
     while ( $row=get_decoded_hashref($sth) ) {
         hide_row_els($row);
@@ -638,7 +642,7 @@ sub output_json_thread {
 
 sub get_json_meta {
     my ($row, $i) = @_;
-    my $json_info = $JSON->decode(encode('utf-8', $$row{'files'}[$i]{'info_json'}) or '{}');
+    my $json_info = $JSON->decode(encode(CHARSET, $$row{'files'}[$i]{'info_json'}) or '{}');
     my $filename = $$cfg{SELFPATH} . '/' . $$row{'files'}[$i]{'image'};
     return $json_info if %$json_info;
     return get_meta($filename, &CHARSET) if -f $filename;
@@ -651,7 +655,7 @@ sub output_json_meta {
 
     $sth = $dbh->prepare("SELECT num FROM " . $$cfg{SQL_TABLE} . " WHERE num=?;");
     $sth->execute($id);
-    $error = decode('utf8', $sth->errstr);
+    $error = decode(CHARSET, $sth->errstr);
     $row = $sth->fetchrow_hashref();
     if(defined $row) {
         $code = 200;
@@ -690,7 +694,7 @@ sub output_json_ban {
 
     $sth = $dbh->prepare("SELECT `comment`, `ival1` as `ip`, `ival2` as `mask`, `date` FROM " . $$cfg{SQL_ADMIN_TABLE} . " WHERE num=?;");
     $sth->execute($id);
-    $error = decode('utf8', $sth->errstr);
+    $error = decode(CHARSET, $sth->errstr);
     $row = $sth->fetchrow_hashref();
     if(defined $row) {
         $code = 200;
@@ -698,7 +702,7 @@ sub output_json_ban {
         $$row{'mask'} = dec_to_dot($$row{'mask'});
         $data{'ban_info'} = $row;
         $data{'ip_info'}{'asn_info'} = [get_asn_info($$row{'ip'})];
-        $data{'ip_info'}{'as_desc'} = decode('utf8', get_as_description($data{'ip_info'}{'asn_info'}[0]));
+        $data{'ip_info'}{'as_desc'} = decode(CHARSET, get_as_description($data{'ip_info'}{'asn_info'}[0]));
         $data{'ip_info'}{'ptr'} = get_rdns($$row{'ip'});
         $data{'ip_info'}{'contacts'} = [get_ipwi_contacts($$row{'ip'})];
     } elsif($sth->rows == 0) {
@@ -729,7 +733,7 @@ sub output_json_post {
 
     $sth = $dbh->prepare("SELECT * FROM " . $$cfg{SQL_TABLE} . " WHERE num=?;");
     $sth->execute($id);
-    $error = decode('utf8', $sth->errstr);
+    $error = decode(CHARSET, $sth->errstr);
     $row = get_decoded_hashref($sth);
     if(defined $row) {
         $code = 200;
@@ -764,7 +768,7 @@ sub output_json_newposts {
 
     $sth = $dbh->prepare("SELECT * FROM " . $$cfg{SQL_TABLE} . " FORCE INDEX(cover) WHERE parent=? and num>? ORDER BY num ASC;");
     $sth->execute($id,$after);
-    $error = decode('utf8', $sth->errstr);
+    $error = decode(CHARSET, $sth->errstr);
     if($sth->rows) {
         $code = 200;
         while($row=get_decoded_hashref($sth)) {
@@ -798,9 +802,12 @@ sub output_json_stats {
     my ($date_format) = @_;
     my (@data, $sth, $error, $code, %status, %data, %json);
     
-    $sth = $dbh->prepare("SELECT DATE_FORMAT(FROM_UNIXTIME(`timestamp`), ?) as `datum`, COUNT(`num`) as `posts` FROM " . $$cfg{SQL_TABLE} . " FORCE INDEX(cover) GROUP BY `datum` ORDER BY timestamp ASC;");
-    $sth->execute(decode('utf8', $date_format));
-    $error = decode('utf8', $sth->errstr);
+    $sth = $dbh->prepare(
+        "SELECT DATE_FORMAT(FROM_UNIXTIME(`timestamp`), ?) AS `datum`, COUNT(`num`) AS `posts` FROM "
+        . $$cfg{SQL_TABLE} . " GROUP BY `datum`;");
+
+    $sth->execute(clean_string(decode_string($date_format, CHARSET)));
+    $error = $sth->errstr;
     @data = $sth->fetchall_arrayref;
     if(defined \@data) {
         $code = 200;
@@ -1029,7 +1036,7 @@ sub show_page {
     make_http_header();
     my $output =
             $tpl->page({
-                postform => ( $$cfg{ALLOW_TEXTONLY} or $$cfg{ALLOW_IMAGES} ),
+                postform     => ( $$cfg{ALLOW_TEXTONLY} or $$cfg{ALLOW_IMAGES} or $isAdmin ),
                 image_inp    => ($$cfg{ALLOW_IMAGES}),
                 textonly_inp => ( $$cfg{ALLOW_IMAGES} and $$cfg{ALLOW_TEXTONLY} ),
                 prevpage     => $prevpage,
@@ -1084,11 +1091,12 @@ sub show_thread {
 
     make_http_header();
     my $loc = get_geolocation(get_remote_addr());
+    my $locked = $thread[0]{locked};
     my $output = 
             $tpl->page({
                 thread       => $thread,
                 title        => $thread[0]{subject},
-                postform     => ( $$cfg{ALLOW_TEXT_REPLIES} or $$cfg{ALLOW_IMAGE_REPLIES} ),
+                postform     => ( ($$cfg{ALLOW_TEXT_REPLIES} or $$cfg{ALLOW_IMAGE_REPLIES} ) and !$locked or $isAdmin),
                 image_inp    => ( $$cfg{ALLOW_IMAGE_REPLIES} ),
                 textonly_inp => 0,
                 dummy        => $thread[$#thread]{num},
@@ -1097,7 +1105,7 @@ sub show_thread {
                 isAdmin      => $isAdmin, 
                 admin        => $admin,
                 modclass     => $session[1],
-                locked       => $thread[0]{locked},
+                locked       => $locked,
                 stylesheets  => get_stylesheets(),
                 cfg          => $cfg,
                 locale       => $locale,
@@ -1226,6 +1234,8 @@ sub print_page {
 sub dnsbl_check {
     my ($ip) = @_;
     my @errors;
+
+    return if ($ip =~ /:/); # IPv6
 
     foreach my $dnsbl_info ( @{$$cfg{DNSBL_INFOS}} ) {
         my $dnsbl_host   = @$dnsbl_info[0];
@@ -1494,9 +1504,6 @@ sub post_stuff {
         $parent_res = get_parent_post($parent) or make_error($$locale{S_NOTHREADERR});
         $lasthit = $$parent_res{lasthit};
         $sticky = $$parent_res{sticky};
-        # move "locked" check here:
-        # make_error($$locale{S_LOCKED}) if ($$parent_res{locked} and !$admin_post);
-        # and remove sub check_locked($parent);
         make_error($$locale{S_LOCKED}) if ($$parent_res{locked} and !$admin_post);
     }
     else {
@@ -1644,31 +1651,24 @@ sub post_stuff {
 
     if ($parent)    # bumping
     {
-        my $autosage;
-        $sth = $dbh->prepare(
-            "SELECT autosage FROM " . $$cfg{SQL_TABLE} . " WHERE num=?;" );
-        $sth->execute($parent);
-        if ( ( $sth->fetchrow_array() )[0] ) { $autosage = 1; }
+        my $autosage = $$parent_res{autosage};
+        # if parent has autosage set, the sage_count SQL query does not need to be executed
+        my $bumplimit = ($autosage or $$cfg{MAX_RES} and sage_count($parent_res) > $$cfg{MAX_RES});
 
         # check for sage, or too many replies
-        unless ( $email =~ /sage/i
-            or sage_count($parent_res) > $$cfg{MAX_RES}
-        and $$cfg{MAX_RES} ne 0
-            or $autosage )
+        unless ( $email =~ /sage/i or $bumplimit )
         {
             $sth =
-              $dbh->prepare( "UPDATE "
-                  . $$cfg{SQL_TABLE}
-                  . " SET lasthit=$time WHERE num=? OR parent=?;" )
-              ;    # or make_error($$locale{S_SQLFAIL});
-            $sth->execute( $parent, $parent ) or make_error($$locale{S_SQLFAIL});
+              $dbh->prepare(
+                "UPDATE " . $$cfg{SQL_TABLE} . " SET lasthit=? WHERE num=? OR parent=?;"
+              );
+            $sth->execute( $time, $parent, $parent ) or make_error($$locale{S_SQLFAIL});
         }
-        if ( sage_count($parent_res) > ($$cfg{MAX_RES} - 1) and $$cfg{MAX_RES} ne 0) {
+        if ( $bumplimit and !$autosage ) {
             $sth =
-              $dbh->prepare( "UPDATE "
-                  . $$cfg{SQL_TABLE}
-                  . " SET autosage=1 WHERE num=? OR parent=?;" )
-              ;    # or make_error($$locale{S_SQLFAIL});
+              $dbh->prepare(
+                  "UPDATE " . $$cfg{SQL_TABLE} . " SET autosage=1 WHERE num=? OR parent=?;"
+              );
             $sth->execute( $parent, $parent ) or make_error($$locale{S_SQLFAIL});
         }
     }
@@ -1901,8 +1901,6 @@ sub flood_check {
     $sth->finish() if($sth);
 }
 
-
-
 sub format_comment {
     my ($comment) = @_;
 
@@ -2132,26 +2130,25 @@ sub sage_count {
 
 sub get_file_size {
     my ($file, $nopomf) = @_;
-    my ($size);
-    my ($ext) = $file =~ /\.([^\.]+)$/;
+    my (@filestats, $errfname, $errfsize, $max_size);
+    my $size = 0;
+    my $ext = $file =~ /\.([^\.]+)$/;
     my $sizehash = $$cfg{FILESIZES};
 
-    $size = stat($file)->size;
-    if ( !$nopomf && grep {$_ eq $ext} @{$$cfg{POMF_EXTENSIONS}} ) { # no check if uploading to pomf
-        make_error($$locale{S_TOOBIGORNONE}) if ( $size == 0 );
-        return ($size);
-    }
-    if ( $$sizehash{$ext} ) {
-        make_error($$locale{S_TOOBIG}) if ( $size > $$sizehash{$ext} * 1024 );
-    }
-    else {
-        make_error($$locale{S_TOOBIG}) if ( $size > $$cfg{MAX_KB} * 1024 );
-    }
-    make_error($$locale{S_TOOBIGORNONE}) if ( $size == 0 );  # check for small files, too?
+    @filestats = stat($file);
+    $size = $filestats[7];
+    $max_size = $$cfg{MAX_KB};
+    $max_size = $$sizehash{$ext} if ($$sizehash{$ext});
+    $errfname = clean_string(decode_string($file, CHARSET));
+    # or round using: int($size / 1024 + 0.5)
+    $errfsize = sprintf("%.2f", $size / 1024) . " kB &gt; " . $max_size . " kB";
+
+    make_error($$locale{S_TOOBIG} . " ($errfname: $errfsize)") 
+        if ($size > $max_size * 1024 and !$nopomf && grep {$_ eq $ext} @{$$cfg{POMF_EXTENSIONS}});
+    make_error($$locale{S_TOOBIGORNONE} . " ($errfname)") if ($size == 0);  # check for small files, too?
 
     return ($size);
 }
-
 
 sub get_preview {
     my ($comment) = @_;
@@ -2170,7 +2167,6 @@ sub get_preview {
     }
     return $preview;
 }
-
 
 sub process_file {
     my ( $file, $uploadname, $time, $nopomf ) = @_;
@@ -2415,6 +2411,52 @@ sub thread_control {
 # Deleting
 #
 
+sub delete_all {
+    my ($admin, $ip, $mask, $go) = @_;
+    my ($sth, $row, @posts);
+    my @session = check_password( $admin, '' );
+
+    unless($go and $ip) # do not allow empty IP (as it would delete anonymized (staff) posts)
+    {
+        my ($pcount, $tcount);
+
+        $sth = $dbh->prepare("SELECT count(`num`) FROM ".$$cfg{SQL_TABLE}." WHERE ip=? OR ip & ? = ? & ?;") or make_error($$locale{S_SQLFAIL});
+        $sth->execute($ip, $mask, $ip, $mask) or make_error($$locale{S_SQLFAIL});
+        $pcount = ($sth->fetchrow_array())[0];
+        $sth->finish;
+
+        $sth = $dbh->prepare("SELECT count(`num`) FROM ".$$cfg{SQL_TABLE}." WHERE parent=0 AND (ip=? OR ip & ? = ? & ?);") or make_error($$locale{S_SQLFAIL});
+        $sth->execute($ip, $mask, $ip, $mask) or make_error($$locale{S_SQLFAIL});
+        $tcount = ($sth->fetchrow_array())[0];
+        $sth->finish;
+
+        make_http_header();
+        print $tpl->delete_panel({
+            admin => $admin,
+            modclass => $session[1],
+            ip => $ip,
+            mask => $mask,
+            posts => $pcount,
+            threads => $tcount,
+            cfg => $cfg,
+            locale => $locale,
+            stylesheets => get_stylesheets()
+        });
+    }
+    else
+    {
+        $sth =
+          $dbh->prepare( "SELECT num FROM " . $$cfg{SQL_TABLE} . " WHERE ip<>0 AND ip IS NOT NULL AND (ip & ? = ? & ? OR ip=?);" )
+          or make_error($$locale{S_SQLFAIL});
+        $sth->execute( $mask, $ip, $mask, $ip ) or make_error($$locale{S_SQLFAIL});
+        while ( $row = $sth->fetchrow_hashref() ) { push( @posts, $$row{num} ); }
+        $sth->finish;
+
+        log_action("delall",$ip,$admin);
+        delete_stuff('', 0, $admin, 1, 0, @posts);
+    }
+}
+
 sub delete_stuff {
     my ( $password, $fileonly, $admin, $admin_del, $parent, @posts ) = @_;
     my ($post, $ip);
@@ -2433,7 +2475,7 @@ sub delete_stuff {
         or ( $password and !$deletebyip )
         or $adminDel
       );    # allow deletion by ip with empty password
-                        # no password means delete always
+            # no password means delete always
 
     $password = "" if ($adminDel);
 
@@ -2515,48 +2557,47 @@ sub delete_post {
 
             # prevent GHOST BUMPING by hanging a thread where it belongs: at the time of the last non sage post
             if ($$cfg{PREVENT_GHOST_BUMPING}) {
-                # first find the parent of the post
+                # get parent of the deleted post
+                # if a thread was deleted, nothing needs to be done
                 my $parent = $$row{parent};
-                if ( $parent != 0 ) {
+                if ($parent) {
                     # its actually a post in a thread, not a thread itself
                     # find the thread to check for autosage
                     $sth = $dbh->prepare(
-                        "SELECT * FROM " . $$cfg{SQL_TABLE} . " WHERE num=?" )
+                        "SELECT * FROM " . $$cfg{SQL_TABLE} . " WHERE num=?;" )
                       or return $$locale{S_SQLFAIL};
-                    $sth->execute($parent);
+                    $sth->execute($parent) or return $$locale{S_SQLFAIL};
                     my $threadRow = $sth->fetchrow_hashref();
                     if ( $threadRow and $$threadRow{autosage} != 1 ) {
+                        # store the thread OP timestamp value
+                        # will be used if no non-sage reply is found
+                        my $lasthit = $$threadRow{timestamp};
                         my $sth2;
                         $sth2 =
                           $dbh->prepare( "SELECT * FROM "
                               . $$cfg{SQL_TABLE}
-                              . " FORCE INDEX(cover) WHERE num=? OR parent=? ORDER BY timestamp DESC"
+                              . " WHERE parent=? ORDER BY timestamp DESC;"
                           ) or return $$locale{S_SQLFAIL};
-                        $sth2->execute( $parent, $parent );
+                        $sth2->execute($parent) or return $$locale{S_SQLFAIL};
                         my $postRow;
                         my $foundLastNonSage = 0;
                         while ( ( $postRow = $sth2->fetchrow_hashref() )
                             and $foundLastNonSage == 0 )
                         {
-                        # takes into account, that threads can have SAGE and are of course counted as
-                        # normal post! this is a special case where we accept sage and the timestamp as valid
-                            if (  !( $$postRow{email} =~ /sage/i )
-                                or ( $$postRow{parent} == 0 ) )
-                            {
-                                $foundLastNonSage = $$postRow{timestamp};
-                            }
+                            $foundLastNonSage = $$postRow{timestamp}
+                                if ($$postRow{email} !~ /sage/i);
                         }
-                        if ($foundLastNonSage) {
-                            my $upd;
-                            $upd =
-                              $dbh->prepare( "UPDATE "
-                                  . $$cfg{SQL_TABLE}
-                                  . " SET lasthit=? WHERE parent=? OR num=?;" )
-                              or return $$locale{S_SQLFAIL};
-                            $upd->execute( $foundLastNonSage, $parent, $parent )
-                              or return ($$locale{S_SQLFAIL} . " " . $dbh->errstr() );
-                            $upd->finish();
-                        }
+
+                        # var now contains the timestamp we have to update lasthit to
+                        $lasthit = $foundLastNonSage if ($foundLastNonSage);
+
+                        my $upd =
+                          $dbh->prepare( "UPDATE "
+                              . $$cfg{SQL_TABLE}
+                              . " SET lasthit=? WHERE parent=? OR num=?;" )
+                          or make_error($$locale{S_SQLFAIL});
+                        $upd->execute( $lasthit, $parent, $parent )
+                          or return $$locale{S_SQLFAIL} . " " . $dbh->errstr();
                     }
                 }
             }
@@ -2587,6 +2628,7 @@ sub delete_post {
     }
     $sth->finish;
 
+    $postinfo = "Post not found" unless $postinfo;
     return $postinfo;
 }
 
@@ -2612,8 +2654,8 @@ sub make_rss { # hater ktory droczit na perenosy skobok sosi xD
     $sth->finish;
     make_rss_header();
     my $out = $tpl->rss({
-        items=>\@items,
-        pub_date=>make_date(time, "http"), # Date RSS was generated.
+        items => \@items,
+        pub_date => make_date(time, "http"), # Date RSS was generated.
         cfg => $cfg,
         locale => $locale
     });
@@ -2719,12 +2761,12 @@ sub make_admin_ban_edit # generating ban editing window
     $sth->finish;
     make_http_header();
     print $tpl->edit_window({
-        admin=>$admin,
+        admin => $admin,
         modclass => $session[1],
-        hash=>\@hash,
-        stylesheets=>get_stylesheets(),
-        cfg=>$cfg,
-        locale=>$locale
+        hash => \@hash,
+        stylesheets => get_stylesheets(),
+        cfg => $cfg,
+        locale => $locale
     });
 }
 
@@ -2755,7 +2797,7 @@ sub make_admin_ban_panel {
         $$row{rowtype} = @bans % 2 + 1;
         if ($$row{type} eq 'ipban' or $$row{type} eq 'whitelist') {
             my $flag = get_geolocation(dec_to_dot($$row{ival1}));
-            $flag = 'UNKNOWN' if ($flag eq 'unk');
+            $flag = 'UNKNOWN' if ($flag eq 'unk' or $flag eq 'A1' or $flag eq 'A2');
             $$row{flag} = $flag;
         }
         push @bans, $row;
@@ -2815,21 +2857,21 @@ sub make_admin_orphans {
     my @t_orph;
 
     foreach my $file (@orph_files) {
-        my $result = stat($$cfg{SELFPATH}.'/'.$file);
+        my @result = stat($$cfg{SELFPATH}.'/'.$file);
         my $entry = {};
         $$entry{rowtype} = @f_orph % 2 + 1;
         $$entry{name} = $file;
-        $$entry{modified} = $$result[9];
-        $$entry{size} = $$result[7];
+        $$entry{modified} = $result[9];
+        $$entry{size} = $result[7];
         push(@f_orph, $entry);
     }
 
     foreach my $thumb (@orph_thumbs) {
-        my $result = stat($$cfg{SELFPATH}.'/'.$thumb);
+        my @result = stat($$cfg{SELFPATH}.'/'.$thumb);
         my $entry = {};
         $$entry{name} = $thumb;
-        $$entry{modified} = $$result[9];
-        $$entry{size} = $$result[7];
+        $$entry{modified} = $result[9];
+        $$entry{size} = $result[7];
         push(@t_orph, $entry);
     }
 
@@ -3035,7 +3077,7 @@ sub edit_admin_entry # subroutine for editing entries in the admin table
     
     make_http_forward( get_script_name() . "?task=bans&section=".$$cfg{SELFPATH});
     # make_http_header();
-    # print encode_string(EDIT_SUCCESSFUL->(stylesheets=>get_stylesheets(),cfg=>$cfg));
+    # print encode_string(EDIT_SUCCESSFUL->(stylesheets => get_stylesheets(),cfg => $cfg));
 }
 
 sub remove_admin_entry {
@@ -3053,56 +3095,31 @@ sub remove_admin_entry {
     make_http_forward( get_script_name() . "?task=bans&section=".$$cfg{SELFPATH});
 }
 
-sub delete_all {
-    my ($admin, $ip, $mask, $go) = @_;
-    my ($sth, $row, @posts);
-    my @session = check_password( $admin, '' );
+sub make_expiration_date {
+    my ($expires,$time)=@_;
 
-    unless($go and $ip) # do not allow empty IP (as it would delete anonymized (staff) posts)
-    {
-        my ($pcount, $tcount);
-
-        $sth = $dbh->prepare("SELECT count(`num`) FROM ".$$cfg{SQL_TABLE}." WHERE ip=? OR ip & ? = ? & ?;") or make_error($$locale{S_SQLFAIL});
-        $sth->execute($ip, $mask, $ip, $mask) or make_error($$locale{S_SQLFAIL});
-        $pcount = ($sth->fetchrow_array())[0];
-        $sth->finish;
-
-        $sth = $dbh->prepare("SELECT count(`num`) FROM ".$$cfg{SQL_TABLE}." WHERE parent=0 AND (ip=? OR ip & ? = ? & ?);") or make_error($$locale{S_SQLFAIL});
-        $sth->execute($ip, $mask, $ip, $mask) or make_error($$locale{S_SQLFAIL});
-        $tcount = ($sth->fetchrow_array())[0];
-        $sth->finish;
-
-        make_http_header();
-        print $tpl->delete_panel({
-            admin=>$admin,
-            modclass=>$session[1],
-            ip=>$ip,
-            mask=>$mask,
-            posts=>$pcount,
-            threads=>$tcount,
-            cfg=>$cfg,
-            locale=>$locale,
-            stylesheets=>get_stylesheets()
-        });
-    }
+    if($use_parsedate) { $expires=parsedate($expires); } # Sexy date parsing
     else
     {
-        $sth =
-          $dbh->prepare( "SELECT num FROM " . $$cfg{SQL_TABLE} . " WHERE ip<>0 AND ip IS NOT NULL ip=? OR ip & ? = ? & ?);" )
-          or make_error($$locale{S_SQLFAIL});
-        $sth->execute( $ip, $mask, $ip, $mask ) or make_error($$locale{S_SQLFAIL});
-        while ( $row = $sth->fetchrow_hashref() ) { push( @posts, $$row{num} ); }
-        $sth->finish;
+        my ($date)=grep { $$_{label} eq $expires } @{$$cfg{BAN_DATES}};
 
-        log_action("delall",$ip,$admin);
-        delete_stuff('', 0, $admin, 1, 0, @posts);
+        if(defined $date->{time})
+        {
+            if($date->{time}!=0) { $expires=$time+$date->{time}; } # Use a predefined expiration time
+            else { $expires=0 } # Never expire
+        }
+        elsif($expires!=0) { $expires=$time+$expires } # Expire in X seconds
+        else { $expires=0 } # Never expire
     }
+
+    return $expires;
 }
 
 sub check_password {
     my ( $admin, $password, $mode ) = @_;
+    my $moder = check_moder($admin, $mode);
     my @class = qw/admin mod/;
-    my @adm = ('Admin', @class[0]);
+    my @adm = ('Admin', $class[0]);
 
     # return @adm if ( $admin eq ADMIN_PASS );
     return @adm if ( $admin eq crypt_password(ADMIN_PASS) );
@@ -3111,8 +3128,7 @@ sub check_password {
         return @adm if ( $admin eq crypt_password($password) );
     }
     else {
-        my $moder = check_moder($admin, $mode);
-        return ($moder, @class[1]) if ( $moder ne 0 );
+        return ($moder, $class[1]) if ( $moder ne 0 );
     }
 
     make_error($$locale{S_WRONGPASS}) if($mode ne 'silent');
@@ -3148,26 +3164,6 @@ sub check_moder {
 sub get_moder_nick {
     my ($pass) = @_;
     first { crypt_password( $moders->{$_}{password} ) eq $pass } keys $moders;
-}
-
-sub make_expiration_date {
-    my ($expires,$time)=@_;
-
-    if($use_parsedate) { $expires=parsedate($expires); } # Sexy date parsing
-    else
-    {
-        my ($date)=grep { $$_{label} eq $expires } @{$$cfg{BAN_DATES}};
-
-        if(defined $date->{time})
-        {
-            if($date->{time}!=0) { $expires=$time+$date->{time}; } # Use a predefined expiration time
-            else { $expires=0 } # Never expire
-        }
-        elsif($expires!=0) { $expires=$time+$expires } # Expire in X seconds
-        else { $expires=0 } # Never expire
-    }
-
-    return $expires;
 }
 
 #
@@ -3260,7 +3256,7 @@ sub edit_post {
     my ($sth,$postfix);
 
     my @neko = check_password($admin,'');
-    make_error($$locale{S_NOPRIVILEGES}) if( $no_format and @neko[1] ne 'admin' );
+    make_error($$locale{S_NOPRIVILEGES}) if( $no_format and $neko[1] ne 'admin' );
 
     my $post=get_post($num) or make_error(sprintf "Post %d doesn't exist",$num);
     my $adminpost  = $capcode ? 1 : undef;
@@ -3333,7 +3329,7 @@ sub log_action {
         $dbh->begin_work();
 
         $sth=$dbh->prepare("INSERT INTO ".$$cfg{SQL_LOG_TABLE}." VALUES(null,?,?,?,?,?,?);") or make_error($dbh->errstr);
-        $sth->execute(@neko[0],$action,$object,($$cfg{SELFPATH}),$time,dot_to_dec(get_remote_addr())) or make_error($dbh->errstr);
+        $sth->execute($neko[0],$action,$object,($$cfg{SELFPATH}),$time,dot_to_dec(get_remote_addr())) or make_error($dbh->errstr);
         $sth->finish;
 
         $dbh->commit();
@@ -3388,7 +3384,7 @@ sub make_view_log {
 
     make_http_header();
     print $tpl->staff_log({
-        admin=>$admin,
+        admin => $admin,
         modclass => $session[1],
         log => \@log,
         pages => \@pages,
@@ -3426,12 +3422,12 @@ sub clear_log {
 
 sub make_http_header {
     my ($not_found) = @_;
-    print $query->header(-type=>'text/html', -expires => '-1d',  -status=>'404 Not found', -charset=>CHARSET) if ($not_found);
-    print $query->header(-type=>'text/html', -expires => '-1d', -charset=>CHARSET) if (!$not_found);
+    print $query->header(-type=>'text/html', -expires => '-1d',  -status=>'404 Not found', -charset => CHARSET) if ($not_found);
+    print $query->header(-type=>'text/html', -expires => '-1d', -charset => CHARSET) if (!$not_found);
 }
 
 sub make_rss_header {
-    print $query->header(-type=>'application/rss+xml', -charset=>CHARSET);
+    print $query->header(-type=>'application/rss+xml', -charset => CHARSET);
 }
 
 sub make_json_header {
@@ -3477,11 +3473,10 @@ sub make_error {
 
 sub make_ban {
     my ($ip, $reason, $mode, @bans) = @_;
-    my $out;
 
     make_http_header();
     if ( $mode == 1 ) {
-        $out = $tpl->error({
+        print $tpl->error({
                 ip             => $ip,
                 dnsbl          => $reason,
                 error_page     => 'HTTP 403 - Proxy found',
@@ -3493,7 +3488,7 @@ sub make_ban {
         });
     }
     else {
-        $out = $tpl->error({
+        print $tpl->error({
                 bans           => \@bans,
                 error_page     => 'Banned',
                 #error_subtitle => 'GEH ZUR&Uuml;CK NACH KRAUTKANAL!',
@@ -3504,10 +3499,6 @@ sub make_ban {
                 locale         => $locale
         });
     }
-
-    $out =~ s/^\s+//; # remove whitespace at the beginning
-    $out =~ s/^\s+\n//mg; # remove empty lines
-    print $out;
 
     eval { next; };
     if ($@) {
@@ -3534,7 +3525,7 @@ sub expand_filename {
 
     my ($self_path) = $ENV{SCRIPT_NAME} =~ m!^(.*/)[^/]+$!;
     $self_path = 'https://'.$ENV{SERVER_NAME}.$self_path if ($force_http);
-    return decode('utf-8', $self_path) . $$cfg{SELFPATH} . '/' . $filename;
+    return decode(CHARSET, $self_path) . $$cfg{SELFPATH} . '/' . $filename;
 }
 
 sub expand_image_filename {
@@ -3658,7 +3649,10 @@ sub get_remote_addr {
     return ($ENV{HTTP_CF_CONNECTING_IP} || $ENV{HTTP_X_REAL_IP} || $ENV{REMOTE_ADDR});
 }
 
-# HUIPIZDA
+#
+# Config loaders
+#
+
 sub fetch_config($)
 {
     my ($boardSection) = @_;
@@ -3682,7 +3676,8 @@ sub get_settings {
         $file = './lib/config/trips.pl';
     }
     elsif ( $dodo =~ /locale_(ru|en|de)/ ) {
-        $file = "./lib/config/strings_$1.pl";
+        my $dildo = $1 ? $1 : 'en'; # fall back to english if shit happens
+        $file = "./lib/config/strings_${dildo}.pl";
     }
     else {
         $file = './lib/config/settings.pl';
@@ -3705,7 +3700,6 @@ sub get_settings {
 #
 # Database utils
 #
-
 
 sub init_database {
     my ($sth);
@@ -3919,7 +3913,7 @@ sub table_exists {
 }
 
 sub count_maxreplies {
-    my ($row)=@_;
+    my ($row, $images)=@_;
 
     my $max_replies = $$cfg{REPLIES_PER_THREAD};
     # in case of a locked thread use custom number of replies

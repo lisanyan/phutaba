@@ -1,7 +1,5 @@
 <include %TMPLDIR%/head.tpl>
 <perleval %isAdmin=$isAdmin; %thread=$thread />
-<if !$locked or $isAdmin>
-<if !$$cfg{DISABLE_NEW_THREADS} or $thread or $isAdmin>
 <if $postform>
 	<div class="postarea">
 	<form id="postform" action="<var %self>" method="post" enctype="multipart/form-data">
@@ -77,10 +75,7 @@
 	</table>
 	</form>
 	</div>
-	<script type="text/javascript">set_inputs("postform")</script>
 
-</if>
-</if>
 </if>
 
 <if $locked && !$isAdmin>
@@ -153,5 +148,6 @@
 
 </form>
 
-<script type="text/javascript">set_delpass("delform")</script>
+<if $postform><div class="postarea" id="postform2"></div></if>
+
 <include %TMPLDIR%/foot.tpl>

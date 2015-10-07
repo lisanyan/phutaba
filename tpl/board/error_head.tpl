@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-	<title><var $$cfg{TITLE}> &raquo; <var $error_page></title>
 	<meta charset="<const CHARSET>" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title><var $$cfg{TITLE}> &raquo; <var $error_page></title>
 	<link rel="stylesheet" type="text/css" href="/static/css/phutaba.css" />
 	<link rel="shortcut icon" type="image/x-icon" href="/img/favicon.ico" />
 	<link rel="icon" type="image/x-icon" href="/img/favicon.ico" />

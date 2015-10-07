@@ -274,14 +274,19 @@ function scriptCSS() {
 }
 
 // "Notifications"
-function showMessage(text, delay, hold) {  // spizdil s inacha
+function showMessage(text, delay) {  // spizdil s inacha
+	var message = $j('#message');
 	if (delay == null) delay = 1000;
-	if ($j('#message').get() == '') {
+	if (message.get() == '') {
 		$j('body').children().last().after('<div id="message" class="post"></div>');
-		$j('#message').hide();
+		message = $j('#message'); // ugly hack
+		message.hide();
 	}
-	$j('#message').html("<span class=\"postername\">" + text + "</span>");
-	$j('#message').fadeIn(150).delay(delay).fadeOut(300);
+	// var top = ($j(window).height() - message.outerHeight()) / 2;
+	var left = ($j(window).width() - message.outerWidth()) / 2;
+	message.css({left: (left > 0 ? left : 0)+'px'});
+	message.html("<span class=\"postername\">" + text + "</span>");
+	message.fadeIn(150).delay(delay).fadeOut(300);
 }
 
 // Js settings
@@ -293,15 +298,30 @@ function toggleNavMenu(node) {
   }
 }
 
+function moveForm(spadre) {
+	if (spadre.length && window.thread_id) {
+		spadre.detach().appendTo('#postform2');
+		$j('.postarea').prev('hr').detach().prependTo(spadre.parent());
+		$j('<p>').css('padding', '1px').prependTo(spadre.parent());
+	}
+}
+
 function eventLoader() {
-  $j('#navmenu0').click(toggleNavMenu);
-  $j('#navmenu1').click(toggleNavMenu);
+  $j('#navmenu0, #navmenu1').click(toggleNavMenu);
   $j('#tglmommy').click(toggleMommy);
+
   $j('#tglcontext').click(function(){
 	Settings.set('context', +this.checked);
 	showMessage(consts[lang].done);
   });
+
+  $j('#tglform').click(function(){
+	Settings.set('bottomform', +this.checked);
+	showMessage(consts[lang].done);
+  });
+
   $id('tglcontext').checked = Settings.get('context') == 1 ? "checked" : "";
+  $id('tglform').checked = Settings.get('bottomform') == 1 ? "checked" : "";
 }
 
 // Main load function.
@@ -317,6 +337,8 @@ var slowload = function() {
 	titleNewPosts();
 	getNewPosts();
   }
+  if (Settings.get('bottomform') == 1)
+  	moveForm($j('#postform'));
 }
 
 $j(document).ready(slowload);

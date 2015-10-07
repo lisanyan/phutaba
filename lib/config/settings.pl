@@ -3,14 +3,16 @@ my (%settings, %boards);
 use utf8;
 
 # System config
-$settings{SQL_TABLE_IMG} = 'board_img';			# Table (NOT DATABASE) used by image board for secondary images
-$settings{SQL_TABLE} = 'board';			# Table (NOT DATABASE) used by image board
+$settings{SQL_TABLE_IMG} = 'board_img';		# Table (NOT DATABASE) used by image board for secondary images
+$settings{SQL_TABLE} = 'board';				# Table (NOT DATABASE) used by image board
 $settings{SQL_ADMIN_TABLE} = 'admin';		# Table used for admin information
 $settings{SQL_LOG_TABLE} = 'modlog';		# Table used for mod log
+$settings{BOARD_LOCALE} = 'locale_ru';		# Locale used for board, currently available translations: (ru, en, de)
 $settings{BOARD_ENABLED} = 1;
 $settings{DISABLE_NEW_THREADS} = 0;
 $settings{ENABLE_WEBSOCKET_NOTIFY} = 0;
 $settings{ENABLE_HIDE_THREADS} = 1;
+$settings{ENABLE_AFMOD} = 1;
 
 # Page look
 $settings{ADMIN_EMAIL} = 'admin@02ch.in';
@@ -23,7 +25,7 @@ $settings{SHOWTITLETXT} = 1;				# Show TITLE at top (1: yes  0: no)
 $settings{SHOWTITLEIMG} = 0;				# Show image at top (0: no, 1: single, 2: rotating)
 $settings{TITLEIMG} = 'title.jpg';			# Title image (point to a script file if rotating)
 $settings{ENABLE_BANNERZ} = 1;
-$settings{SSL_ICON} = '/img/icons/ssl.png';
+$settings{SSL_ICON} = ''; # '/img/icons/ssl.png';
 $settings{FAVICON} = '';			# Favicon.ico file
 $settings{HOME} = '/';					# Site home directory (up one level by default)
 $settings{IMAGES_PER_PAGE} = 12;			# Images per page
@@ -177,16 +179,16 @@ $settings{DNSBL_INFOS} =
 	[
 		[ 'tor.dnsbl.sectoor.de', ['127.0.0.1'] ],
 		[ 'torexit.dan.me.uk', ['127.0.0.100'] ],
-		# [ 'b.barracudacentral.org', ['127.0.0.2'] ], # don't use these, too many false-positives (or i'm just unlucky?)
-		# [ 'zen.spamhaus.org', ['127.0.0.2', '127.0.0.3', '127.0.0.4'] ],
+		# [ 'b.barracudacentral.org', ['127.0.0.2'] ],
 		[ 'dnsbl.dronebl.org', ['127.0.0.1', '127.0.0.8', '127.0.0.9', '127.0.0.14'] ],
+		# [ 'zen.spamhaus.org', ['127.0.0.2', '127.0.0.3', '127.0.0.4'] ],
 	];
 
 # board-specific config
-$boards{b} = {
+$boards{b} = { # sample
 	%settings,
-	BOARD_NAME => 'Random',
-	BOARD_DESC => 'Dead board',
+	BOARD_NAME => 'Бред',
+	BOARD_DESC => 'Мертвечина',
 	SQL_TABLE => 'b_comments',
 	SQL_TABLE_IMG => 'b_img',
 	MAX_THREADS => 250,
@@ -195,11 +197,15 @@ $boards{b} = {
 	SHOW_COUNTRIES => 1,
 	ADDITIONAL_RULES => q{<li><strong>Don't be a baka.</strong></li>}
 };
-$boards{mg} = { # Example
+$boards{d} = {
 	%settings,
-	BOARD_NAME => 'Magic',
-	SQL_TABLE => 'mg_comments',
-	SQL_TABLE_IMG => 'mg_img',
+	BOARD_NAME => 'Отделение',
+	SQL_TABLE => 'd_comments',
+	SQL_TABLE_IMG => 'd_img',
+	ALLOW_TEXT_REPLIES => 1,
+	ALLOW_TEXTONLY => 1,
+	ALLOW_IMAGE_REPLIES => 0,
+	ALLOW_IMAGES => 0,
+	ADDITIONAL_RULES => q{<li>Обсуждение работы борды.</li>}
 };
-
 \%boards;

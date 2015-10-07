@@ -10,11 +10,11 @@
 <if $noformat><input type="hidden" name="noformat" value="on" /></if>
 
 <table><tbody>
-<tr><td class="postblock"><var $$locale{S_NAME}></td><td><input type="text" name="field1" size="28" value="<var Wakaba::clean_string($name)>" />
+<tr><td class="postblock"><var $$locale{S_NAME}></td><td><input type="text" name="field1" size="28" value="<var $name>" />
 <if $trip><label><input type="checkbox" name="notrip" value="yes" /> Kill trip (<var $trip>)</label></if>
 </td></tr>
 <tr><td class="postblock"><label for="sage"><var $$locale{S_SAGE}></label></td>
-<td><label><input type="checkbox" name="field2" value="sage" id="sage" <if $sage>checked="checked"</if> /> <var $$locale{S_SAGEDESC}></label></td></tr>
+<td><label><input type="checkbox" name="field2" value="sage" id="sage" <if $email>checked="checked"</if> /> <var $$locale{S_SAGEDESC}></label></td></tr>
 <tr><td class="postblock"><var $$locale{S_SUBJECT}></td><td><input type="text" name="field3" size="35" value="<var $subject>" />
 <input type="submit" value="<var $$locale{S_SUBMIT}>" /></td></tr>
 <tr><td class="postblock"><var $$locale{S_COMMENT}></td>

@@ -15,7 +15,6 @@ BEGIN {
 	die S_NOSQL    unless ( defined &SQL_PASSWORD );
 
 	eval "use constant USE_TEMPFILES => 1" unless ( defined &USE_TEMPFILES );
-	eval "use constant ENABLE_AFMOD => 1" unless ( defined &ENABLE_AFMOD );
 
 	eval "use constant ENABLE_CAPTCHA => 1" unless ( defined &ENABLE_CAPTCHA );
 	eval "use constant SQL_CAPTCHA_TABLE => 'captcha'" unless ( defined &SQL_CAPTCHA_TABLE );

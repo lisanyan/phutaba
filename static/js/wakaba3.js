@@ -211,6 +211,7 @@ function del_file_input(sender, max) {
 }
 
 function insert(text) {
+	if (typeof document.forms.postform == 'undefined') return false;
 	var textarea = document.forms.postform.nya4;
 	if (textarea) {
 		if (textarea.createTextRange && textarea.caretPos) { // IE
@@ -269,7 +270,7 @@ function expand(el, org_width, org_height, thumb_width, thumb_height, thumb, ext
 	var img = ( el.firstElementChild || el.children[0] );
 	var org = el.href;
 	var parent = el.parentNode;
-	var post = img.parentNode.parentNode.parentNode.parentNode.parentNode.parentNode; // lol parentNode hell
+	var post = img.parentNode.parentNode.parentNode.parentNode.parentNode.parentNode.parentNode; // lol parentNode hell
 
 	if (ext=='WEBM' || ext=='MP4') { // Anal workaround on expanding videos
     	var orightml = parent.innerHTML;

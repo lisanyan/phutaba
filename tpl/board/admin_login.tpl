@@ -1,4 +1,5 @@
 <include %TMPLDIR%head.tpl>
+<hr />
 <div align="center"><form action="<var %self>" method="post">
 <input type="hidden" name="section" value="<var $$cfg{SELFPATH}>" />
 <input type="hidden" name="task" value="admin" />

@@ -18,30 +18,6 @@ BEGIN {
 
 return 1 if (caller);
 
-my $locale = get_locale("locale_ru"); # edit this to change locale
-
-sub get_locale {
-    my ($dodo) = @_;
-    my ($settings, $file);
-    
-    if ( $dodo =~ /locale_(ru|en|de)/g ) {
-        $file = "./lib/config/strings_$1.pl";
-    }
-
-    # Grab code from config file and evaluate.
-    open (MODCONF, $file) or return 0; # Silently fail if we cannot open file.
-    binmode MODCONF, ":utf8"; # Needed for files using non-ASCII characters.
-
-    my $board_options_code = do { local $/; <MODCONF> };
-    $settings = eval $board_options_code; # Set up hash.
-
-    # Exception for bad config.
-    close MODCONF and return 0 if ($@);
-    close MODCONF;
-    
-    \%$settings;
-}
-
 my $font_height = 8;
 my %font        = (
     a => [
@@ -77,54 +53,103 @@ my %font        = (
     ' ' => [3],
 );
 
-my $query    = CGI->new;
-my $key      = ( $query->param("key") or 'default' );
-my $selector = ( $query->param("selector") or ".captcha" );
-my $style    = ( $query->cookie("wakabastyle"));
-my $board    = ( $query->param("board") or 'default');
-# my $ip = $ENV{HTTP_X_REAL_IP};
-# my $ip = $ENV{HTTP_CF_CONNECTING_IP};
-# $ip = $ENV{REMOTE_ADDR} if ($ip eq undef); # for crazy people who expose their server to the internet
-my $ip = ($ENV{HTTP_CF_CONNECTING_IP} || $ENV{HTTP_X_REAL_IP} || $ENV{REMOTE_ADDR});
+# sub main {
+    my $query    = CGI->new;
+    my $key      = ( $query->param("key") or 'default' );
+    my $selector = ( $query->param("selector") or ".captcha" );
+    my $style    = ( $query->cookie("wakabastyle"));
+    my $board    = ( $query->param("board") or 'default');
+    my $ip = ($ENV{HTTP_CF_CONNECTING_IP} || $ENV{HTTP_X_REAL_IP} || $ENV{REMOTE_ADDR});
 
-#my @foreground = find_stylesheet_color( $style, $selector );
+    my $settings = fetch_config($board);
+    my $locale = get_settings($$settings{BOARD_LOCALE}); # edit this to change locale
 
-my @foreground = ( 0x70, 0x6b, 0x5e );
-my @background = ( 0xff, 0xff, 0xff ); #( 0xff, 0xff, 0xff );
+    #my @foreground = find_stylesheet_color( $style, $selector );
 
-my $dbh =
-  DBI->connect( SQL_DBI_SOURCE, SQL_USERNAME, SQL_PASSWORD,
-    { AutoCommit => 1 } )
-  or die $$locale{S_SQLCONF};
-init_captcha_database($dbh)
-  unless ( table_exists_captcha( $dbh, SQL_CAPTCHA_TABLE ) );
+    my @foreground = ( 0x70, 0x6b, 0x5e );
+    my @background = ( 0xff, 0xff, 0xff ); #( 0xff, 0xff, 0xff );
 
-my ( $word, $timestamp ) = get_captcha_word( $dbh, $ip, $key, $board );
+    my $dbh =
+      DBI->connect( SQL_DBI_SOURCE, SQL_USERNAME, SQL_PASSWORD,
+        { AutoCommit => 1 } )
+      or die $$locale{S_SQLCONF};
+    init_captcha_database($dbh)
+      unless ( table_exists_captcha( $dbh, SQL_CAPTCHA_TABLE ) );
 
-if ( !$word ) {
-    $word      = make_word();
-    $timestamp = time();
-    save_captcha_word( $dbh, $ip, $key, $word, $timestamp, $board );
-}
+    my ( $word, $timestamp ) = get_captcha_word( $dbh, $ip, $key, $board );
 
-srand $timestamp;
+    if ( !$word ) {
+        $word      = make_word();
+        $timestamp = time();
+        save_captcha_word( $dbh, $ip, $key, $word, $timestamp, $board );
+    }
 
-print $query->header(
-    -type => 'image/gif',
+    srand $timestamp;
 
-    #	-expires=>'+'.($timestamp+(CAPTCHA_LIFETIME)-time()),
-    #	-expires=>'now',
-);
+    print $query->header(
+        -type => 'image/gif',
 
-binmode STDOUT;
+        #	-expires=>'+'.($timestamp+(CAPTCHA_LIFETIME)-time()),
+        #	-expires=>'now',
+    );
 
-make_image($word);
+    binmode STDOUT;
 
-$dbh->disconnect();
+    make_image($word);
+
+    $dbh->disconnect();
+# }
 
 #
 # End of main code
 #
+
+#
+# Config loaders
+#
+
+sub fetch_config($)
+{
+    my ($boardSection) = @_;
+    my $settings = get_settings('settings');
+
+    unless ($$settings{$boardSection}) {
+        $$settings{$boardSection}{NOTFOUND} = 1;
+    }
+
+    $$settings{$boardSection};
+}
+
+sub get_settings {
+    my ($dodo) = @_;
+    my ($settings, $file);
+    
+    if ( $dodo eq 'mods' ) {
+        $file = './lib/config/moders.pl';
+    }
+    elsif ( $dodo eq 'trips' ) {
+        $file = './lib/config/trips.pl';
+    }
+    elsif ( $dodo =~ /locale_(ru|en|de)/ ) {
+        $file = "./lib/config/strings_$1.pl";
+    }
+    else {
+        $file = './lib/config/settings.pl';
+    }
+
+    # Grab code from config file and evaluate.
+    open (MODCONF, $file) or return 0; # Silently fail if we cannot open file.
+    binmode MODCONF, ":utf8"; # Needed for files using non-ASCII characters.
+
+    my $board_options_code = do { local $/; <MODCONF> };
+    $settings = eval $board_options_code; # Set up hash.
+
+    # Exception for bad config.
+    close MODCONF and return 0 if ($@);
+    close MODCONF;
+    
+    \%$settings;
+}
 
 #
 # Code generation

@@ -1,7 +1,7 @@
 package Pomf;
 
 use strict;
-use warnings;
+# use warnings;
 use LWP;
 
 use Exporter qw(import);
@@ -25,7 +25,7 @@ sub pomf_upload
 	}
 }
 
-sub pomf_sender($) {
+sub pomf_sender {
 	my ($file,$post)=@_;
 	my ($data, $rdata, $request, $return);
 

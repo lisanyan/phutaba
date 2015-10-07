@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<title><var $$cfg{TITLE}> &raquo; <if $title><var $title></if><if !$title>/<var $$cfg{SELFPATH}>/ - <var $$cfg{BOARD_NAME}></if></title>
 <meta charset="<const CHARSET>" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title><var $$cfg{TITLE}> &raquo; <if $title><var $title></if><if !$title>/<var $$cfg{SELFPATH}>/ - <var $$cfg{BOARD_NAME}></if></title>
 
 <link rel="shortcut icon" href="/img/favicon.ico" />
 <link rel="stylesheet" type="text/css" href="/static/css/phutaba.css" />
@@ -11,7 +12,7 @@
 <link rel="alternate" type="application/rss+xml" title="RSS" href="<var Wakaba::expand_filename("board.rss", 1)>" />
 
 <if $$cfg{STYLESHEET}><link rel="stylesheet" type="text/css" href="<var $$cfg{STYLESHEET}>" /></if>
-<if Wakaba::test_afmod()><link rel="stylesheet" type="text/css" href="/static/css/af.css" /></if>
+<if Wakaba::test_afmod($$cfg{ENABLE_AFMOD})><link rel="stylesheet" type="text/css" href="/static/css/af.css" /></if>
 
 <link rel="shortcut icon" type="image/x-icon" href="/img/favicon.ico" />
 <link rel="icon" type="image/x-icon" href="/img/favicon.ico" />
@@ -24,9 +25,6 @@
 <meta name="application-name" content="<var $$cfg{TITLE}> /<var $$cfg{SELFPATH}>/" />
 <meta name="apple-mobile-web-app-title" content="<var $$cfg{TITLE}>" />
 </if>
-
-<script type="text/javascript">var style_cookie="<var $$cfg{STYLE_COOKIE}>";</script>
-<script type="text/javascript" src="/static/js/wakaba3.js"></script>
 
 <style type="text/css">
 <var $$cfg{ADDITIONAL_CSS}>
@@ -94,6 +92,7 @@
   <hr />
 	[<a id="tglmommy" href="#" title="Alt+N/Shift+Alt+N(OPERA)">NSFW</a>]
 	[<label><input type="checkbox" value="" id="tglcontext"><var $$locale{S_JS_CONTEXT}></label>]
+	[<label><input type="checkbox" value="" id="tglform"><var $$locale{S_JS_BOTTOMFORM}></label>]
   <hr />
 
   <div class="settingsDone">
@@ -104,8 +103,6 @@
 
 <div class="content">
 
-<script type="text/javascript" src="/static/vendor/wz_tooltip.js"></script>
-
 <nav>
 	<ul class="menu">
 	<!-- we do not need nav_boards_admin anymore -->
@@ -113,7 +110,6 @@
 	</ul>
 
 	<ul class="menu right">
-	<!-- <li><a href="#" onclick="show_el('s-styles'); return false;"><var $$locale{S_JS_STYLES}></a></li> -->
 	<li><a href="javascript:void(0)" id="navmenu0"><var $$locale{S_OPTIONS}></a></li>
 	<li><a href="<var %self>?task=search&amp;section=<var $$cfg{SELFPATH}>"><var $$locale{S_SEARCH}></a></li>
 	<include tpl/nav_pages.html>
@@ -132,4 +128,4 @@
 	</div>
 </header>
 
-<if !$$cfg{DISABLE_NEW_THREADS} or $isAdmin or $thread or $admin><hr /></if>
+<if $postform or $locked><hr /></if>
