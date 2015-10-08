@@ -1866,7 +1866,7 @@ sub process_file {
     $md5ctx = Digest::MD5->new unless ($@);
 
     # copy file
-    open( OUTFILE, ">>$filename" ) or make_error(S_NOTWRITE);
+    open( OUTFILE, ">>$filename" ) or make_error(S_NOTWRITE . " ($filename)");
     binmode OUTFILE;
     while ( read( $file, $buffer, 1024 ) )    # should the buffer be larger?
     {
@@ -2418,14 +2418,17 @@ sub make_admin_orphans {
 
 sub move_files($$){
 	my ($admin, @files) = @_;
+	my ($source, $target);
 
 	check_password($admin, ADMIN_PASS);
 
     foreach my $file (@files) {
 		$file = clean_string($file);
 		if ($file =~ m!^[a-zA-Z0-9]+/[a-zA-Z0-9-]+\.[a-zA-Z0-9]+$!) {
-			rename(BOARD_IDENT . '/' . $file, BOARD_IDENT . '/' . ORPH_DIR . $file)
-				or make_error(S_NOTWRITE . ' (' . decode_string(ORPH_DIR . $file, CHARSET) . ')');
+			$source = BOARD_IDENT . '/' . $file;
+			$target = BOARD_IDENT . '/' . ORPH_DIR . $file;
+			rename($source, $target)
+				or make_error(S_NOTWRITE . ' (' . decode_string($target, CHARSET) . ')');
 		}
 	}
 
@@ -2542,7 +2545,7 @@ sub add_admin_entry {
 		if ($type eq 'ipban') {
 			if ($sval1 =~ /\d+/) {
 				$sval1 += $time;
-				$expires = get_date($sval1);
+				$expires = make_date($sval1, 'phutaba');
 			} else { $sval1 = ""; }
 		}
 

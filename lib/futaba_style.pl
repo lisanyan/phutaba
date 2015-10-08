@@ -528,7 +528,7 @@ use constant ERROR_TEMPLATE => compile_template(
  <if $reason>mit folgender Begr&uuml;ndung gesperrt:<br /><strong><var $reason></strong></if>
  <if !$reason>gesperrt.</if>
  <br /><br />Diese Sperrung 
- <if $expires>l&auml;uft am <strong><var get_date($expires)></strong> ab.</if>
+ <if $expires>l&auml;uft am <strong><var make_date($expires, 'phutaba')></strong> ab.</if>
  <if !$expires>gilt f&uuml;r unbestimmte Zeit.</if>
  <br />
 </loop>

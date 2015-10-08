@@ -27,7 +27,7 @@ use constant POST_VIEW_INCLUDE => q{
 		<span class="subject"><var $subject></span>
         <span class="postername"><var $name><if $trip><span class="tripcode"><var $trip></span></if></span>
 		<if $adminpost><span class="teampost">## Team ##</span></if>
-		<span class="date desktop"><var get_date($timestamp)></span>
+		<span class="date desktop"><var make_date($timestamp, 'phutaba')></span>
 		<span class="date mobile"><var make_date($timestamp, '2ch')></span>
 	</label>
 

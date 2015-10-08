@@ -4,7 +4,6 @@ use strict;
 
 use Time::Local;
 use Socket;
-use DateTime;          # Used in sub get_date()
 use Image::ExifTool;   # Extract meta info from posted files
 use Geo::IP;           # Location info on IP addresses
 use Net::IP qw(:PROC); # IPv6 conversions
@@ -1193,7 +1192,18 @@ sub make_date {
       qw(Januar Februar M&auml;rz April Mai Juni Juli August September Oktober November Dezember);
     @locdays = @days unless (@locdays);
 
-    if ( $style eq "2ch" ) {
+	if ($style eq "phutaba") {
+		my @ltime = localtime($time);
+
+		return sprintf("%d. %s %d (%s.) %02d:%02d:%02d",
+			$ltime[3],
+			$fullmonths[$ltime[4]],
+			$ltime[5] + 1900,
+			$locdays[$ltime[6]],
+			$ltime[2], $ltime[1], $ltime[0]
+		);
+	}
+    elsif ( $style eq "2ch" ) {
         my @ltime = localtime($time);
 
         return sprintf(
@@ -2061,14 +2071,6 @@ sub get_post_info($$) {
 
 		return $flag . $location . '<br />' . $items[4];
 	}
-}
-
-sub get_date {
-    my ($date) = @_;
-    DateTime->DefaultLocale("de_DE");
-    my $dt = DateTime->from_epoch( epoch => $date, time_zone => 'Europe/Berlin' );
-    # $day, $fullmonths[$month], $year, $days[$wday], $hour, $min, $sec
-    return clean_string($dt->strftime("%e. %B %Y (%a) %H:%M:%S %Z"));
 }
 
 1;
