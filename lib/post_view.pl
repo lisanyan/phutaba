@@ -27,7 +27,7 @@ use constant POST_VIEW_INCLUDE => q{
 		<span class="subject"><var $subject></span>
         <span class="postername"><var $name><if $trip><span class="tripcode"><var $trip></span></if></span>
 		<if $adminpost><span class="teampost">## Team ##</span></if>
-		<span class="date desktop"><var get_date($timestamp)></span>
+		<span class="date desktop"><var make_date($timestamp, 'phutaba')></span>
 		<span class="date mobile"><var make_date($timestamp, '2ch')></span>
 	</label>
 
@@ -48,7 +48,7 @@ use constant POST_VIEW_INCLUDE => q{
 		<if $sticky><span class="sticky"><img src="/img/icons/pin.png" onmouseover="Tip('<var S_STICKYTITLE>')" onmouseout="UnTip()" alt="Pin" /></span></if>
 		<if $locked><span class="locked"><img src="/img/icons/locked.png" onmouseover="Tip('<var S_LOCKEDTITLE>')" onmouseout="UnTip()" alt="Lock" /></span></if>
 		<if !$autosage><if $email><span class="sage"><const S_SAGE></span></if></if>
-		<if !$sticky><if $autosage><span class="sage">Systemkontra</span></if></if>
+		<if !$sticky><if $autosage><span class="sage"><const S_BUMPLIMIT></span></if></if>
 	</if>
 
 	<if $parent>
@@ -59,7 +59,7 @@ use constant POST_VIEW_INCLUDE => q{
 		<span class="replylink">[<a href="<var get_reply_link($num,0)>"><const S_REPLY></a>]</span>
 	</if>
 
-	<if $isAdmin>
+	<if $admin>
 		<if !$adminpost>
 		<div class="hidden" id="postinfo_<var $num>">
 			<var get_post_info($location, get_board_id())>
@@ -123,10 +123,9 @@ use constant POST_VIEW_INCLUDE => q{
 	<div class="filename"><const S_PICNAME><a target="_blank" title="<var $uploadname>" href="<var expand_image_filename($image)>/<var get_urlstring($uploadname)>"><var $displayname></a></div>
 	<div class="filesize"><var get_displaysize($size, DECIMAL_MARK)><if $width && $height>, <var $width>&nbsp;&times;&nbsp;<var $height></if><if $info>, <var $info></if></div>
 	<if $thumbnail>
-		<div class="filelink">
+		<div class="filelink" onmouseover="TagToTip('imageinfo_<var md5_hex($image)>', TITLE, '<const S_FILEINFO>', WIDTH, -450)" onmouseout="UnTip()">
 		<a target="_blank" href="<var expand_image_filename($image)>">
-			<img onmouseover="TagToTip('imageinfo_<var md5_hex($image)>', TITLE, '<const S_FILEINFO>', WIDTH, -450)" onmouseout="UnTip()"
-				<if get_extension($image) eq 'JPG' or get_extension($image) eq 'PNG' or get_extension($image) eq 'GIF'>onclick="return expand_image(this, <var $width>, <var $height>, <var $tn_width>, <var $tn_height>, '<var expand_filename($thumbnail)>')"</if>
+			<img <if get_extension($image) eq 'JPG' or get_extension($image) eq 'PNG' or get_extension($image) eq 'GIF'>onclick="return expand_image(this, <var $width>, <var $height>, <var $tn_width>, <var $tn_height>, '<var expand_filename($thumbnail)>')"</if>
 				src="<var expand_filename($thumbnail)>" width="<var $tn_width>" height="<var $tn_height>" alt="<var $size>" />
 		</a>
 		</div>

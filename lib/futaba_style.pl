@@ -52,7 +52,7 @@ use constant NORMAL_HEAD_INCLUDE => q{
 <meta name="apple-mobile-web-app-title" content="<const TITLE>" />
 </if>
 
-<if $isAdmin>
+<if $admin>
 	<link rel="stylesheet" type="text/css" href="/static/vendor/jquery-ui.min.css" />
 </if>
 
@@ -63,7 +63,7 @@ use constant NORMAL_HEAD_INCLUDE => q{
 
 <body>
 
-<if $isAdmin>
+<if $admin>
 <div id="modpanel" class="hidden">
 <table>
 <tr>
@@ -121,7 +121,7 @@ use constant NORMAL_HEAD_INCLUDE => q{
 	</div>
 </header>
 
-<if $postform or $isAdmin or $admin><hr /></if>
+<if $postform or $locked or $admin><hr /></if>
 
 };
 
@@ -160,7 +160,7 @@ use constant NORMAL_FOOT_INCLUDE => q{
 <script type="text/javascript" src="/static/vendor/jquery-1.11.3.min.js"></script>
 <script type="text/javascript" src="/static/vendor/jquery.blockUI.js"></script>
 
-<if $isAdmin>
+<if $admin>
         <script type="text/javascript" src="/static/vendor/jquery-ui.min.js"></script>
         <script type="text/javascript" src="/static/js/admin.js"></script>
 </if>
@@ -170,7 +170,7 @@ use constant NORMAL_FOOT_INCLUDE => q{
 <script type="text/javascript" src="/static/js/hidethreads.js"></script>
 </if>
 
-<if $postform && !$locked or $isAdmin><script type="text/javascript">set_inputs("postform")</script></if>
+<if $postform><script type="text/javascript">set_inputs("postform")</script></if>
 <script type="text/javascript">set_delpass("delform")</script>
 
 <script type="text/javascript">
@@ -221,7 +221,7 @@ use constant NORMAL_FOOT_INCLUDE => q{
 use constant PAGE_TEMPLATE => compile_template(
     MANAGER_HEAD_INCLUDE . q{
 
-<if $postform && !$locked or $isAdmin>
+<if $postform>
 	<div class="postarea">
 	<form id="postform" action="<var $self>" method="post" enctype="multipart/form-data">
 	<input type="hidden" name="task" value="post" />
@@ -238,13 +238,13 @@ use constant PAGE_TEMPLATE => compile_template(
 
 	<table>
 	<tbody id="postTableBody">
-		<if $isAdmin>
+		<if $admin>
 			<tr><td class="postblock">## Team ##</td>
 			<td><label><input type="checkbox" name="as_staff" value="1" />  <const S_POSTASADMIN></label></td></tr>
 			<tr><td class="postblock">HTML</td>
 			<td><label><input type="checkbox" name="no_format" value="1" /> <const S_NOTAGS2></label></td></tr>
 		</if>
-	<if !FORCED_ANON or $isAdmin><tr><td class="postblock"><label for="name"><const S_NAME></label></td><td><input type="text" name="field1" id="name" /></td></tr></if>
+	<if !FORCED_ANON or $admin><tr><td class="postblock"><label for="name"><const S_NAME></label></td><td><input type="text" name="field1" id="name" /></td></tr></if>
 
 	<tr><td class="postblock"><label for="subject"><const S_SUBJECT></label></td><td><input type="text" name="field3" id="subject" />
 	<input type="submit" id="postform_submit" value="<if $thread><const S_BTREPLY> /<var BOARD_IDENT>/<var $thread></if><if !$thread><const S_BTNEWTHREAD></if>" /></td>
@@ -261,20 +261,19 @@ use constant PAGE_TEMPLATE => compile_template(
 	</td></tr>
 
 	<if $image_inp>
-		<tr id="fileUploadField"><td class="postblock"><const S_UPLOADFILE> (max. 4)</td>
-		<td id="fileInput"><div><input type="file" name="file" onchange="file_input_change(4)" /></div>
+		<tr id="fileUploadField"><td class="postblock"><const S_UPLOADFILE> (max. <const MAX_FILES>)</td>
+		<td id="fileInput"><div><input type="file" name="file" onchange="file_input_change(<const MAX_FILES>)" /></div>
 		<if $textonly_inp>[<label><input type="checkbox" name="nofile" value="on" /><const S_NOFILE> ]</label></if>
 		</td></tr>
 	</if>
 
-	<if $thread><tr id="trgetback"><td class="postblock"><const S_NOKO></td>
+	<tr id="trgetback"><td class="postblock"><const S_NOKO></td>
 	<td>
 	<label><input name="gb2" value="board" checked="checked" type="radio" /> <const S_NOKOOFF></label>
 	<label><input name="gb2" value="thread" type="radio" /> <const S_NOKOON></label>
 	</td></tr>
-	</if>
 
-	<if !$isAdmin && need_captcha(CAPTCHA_MODE, CAPTCHA_SKIP, $loc)>
+	<if $captcha_inp>
 		<tr><td class="postblock"><label for="captcha"><const S_CAPTCHA></label> (<a href="/faq">?</a>) (<var $loc>)</td>
 		<td><input type="text" name="captcha" id="captcha" size="10" /> <img alt="" src="/captcha.pl?key=<var get_captcha_key($thread)>&amp;dummy=<var $dummy>&amp;board=<var BOARD_IDENT>" /></td></tr>
 	</if>
@@ -288,7 +287,7 @@ use constant PAGE_TEMPLATE => compile_template(
 	</div>
 </if>
 
-<if $locked && !$isAdmin>
+<if $locked && !$admin>
 <p class="locked"><var sprintf S_THREADLOCKED, $thread></p>
 </if>
 
@@ -519,24 +518,20 @@ use constant ERROR_TEMPLATE => compile_template(
 <div class="info"><var $error></div>
 </if>
 
-<if $banned or $dnsbl>
+<if $banned>
 <div class="info">
 <img src="/img/ernstwurf_schock.png" width="210" height="210" style="float: right;" />
+
 <loop $bans>
  Deine IP-Adresse <strong><var $ip></strong>
  <if $showmask>(Netz <var $network>/<var $setbits>)</if> wurde
  <if $reason>mit folgender Begr&uuml;ndung gesperrt:<br /><strong><var $reason></strong></if>
  <if !$reason>gesperrt.</if>
  <br /><br />Diese Sperrung 
- <if $expires>l&auml;uft am <strong><var get_date($expires)></strong> ab.</if>
+ <if $expires>l&auml;uft am <strong><var make_date($expires, 'phutaba')></strong> ab.</if>
  <if !$expires>gilt f&uuml;r unbestimmte Zeit.</if>
  <br />
 </loop>
-
-<if $dnsbl>
-Deine IP-Adresse <strong><var $ip></strong> wurde in der Blacklist <strong><var $dnsbl></strong> gefunden.
-Aufgrund dieser Tatsache ist es dir nicht gestattet zu posten.<br />
-</if>
 
  <br />Bitte kontaktiere uns im IRC, wenn du wieder posten willst!
 </div>

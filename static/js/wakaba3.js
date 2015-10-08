@@ -180,6 +180,7 @@ function del_file_input(sender, max) {
 }
 
 function insert(text) {
+	if (typeof document.forms.postform != "object") return;
 	var textarea = document.forms.postform.field4;
 	if (textarea) {
 		if (textarea.createTextRange && textarea.caretPos) { // IE
@@ -198,21 +199,16 @@ function insert(text) {
 }
 
 function expand_post(id) {
-	//$j("#posttext_" + id).html($j("#posttext_full_" + id).html());
-	document.getElementById("posttext_" + id).innerHTML = document.getElementById("posttext_full_" + id).innerHTML;
+	var abbr = document.getElementById("posttext_" + id);
+	var full = document.getElementById("posttext_full_" + id);
+	abbr.innerHTML = full.innerHTML;
 	return false;
 }
 
 // http://stackoverflow.com/a/7557433/5628
 function isElementInViewport(el) {
 	var rect = el.getBoundingClientRect();
-
-	return (
-		rect.top >= 0 &&
-		rect.left >= 0 //&&
-		//rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
-		//rect.right <= (window.innerWidth || document.documentElement.clientWidth)
-	);
+	return (rect.top >= 0 && rect.left >= 0);
 }
 
 function expand_image(element, org_width, org_height, thumb_width, thumb_height, thumb) {

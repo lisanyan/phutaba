@@ -21,11 +21,17 @@ use constant FILEGROUPS => (
 	doc => 'Dokumente',
 	other => 'Sonstige',
 );
-
 use constant GROUPORDER => 'image video archive audio doc other'; # other has to be last
 
 use constant CAPTCHA_MODE => 2;
 use constant CAPTCHA_SKIP = 'DE NO CH AT LI BE LU DK NL';
+
+use constant ENABLE_DNSBL_CHECK => 1;
+use constant DNSBL_TIMEOUT => 0.1;
+use constant DNSBL_INFOS => [
+	['tor.dnsbl.sectoor.de',  '127.0.0.1', 'Tor-Exit-Node laut Auflistung von sectoor.de'],
+	['torexit.dan.me.uk',   '127.0.0.100', 'Tor-Exit-Node laut Auflistung von dan.me.uk'],
+];
 
 use constant TRACKING_CODE => qq();			# Paste the js/html of a visitor tracking software between ()
 

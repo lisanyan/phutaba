@@ -123,7 +123,7 @@ use constant S_NOKOON => 'Thread';
 use constant S_THREADLOCKED => '<strong>Thread %s</strong> ist geschlossen. Es kann nicht geantwortet werden.';
 use constant S_FILEINFO => 'Informationen';
 use constant S_FILEDELETED => 'Datei gel&ouml;scht';
-
+use constant S_BUMPLIMIT => 'Systemkontra';
 
 use constant S_POSTINFO => 'IP-Informationen';
 use constant S_MPDELETEIP => 'Alle l&ouml;schen';
@@ -220,7 +220,8 @@ use constant S_NOPIC => 'Fehler: Keine Datei ausgew&auml;hlt.'
   ;    # Returns error for no file selected and override unchecked
 use constant S_NOTEXT => 'Fehler: Keinen Text eingegeben.'
   ;    # Returns error for no text entered in to subject/comment
-use constant S_TOOLONG => 'Fehler: Zu viele Zeichen im Kommentar.'
+use constant S_TOOLONG1 => 'Fehler: Zu viele Zeichen im Feld Name, Betreff oder E-Mail.';
+use constant S_TOOLONG2 => 'Fehler: Kommentar zu lang.'
   ;    # Returns error for too many characters in a given field
 use constant S_NOTALLOWED1 =>
   'Fehler: Neue Threads m&uuml;ssen eine Datei enthalten.';    # Returns error for non-allowed post types
@@ -230,14 +231,14 @@ use constant S_NOTALLOWED3 =>
   'Fehler: Antworten m&uuml;ssen eine Datei enthalten.';
 use constant S_NOTALLOWED4 =>
   'Fehler: Antworten d&uuml;rfen keine Dateien enthalten.';
-use constant S_NONEWTHREADS =>
-  'Fehler: Neue Threads d&uuml;rfen nicht er&ouml;ffnet werden.';
 use constant S_UNUSUAL => 'Fehler: WAS GEHT DENN MIT DIR AB?'
   ;    # Returns error for abnormal reply? (this is a mystery!)
 use constant S_BADHOST => 'Fehler: IP-Adresse ist gesperrt.'
   ;    # Returns error for banned host ($badip string)
 use constant S_BADHOSTPROXY => 'Fehler: Proxy ist gesperrt.'
   ;    # Returns error for banned proxy ($badip string)
+use constant S_ASBAN => 'AS-Netz-Sperre';
+use constant S_AUTOBAN => 'Spambot [Auto Ban]'; # Ban reason for automatically created bans
 use constant S_RENZOKU =>
   'Fehler: Zu viele Posts abgesetzt.';    # Returns error for $sec/post spam filter
 use constant S_RENZOKU2 =>

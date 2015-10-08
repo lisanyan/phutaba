@@ -1,28 +1,23 @@
 Phutaba Imageboard based on Wakaba
+==================================
 
-Installation:
+Installation
+------------
 - Modify lib/site_config.pl.dist and save as lib/site_config.pl
 - Modify board/config.pl to configure your board
+- Create board/src/ and board/thumb/ directories
 - SQL tables are created automatically (if db user has CREATE TABLE permissions)
 - Create new boards by copying the structure and files from board/*
 
-dependencies:
-* mysql
-* perl
-* libfile-mimeinfo-perl
+Dependencies
+------------
+* MySQL 5
+* Perl 5
 * Image::ExifTool / libimage-exiftool-perl
-* HTML::Strip / libhtml-strip-perl
-* Locale::Codes
-* Net::Abuse::Utils
-* DateTime
-* Template
-* HTML::Entities
 * Net::DNS
 * Net::IP
-* JSON:XS
-* JSON
-* IO::Scalar
 * Geo::IP
-* ... and many more
+* JSON::XS
+* JSON
 
-only for enterprise imageboards
+Only for enterprise Imageboards

@@ -15,6 +15,7 @@ use constant SQL_ADMIN_TABLE => 'admin';		# Table used for admin information
 use constant USE_TEMPFILES => 1;				# Set this to 1 under Unix and 0 under Windows! (Use tempfiles when creating pages)
 use constant ENABLE_WEBSOCKET_NOTIFY => 0;
 use constant ENABLE_IRC_NOTIFY => 0;
+#use constant ENABLE_DNSBL_CHECK => 0;
 
 # Page look
 use constant TITLE => 'Ernstchan';	# Name of this image board
@@ -57,8 +58,8 @@ use constant MAX_IMAGE_HEIGHT => 50000000000;		# Maximum height of image before 
 use constant MAX_IMAGE_PIXELS => 50000000000;		# Maximum width*height of image before rejecting
 
 # Captcha
-#use constant CAPTCHA_MODE => 2; # Require captcha for posting (0: never, 1: always, 2: on except for countries in CAPTCHA_SKIP)
-#use constant CAPTCHA_SKIP => 'DE AT CH'; # Country codes that do not require a captcha for posting if CAPTCHA_MODE eq 2
+#use constant CAPTCHA_MODE => 2; # Require captcha for posting (0: never, 1: always, 2: on - except for countries in CAPTCHA_SKIP)
+#use constant CAPTCHA_SKIP => 'DE AT CH'; # Country codes that do not require a captcha for posting if CAPTCHA_MODE is 2
 use constant SQL_CAPTCHA_TABLE => 'captcha';	# Global captcha table for all boards
 use constant CAPTCHA_LIFETIME => 300;			# Captcha lifetime in seconds
 use constant CAPTCHA_SCRIPT => 'captcha.pl';
@@ -73,8 +74,10 @@ use constant THUMBNAIL_SMALL => 1;				# Thumbnail small images (1: yes, 0: no)
 use constant THUMBNAIL_QUALITY => 70;			# Thumbnail JPEG quality
 use constant DELETED_THUMBNAIL => '';			# Thumbnail to show for deleted images (leave empty to show text message)
 use constant DELETED_IMAGE => '';				# Image to link for deleted images (only used together with DELETED_THUMBNAIL)
-use constant ALLOW_TEXTONLY => 0;				# Allow textonly posts (1: yes, 0: no)
-use constant ALLOW_IMAGES => 1;				# Allow image posting (1: yes, 0: no)
+# setting both ALLOW_TEXTONLY and ALLOW_IMAGES to 0 disables new threads
+use constant ALLOW_TEXTONLY => 0;				# Allow textonly thread OP (1: yes, 0: no)
+use constant ALLOW_IMAGES => 1;					# Allow image in thread OP (1: yes, 0: no)
+# setting both ALLOW_TEXT_REPLIES and ALLOW_IMAGE_REPLIES to 0 disables replys
 use constant ALLOW_TEXT_REPLIES => 1;			# Allow replies (1: yes, 0: no)
 use constant ALLOW_IMAGE_REPLIES => 1;			# Allow replies with images (1: yes, 0: no)
 use constant ALLOW_UNKNOWN => 0;				# Allow unknown filetypes (1: yes, 0: no)
@@ -149,29 +152,22 @@ use constant FILETYPES => (
 #	swf => 'icons/flash.png',
 #	torrent => 'icons/torrent.png',
 #	# To stop Wakaba from renaming image files, put their names in here like this:
-#	gif => '.',
-#	jpg => '.',
-#	png => '.',
-	bmp => '.',
-	psd => '.',
-#	svg => '.',
-	rar => '.',
-	zip => '.',
-	mp3 => '.',
-	ogg => '.',
-	wma => '.',
-	'7z' => '.',
+	bmp => 'image',
+	psd => 'image',
+	rar => 'archive',
+	zip => 'archive',
+	'7z' => 'archive',
+	mp3 => 'audio',
+	ogg => 'audio',
+
 );
-use constant FILESIZES => ();
+
+# override MAX_KB for specific file types
+use constant FILESIZES => (
+	webm => 15360,
+	mp4 => 15360,
+);
 
 # no encoding; # Uncomment this if you uncommented the "use encoding" at the top of the file
-
-# DNSBL
-use constant ENABLE_DNSBL_CHECK => 1;
-use constant DNSBL_TIMEOUT => '0.1';
-use constant DNSBL_INFOS =>[
-            ['tor.dnsbl.sectoor.de', '127.0.0.1', "tor.dnsbls.sectoor.de"],
-            ['torexit.dan.me.uk' ,'127.0.0.100', "torexit.dan.me.uk"],
-            ];
 
 1;
