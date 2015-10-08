@@ -3,7 +3,7 @@
 use strict;
 use utf8;
 
-use POSIX qw(strftime);
+use POSIX qw(strftime ceil);
 use Time::Local;
 use Socket;
 use Image::ExifTool;
@@ -858,7 +858,7 @@ sub clean_string {
 
     $str =~ s/[\x{202A}-\x{202E}]//g;
 
-	# $str =~ s/[\x00-\x08\x0b\x0c\x0e-\x1f]//g;    # remove control chars
+	$str =~ s/[\x00-\x08\x0b\x0c\x0e-\x1f]//g;    # remove control chars
 
     return $str;
 }
@@ -1220,14 +1220,16 @@ sub make_date {
     my ( $time, $style, $locnames ) = @_;
     my @days   = qw(Sun Mon Tue Wed Thu Fri Sat);
     my @months = qw(Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec);
+
     unless ($locnames) {
 	    $$locnames{months} = \@months;
 	    $$locnames{weekdays} = \@days;
     }
 
-    if ( $style eq "2ch" ) {
-        my @ltime = localtime($time);
+	my @ltime = localtime($time);
+	my $tz = strftime("%Z", @ltime);
 
+    if ( $style eq "2ch" ) {
         return sprintf(
             "%04d-%02d-%02d %02d:%02d",
             $ltime[5] + 1900,
@@ -1236,17 +1238,13 @@ sub make_date {
         );
     }
     elsif ( $style eq "futaba" or $style eq "0" ) {
-		my @ltime=localtime($time);
-
-		return sprintf("%s %02d %s %04d %02d:%02d:%02d",
-		@{$$locnames{weekdays}}[$ltime[6]],$ltime[3],@{$$locnames{months}}[$ltime[4]],$ltime[5]+1900,$ltime[2],$ltime[1],$ltime[0]);
+		return sprintf("%s %02d %s %04d %02d:%02d:%02d %s",
+		@{$$locnames{weekdays}}[$ltime[6]], $ltime[3], @{$$locnames{months}}[$ltime[4]], $ltime[5]+1900, $ltime[2], $ltime[1], $ltime[0], $tz);
     }
     elsif ( $style eq "localtime" ) {
         return scalar( localtime($time) );
     }
     elsif ( $style eq "tiny" ) {
-        my @ltime = localtime($time);
-
         return sprintf(
             "%02d/%02d %02d:%02d",
             $ltime[4] + 1,
@@ -1270,8 +1268,6 @@ sub make_date {
     elsif ( $style eq "2ch-sep93" ) {
         my $sep93 = timelocal( 0, 0, 0, 1, 8, 93 );
         return make_date( $time, "2ch" ) if ( $time < $sep93 );
-
-        my @ltime = localtime($time);
 
         return sprintf(
             "%04d-%02d-%02d %02d:%02d",
@@ -1524,6 +1520,7 @@ sub analyze_image {
 
     safety_check($file);
 
+    return ( "bmp", @res ) if ( @res = analyze_bmp($file) );
     return ( "jpg", @res ) if ( @res = analyze_jpeg($file) );
     return ( "png", @res ) if ( @res = analyze_png($file) );
     return ( "gif", @res ) if ( @res = analyze_gif($file) );
@@ -1546,6 +1543,27 @@ sub safety_check {
     die "Possible IE XSS exploit in file"
       if $buffer =~
 /<(?:body|head|html|img|plaintext|pre|script|table|title|a href|channel|scriptlet)/;
+}
+
+sub analyze_bmp {
+    my ($file) = @_;
+    my ( $bytes, $buffer );
+
+    $bytes = read( $file, $buffer, 24 );
+    seek( $file, 0, 0 );
+    return () unless ( $bytes == 24 );
+
+	my (
+		$b_magic, $m_magic, $filesize, 
+		$dummy,   $dummy1,  $offbits, $infohead_size, 
+		$width,   $height,  
+	) = unpack("CCVvvVVVVvv", $buffer);
+
+    return ()
+      unless ( $b_magic == 66
+        and $m_magic == 77 );
+
+    return ( $width, $height );
 }
 
 sub analyze_jpeg {
@@ -2005,6 +2023,8 @@ sub get_urlstring($) {
 	$filename =~ s/ /%20/g;
 	$filename =~ s/\[/%5B/g;
 	$filename =~ s/\]/%5D/g;
+	$filename =~ s/\</%3C/g;
+	$filename =~ s/\>/%3E/g;
 	return $filename;
 }
 
@@ -2058,7 +2078,7 @@ sub get_post_info($$) {
 	return '(n/a)' unless (@items);
 
 	# country flag
-	$items[0] = 'UNKNOWN' if ($items[0] eq 'unk');
+	$items[0] = 'UNKNOWN' if ($items[0] eq 'unk' or $items[0] eq 'A1' or $items[0] eq 'A2');
 	my $flag = '<img style="vertical-align:initial" alt="" src="/img/flags/' . $items[0] . '.PNG"> ';
 
 	if (scalar @items == 1) { # for legacy entries
@@ -2083,7 +2103,7 @@ sub get_post_info2($;$) {
 	my @items = split(/<br \/>/, $data);
 	return '(n/a)' unless (@items);
 
-	$items[0] = 'UNKNOWN' if ($items[0] eq 'unk');
+	$items[0] = 'UNKNOWN' if ($items[0] eq 'unk' or $items[0] eq 'A1' or $items[0] eq 'A2');
 	@items = qw/UNKNOWN/ if ($adm);
 	my $flag = '<img style="vertical-align:text-top" alt="" src="/img/flags/' . $items[0] . '.PNG"> ';
 	my $ret = $flag;
@@ -2094,27 +2114,10 @@ sub get_post_info2($;$) {
 		# geo location
 		my @loc = grep {$_} ($items[1], $items[2], $items[3]);
 		my $location = clean_string( join(', ', @loc));
-
 		$ret = $location;
 	}
 	$ret = sprintf('<span class="countryflag" onmouseover="Tip(\'%s\', DELAY, 0, WIDTH, -450)" onmouseout="UnTip()">%s</span>', $ret, $flag);
 	return $ret;
-}
-
-sub get_date {
-    my ($date, $nya) = @_;
-    my $ret;
-	eval 'use DateTime qw(from_epoch strftime)';
-    DateTime->DefaultLocale("ru_RU");
-    my $dt = DateTime->from_epoch( epoch => $date, time_zone => 'Europe/Moscow' );
-    # $day, $fullmonths[$month], $year, $days[$wday], $hour, $min, $sec
-    unless ($nya) {
-    	$ret = $dt->strftime("%e %B %Y (%a) %H:%M:%S %Z");
-    }
-    else {
-    	$ret = $dt->strftime("%d.%m.%Y %H:%M %Z");
-    }
-    return $ret;
 }
 
 sub rev {
