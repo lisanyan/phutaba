@@ -7,12 +7,6 @@ use utf8;
 use Data::Dumper;
 use POSIX;
 
-use lib '.';
-BEGIN { # fuck
- do "lib/site_config.pl";
- do "lib/config_defaults.pl";
-}
-
 #<var $var> - вывод переменной
 # $var - перемерная, изменяется внутри loop,  %var - глобальная переменная, не изменется внутри loop
 #<if УСЛОВИЕ> html контент</else/>(опционально) html контент </if> - условие
@@ -133,9 +127,8 @@ sub new {
 			%vars=%{$vars} if($vars);
 			%global=%{$self->{globals}};
 
-			$vars{self}=decode("utf-8", $ENV{SCRIPT_NAME});
-			$global{self}=$vars{self};
-			$global{board}=$vars{cfg}{SELFPATH};
+			$global{self}=$ENV{SCRIPT_NAME};
+			$global{server_name}=$ENV{SERVER_NAME};
 
 			if($globals){$global{$_}=$globals->{$_} for(keys %{$globals});};
 			

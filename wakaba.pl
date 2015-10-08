@@ -2,12 +2,11 @@
 
 package Wakaba;
 
+use strict;
 # use 5.16.0;
-umask 0022;    # Fix some problems
+# umask 0022;    # Fix some problems
 
 use lib '.';
-use strict;
-use POSIX;
 use CGI::Carp qw(fatalsToBrowser set_message);
 use CGI::Fast;
 use DBI;
@@ -148,9 +147,8 @@ while($query=CGI::Fast->new)
     $sth->execute();
     $sth->finish;
 
-    my $task  = ( $query->param("task") or $query->param("action")) unless $query->param("POSTDATA");
+    my $task  = ( $query->param("task") or $query->param("action"));
     my $json  = ( $query->param("json") or "" );
-    $task = ( $query->url_param("task") ) unless $task;
 
     # check for admin table
     init_admin_database() if ( !table_exists($$cfg{SQL_ADMIN_TABLE}) );
@@ -186,17 +184,12 @@ while($query=CGI::Fast->new)
             output_json_stats($date_format);
         }
     }
-    elsif ($json eq "ban") {
-        my $id = $query->param("id");
-        if (defined $id and $id =~ /^[+-]?\d+$/) {
-            output_json_ban($id);
-        }
-    }
-    elsif ($json eq "meta") {
-        my $id = $query->param("post");
-        if (defined $id and $id =~ /^[+-]?\d+$/) {
-            output_json_meta($id);
-        }
+    elsif ($json) {
+        make_json_header();
+        print $JSON->encode({
+            code => 500,
+            error => 'Unknown json parameter.'
+        });
     }
 
     if ( !table_exists($$cfg{SQL_TABLE}) )    # check for comments table
@@ -258,7 +251,7 @@ while($query=CGI::Fast->new)
         my $spam1      = $query->param("name");
         my $spam2      = $query->param("link");
         my $gb2        = $query->param("gb2");
-        my $name       = $query->param("nya1");
+        my $name       = $query->param("nya1"); # obfuscation LOL
         my $email      = $query->param("nya2");
         my $subject    = $query->param("nya3");
         my $comment    = $query->param("nya4");
@@ -458,34 +451,23 @@ while($query=CGI::Fast->new)
 sub hide_row_els {
     my ($row) = @_;
     $$row{'location'} = (split(/<br \/>/, $$row{location}))[0] if $$cfg{SHOW_COUNTRIES};
-    $$row{'admin_post'} = $$row{'ip'} = $$row{'password'} = undef;
+    undef($$row{'admin_post'} = $$row{'ip'} = $$row{'password'});
     $$row{'location'} = $$cfg{SHOW_COUNTRIES} ? $$row{'location'} : undef;
 }
 
 sub output_json_threads {
-    my ($pageToShow, $admin) = @_;
+    my ($pageToShow) = @_;
     my $page = $pageToShow <=0 ? 1 : $pageToShow;
     my ( $sth, $row, @threads );
     my ( $code, $error );
     my @session;
 
-    my $offset = ceil($page*$$cfg{IMAGES_PER_PAGE}-$$cfg{IMAGES_PER_PAGE});
-    # if we try to call show_page with admin parameter
-    # the admin password will be checked and this
-    # variable will be 1
-    my $isAdmin = 0;
-    if(defined($admin))
-    {
-        @session = check_password($admin, '', 'silent');
-        if ($session[0]) { $isAdmin = 1; }
-        else { $admin = ""; }
-    }
-
     my $threadcount;
+    my $offset = ceil($page*$$cfg{IMAGES_PER_PAGE}-$$cfg{IMAGES_PER_PAGE});
     my $totalThreadCount = count_threads();
     my $total = get_page_count($totalThreadCount);
 
-    if ( $page > ( $total ) ) {
+    if ( $page > $total ) {
         $error = $$locale{S_INVALID_PAGE};
     }
 
@@ -493,12 +475,12 @@ sub output_json_threads {
             "SELECT * FROM "
           . $$cfg{SQL_TABLE}
           . " FORCE INDEX(cover) WHERE parent IS NULL or parent=0 ORDER BY sticky DESC,lasthit DESC LIMIT ?,?"
-    ) or make_error($$locale{S_SQLFAIL});
-    $sth->execute($offset,$$cfg{IMAGES_PER_PAGE}) or make_error($$locale{S_SQLFAIL});
+    );
+    $sth->execute($offset,$$cfg{IMAGES_PER_PAGE});
 
     my @thread;
 
-    my $posts = $dbh->prepare("SELECT * FROM ".$$cfg{SQL_TABLE}." FORCE INDEX(cover) WHERE parent=? ORDER BY num DESC LIMIT ?;") or make_error($$locale{S_SQLFAIL});
+    my $posts = $dbh->prepare("SELECT * FROM ".$$cfg{SQL_TABLE}." FORCE INDEX(cover) WHERE parent=? ORDER BY num DESC LIMIT ?;");
 
     while ($row = get_decoded_hashref($sth)
             and $threadcount <= ( $$cfg{IMAGES_PER_PAGE} * ( $page ) ) )
@@ -640,100 +622,13 @@ sub output_json_thread {
     print $JSON->encode(\%json);
 }
 
-sub get_json_meta {
-    my ($row, $i) = @_;
-    my $json_info = $JSON->decode(encode(CHARSET, $$row{'files'}[$i]{'info_json'}) or '{}');
-    my $filename = $$cfg{SELFPATH} . '/' . $$row{'files'}[$i]{'image'};
-    return $json_info if %$json_info;
-    return get_meta($filename, &CHARSET) if -f $filename;
-    return $JSON->decode('{}');
-}
-
-sub output_json_meta {
-    my ($id) = @_;
-    my ($sth, $row, $error, $code, %status, %data, %json);  
-
-    $sth = $dbh->prepare("SELECT num FROM " . $$cfg{SQL_TABLE} . " WHERE num=?;");
-    $sth->execute($id);
-    $error = decode(CHARSET, $sth->errstr);
-    $row = $sth->fetchrow_hashref();
-    if(defined $row) {
-        $code = 200;
-        add_images_to_row($row);
-        $data{'file'} = [
-            get_json_meta($row, 0),
-            get_json_meta($row, 1),
-            get_json_meta($row, 2),
-            get_json_meta($row, 3)
-        ];
-    } elsif($sth->rows == 0) {
-        $code = 404;
-        $error = 'Element not found.';
-    } else {
-        $code = 500;
-    }
-
-    %status = (
-        "error_code" => $code,
-        "error_msg" => $error,
-    );
-    %json = (
-        "data" => \%data,
-        "status" => \%status,
-    );
-    $sth->finish;
-
-    make_json_header();
-    print $JSON->encode(\%json);
-}
-        
-
-sub output_json_ban {
-    my ($id) = @_;
-    my ($sth, $row, $error, $code, %status, %data, %json);
-
-    $sth = $dbh->prepare("SELECT `comment`, `ival1` as `ip`, `ival2` as `mask`, `date` FROM " . $$cfg{SQL_ADMIN_TABLE} . " WHERE num=?;");
-    $sth->execute($id);
-    $error = decode(CHARSET, $sth->errstr);
-    $row = $sth->fetchrow_hashref();
-    if(defined $row) {
-        $code = 200;
-        $$row{'ip'} = dec_to_dot($$row{'ip'});
-        $$row{'mask'} = dec_to_dot($$row{'mask'});
-        $data{'ban_info'} = $row;
-        $data{'ip_info'}{'asn_info'} = [get_asn_info($$row{'ip'})];
-        $data{'ip_info'}{'as_desc'} = decode(CHARSET, get_as_description($data{'ip_info'}{'asn_info'}[0]));
-        $data{'ip_info'}{'ptr'} = get_rdns($$row{'ip'});
-        $data{'ip_info'}{'contacts'} = [get_ipwi_contacts($$row{'ip'})];
-    } elsif($sth->rows == 0) {
-        $code = 404;
-        $error = 'Element not found.';
-    } else {
-        $code = 500;
-    }
-
-    %status = (
-        "error_code" => $code,
-        "error_msg" => $error,
-    );
-    %json = (
-        "data" => \%data,
-        "status" => \%status,
-    );
-    $sth->finish;
-
-    make_json_header();
-    print $JSON->encode(\%json);
-}
-    
-
 sub output_json_post {
     my ($id) = @_;
     my ($sth, $row, $error, $code, %status, %data, %json);
 
     $sth = $dbh->prepare("SELECT * FROM " . $$cfg{SQL_TABLE} . " WHERE num=?;");
     $sth->execute($id);
-    $error = decode(CHARSET, $sth->errstr);
+    $error = $sth->errstr;
     $row = get_decoded_hashref($sth);
     if(defined $row) {
         $code = 200;
@@ -768,7 +663,7 @@ sub output_json_newposts {
 
     $sth = $dbh->prepare("SELECT * FROM " . $$cfg{SQL_TABLE} . " FORCE INDEX(cover) WHERE parent=? and num>? ORDER BY num ASC;");
     $sth->execute($id,$after);
-    $error = decode(CHARSET, $sth->errstr);
+    $error = $sth->errstr;
     if($sth->rows) {
         $code = 200;
         while($row=get_decoded_hashref($sth)) {
@@ -844,7 +739,6 @@ sub show_post {
     if(defined($admin))
     {
         if (check_password($admin,'','silent')) { $isAdmin = 1; }
-        else { $admin = ""; }
     }
 
     $sth = $dbh->prepare(
@@ -863,8 +757,7 @@ sub show_post {
                 thread       => $id,
                 posts        => \@thread,
                 single       => 1,
-                isAdmin      => $isAdmin,
-                admin        => $admin,
+                admin        => $isAdmin,
                 locked       => $thread[0]{locked},
                 stylesheets  => get_stylesheets(),
                 cfg          => $cfg,
@@ -888,7 +781,6 @@ sub show_newposts {
     if(defined($admin))
     {
         if (check_password($admin,'','silent')) { $isAdmin = 1; }
-        else { $admin = ""; }
     }
 
     $sth = $dbh->prepare(
@@ -909,8 +801,7 @@ sub show_newposts {
                 thread       => $thread,
                 posts        => \@thread,
                 single       => 2,
-                isAdmin      => $isAdmin,
-                admin        => $admin,
+                admin        => $isAdmin,
                 locked       => $thread[0]{locked},
                 stylesheets  => get_stylesheets(),
                 cfg          => $cfg,
@@ -940,7 +831,6 @@ sub show_page {
     {
         @session = check_password($admin, '', 'silent');
         if ($session[0]) { $isAdmin = 1; }
-        else { $admin = ""; }
     }
 
     my $threadcount;
@@ -1044,8 +934,7 @@ sub show_page {
                 pages        => \@pages,
                 loc          => $loc,
                 threads      => \@threads,
-                isAdmin      => $isAdmin,
-                admin        => $admin,
+                admin        => $isAdmin,
                 modclass     => $session[1],
                 stylesheets  => get_stylesheets(),
                 cfg          => $cfg,
@@ -1071,7 +960,6 @@ sub show_thread {
     {
         @session = check_password($admin, '', 'silent');
         if ($session[0]) { $isAdmin = 1; }
-        else { $admin = ""; }
     }
 
     $sth = $dbh->prepare(
@@ -1102,8 +990,7 @@ sub show_thread {
                 dummy        => $thread[$#thread]{num},
                 loc          => $loc,
                 threads      => [ { posts => \@thread } ],
-                isAdmin      => $isAdmin, 
-                admin        => $admin,
+                admin        => $isAdmin, 
                 modclass     => $session[1],
                 locked       => $locked,
                 stylesheets  => get_stylesheets(),
@@ -1115,64 +1002,69 @@ sub show_thread {
     print($output);
 }
 
-sub add_images_to_thread {
-    my (@posts) = @_;
-    my ($parent, $sthfiles, $res, @files, $uploadname, $post);
-    my $errcounter = 0;
+sub get_files($$$) {
+    my ($threadid, $postid, $files) = @_;
+    my ($sth, $res, $where, $uploadname);
 
-    $parent = $posts[0]{num};
-
-    # get all files of a thread with one query
-    $sthfiles = $dbh->prepare(
-        # post,image,size,width,height,thumbnail,tn_width,tn_height,info,info_all,info_json,uploadname
-        "SELECT * FROM " . $$cfg{SQL_TABLE_IMG} . " FORCE INDEX(cover) WHERE thread=? OR post=? ORDER BY post ASC, num ASC;")
-        or $errcounter++;
-    $sthfiles->execute($parent, $parent) or $errcounter++;
-    while ( $res = get_decoded_hashref($sthfiles) ) {
-        $$res{displayname} = get_displayname($$res{uploadname});
-        $$res{thumbnail} = undef if ($$res{thumbnail} =~ m|^\.\./img/|); # temporary, static thumbs are not used anymore
-        push(@files, $res);
+    if ($threadid) {
+        # get all files of a thread with one query
+        $where = " WHERE thread=? OR post=? ORDER BY post ASC, num ASC;";
+    } else {
+        # get all files of one post only
+        $where = " WHERE post=? ORDER BY num ASC;";
     }
-    $sthfiles->finish;
-
-    return if $errcounter>0;
-    return unless $files[0];
-
-    do { while (@files and $$_{num} == $files[0]{post}) { push(@{$$_{files}}, shift(@files)) } } for @posts;
-}
-
-sub add_images_to_array($@) {
-    my ($postid, $files) = @_;
-    my ($sth, $res, $uploadname, $count, $size);
-    my $errcounter = 0;
-    $count = 0;
-    $size = 0;
 
     $sth = $dbh->prepare(
-        "SELECT * FROM " . $$cfg{SQL_TABLE_IMG} . " FORCE INDEX(cover) WHERE post=? ORDER BY num ASC;")
-        or $errcounter++;
-    $sth->execute($postid);
-    while ( $res = get_decoded_hashref($sth) ) {
-        $count++; $size += $$res{size};
-        $uploadname = clean_string($$res{uploadname});
+          "SELECT * FROM "
+        . $$cfg{SQL_TABLE_IMG} . " FORCE INDEX(cover)" .
+          $where
+    ) or make_error($$locale{S_SQLFAIL});
+
+    if ($threadid) {
+        $sth->execute($threadid, $threadid) or make_error($$locale{S_SQLFAIL});
+    } else {
+        $sth->execute($postid) or make_error($$locale{S_SQLFAIL});
+    }
+
+    my ($count, $size);
+    while ($res = get_decoded_hashref($sth)) {
+        $count++;
+        $size += $$res{size};
+        $uploadname = remove_path($$res{uploadname});
+        $$res{uploadname} = clean_string($uploadname);
         $$res{displayname} = clean_string(get_displayname($uploadname));
-        $$res{thumbnail} = undef if ($$res{thumbnail} =~ m|^\.\./img/|); # temporary, static thumbs are not used anymore
+
+        # static thumbs are not used anymore (for old posts)
+        $$res{thumbnail} = undef if ($$res{thumbnail} =~ m|^\.\./img/|);        
+
+        # board path is added by expand_filename
+
         push(@$files, $res);
     }
-    $sth->finish;
-
     return ($count, $size);
 }
 
-sub add_images_to_row {
+sub add_images_to_thread(@) {
+    my (@posts) = @_;
+    my ($sthfiles, $res, @files, $uploadname, $post);
+
+    @files = ();
+    get_files($posts[0]{num}, 0, \@files);
+    return unless (@files);
+
+    foreach $post (@posts) {
+        while (@files and $$post{num} == $files[0]{post}) {
+            push(@{$$post{files}}, shift(@files))
+        }
+    }
+}
+
+sub add_images_to_row($) {
     my ($row) = @_;
+    my @files = (); # all files of one post for loop-processing in the template
 
-    my @files; # this array holds all files of one post for loop-processing in the template
-    # @files = ();
-
-    ($$row{imagecount}, $$row{total_imagesize}) = add_images_to_array($$row{num}, \@files);
-
-    $row->{'files'}=[@files] if @files; # add the hashref with files to the post    
+    ($$row{imagecount}, $$row{total_imagesize}) = get_files(0, $$row{num}, \@files);
+    $$row{files} = [@files] if (@files); # copy the array to an arrayref in the post
 }
 
 sub resolve_reflinks($) {
@@ -1260,10 +1152,10 @@ sub dnsbl_check {
                             last;
                         }
                     }
-                    $bgsock = undef;
+                    undef($bgsock);
                 }
                 $sel->remove($sock);
-                $sock = undef;
+                undef($sock);
             }
         }
 
@@ -1273,7 +1165,7 @@ sub dnsbl_check {
             }
         }
     }
-    make_ban( $ip, shift(@errors), 1 ) if scalar @errors;
+    make_ban( $$locale{S_BADHOSTPROXY}, { ip => $ip, showmask => 0, reason => shift(@errors) } ) if scalar @errors;
 }
 
 
@@ -1340,8 +1232,7 @@ sub find_posts {
                 filenames   => $in_filenames,
                 comment     => $in_comment,
                 count       => $count,
-                isAdmin     => 0,
-                admin       => '',
+                admin       => 0,
                 stylesheets => get_stylesheets(),
                 cfg         => $cfg,
                 locale      => $locale
@@ -1363,11 +1254,8 @@ sub post_stuff {
         $no_pomf, @files
     ) = @_;
 
-    my $file = $files[0];
-    my $uploadname = $files[0];
-    my $file1 = $files[1];
-    my $file2 = $files[2];
-    my $file3 = $files[3];
+    my $file = @files; # file count
+    # my $uploadname = $files[0];
 
     my $original_comment = $comment;
     # get a timestamp for future use
@@ -1425,14 +1313,12 @@ sub post_stuff {
     make_error($$locale{S_NOTEXT}) if ( $comment =~ /^\s*$/ and !$file );
 
     # get file size, and check for limitations.
-    my $size  = get_file_size($files[0], $no_pomf) if ($files[0]);
-    my $size1 = get_file_size($files[1], $no_pomf) if ($files[1]);
-    my $size2 = get_file_size($files[2], $no_pomf) if ($files[2]);
-    my $size3 = get_file_size($files[3], $no_pomf) if ($files[3]);
+    my @size;
+    for (my $i = 0; $i < $$cfg{MAX_FILES}; $i++) {
+        $size[$i] = get_file_size($files[$i]) if ($files[$i]);
+    }
 
     # find IP
-    #my $ip  = $ENV{REMOTE_ADDR};
-    #my $ip  = substr($ENV{HTTP_X_FORWARDED_FOR}, 6); # :ffff:1.2.3.4
     my $ip = get_remote_addr(); 
     my $ssl = ( $ENV{HTTP_X_ALUHUT} || $ENV{SSL_CIPHER} );
     undef($ssl) unless $ssl;
@@ -1499,11 +1385,12 @@ sub post_stuff {
     $loc = join("<br />", $loc, $country_name, $region_name, $city, $as_info);
 
     # check if thread exists, and get lasthit value
-    my ( $parent_res, $lasthit );
+    my ( $parent_res, $lasthit, $autosage );
     if ($parent) {
         $parent_res = get_parent_post($parent) or make_error($$locale{S_NOTHREADERR});
         $lasthit = $$parent_res{lasthit};
         $sticky = $$parent_res{sticky};
+        $autosage = $$parent_res{autosage};
         make_error($$locale{S_LOCKED}) if ($$parent_res{locked} and !$admin_post);
     }
     else {
@@ -1549,30 +1436,18 @@ sub post_stuff {
     # Manager and deletion stuff - duuuuuh?
 
     # copy file, do checksums, make thumbnail, etc
-    my (@filename, @md5, @width, @height, @thumbnail, @tn_width, @tn_height, @info, @info_all, @info_json);
+    my (@filename, @md5, @width, @height, @thumbnail, @tn_width, @tn_height, @info, @info_all, @uploadname);
+    foreach (my $i = 0; $i < $$cfg{MAX_FILES}; $i++) {
+        if ($files[$i]) {
+            # TODO: replace by $time when open_unique works
+            my $file_ts = time() . sprintf("-%03d", int(rand(1000)));
+            $file_ts = $time unless ($i);
 
-    ($filename[0], $md5[0], $width[0], $height[0], $thumbnail[0], $tn_width[0], $tn_height[0], $info[0], $info_all[0], $info_json[0], $file) =
-        process_file($files[0], $uploadname, $time, $no_pomf) if ($files[0]);
-
-    my $tsf1 = 0;
-    my $tsf2 = 0;
-    my $tsf3 = 0;
-    if ($files[1]) {
-        $tsf1 = time() . sprintf( "%03d", int( rand(1000) ) );
-        ($filename[1], $md5[1], $width[1], $height[1], $thumbnail[1], $tn_width[1], $tn_height[1], $info[1], $info_all[1], $info_json[1], $file1) =
-            process_file($files[1], $files[1], $tsf1, $no_pomf);
-    }
-
-    if ($files[2]) {
-        $tsf2 = time() . sprintf( "%03d", int( rand(1000) ) );
-        ($filename[2], $md5[2], $width[2], $height[2], $thumbnail[2], $tn_width[2], $tn_height[2], $info[2], $info_all[2], $info_json[2], $file2) =
-            process_file($files[2], $files[2], $tsf2, $no_pomf);
-    }
-
-    if ($files[3]) {
-        $tsf3 = time() . sprintf( "%03d", int( rand(1000) ) );
-        ($filename[3], $md5[3], $width[3], $height[3], $thumbnail[3], $tn_width[3], $tn_height[3], $info[3], $info_all[3], $info_json[3], $file3) =
-            process_file($files[3], $files[3], $tsf3, $no_pomf);
+            ($filename[$i], $md5[$i], $width[$i], $height[$i],
+                $thumbnail[$i], $tn_width[$i], $tn_height[$i],
+                $info[$i], $info_all[$i], $uploadname[$i])
+                = process_file($files[$i], $files[$i], $file_ts, $no_pomf);
+        }
     }
 
     $numip = "0" if ($$cfg{ANONYMIZE_IP_ADDRESSES} && $admin_post);
@@ -1611,37 +1486,22 @@ sub post_stuff {
     log_action("adminpost",$new_post_id,$admin) if($admin_post and $no_format || $as_staff);
 
     # insert file information into database
-    if (scalar @files) {
+    if ($file) {
         eval {
             $dbh->begin_work();
 
-            $sth = $dbh->prepare("INSERT INTO " . $$cfg{SQL_TABLE_IMG} . " VALUES(null,?,?,?,?,?,?,?,?,?,?,?,?,?,?);" )
-                or make_error($$locale{S_SQLFAIL});
-
+            $sth = $dbh->prepare("INSERT INTO " . $$cfg{SQL_TABLE_IMG} . " VALUES(null,?,?,?,?,?,?,?,?,?,?,?,?,?);" )
+                or make_error($$cfg{S_SQLFAIL});
+    
             my $thread_id = $parent;
             $thread_id = $new_post_id if (!$parent);
-
-            $sth->execute(
-                $thread_id, $new_post_id, $filename[0], $size, $md5[0], $width[0], $height[0],
-                $thumbnail[0], $tn_width[0], $tn_height[0], $file, $info[0], $info_all[0], $info_json[0]
-            ) or make_error($$locale{S_SQLFAIL}) if ($files[0]);
-
-            ($sth->execute(
-                $thread_id, $new_post_id, $filename[1], $size1, $md5[1], $width[1], $height[1],
-                $thumbnail[1], $tn_width[1], $tn_height[1], $file1, $info[1], $info_all[1], $info_json[1]
-            ) or make_error($$locale{S_SQLFAIL})) if ($files[1]);
-
-            ($sth->execute(
-                $thread_id, $new_post_id, $filename[2], $size2, $md5[2], $width[2], $height[2],
-                $thumbnail[2], $tn_width[2], $tn_height[2], $file2, $info[2], $info_all[2], $info_json[2]
-            ) or make_error($$locale{S_SQLFAIL})) if ($files[2]);
-
-            ($sth->execute(
-                $thread_id, $new_post_id, $filename[3], $size3, $md5[3], $width[3], $height[3],
-                $thumbnail[3], $tn_width[3], $tn_height[3], $file3, $info[3], $info_all[3], $info_json[3]
-            ) or make_error($$locale{S_SQLFAIL})) if ($files[3]);
-
-            $dbh->commit();
+    
+            foreach (my $i = 0; $i < $$cfg{MAX_FILES}; $i++) {
+                ($sth->execute(
+                    $thread_id, $new_post_id, $filename[$i], $size[$i], $md5[$i], $width[$i], $height[$i],
+                    $thumbnail[$i], $tn_width[$i], $tn_height[$i], $uploadname[$i], $info[$i], $info_all[$i]
+                ) or make_error($$cfg{S_SQLFAIL})) if ($files[$i]);
+            }
         };
         if ($@) {
             eval { $dbh->rollback() };
@@ -1651,7 +1511,6 @@ sub post_stuff {
 
     if ($parent)    # bumping
     {
-        my $autosage = $$parent_res{autosage};
         # if parent has autosage set, the sage_count SQL query does not need to be executed
         my $bumplimit = ($autosage or $$cfg{MAX_RES} and sage_count($parent_res) > $$cfg{MAX_RES});
 
@@ -1753,7 +1612,7 @@ sub ban_check {
           or make_error($$locale{S_SQLFAIL});
         $sth->execute($as_num) or make_error($$locale{S_SQLFAIL});
 
-        make_ban(0, '', 0, { ip => $ip, showmask => 0, reason => 'AS-Netz-Sperre' }) if (($sth->fetchrow_array())[0]);
+        make_ban($$locale{S_BADHOST}, { ip => $ip, showmask => 0, reason => 'AS-Netz-Sperre' }) if (($sth->fetchrow_array())[0]);
     }
 
     # check if the IP (ival1) belongs to a banned IP range (ival2)
@@ -1821,7 +1680,7 @@ sub ban_check {
     }
 
     # this will send the ban message(s) to the client
-    make_ban(0, '', 0, @bans) if (@bans);
+    make_ban($$locale{S_BADHOST}, @bans) if (@bans);
 
 # fucking mysql...
 #   $sth=$dbh->prepare("SELECT count(*) FROM ".SQL_ADMIN_TABLE." WHERE type='wordban' AND ? LIKE '%' || sval1 || '%';") or make_error($$locale{S_SQLFAIL});
@@ -2197,6 +2056,8 @@ sub process_file {
 
     # jpeg -> jpg
     $uploadname =~ s/\.jpeg$/\.jpg/i;
+    # dib -> bmp
+    # $uploadname =~ s/\.dib$/\.bmp/i;
 
     # make sure $uploadname file extension matches detected extension (for internal formats)
     my ($uploadext) = $uploadname =~ /\.([^\.]+)$/;
@@ -2268,19 +2129,19 @@ sub process_file {
         }
 
         if ($ext eq 'pdf' or $ext eq 'svg') { # cannot determine dimensions for these files
-            $width = undef;
-            $height = undef;
+            undef($width);
+            undef($height);
             $tn_width = $$cfg{MAX_W};
             $tn_height = $$cfg{MAX_H};
         }
 
         if ($$cfg{STUPID_THUMBNAILING}) {
             $thumbnail = $filename;
-            $thumbnail = undef if($ext eq 'pdf' or $ext eq 'svg' or $ext eq 'webm' or $ext eq 'mp4');
+            undef($thumbnail) if($ext eq 'pdf' or $ext eq 'svg' or $ext eq 'webm' or $ext eq 'mp4');
         }
         else {
             if ($ext eq 'webm' or $ext eq 'mp4') {
-                $thumbnail = undef
+                undef($thumbnail)
                   unless (
                     make_video_thumbnail(
                         $filename,         $thumbnail,
@@ -2291,7 +2152,7 @@ sub process_file {
                   );
             }
             else {
-                $thumbnail = undef
+                undef($thumbnail)
                   unless (
                     make_thumbnail(
                         $filename,         $thumbnail,
@@ -2318,7 +2179,6 @@ sub process_file {
     }
 
     my ($info, $info_all) = get_meta_markup($filename, &CHARSET);
-    my $info_json = encode_json(get_meta($filename, &CHARSET));
 
     chmod 0644, $filename; # Make file world-readable
     chmod 0644, $thumbnail if defined($thumbnail); # Make thumbnail (if any) world-readable
@@ -2341,7 +2201,7 @@ sub process_file {
     $filename  =~ s/^${board_path}\///;
     $thumbnail =~ s/^${board_path}\///;
 
-    return ($filename, $md5, $width, $height, $thumbnail, $tn_width, $tn_height, $info, $info_all, $info_json, $uploadname);
+    return ($filename, $md5, $width, $height, $thumbnail, $tn_width, $tn_height, $info, $info_all, $uploadname);
 }
 
 #
@@ -2595,7 +2455,7 @@ sub delete_post {
                           $dbh->prepare( "UPDATE "
                               . $$cfg{SQL_TABLE}
                               . " SET lasthit=? WHERE parent=? OR num=?;" )
-                          or make_error($$locale{S_SQLFAIL});
+                          or return $$locale{S_SQLFAIL};
                         $upd->execute( $lasthit, $parent, $parent )
                           or return $$locale{S_SQLFAIL} . " " . $dbh->errstr();
                     }
@@ -2620,7 +2480,7 @@ sub delete_post {
 
             $sth = $dbh->prepare( "UPDATE "
                   . $$cfg{SQL_TABLE_IMG}
-                  . " SET size=0,md5=null,thumbnail=null,info=null,info_all=null,info_json=null WHERE post=?;" )
+                  . " SET size=0,md5=null,thumbnail=null,info=null,info_all=null WHERE post=?;" )
                 or return $$locale{S_SQLFAIL};
             $sth->execute($post) or return $$locale{S_SQLFAIL};
         }
@@ -2947,7 +2807,6 @@ sub do_login {
 
 sub do_logout {
     make_cookies( wakaadmin => "", -expires => 1 );
-    # make_cookies( wakaadminsave => "", -expires => 1 );
     make_http_forward( get_script_name() . "?task=loginpanel&section=".$$cfg{SELFPATH});
 }
 
@@ -3002,7 +2861,7 @@ sub add_admin_entry {
                 "banned_mask" => dec_to_dot($ival2),
                 "reason" => $comment,
                 "postid" => $postid,
-                "expires" => $expires,
+                "expires" => make_date($expires, "2ch"),
             }
         );
         if($type eq 'ipban'){
@@ -3031,7 +2890,7 @@ sub check_admin_entry {
         else {
             $sth = $dbh->prepare("SELECT count(*) FROM "
                 . $$cfg{SQL_ADMIN_TABLE}
-                . " WHERE type='ipban' AND ival1=? AND (CAST(sval1 AS UNSIGNED)>? OR sval1='');");
+                . " WHERE type='ipban' AND ival1=? AND (expires IS NULL OR expires=0 OR expires>?);");
             $sth->execute(dot_to_dec($ival1), time());
             $results = ($sth->fetchrow_array())[0];
 
@@ -3472,33 +3331,18 @@ sub make_error {
 }
 
 sub make_ban {
-    my ($ip, $reason, $mode, @bans) = @_;
+    my ($title, @bans) = @_;
 
     make_http_header();
-    if ( $mode == 1 ) {
-        print $tpl->error({
-                ip             => $ip,
-                dnsbl          => $reason,
-                error_page     => 'HTTP 403 - Proxy found',
-                #error_subtitle => 'HTTP 403 - Proxy found',
-                error_title    => 'Proxy found',
-                stylesheets    => get_stylesheets(),
-                cfg            => $cfg,
-                locale         => $locale
-        });
-    }
-    else {
-        print $tpl->error({
-                bans           => \@bans,
-                error_page     => 'Banned',
-                #error_subtitle => 'GEH ZUR&Uuml;CK NACH KRAUTKANAL!',
-                error_title    => 'Banned :&lt;',
-                banned         => 1,
-                stylesheets    => get_stylesheets(),
-                cfg            => $cfg,
-                locale         => $locale
-        });
-    }
+    print $tpl->error({
+            bans           => \@bans,
+            error_page     => $title,
+            error_title    => $title,
+            banned         => 1,
+            stylesheets    => get_stylesheets(),
+            cfg            => $cfg,
+            locale         => $locale
+    });
 
     eval { next; };
     if ($@) {
@@ -3578,7 +3422,7 @@ sub get_page_count {
 
 sub get_filetypes_hash {
     my $filetypes = $$cfg{FILETYPES};
-    $$filetypes{gif} = $$filetypes{jpg} = $$filetypes{jpeg} = $$filetypes{png} = $$filetypes{svg} = 'image';
+    $$filetypes{gif} = $$filetypes{jpg} = $$filetypes{jpeg} = $$filetypes{png} = $$filetypes{svg} = $$filetypes{bmp} = 'image';
     $$filetypes{pdf} = 'doc';
     $$filetypes{webm} = $$filetypes{mp4} = 'video';
     return $filetypes;
@@ -3760,7 +3604,6 @@ sub init_files_database {
         "uploadname TEXT," .   # Original filename supplied by the user agent
         "info TEXT," .         # Short file information displayed in the post
         "info_all TEXT," .      # Full file information displayed in the tooltip
-        "info_json TEXT," .      # Full file information encoded into json format
         "INDEX cover(post,thread)" .
 
         ");"

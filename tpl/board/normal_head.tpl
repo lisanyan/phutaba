@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="<const CHARSET>" />
+<meta charset="<const Wakaba::CHARSET>" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title><var $$cfg{TITLE}> &raquo; <if $title><var $title></if><if !$title>/<var $$cfg{SELFPATH}>/ - <var $$cfg{BOARD_NAME}></if></title>
 
@@ -34,7 +34,7 @@
 <if $thread><body class="replypage"></if>
 <if !$thread><body></if>
 
-<if $isAdmin>
+<if $admin>
 <div id="modpanel" style="display: none">
 <div style="display: none; min-width: 250px;" id="banexpireshelp">
 <var $$locale{S_BANEXPIRESDESC}>

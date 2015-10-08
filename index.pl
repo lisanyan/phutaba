@@ -3,7 +3,6 @@
 use strict;
 use CGI;
 use Template;
-use HTML::Entities;
 use Filesys::Df;
 
 use Encode;
@@ -14,8 +13,8 @@ BEGIN {
 	require "lib/site_config.pl";
 }
 my $q = CGI->new;
-my $page = encode_entities(decode('utf8', $q->param("p")));
-my $query = encode_entities(decode('utf8', $q->param("q")));
+my $page = decode('utf8', $q->param("p"));
+my $query = decode('utf8', $q->param("q"));
 my $disk_info = df("/home/");
 
 my $is_main;
@@ -69,7 +68,12 @@ elsif ($page eq 'err404') {
 }
 elsif (-e 'tpl/' . $ttfile) {
 	my $output;
-	$tt->process($ttfile, {'tracking_code' => TRACKING_CODE}, \$output) or tpl_make_error({'http' => '500 Boom', 'type' => "Fehler bei Scriptausf&uuml;hrung", 'info' => $tt->error});
+	$tt->process($ttfile, {'tracking_code' => TRACKING_CODE}, \$output)
+	  or tpl_make_error({
+	  	'http' => '500 Boom',
+	  	'type' => "Fehler bei Scriptausf&uuml;hrung",
+	  	'info' => $tt->error
+	  });
 	print $q->header(-charset => 'utf-8');
 	print $output;
 

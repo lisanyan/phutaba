@@ -33,7 +33,7 @@
 		<span onmouseover="Tip('<var $secure>')" onmouseout="UnTip()"><img src="<var $$cfg{SSL_ICON}>" alt="SSL" /></span>
 	</if>
 
-	<if $$cfg{SHOW_COUNTRIES} && !%isAdmin && !$email && !$adminpost>
+	<if $$cfg{SHOW_COUNTRIES} && !%admin && !$email && !$adminpost>
 	  <var Wakaba::get_post_info2($location)>
 	</if>
 
@@ -60,7 +60,7 @@
 		<span class="replylink">[<a href="<var Wakaba::get_reply_link($num,0)>"><var $$locale{S_REPLY}></a>]</span>
 	</if>
 	<if !$parent && %thread>[<a href="#bottom"><var $$locale{S_BOTTOM}></a>]</if>
-	<if %isAdmin>
+	<if %admin>
 		<if !$adminpost>
 		<div class="hidden" id="postinfo_<var $num>">
 			<var Wakaba::get_post_info($$cfg{SELFPATH},$location)>

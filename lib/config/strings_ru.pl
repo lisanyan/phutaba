@@ -129,7 +129,7 @@ $translation{S_THREADLOCKED} = '<strong>Тред %s</strong> закрыт. Вы 
 $translation{S_FILEINFO} = 'Информация';
 $translation{S_FILEDELETED} = 'Файл удален';
 
-$translation{S_POSTINFO} = 'IP-Informationen';
+$translation{S_POSTINFO} = 'Информация IP';
 $translation{S_MPDELETEIP} = 'Уд.&nbsp;все';
 $translation{S_MPDELETE} = 'Удалить';    # Defines for deletion button in Management Panel
 $translation{S_MPEDIT} = 'Редактировать';    # Defines for deletion button in Management Panel
@@ -143,8 +143,8 @@ $translation{S_MPRESET} = 'Сброс';        # Defines name for field reset bu
 $translation{S_MPONLYPIC} = 'Только файл';  # Sets whether or not to delete only file, or entire post/thread
 $translation{S_MPDELETEALL} = 'Удалить все посты с этого IP';    #
 $translation{S_MPBAN} = 'Ban';    # Sets whether or not to delete only file, or entire post/thread
-$translation{S_MPTABLE} = '<th>No.</th><th>Date</th><th>Subject</th>'
-                        . '<th>Name</th><th>Comment</th><th>IP</th>'; # Explains names for Management Panel
+$translation{S_MPTABLE} = '<th>No.</th><th>Дата</th><th>Тема</th>'
+                        . '<th>Имя</th><th>Текст</th><th>IP</th>'; # Explains names for Management Panel
 $translation{S_IMGSPACEUSAGE} = '[ Использовано места: %s, %s Файлов, %s Постов (%s Тредов) ]';
           # Prints space used KB by the board under Management Panel
 $translation{S_DELALLMSG} = 'Затронуто';
@@ -174,12 +174,12 @@ $translation{S_BANASNUMLABEL} = 'AS-Nummer';
 $translation{S_BANASNUM} = 'Бан сети';
 $translation{S_BANSECONDS} = 'Секунды';
 
-$translation{S_ORPHTABLE} = '<th>Link</th><th>File</th><th>Modify&nbsp;date</th><th>Size</th>';
+$translation{S_ORPHTABLE} = '<th>Ссылка</th><th>Файл</th><th>Дата изменения</th><th>Размер</th>';
 $translation{S_MANASHOW} = 'Show';
 
 $translation{S_LOCKED} = 'Тред закрыт';
-$translation{S_BADIP} = 'Incorrect IP address';
-$translation{S_BADDELIP} = 'Wrong IP.'; # Returns error for wrong ip (when user tries to delete file)
+$translation{S_BADIP} = 'Неправильный IP адрес';
+$translation{S_BADDELIP} = 'Неправильный IP.'; # Returns error for wrong ip (when user tries to delete file)
 $translation{S_INVALID_PAGE} = "страницы не существует.";
 $translation{S_STOP_FOOLING} = "Lass das sein, Kevin!";
 
@@ -199,8 +199,8 @@ $translation{S_TOOLONG} = 'Слишком много символов в тек�
 $translation{S_NOTALLOWED} = 'Сообщения без изображений запрещены.';
 $translation{S_NONEWTHREADS} = 'Нельзя создавать новые треды.';
 $translation{S_UNUSUAL} = 'Неверный ответ.';
-$translation{S_BADHOST} = 'Хост забанен.';
-$translation{S_BADHOSTPROXY} = 'Прокси забанен.';
+$translation{S_BADHOST} = 'Бан :&lt;';
+$translation{S_BADHOSTPROXY} = 'Найдена прокси.';
 $translation{S_RENZOKU} = 'Обнаружен флуд, сообщение отклонено.';
 $translation{S_RENZOKU2} = 'Обнаружен флуд, файл отклонён.';
 $translation{S_RENZOKU3} = 'Обнаружен флуд.';

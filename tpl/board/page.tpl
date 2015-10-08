@@ -1,16 +1,16 @@
 <include %TMPLDIR%/head.tpl>
-<perleval %isAdmin=$isAdmin; %thread=$thread />
+<perleval %admin=$admin; %thread=$thread />
 <if $postform>
 	<div class="postarea">
 	<form id="postform" action="<var %self>" method="post" enctype="multipart/form-data">
 
 	<input type="hidden" name="section" value="<var $$cfg{SELFPATH}>" />
 	<input type="hidden" name="task" value="post" />
-	<if $isAdmin>
+	<if $admin>
 		<input type="hidden" name="admin_post" value="yes" />
 	</if>
 	<if $thread><input type="hidden" name="parent" value="<var $thread>" /></if>
-	<if !$isAdmin and !$image_inp and !$thread and $$cfg{ALLOW_TEXTONLY}>
+	<if !$admin and !$image_inp and !$thread and $$cfg{ALLOW_TEXTONLY}>
 		<input type="hidden" name="nofile" value="1" />
 	</if>
 
@@ -21,15 +21,15 @@
 
 	<table>
 	<tbody id="postTableBody">
-		<if $isAdmin>
+		<if $admin>
 			<tr><td class="postblock">## Team ##</td>
 			<td><label><input type="checkbox" name="as_staff" value="1" />  <var $$locale{S_POSTASADMIN}></label></td></tr>
 		</if>
-		<if $isAdmin>
+		<if $admin>
 			<tr><td class="postblock">HTML</td>
 			<td><label><input type="checkbox" name="no_format" value="1" /> <var $$locale{S_NOTAGS2}></label></td></tr>
 		</if>
-	<if !($$cfg{FORCED_ANON}) or $isAdmin><tr><td class="postblock"><label for="name"><var $$locale{S_NAME}></label></td><td><input type="text" name="nya1" id="name" /></td></tr></if>
+	<if !($$cfg{FORCED_ANON}) or $admin><tr><td class="postblock"><label for="name"><var $$locale{S_NAME}></label></td><td><input type="text" name="nya1" id="name" /></td></tr></if>
 
 	<tr><td class="postblock"><label for="subject"><var $$locale{S_SUBJECT}></label></td><td><input type="text" name="nya3" id="subject" />
 	<input type="submit" id="postform_submit" value="<if $thread><var $$locale{S_BTREPLY}> /<var $$cfg{SELFPATH}>/<var $thread></if><if !$thread><var $$locale{S_BTNEWTHREAD}></if>" /></td>
@@ -45,14 +45,14 @@
 	<td><textarea id="field4" name="nya4" cols="48" rows="6"></textarea> <img onclick="resizeCommentfield('field4', this)" src="/img/icons/expand.png" alt="<var $$locale{S_IMGEXPAND}>" title="<var $$locale{S_IMGEXPAND}>" />
 	</td></tr>
 
-	<if $image_inp or $isAdmin>
-		<tr id="fileUploadField"><td class="postblock"><var $$locale{S_UPLOADFILE}> (max. 4)</td>
-		<td id="fileInput"><div><input type="file" name="file" onchange="file_input_change(4)" /></div>
+	<if $image_inp or $admin>
+		<tr id="fileUploadField"><td class="postblock"><var $$locale{S_UPLOADFILE}> (max. <var $$cfg{MAX_FILES}>)</td>
+		<td id="fileInput"><div><input type="file" name="file" onchange="file_input_change(<var $$cfg{MAX_FILES}>)" /></div>
 		<if $textonly_inp>[<label><input type="checkbox" name="nofile" value="on" /><var $$locale{S_NOFILE}> ]</label></if>
 		</td></tr>
 	</if>
 
-	<if $isAdmin or scalar @{$$cfg{POMF_EXTENSIONS}} && $image_inp>
+	<if $admin or scalar @{$$cfg{POMF_EXTENSIONS}} && $image_inp>
 	<tr><td class="postblock"><label for="nopomf"><var $$locale{S_NOPOMF}></label></td>
 	<td><label><input type="checkbox" name="no_pomf" value="on" id="nopomf" onclick="Settings.set('nopomf', +this.checked);" /> <var $$locale{S_NOPOMFDESC}></label></td>
 	</tr>
@@ -78,7 +78,7 @@
 
 </if>
 
-<if $locked && !$isAdmin>
+<if $locked && !$admin>
 <p class="locked"><var sprintf($$locale{S_THREADLOCKED}, $thread)></p>
 </if>
 
@@ -140,7 +140,7 @@
 <div class="delete">
 	<input type="hidden" name="task" value="delete" />
 	<input type="hidden" name="section" value="<var $$cfg{SELFPATH}>" />
-	<if $isAdmin><input type="hidden" name="admindel" value="yes" /></if>
+	<if $admin><input type="hidden" name="admindel" value="yes" /></if>
 	<if $thread><input type="hidden" name="parent" value="<var $thread>" /></if>
 	<input type="password" name="password" placeholder="<var $$locale{S_DELKEY}>" />
 	<input value="<var $$locale{S_DELETE}>" type="submit" />

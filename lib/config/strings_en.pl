@@ -1,19 +1,19 @@
 use utf8;
 my %translation;
-$translation{S_HOME} = 'Home';           # Forwards to home page
-$translation{S_ADMIN} = 'Manage';         # Forwards to Management Panel
+$translation{S_HOME} = 'Home';        # Forwards to home page
+$translation{S_ADMIN} = 'Manage';     # Forwards to Management Panel
 $translation{S_RETURN} = 'Return';    # Returns to image board
 $translation{S_POSTING} =
   'Reply mode';    # Prints message in red bar atop the reply screen
 
-$translation{S_NAME} = 'Name';           # Describes name field
-$translation{S_EMAIL} = 'E-Mail';         # Describes e-mail field
-$translation{S_SUBJECT} = 'Subject';        # Describes subject field
-$translation{S_SUBMIT} = 'Submit';     # Describes submit button
-$translation{S_COMMENT} = 'Comment';      # Describes comment field
-$translation{S_UPLOADFILE} = 'File';          # Describes file field
-$translation{S_NOFILE} = 'No File';    # Describes file/no file checkbox
-$translation{S_CAPTCHA} = 'Captcha';        # Describes captcha field
+$translation{S_NAME} = 'Name';        # Describes name field
+$translation{S_EMAIL} = 'E-Mail';     # Describes e-mail field
+$translation{S_SUBJECT} = 'Subject';  # Describes subject field
+$translation{S_SUBMIT} = 'Submit';    # Describes submit button
+$translation{S_COMMENT} = 'Comment';  # Describes comment field
+$translation{S_UPLOADFILE} = 'File';  # Describes file field
+$translation{S_NOFILE} = 'No File';   # Describes file/no file checkbox
+$translation{S_CAPTCHA} = 'Captcha';  # Describes captcha field
 $translation{S_PARENT} =
   'Thread #';    # Describes parent field on admin post page
 $translation{S_DELPASS} = 'Password';    # Describes password field
@@ -54,6 +54,7 @@ $translation{S_FIRSTPG} = 'Previous';               # Defines previous button
 $translation{S_NEXT} = 'Next';                    # Defines next button
 $translation{S_LASTPG} = 'Next';                  # Defines next button
 $translation{S_TOP} = 'Top';
+$translation{S_BOTTOM} = 'Bottom';
 
 $translation{S_SEARCHTITLE} = 'Search';
 $translation{S_SEARCH} = 'Search';
@@ -66,7 +67,10 @@ $translation{S_SEARCHFOUND} = 'Found:';
 $translation{S_OPTIONS} = 'Options';
 $translation{S_MINLENGTH} = '(min. 3 symbols)';
 
-$translation{S_WEEKDAYS} = ('Sun','Mon','Tue','Wed','Thu','Fri','Sat'); # Defines abbreviated weekday names.
+$translation{S_DATENAMES} = {
+  weekdays => [qw/Sun Mon Tue Wed Thu Fri Sat/], # Defines abbreviated weekday names.
+  months => [qw/January February March April May June July August September October November December/] # Defines full month names
+};
 
 $translation{S_STICKYTITLE} = 'Sticky thread';    # Defines the title of the tiny sticky image on a thread if it is sticky
 $translation{S_LOCKEDTITLE} = 'Locked thread';    # Defines the title of the tiny locked image on a thread if it is locked
@@ -76,6 +80,9 @@ $translation{S_JS_EXPAND} = 'Expand textfield';
 $translation{S_JS_SHRINK} = 'Shrink textfield';
 $translation{S_JS_REMOVEFILE} = 'Remove file';
 $translation{S_JS_STYLES} = 'Styles';
+$translation{S_JS_DONE} = 'Done';
+$translation{S_JS_CONTEXT} = 'Toggle Context';
+$translation{S_JS_UPDATE} = 'Update thread';
 # javascript strings END
 
 $translation{S_MANARET} = 'Return';    # Returns to HTML file instead of PHP--thus no log/SQLDB update occurs
@@ -160,12 +167,13 @@ $translation{S_BANIP} = 'IP ban';
 $translation{S_BANWORD} = 'Wordfilter';
 $translation{S_BANWHITELIST} = 'Whitelist';
 $translation{S_BANREMOVE} = 'Remove';
+$translation{S_BANEDIT} = 'Edit';
 $translation{S_BANCOMMENT} = 'Comment';
 $translation{S_BANTRUST} = 'Kein Captcha';
 $translation{S_BANTRUSTTRIP} = 'Tripcode';
 $translation{S_BANEXPIRESLABEL} = 'Истекает';
-$translation{S_BANEXPIRESDESC} = 'Example: 5 Days, 10 Hours, 30 Minutes<br />Permaban - leave field empty';
-$translation{S_BANREASONLABEL} = 'Причина';
+$translation{S_BANEXPIRESDESC} = '5 Days, 10 Hours, 30 Minutes, etc<br />Permaban - leave field empty';
+$translation{S_BANREASONLABEL} = 'Reason';
 $translation{S_BANASNUMLABEL} = 'AS number';
 $translation{S_BANASNUM} = 'Ban ASnet';
 $translation{S_BANSECONDS} = 'Seconds';
@@ -177,7 +185,7 @@ $translation{S_LOCKED} = 'Thread is locked';
 $translation{S_BADIP} = 'Falsche IP-Adresse';
 $translation{S_BADDELIP} = 'Fehler: Falsche IP.'
   ;    # Returns error for wrong ip (when user tries to delete file)
-$translation{S_INVALID_PAGE} = "Error: page not found.";
+$translation{S_INVALID_PAGE} = "page not found.";
 $translation{S_STOP_FOOLING} = "Lass das sein, Kevin!";
 
 $translation{S_SPAMEXPL} = 'This is the list of domain names Wakaba considers to be spam.<br />'.
@@ -186,35 +194,35 @@ $translation{S_SPAMEXPL} = 'This is the list of domain names Wakaba considers to
 
 $translation{S_TOOBIG} = 'This image is too large!  Upload something smaller!';
 $translation{S_TOOBIGORNONE} = 'Either this image is too big or there is no image at all.  Yeah.';
-$translation{S_REPORTERR} = 'Error: Cannot find reply.';          # Returns error when a reply (res) cannot be found
-$translation{S_UPFAIL} = 'Error: Upload failed.';             # Returns error for failed upload (reason: unknown?)
-$translation{S_NOREC} = 'Error: Cannot find record.';           # Returns error when record cannot be found
-$translation{S_NOCAPTCHA} = 'Error: No verification code on record - it probably timed out.'; # Returns error when there's no captcha in the database for this IP/key
-$translation{S_BADCAPTCHA} = 'Error: Wrong verification code entered.';   # Returns error when the captcha is wrong
-$translation{S_BADFORMAT} = 'Error: File format not supported.';      # Returns error when the file is not in a supported format.
-$translation{S_STRREF} = 'Error: String refused.';              # Returns error when a string is refused
-$translation{S_UNJUST} = 'Error: Unjust POST.';               # Returns error on an unjust POST - prevents floodbots or ways not using POST method?
-$translation{S_NOPIC} = 'Error: No file selected. Did you forget to click "Reply"?';  # Returns error for no file selected and override unchecked
-$translation{S_NOTEXT} = 'Error: No comment entered.';            # Returns error for no text entered in to subject/comment
-$translation{S_TOOLONG} = 'Error: Too many characters in text field.';    # Returns error for too many characters in a given field
-$translation{S_NOTALLOWED} = 'Error: Posting not allowed.';         # Returns error for non-allowed post types
-$translation{S_NONEWTHREADS} = 'Error: New threads can not be created.';
-$translation{S_UNUSUAL} = 'Error: Abnormal reply.';             # Returns error for abnormal reply? (this is a mystery!)
-$translation{S_BADHOST} = 'Error: Host is banned.';             # Returns error for banned host ($badip string)
-$translation{S_BADHOSTPROXY} = 'Error: Proxy is banned for being open.';  # Returns error for banned proxy ($badip string)
-$translation{S_RENZOKU} = 'Error: Flood detected, post discarded.';     # Returns error for $sec/post spam filter
-$translation{S_RENZOKU2} = 'Error: Flood detected, file discarded.';    # Returns error for $sec/upload spam filter
-$translation{S_RENZOKU3} = 'Error: Flood detected.';            # Returns error for $sec/similar posts spam filter.
-$translation{S_RENZOKU4} = 'Error: Post removal period hasn\'t yet expired.';
-$translation{S_RENZOKU5} = 'Error: Flood detected. Please wait.';
-$translation{S_PROXY} = 'Error: Open proxy detected.';            # Returns error for proxy detection.
-$translation{S_DUPE} = 'Error: This file has already been posted <a href="%s">here</a>.'; # Returns error when an md5 checksum already exists.
-$translation{S_DUPENAME} = 'Error: A file with the same name already exists.';  # Returns error when an filename already exists.
-$translation{S_NOTHREADERR} = 'Error: Thread does not exist.';        # Returns error when a non-existant thread is accessed
-$translation{S_BADDELPASS} = 'Error: Incorrect password for deletion.';   # Returns error for wrong password (when user tries to delete file)
-$translation{S_WRONGPASS} = 'Error: Management password incorrect.';    # Returns error for wrong password (when trying to access Manager modes)
-$translation{S_VIRUS} = 'Error: Possible virus-infected file.';       # Returns error for malformed files suspected of being virus-infected.
-$translation{S_NOTWRITE} = 'Error: Could not write to directory.';        # Returns error when the script cannot write to the directory, the chmod (777) is wrong
+$translation{S_REPORTERR} = 'Cannot find reply.';          # Returns error when a reply (res) cannot be found
+$translation{S_UPFAIL} = 'Upload failed.';             # Returns error for failed upload (reason: unknown?)
+$translation{S_NOREC} = 'Cannot find record.';           # Returns error when record cannot be found
+$translation{S_NOCAPTCHA} = 'No verification code on record - it probably timed out.'; # Returns error when there's no captcha in the database for this IP/key
+$translation{S_BADCAPTCHA} = 'Wrong verification code entered.';   # Returns error when the captcha is wrong
+$translation{S_BADFORMAT} = 'File format not supported.';      # Returns error when the file is not in a supported format.
+$translation{S_STRREF} = 'String refused.';              # Returns error when a string is refused
+$translation{S_UNJUST} = 'Unjust POST.';               # Returns error on an unjust POST - prevents floodbots or ways not using POST method?
+$translation{S_NOPIC} = 'No file selected. Did you forget to click "Reply"?';  # Returns error for no file selected and override unchecked
+$translation{S_NOTEXT} = 'No comment entered.';            # Returns error for no text entered in to subject/comment
+$translation{S_TOOLONG} = 'Too many characters in text field.';    # Returns error for too many characters in a given field
+$translation{S_NOTALLOWED} = 'Posting not allowed.';         # Returns error for non-allowed post types
+$translation{S_NONEWTHREADS} = 'New threads can not be created.';
+$translation{S_UNUSUAL} = 'Abnormal reply.';             # Returns error for abnormal reply? (this is a mystery!)
+$translation{S_BADHOST} = 'Host is banned.';             # Returns error for banned host ($badip string)
+$translation{S_BADHOSTPROXY} = 'Proxy is banned for being open.';  # Returns error for banned proxy ($badip string)
+$translation{S_RENZOKU} = 'Flood detected, post discarded.';     # Returns error for $sec/post spam filter
+$translation{S_RENZOKU2} = 'Flood detected, file discarded.';    # Returns error for $sec/upload spam filter
+$translation{S_RENZOKU3} = 'Flood detected.';            # Returns error for $sec/similar posts spam filter.
+$translation{S_RENZOKU4} = 'Post removal period hasn\'t yet expired.';
+$translation{S_RENZOKU5} = 'Flood detected. Please wait.';
+$translation{S_PROXY} = 'Open proxy detected.';            # Returns error for proxy detection.
+$translation{S_DUPE} = 'This file has already been posted <a href="%s">here</a>.'; # Returns error when an md5 checksum already exists.
+$translation{S_DUPENAME} = 'A file with the same name already exists.';  # Returns error when an filename already exists.
+$translation{S_NOTHREADERR} = 'Thread does not exist.';        # Returns error when a non-existant thread is accessed
+$translation{S_BADDELPASS} = 'Incorrect password for deletion.';   # Returns error for wrong password (when user tries to delete file)
+$translation{S_WRONGPASS} = 'Management password incorrect.';    # Returns error for wrong password (when trying to access Manager modes)
+$translation{S_VIRUS} = 'Possible virus-infected file.';       # Returns error for malformed files suspected of being virus-infected.
+$translation{S_NOTWRITE} = 'Could not write to directory.';        # Returns error when the script cannot write to the directory, the chmod (777) is wrong
 $translation{S_SPAM} = 'Spammers are not welcome here.';          # Returns error when detecting spam
 $translation{S_NOBOARDACC} = 'You don\'t have access to this board, accessible: %s<br /><a href="%s?task=logout">Logout</a>';
 
@@ -230,6 +238,6 @@ $translation{S_REDIR} =
   ;    # Redir message for html in REDIR_DIR
 
 $translation{S_DNSBL} =
-  'Error: TOR nodes are not allowed!';    # error string for tor node check
+  'TOR nodes are not allowed!';    # error string for tor node check
 
 \%translation;

@@ -9,7 +9,7 @@
 	</ul>
 </nav>
 </div>
-<const TRACKING_CODE>
+<const Wakaba::TRACKING_CODE>
 
 <script type="text/javascript">var style_cookie="<var $$cfg{STYLE_COOKIE}>";</script>
 <script type="text/javascript" src="/static/js/wakaba3.js"></script>
@@ -18,7 +18,7 @@
 <script type="text/javascript" src="/static/vendor/jquery.blockUI.js"></script>
 <!-- <script type="text/javascript" src="/static/vendor/jquery.form.min.js"></script> -->
 
-<if %isAdmin>
+<if %admin>
 <link rel="stylesheet" type="text/css" href="/static/vendor/jquery-ui.min.css" />
 <script type="text/javascript" src="/static/vendor/jquery-ui.min.js"></script>
 <script type="text/javascript" src="/static/js/admin.js"></script>

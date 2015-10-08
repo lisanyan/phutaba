@@ -56,6 +56,7 @@ $translation{S_FIRSTPG} = 'Zur&uuml;ck';    # Defines previous button
 $translation{S_NEXT} = 'Vor';            # Defines next button
 $translation{S_LASTPG} = 'Vor';            # Defines next button
 $translation{S_TOP} = 'Nach oben';
+$translation{S_BOTTOM} = 'Nach unten';
 
 $translation{S_SEARCHTITLE} = 'Suche';
 $translation{S_SEARCH} = 'Suchen nach';
@@ -68,8 +69,10 @@ $translation{S_SEARCHFOUND} = 'Ergebnisse:';
 $translation{S_OPTIONS} = 'Optionen';
 $translation{S_MINLENGTH} = '(min. 3 Zeichen)';
 
-$translation{S_WEEKDAYS} = [ 'So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa' ) ]
-  ;                                         # Defines abbreviated weekday names.
+$translation{S_DATENAMES} = {
+  weekdays => [ 'So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa' ], # Defines abbreviated weekday names.
+  months => [qw/Januar Februar März April Mai Juni Juli August September Oktober November Dezember/] # Defines full month names
+};
 
 $translation{S_STICKYTITLE} = 'Thread ist angepinnt';    # Defines the title of the tiny sticky image on a thread if it is sticky
 $translation{S_LOCKEDTITLE} = 'Thread ist geschlossen';    # Defines the title of the tiny locked image on a thread if it is locked
@@ -79,6 +82,9 @@ $translation{S_JS_EXPAND} = 'Textfeld vergrößern';
 $translation{S_JS_SHRINK} = 'Textfeld verkleinern';
 $translation{S_JS_REMOVEFILE} = 'Datei entfernen';
 $translation{S_JS_STYLES} = 'Styles';
+$translation{S_JS_DONE} = 'Ok';
+$translation{S_JS_CONTEXT} = 'Context';
+$translation{S_JS_UPDATE} = 'Update thread';
 # javascript strings END
 
 $translation{S_MANARET} = 'Zur&uuml;ck';    # Returns to HTML file instead of PHP--thus no log/SQLDB update occurs
@@ -91,20 +97,13 @@ $translation{S_MANAPANEL} = 'Posts moderieren'; # Defines Management Panel radio
 $translation{S_MANATOOLS} = 'Werkzeuge';
 $translation{S_MANAGEOINFO} = 'GeoIP-Informationen';
 $translation{S_MANADELETE} = 'Posts l&ouml;schen';
-$translation{S_MANABANS} = 'Sperren verwalten';         # Defines Bans Panel button
-$translation{S_MANAPROXY} = 'Proxys konfigurieren';
-$translation{S_MANASPAM} = 'Spam';                # Defines Spam Panel button
-$translation{S_MANASQLDUMP} = 'MySQL abfragen';      # Defines SQL dump button
-$translation{S_MANASQLINT} = 'MySQL Interface';   # Defines SQL interface button
+$translation{S_MANABANS} = 'Sperren verwalten'; # Defines Bans Panel button
 $translation{S_MANAORPH} = 'Verwaiste Dateien';
   ; # Defines Manager Post radio button--allows the user to post using HTML code in the comment box
-$translation{S_MANAREBUILD} = 'Cache erneuern';    #
-$translation{S_MANANUKE} = 'Atombombe';         #
 $translation{S_MANALOGOUT} = 'Abmelden';          #
-$translation{S_MANASAVE} =
-  'Speichern';    # Defines Label for the login cookie checbox
-$translation{S_MANASUB} =
-  'Los';          # Defines name for submit button in Manager Mode
+$translation{S_MANASAVE} = 'Speichern';    # Defines Label for the login cookie checbox
+$translation{S_MANALOG} = 'Log';
+$translation{S_MANASUB} = 'Los';          # Defines name for submit button in Manager Mode
 
 $translation{S_NOTAGS} = '<p>Formatierung nur mit HTML-Tags. Keine Parser-Verarbeitung.</p>';               # Prints message on Management Board
 
@@ -132,8 +131,7 @@ $translation{S_FILEDELETED} = 'Datei gel&ouml;scht';
 
 $translation{S_POSTINFO} = 'IP-Informationen';
 $translation{S_MPDELETEIP} = 'Alle l&ouml;schen';
-$translation{S_MPDELETE} =
-  'Post l&ouml;schen';    # Defines for deletion button in Management Panel
+$translation{S_MPDELETE} = 'Post l&ouml;schen';    # Defines for deletion button in Management Panel
 $translation{S_MPDELFILE} = 'Datei(en) l&ouml;schen';
 $translation{S_MPARCHIVE} = 'Archiv';
 $translation{S_MPSTICKY} = 'Sticky setzen';
@@ -141,13 +139,12 @@ $translation{S_MPUNSTICKY} = 'Sticky entfernen';
 $translation{S_MPLOCK} = 'Thread schlie&szlig;en';
 $translation{S_MPUNLOCK} = 'Thread &ouml;ffnen';
 $translation{S_MPEDIT} = 'Post-Text bearbeiten';
-$translation{S_MPRESET} =
-  'Resetten';        # Defines name for field reset button in Management Panel
-$translation{S_MPONLYPIC} =
-  'Nur Datei';  # Sets whether or not to delete only file, or entire post/thread
+$translation{S_MPRESET} = 'Resetten';        # Defines name for field reset button in Management Panel
+$translation{S_MPONLYPIC} = 'Nur Datei';  # Sets whether or not to delete only file, or entire post/thread
 $translation{S_MPDELETEALL} = 'Alle&nbsp;Posts&nbsp;dieser&nbsp;IP&nbsp;l&ouml;schen';    #
-$translation{S_MPBAN} =
-  'Bann';    # Sets whether or not to delete only file, or entire post/thread
+$translation{S_MPBAN} = 'Bann';    # Sets whether or not to delete only file, or entire post/thread
+$translation{S_MPTABLE} = '<th>No.</th><th>Date</th><th>Subject</th>'
+                        . '<th>Name</th><th>Comment</th><th>IP</th>'; # Explains names for Management Panel
 $translation{S_IMGSPACEUSAGE} = '[ Belegter Speicherplatz: %s, %s Dateien, %s Posts (%s Threads) ]';          # Prints space used KB by the board under Management Panel
 
 $translation{S_DELALLMSG} = 'Betroffen';
@@ -156,7 +153,8 @@ $translation{S_DELALLCOUNT} = '%s Posts (%s Threads)';
 $translation{S_BANFILTER} = 'Abgelaufene Sperren ausblenden';
 $translation{S_BANSHOWALL} = 'Abgelaufene Sperren anzeigen';
 $translation{S_BANTABLE} =
-  '<th>Typ</th><th colspan="2">Wert</th><th>Kommentar</th><th>Erstelldatum</th><th>Ablaufdatum</th><th>Aktion</th>';          # Explains names for Ban Panel
+  '<th>Typ</th><th colspan="2">Wert</th><th>Kommentar</th><th>Erstelldatum</th><th>Ablaufdatum</th><th>Aktion</th>';
+  # Explains names for Ban Panel
 $translation{S_BANIPLABEL} = 'IP-Adresse';
 $translation{S_BANMASKLABEL} = 'Netzmaske';
 $translation{S_BANCOMMENTLABEL} = 'Kommentar';
@@ -166,12 +164,16 @@ $translation{S_BANIP} = 'IP sperren';
 $translation{S_BANWORD} = 'Wortfilter';
 $translation{S_BANWHITELIST} = 'Whitelist';
 $translation{S_BANREMOVE} = 'Entfernen';
+$translation{S_BANEDIT} = 'Bearbeiten';
 $translation{S_BANCOMMENT} = 'Kommentar';
 $translation{S_BANTRUST} = 'Kein Captcha';
 $translation{S_BANTRUSTTRIP} = 'Tripcode';
 $translation{S_BANREASONLABEL} = 'Grund';
 $translation{S_BANASNUMLABEL} = 'AS-Nummer';
 $translation{S_BANASNUM} = 'Netz sperren';
+$translation{S_BANEXPIRESLABEL} = 'Dauer';
+$translation{S_BANEXPIRESDESC} = '5 Days, 10 Hours, 30 Minutes, etc<br />Permaban - leave field empty';
+$translation{S_BANREASONLABEL} = 'Grund';
 
 $translation{S_LOCKED} = 'Thread ist geschlossen';
 
@@ -180,60 +182,41 @@ $translation{S_MANASHOW} = '&Ouml;ffnen';
 
 $translation{S_PROXYDISABLED} = 'Proxy-Abfrage ist momentan nicht aktiviert.';
 $translation{S_BADIP} = 'Falsche IP-Adresse';
-$translation{S_BADDELIP} = 'Fehler: Falsche IP.';    # Returns error for wrong ip (when user tries to delete file)
-$translation{S_INVALID_PAGE} = "Fehler: Keine solche Seite gefunden.";
+$translation{S_BADDELIP} = 'Falsche IP.';    # Returns error for wrong ip (when user tries to delete file)
+$translation{S_INVALID_PAGE} = "Keine solche Seite gefunden.";
 $translation{S_STOP_FOOLING} = "Lass das sein, Kevin!";
-
-$translation{S_SPAMEXPL} =
-  'Diese Liste mit Domains werden von Wakaba als Spam angesehen.<br />'
-  . 'Die aktuellste Version davon gibt es <a href="http://wakaba.c3.cx/antispam/antispam.pl?action=view&amp;format=wakaba">hier</a>, '
-  . 'die <code>spam.txt</code>-Datei direkt <a href="http://wakaba.c3.cx/antispam/spam.txt">hier</a>.';
 
 $translation{S_TOOBIG} = 'Die Datei ist zu gro&szlig;.';
 $translation{S_TOOBIGORNONE} = 'Die Datei ist zu gro&szlig; oder leer.';
-$translation{S_REPORTERR} = 'Fehler: Beitrag nicht gefunden.';    # Returns error when a reply (res) cannot be found
-$translation{S_UPFAIL} = 'Fehler: Upload fehlgeschlagen.';    # Returns error for failed upload (reason: unknown?)
-$translation{S_NOREC} =
-  'Fehler: Eintrag nicht gefunden.'; # Returns error when record cannot be found
-$translation{S_NOCAPTCHA} = 'Fehler: Kein CAPTCHA in der DB für diesen Key.';    # Returns error when there's no captcha in the database for this IP/key
-$translation{S_BADCAPTCHA} =
-  'Fehler: Falscher Captcha-Code.';    # Returns error when the captcha is wrong
-$translation{S_BADFORMAT} = 'Fehler: Dateityp wird nicht unterst&uuml;tzt.';    # Returns error when the file is not in a supported format.
-$translation{S_STRREF} =
-  'Fehler: String abgewiesen.';    # Returns error when a string is refused
-$translation{S_UNJUST} = 'Fehler: Flood detektiert.'; # Returns error on an unjust POST - prevents floodbots or ways not using POST method?
-$translation{S_NOPIC} = 'Fehler: Keine Datei ausgew&auml;hlt.';    # Returns error for no file selected and override unchecked
-$translation{S_NOTEXT} = 'Fehler: Keinen Text eingegeben.';    # Returns error for no text entered in to subject/comment
-$translation{S_TOOLONG} = 'Fehler: Zu viele Zeichen im Kommentar.';    # Returns error for too many characters in a given field
-$translation{S_NOTALLOWED} =
-  'Fehler: Das Post-Formular wurde falsch ausgef&uuml;llt.';    # Returns error for non-allowed post types
-$translation{S_NONEWTHREADS} =
-  'Fehler: Neue Threads d&uuml;rfen nicht er&ouml;ffnet werden.';
-$translation{S_UNUSUAL} = 'Fehler: WAS GEHT DENN MIT DIR AB?';    # Returns error for abnormal reply? (this is a mystery!)
-$translation{S_BADHOST} = 'Fehler: IP-Adresse ist gesperrt.';    # Returns error for banned host ($badip string)
-$translation{S_BADHOSTPROXY} = 'Fehler: Proxy ist gesperrt.';    # Returns error for banned proxy ($badip string)
-$translation{S_RENZOKU} =
-  'Fehler: Zu viele Posts abgesetzt.';    # Returns error for $sec/post spam filter
-$translation{S_RENZOKU2} =
-  'Fehler: Zu viele Posts abgesetzt.';    # Returns error for $sec/upload spam filter
-$translation{S_RENZOKU3} =
-  'Fehler: Zu viele Posts abgesetzt.';    # Returns error for $sec/similar posts spam filter.
-$translation{S_RENZOKU4} =
-  'Fehler: L&ouml;schwartezeit noch nicht abgelaufen.';    # Returns error for too early post deletion.
-$translation{S_RENZOKU5} = 'Fehler: Zu viele Posts abgesetzt. Bitte warten.';
-$translation{S_PROXY} =
-  'Fehler: Ich mag keine Proxys.';    # Returns error for proxy detection.
-$translation{S_DUPE} =
-  'Fehler: Die Datei wurde bereits <a href="%s">hier</a> hochgeladen.';    # Returns error when an md5 checksum already exists.
-$translation{S_DUPENAME} =
-  'Fehler: Eine Datei desselbigen Namens existiert bereits.';    # Returns error when an filename already exists.
-$translation{S_NOTHREADERR} = 'Fehler: Thema existiert nicht.';    # Returns error when a non-existant thread is accessed
-$translation{S_BADDELPASS} = 'Fehler: Falsches L&ouml;schpasswort.';    # Returns error for wrong password (when user tries to delete file)
-$translation{S_WRONGPASS} = 'Fehler: Falsches Passwort / Bitte erneut anmelden.';    # Returns error for wrong password (when trying to access Manager modes)
-$translation{S_VIRUS} =
-  'Fehler: Die Datei k&ouml;nnte von einem Virus befallen sein.';    # Returns error for malformed files suspected of being virus-infected.
-$translation{S_NOTWRITE} =
-  'Fehler: Verzeichnis konnte nicht beschrieben werden.'; # Returns error when the script cannot write to the directory, the chmod (777) is wrong
+$translation{S_REPORTERR} = 'Beitrag nicht gefunden.';    # Returns error when a reply (res) cannot be found
+$translation{S_UPFAIL} = 'Upload fehlgeschlagen.';    # Returns error for failed upload (reason: unknown?)
+$translation{S_NOREC} = 'Eintrag nicht gefunden.'; # Returns error when record cannot be found
+$translation{S_NOCAPTCHA} = 'Kein CAPTCHA in der DB für diesen Key.';    # Returns error when there's no captcha in the database for this IP/key
+$translation{S_BADCAPTCHA} = 'Falscher Captcha-Code.';    # Returns error when the captcha is wrong
+$translation{S_BADFORMAT} = 'Dateityp wird nicht unterst&uuml;tzt.';    # Returns error when the file is not in a supported format.
+$translation{S_STRREF} = 'String abgewiesen.';    # Returns error when a string is refused
+$translation{S_UNJUST} = 'Flood detektiert.'; # Returns error on an unjust POST - prevents floodbots or ways not using POST method?
+$translation{S_NOPIC} = 'Keine Datei ausgew&auml;hlt.';    # Returns error for no file selected and override unchecked
+$translation{S_NOTEXT} = 'Keinen Text eingegeben.';    # Returns error for no text entered in to subject/comment
+$translation{S_TOOLONG} = 'Zu viele Zeichen im Kommentar.';    # Returns error for too many characters in a given field
+$translation{S_NOTALLOWED} = 'Das Post-Formular wurde falsch ausgef&uuml;llt.';    # Returns error for non-allowed post types
+$translation{S_NONEWTHREADS} = 'Neue Threads d&uuml;rfen nicht er&ouml;ffnet werden.';
+$translation{S_UNUSUAL} = 'WAS GEHT DENN MIT DIR AB?';    # Returns error for abnormal reply? (this is a mystery!)
+$translation{S_BADHOST} = 'IP-Adresse ist gesperrt.';    # Returns error for banned host ($badip string)
+$translation{S_BADHOSTPROXY} = 'Proxy ist gesperrt.';    # Returns error for banned proxy ($badip string)
+$translation{S_RENZOKU} = 'Zu viele Posts abgesetzt.';    # Returns error for $sec/post spam filter
+$translation{S_RENZOKU2} = 'Zu viele Posts abgesetzt.';    # Returns error for $sec/upload spam filter
+$translation{S_RENZOKU3} = 'Zu viele Posts abgesetzt.';    # Returns error for $sec/similar posts spam filter.
+$translation{S_RENZOKU4} = 'L&ouml;schwartezeit noch nicht abgelaufen.';    # Returns error for too early post deletion.
+$translation{S_RENZOKU5} = 'Zu viele Posts abgesetzt. Bitte warten.';
+$translation{S_PROXY} = 'Ich mag keine Proxys.';    # Returns error for proxy detection.
+$translation{S_DUPE} = 'Die Datei wurde bereits <a href="%s">hier</a> hochgeladen.';    # Returns error when an md5 checksum already exists.
+$translation{S_DUPENAME} = 'Eine Datei desselbigen Namens existiert bereits.';    # Returns error when an filename already exists.
+$translation{S_NOTHREADERR} = 'Thema existiert nicht.';    # Returns error when a non-existant thread is accessed
+$translation{S_BADDELPASS} = 'Falsches L&ouml;schpasswort.';    # Returns error for wrong password (when user tries to delete file)
+$translation{S_WRONGPASS} = 'Falsches Passwort / Bitte erneut anmelden.';    # Returns error for wrong password (when trying to access Manager modes)
+$translation{S_VIRUS} = 'Die Datei k&ouml;nnte von einem Virus befallen sein.';    # Returns error for malformed files suspected of being virus-infected.
+$translation{S_NOTWRITE} = 'Verzeichnis konnte nicht beschrieben werden.'; # Returns error when the script cannot write to the directory, the chmod (777) is wrong
 $translation{S_SPAM} = 'Spam? Raus hier!';   # Returns error when detecting spam
 $translation{S_NOBOARDACC} = 'You don\'t have access to this board, accessible: %s<br /><a href="%s?task=logout">Logout</a>';
 
@@ -248,6 +231,6 @@ $translation{S_REDIR} =
   'If the redirect didn\'t work, please choose one of the following mirrors:';    # Redir message for html in REDIR_DIR
 
 $translation{S_DNSBL} =
-  'Fehler: TOR-Nodes sind nicht erlaubt!';    # error string for tor node check
+  'TOR-Nodes sind nicht erlaubt!';    # error string for tor node check
 
 \%translation;

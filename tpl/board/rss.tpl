@@ -4,7 +4,7 @@
     <atom:link href="<var Wakaba::expand_filename("board.rss", 1)>" rel="self" type="application/rss+xml" />
     <title><var $$cfg{TITLE}> /<var $$cfg{SELFPATH}>/: Latest Posts</title>
     <link><var Wakaba::expand_filename("", 1)></link>
-    <description>The latest threads and replies in /<var $$cfg{SELFPATH}>/ at <var $ENV{SERVER_NAME}>, updated in realtime.</description>
+    <description>The latest threads and replies in /<var $$cfg{SELFPATH}>/ at <var %server_name>, updated in realtime.</description>
     <pubDate><var $pub_date></pubDate>
     <lastBuildDate><var $pub_date></lastBuildDate>
     <generator>Wakaba</generator>

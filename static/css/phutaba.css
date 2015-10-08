@@ -31,8 +31,13 @@ pre {
 	word-wrap: break-word;
 }
 
-ul.right { float: none !important; /* clear: both */ }
-ul.menu li a, ul.menu_bottom li a { border-radius: 0.5em; margin: 2px 0px 1px }
+ul.right { float: none !important; }
+ul.menu li a, ul.menu_bottom li a {
+	border-radius: 0.5em;
+	margin: 2px 0px 1px;
+	border-style: solid;
+	border-width: 1px; 
+}
 ul.menu, ul.menu_bottom { padding: 0.2em }
 ul.pagelist { margin: 0px 1em 3px 0px !important }
 
@@ -561,6 +566,7 @@ footer img {
 	width: 40%;
 	z-index: 400;
 	-webkit-box-shadow: #666 0px 0px 10px;
+	box-shadow: #666 0px 0px 10px;
 }
 #overlay, .overlay {
 	display: none;

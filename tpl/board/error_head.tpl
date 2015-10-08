@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-	<meta charset="<const CHARSET>" />
+	<meta charset="<const Wakaba::CHARSET>" />
 	<meta name="viewport" content="width=device-width, initial-scale=1" />
 	<title><var $$cfg{TITLE}> &raquo; <var $error_page></title>
 	<link rel="stylesheet" type="text/css" href="/static/css/phutaba.css" />

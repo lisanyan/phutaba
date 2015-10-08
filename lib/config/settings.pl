@@ -44,6 +44,7 @@ $settings{SHOW_COUNTRIES} = 0;
 $settings{PREVENT_GHOST_BUMPING} = 1;
 
 # Limitations
+$settings{MAX_FILES} = 4;
 $settings{MAX_KB} = 10240;					# Maximum upload size in KB
 $settings{MAX_W} = 200;						# Images exceeding this width will be thumbnailed
 $settings{MAX_H} = 200;						# Images exceeding this height will be thumbnailed
@@ -65,6 +66,13 @@ $settings{MAX_IMAGE_PIXELS} = 50000000000;		# Maximum width*height of image befo
 $settings{CAPTCHA_MODE} = 2;
 $settings{CAPTCHA_SKIP} = 'DE NO CH AT LI BE LU DK NL FI EE RU UA BY KZ PL EU';
 $settings{CAPTCHA_SCRIPT} = 'captcha.pl';
+$settings{SQL_CAPTCHA_TABLE} = 'captcha';
+$settings{CAPTCHA_LIFETIME} = 1440;
+$settings{CAPTCHA_HEIGHT} = 18;
+$settings{CAPTCHA_SCRIBBLE} = 0.2;
+$settings{CAPTCHA_SCALING} = 0.15;
+$settings{CAPTCHA_ROTATION} = 0.3;
+$settings{CAPTCHA_SPACING} = 2.5;
 
 # Tweaks
 $settings{THUMBNAIL_SMALL} = 1;				# Thumbnail small images (1: yes, 0: no)
@@ -127,13 +135,6 @@ $settings{FILESIZES} = { };
 $settings{FILETYPES} = {
 	swf => 'other', # Other
 	torrent => 'other',
-	gif => '.', # Img
-	jpg => '.',
-	png => '.',
-	svg => '.',
-	bmp => 'image',
-	webm => '.', # Vid
-	mp4 => '.',
 	psd => 'doc', # Doc
 	epub => 'doc',
 	mobi => 'doc',

@@ -1,6 +1,8 @@
 hr{border-top:1px solid #333}
 body{background:#e8e5e5 url(/img/kaiserchan_bg.png) fixed}
 a:link,a:visited,a:hover{color:#34345C}
+.reflink a, .filename a, .filetype a, .togglethread a{color:inherit;text-decoration:none}
+.reflink a:hover, .filename a:hover, .filetype a:hover{text-decoration:underline}
 ul.menu a,ul.menu_bottom a{background-color:#C9C9C9;border-color:#333}
 .boardname,.caption{color:#000}
 .postblock{background-color:#333;color:#FFBC00}

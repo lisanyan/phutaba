@@ -11,9 +11,9 @@ use DBI;
 
 use lib '.';
 BEGIN {
- do "lib/site_config.pl";
- do "lib/config_defaults.pl";
- do "lib/wakautils.pl";
+    require "lib/site_config.pl";
+    require "lib/config_defaults.pl";
+    require "lib/wakautils.pl";
 }
 
 return 1 if (caller);
@@ -58,11 +58,16 @@ my %font        = (
     my $key      = ( $query->param("key") or 'default' );
     my $selector = ( $query->param("selector") or ".captcha" );
     my $style    = ( $query->cookie("wakabastyle"));
-    my $board    = ( $query->param("board") or 'default');
+    my $board    = ( $query->param("board") or 'b');
     my $ip = ($ENV{HTTP_CF_CONNECTING_IP} || $ENV{HTTP_X_REAL_IP} || $ENV{REMOTE_ADDR});
 
     my $settings = fetch_config($board);
     my $locale = get_settings($$settings{BOARD_LOCALE}); # edit this to change locale
+
+    if( $$settings{NOTFOUND} ) {
+        print ("Content-type: text/plain\n\nBoard not found.");
+        exit;
+    }
 
     #my @foreground = find_stylesheet_color( $style, $selector );
 
@@ -74,7 +79,7 @@ my %font        = (
         { AutoCommit => 1 } )
       or die $$locale{S_SQLCONF};
     init_captcha_database($dbh)
-      unless ( table_exists_captcha( $dbh, SQL_CAPTCHA_TABLE ) );
+      unless ( table_exists_captcha( $dbh, $$settings{SQL_CAPTCHA_TABLE} ) );
 
     my ( $word, $timestamp ) = get_captcha_word( $dbh, $ip, $key, $board );
 
@@ -89,7 +94,7 @@ my %font        = (
     print $query->header(
         -type => 'image/gif',
 
-        #	-expires=>'+'.($timestamp+(CAPTCHA_LIFETIME)-time()),
+        #	-expires=>'+'.($timestamp+($$settings{CAPTCHA_LIFETIME})-time()),
         #	-expires=>'now',
     );
 
@@ -167,7 +172,7 @@ sub make_word {
             "b", "c", "d",  "f", "g", "j", "l", "m",
             "n", "p", "qu", "r", "s", "t", "v", "s%P%"
         ],
-        I => [ "ex",     "in", "un", "re", "de" ],
+        I => [ "ex", "in", "un", "re", "de", "te" ],
         T => [ "%V%%F%", "%V%%E%e" ],
         U => [ "er", "ish", "ly", "en", "ing", "ness", "ment", "able", "ive" ],
         C => [
@@ -182,7 +187,7 @@ sub make_word {
         ],
         F => [
             "b", "tch", "d",  "ff", "g", "gh", "ck",   "ll",
-            "m", "n",   "n",  "ng", "p", "r",  "ss",   "sh",
+            "m", "n",   "n",  "ng", "p", "r",  "ps",   "ss", "sh",
             "t", "tt",  "th", "x",  "y", "zz", "r%R%", "s%P%",
             "l%L%"
         ],
@@ -215,7 +220,7 @@ sub get_captcha_word {
 
     $sth =
       $dbh->prepare( "SELECT word,timestamp FROM "
-          . SQL_CAPTCHA_TABLE
+          . $$settings{SQL_CAPTCHA_TABLE}
           . " WHERE ip=? AND pagekey=? AND board=?;" )
       or return undef;
     $sth->execute( $ip, $key, $board )
@@ -236,7 +241,7 @@ sub save_captcha_word {
         $dbh->begin_work();
 
         my $sth =
-          $dbh->prepare( "INSERT INTO " . SQL_CAPTCHA_TABLE . " VALUES(?,?,?,?,?);" )
+          $dbh->prepare( "INSERT INTO " . $$settings{SQL_CAPTCHA_TABLE} . " VALUES(?,?,?,?,?);" )
           or die $$locale{S_SQLFAIL};
         $sth->execute( $ip, $key, $word, $time, $board ) or die $$locale{S_SQLFAIL};
         $sth->finish();
@@ -267,7 +272,7 @@ sub delete_captcha_word {
     my ( $dbh, $ip, $key, $board ) = @_;
 
     my $sth = $dbh->prepare(
-        "DELETE FROM " . SQL_CAPTCHA_TABLE . " WHERE ip=? AND pagekey=? AND board=?;" )
+        "DELETE FROM " . $$settings{SQL_CAPTCHA_TABLE} . " WHERE ip=? AND pagekey=? AND board=?;" )
       or return;
     $sth->execute( $ip, $key, $board ) or return;
 }
@@ -280,11 +285,11 @@ sub init_captcha_database {
     my ($dbh) = @_;
     my ($sth);
 
-    $sth = $dbh->do( "DROP TABLE " . SQL_CAPTCHA_TABLE . ";" )
-      if ( table_exists_captcha( $dbh, SQL_CAPTCHA_TABLE ) );
+    $sth = $dbh->do( "DROP TABLE " . $$settings{SQL_CAPTCHA_TABLE} . ";" )
+      if ( table_exists_captcha( $dbh, $$settings{SQL_CAPTCHA_TABLE} ) );
     $sth = $dbh->prepare(
             "CREATE TABLE "
-          . SQL_CAPTCHA_TABLE . " ("
+          . $$settings{SQL_CAPTCHA_TABLE} . " ("
           . "ip TEXT,"
           . "pagekey TEXT,"
           . "word TEXT,"
@@ -300,10 +305,10 @@ sub init_captcha_database {
 
 sub trim_captcha_database {
     my ($dbh) = @_;
-    my $mintime = time() - (CAPTCHA_LIFETIME);
+    my $mintime = time() - ($$settings{CAPTCHA_LIFETIME});
 
     my $sth = $dbh->prepare(
-        "DELETE FROM " . SQL_CAPTCHA_TABLE . " WHERE timestamp<=$mintime;" )
+        "DELETE FROM " . $$settings{SQL_CAPTCHA_TABLE} . " WHERE timestamp<=$mintime;" )
       or die $$locale{S_SQLFAIL};
     $sth->execute() or die $$locale{S_SQLFAIL};
 }
@@ -370,6 +375,8 @@ sub make_image {
     my ($word) = @_;
     my ( $width, $height );
 
+    @pixels=[]; # if you're using fcgi and won't do that 
+                #image will be drawn over previous image and so on..
     $pixel_w = $width;
     $pixel_h = $height;
 
@@ -404,7 +411,7 @@ my ( $scale, $rot, $dx, $dy );
 
 sub draw_string {
     my @chars = split //, $_[0];
-    my $x_offs = int( CAPTCHA_HEIGHT / $font_height * 2 );
+    my $x_offs = int( $$settings{CAPTCHA_HEIGHT} / $font_height * 2 );
 
     foreach my $char (@chars) {
         next unless ( $font{$char} );
@@ -429,7 +436,7 @@ sub draw_string {
                 $prev_y = $y;
             }
         }
-        $x_offs += int( ( $char_w + (CAPTCHA_SPACING) ) * $scale );
+        $x_offs += int( ( $char_w + ($$settings{CAPTCHA_SPACING}) ) * $scale );
     }
 }
 
@@ -439,10 +446,10 @@ sub setup_transform {
     $dx = $char_w / 2;
     $dy = $font_height / 2;
     $scale =
-      CAPTCHA_HEIGHT /
+      $$settings{CAPTCHA_HEIGHT} /
       $font_height *
-      ( 1 + (CAPTCHA_SCALING) * ( 1 - rand(2) ) );
-    $rot = ( rand(2) - 1 ) * (CAPTCHA_ROTATION);
+      ( 1 + ($$settings{CAPTCHA_SCALING}) * ( 1 - rand(2) ) );
+    $rot = ( rand(2) - 1 ) * ($$settings{CAPTCHA_ROTATION});
 }
 
 sub transform_coords {
@@ -454,7 +461,7 @@ sub transform_coords {
                 cos($rot) * ( $x - $dx ) -
                   sin($rot) * ( $y - $dy ) +
                   $dx +
-                  rand(CAPTCHA_SCRIBBLE)
+                  rand($$settings{CAPTCHA_SCRIBBLE})
             )
         ),
         int(
@@ -462,7 +469,7 @@ sub transform_coords {
                 sin($rot) * ( $x - $dx ) +
                   cos($rot) * ( $y - $dy ) +
                   $dy +
-                  rand(CAPTCHA_SCRIBBLE)
+                  rand($$settings{CAPTCHA_SCRIBBLE})
             )
         )
     );

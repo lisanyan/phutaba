@@ -2,8 +2,9 @@
 <html lang="en"> 
 
 <head>
-	<title>02ch [% IF template.title %]&raquo; [% template.title %][% END %]</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
 	<meta charset="utf-8" />
+	<title>02ch [% IF template.title %]&raquo; [% template.title %][% END %]</title>
 	<link rel="stylesheet" type="text/css" href="/static/css/phutaba.css" />
 	<link rel="shortcut icon" href="/img/favicon.ico" />
 	<link rel="alternate stylesheet" type="text/css" href="/static/css/photon.css" title="Photon" />
