@@ -726,7 +726,7 @@ sub output_page {
 		encode_string(
             PAGE_TEMPLATE->(
 				postform     => (ALLOW_TEXTONLY or ALLOW_IMAGES or $isAdmin),
-				image_inp    => ALLOW_IMAGES,
+				image_inp    => (ALLOW_IMAGES or $isAdmin),
 				textonly_inp => (ALLOW_IMAGES and ALLOW_TEXTONLY),
 				captcha_inp  => (!$isAdmin and need_captcha(CAPTCHA_MODE, CAPTCHA_SKIP, $loc)),
 				prevpage     => $prevpage,
@@ -816,7 +816,7 @@ sub show_thread {
 				locked       => $locked,
 				title        => $thread[0]{subject},
 				postform     => ((ALLOW_TEXT_REPLIES or ALLOW_IMAGE_REPLIES) and !$locked or $isAdmin),
-				image_inp    => ALLOW_IMAGE_REPLIES,
+				image_inp    => (ALLOW_IMAGE_REPLIES or $isAdmin),
 				textonly_inp => 0,
 				captcha_inp  => (!$isAdmin and need_captcha(CAPTCHA_MODE, CAPTCHA_SKIP, $loc)),
 				dummy        => $thread[$#thread]{num},
