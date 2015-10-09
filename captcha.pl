@@ -137,7 +137,7 @@ sub get_settings {
     }
     elsif ( $dodo =~ /locale_(ru|en|de)/ ) {
         my $dildo = $1 ? $1 : 'en'; # fall back to english if shit happens
-        $file = "./lib/config/strings_$1.pl";
+        $file = "./lib/config/strings_$dildo.pl";
     }
     else {
         $file = './lib/config/settings.pl';
