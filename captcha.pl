@@ -136,6 +136,7 @@ sub get_settings {
         $file = './lib/config/trips.pl';
     }
     elsif ( $dodo =~ /locale_(ru|en|de)/ ) {
+        my $dildo = $1 ? $1 : 'en'; # fall back to english if shit happens
         $file = "./lib/config/strings_$1.pl";
     }
     else {
@@ -376,7 +377,7 @@ sub make_image {
     my ( $width, $height );
 
     @pixels=[]; # if you're using fcgi and won't do that 
-                #image will be drawn over previous image and so on..
+                # image will be drawn over previous image and so on..
     $pixel_w = $width;
     $pixel_h = $height;
 

@@ -89,8 +89,8 @@ config. OffsetY			= 8			// Vertical offset
 config. Opacity			= 100		// Integer between 0 and 100 - opacity of tooltip in percent
 config. Padding			= 3			// Spacing between border and content
 config. Shadow			= false		// false or true
-config. ShadowColor		= '#C0C0C0'
-config. ShadowWidth		= 5
+config. ShadowColor		= '#666'
+config. ShadowWidth		= 2
 config. Sticky			= false		// false or true - fixate tip, ie. don't follow the mouse and don't hide on mouseout
 config. TextAlign		= 'left'	// 'left', 'right' or 'justify'
 config. Title			= ''		// Default title text applied to all tips (no default title: empty string '')
@@ -946,7 +946,7 @@ function tt_Show()
 	var css = tt_aElt[0].style;
 
 	// Override the z-index of the topmost wz_dragdrop.js D&D item
-	css.zIndex = Math.max((window.dd && dd.z) ? (dd.z + 2) : 0, 10010);
+	css.zIndex = Math.max((window.dd && dd.z) ? (dd.z + 2) : 0, 1010);
 	if(tt_aV[STICKY] || !tt_aV[FOLLOWMOUSE])
 		tt_iState &= ~0x4;
 	if(tt_aV[EXCLUSIVE])
@@ -1299,4 +1299,3 @@ function tt_ExtCallFncs(arg, sFnc)
 }
 
 tt_Init();
-

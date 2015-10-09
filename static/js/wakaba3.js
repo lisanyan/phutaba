@@ -50,7 +50,7 @@ function set_inputs(id) {
 		if (typeof nya1 == "object" && !nya1.value) nya1.value = get_cookie("name");
 		/* if (!nya2.value) nya2.value = get_cookie("email"); */
 		if (typeof gb2 == "object")	gb2[1].checked = (get_cookie("gb2") == "thread");
-		if (typeof no_pomf == "object") no_pomf.checked = Settings.get("nopomf") == 1 ? "checked" : "";
+		if (typeof no_pomf == "object") no_pomf.checked = (get_cookie("nopomf") == "on");
 		if (!password.value) password.value = get_password("password");
 
 		// preload images for post form

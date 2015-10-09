@@ -9,7 +9,6 @@ use Socket;
 use Image::ExifTool;
 use Geo::IP;
 use Net::IP qw(:PROC); # IPv6 conversions
-use IO::Scalar;
 
 my $has_md5 = 0;
 eval 'use Digest::MD5 qw(md5)';
@@ -1549,9 +1548,9 @@ sub analyze_bmp {
     my ($file) = @_;
     my ( $bytes, $buffer );
 
-    $bytes = read( $file, $buffer, 24 );
+    $bytes = read( $file, $buffer, 56 );
     seek( $file, 0, 0 );
-    return () unless ( $bytes == 24 );
+    return () unless ( $bytes == 56 );
 
 	my (
 		$b_magic, $m_magic, $filesize, 

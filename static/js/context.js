@@ -3,21 +3,21 @@ function highlight() {
   // to be here until the board doesn't hardcode it into posts anymore
 }
 
-// WARNING!! Ультраговнокод
+// WARNING!! Shitty code!
 (function(){
-var isWindowFocused = true, newPosts = 0;
-var old_t = $j('title').text();
+var isWindowFocused = true, newPosts = 0, UpdaterTimer;
+var old_t = document.title;
+var origBtn, updBtn = $j('#updater');
 var perdelki = Settings.get('context');
 
 var _selector = '.thread_OP, .thread_reply'; //post
 var refMap = [], postByNum = [];
-var origBtn, updBtn = $j('#updater');
 
 var lang = 'ru';
 var consts = {
   en: {
-	newPostsNotFound: "Now new messages found.",
-	newPostsFound: " new messages",
+	newPostsNotFound: "No new messages found.",
+	newPostsFound: "New messages: ",
 	pNotFound: "Post not found",
 	updthr: "Update thread",
 	load: "Loading...",
@@ -85,7 +85,7 @@ function getRefMap(pNum, rNum)
 
 function showRefMap(post, p_num, isUpd) {
   if(typeof refMap[p_num] !== 'object' || !post) return;
-  
+
   var data = consts[lang].replies + refMap[p_num].toString().replace(/(\d+)/g, ' <span class="backreflink"><a href="#$1">>>$1</a></span>');
   var map_b = isUpd ? $id("pidarok_refmap_"+p_num) : null;
 
@@ -160,7 +160,10 @@ function delPreview(e) {
 		$j(pView).closest('a').unbind('mouseout');
 	}
 }
-function addPreview(a){$j(a || ".thread .text").find(".backreflink a").each(function(){$event(this,{mouseover:showPostPreview,mouseout:delPreview})})};
+function addPreview(a) {
+	$j(a || ".thread .text").find(".backreflink a").each(function(){
+		$event(this, { mouseover:showPostPreview, mouseout:delPreview })
+	})};
 
 /*------------------------------------------------------------------- AJAX -------------------------------------------------------------*/
 
@@ -169,7 +172,7 @@ function getNewPosts() {
 	if(window.thread_id !== null) {
 		origBtn = updBtn.html();
 		$j(updBtn).css('display','inline').find('a').click(loadNewPosts);
-		setInterval(loadNewPosts, 45000);
+		updater = setInterval(loadNewPosts, 45000);
 	}
 }
 
@@ -180,36 +183,40 @@ function loadNewPosts() {
 	  $j(updBtn).html(origBtn).find('a').unbind('click').click(loadNewPosts);
 	}
 	$j(updBtn).html('['+consts[lang].load+']');
+	clearInterval(updater);
 
 	$j.ajax('/wakaba.pl?section='+window.board+'&task=show&thread='+window.thread_id+'&after='+aft,
 	  {async:true} )
 		.done(function(data) {
 			if(!data.error_code) {
-			  var postdata = $j(data).filter('*');
-			  postdata.each(function(){
-				newPosts++;
-				addRefLinkMap([this]);
-				addPreview([this]);
-				addPreview($j('.pidarok_refmap'));
-				$j('.thread').append($j(this).hide().fadeIn("normal"));
-			  });
-			  if (newPosts > 0 ) {
-				if(!isWindowFocused) $j('title').text('['+newPosts+'] '+old_t);
-				if (isWindowFocused) {
-				  showMessage(consts[lang].newPostsFound+newPosts, 1800);
-				  newPosts = 0;
-				  defTitle();
+				var postdata = $j(data).filter('*');
+				newPosts += postdata.length;
+				postdata.each(function(){
+					addRefLinkMap([this]);
+					addPreview([this]);
+					addPreview($j('.pidarok_refmap'));
+					$j('.thread').append($j(this).hide().fadeIn("normal"));
+				});
+				if (newPosts > 0 ) {
+				if ( !isWindowFocused )
+					$j('title').text('['+newPosts+'] '+old_t);
+				if ( isWindowFocused ) {
+					showMessage(consts[lang].newPostsFound+newPosts, 1800);
+					newPosts = 0;
+					defTitle();
 				}
 			  }
 			}
 			else {
-			  if(isWindowFocused && data.error_code==400) showMessage(consts[lang].newPostsNotFound);
+			  if(isWindowFocused && data.error_code==400)
+			  	showMessage(consts[lang].newPostsNotFound);
 			}
+			updater = setInterval(loadNewPosts, 45000);
 			restoreButton();
 		})
 		.fail(function() {
-		  setTimeout(restoreButton, 1500);
-		  console.log('Error.');
+			setTimeout(restoreButton, 1500);
+			console.log('Error.');
 		});
 }
 
@@ -234,47 +241,46 @@ function titleNewPosts() {
 				  break;
 		  }
 	  }
-
 	  $j(this).data("prevType", e.type);
   })
 }
 
 function defTitle() {
-  $j('title').text(old_t);
-  setTimeout(function(){
-	$j('.post_new').removeClass('post_new');
-  }, 1500);
+	$j('title').text(old_t);
+	setTimeout(function(){
+		$j('.post_new').removeClass('post_new');
+	}, 1500);
 }
 
 /*------------------------------------------------------------------- ANALNY KOSTYLI -------------------------------------------------------------*/
 // "MOMMY IN ROOM" IMAGE HIDER
 function toggleMommy() {
-  Settings.set('mommy', (Settings.get('mommy') || 0) == 0 ? 1 : 0);
-  scriptCSS();
-  return false;
+	Settings.set('mommy', (Settings.get('mommy') || 0) == 0 ? 1 : 0);
+	scriptCSS();
+	return false;
 }
 
 function hotkeyMommy(e) {
-  if(!e) e = window.event;
-  if(e.altKey && e.keyCode == 78) toggleMommy();
+	if(!e) e = window.event;
+	if(e.altKey && e.keyCode == 78) toggleMommy();
 }
 
 // SCRIPT CSS
 function scriptCSS() {
-  var x = [];
-  if(Settings.get('mommy') == 1)
-	x.push('img[src*="thumb"] {opacity:0.04 !important} img[src*="thumb"]:hover {opacity:1 !important}');
-  if(!$id('pidarok_css'))
-	$t('head')[0].appendChild($new('style', {
-	  'id': 'pidarok_css',
-	  'type': 'text/css',
-	  'text': x.join(' ')
-	}));
-  else $id('pidarok_css').textContent = x.join(' ');
+	var x = [];
+	if(Settings.get('mommy') == 1)
+		x.push('img[src*="thumb"] {opacity:0.04 !important} img[src*="thumb"]:hover {opacity:1 !important}');
+	if(!$id('pidarok_css'))
+		$t('head')[0].appendChild($new('style', {
+			'id': 'pidarok_css',
+			'type': 'text/css',
+			'text': x.join(' ')
+		}));
+	else $id('pidarok_css').textContent = x.join(' ');
 }
 
 // "Notifications"
-function showMessage(text, delay) {  // spizdil s inacha
+function showMessage(text, delay) {
 	var message = $j('#message');
 	if (delay == null) delay = 1000;
 	if (message.get() == '') {
@@ -291,11 +297,11 @@ function showMessage(text, delay) {  // spizdil s inacha
 
 // Js settings
 function toggleNavMenu(node) {
-  if ($id("overlay").style.display == 'block') {
-	$id("overlay").style.display = "none";
-  } else {
-	$id("overlay").style.display = "block";
-  }
+	if ($id("overlay").style.display == 'block') {
+		$id("overlay").style.display = "none";
+	} else {
+		$id("overlay").style.display = "block";
+	}
 }
 
 function moveForm(spadre) {
@@ -307,21 +313,21 @@ function moveForm(spadre) {
 }
 
 function eventLoader() {
-  $j('#navmenu0, #navmenu1').click(toggleNavMenu);
-  $j('#tglmommy').click(toggleMommy);
+	$j('#navmenu0, #navmenu1').click(toggleNavMenu);
+	$j('#tglmommy').click(toggleMommy);
 
-  $j('#tglcontext').click(function(){
-	Settings.set('context', +this.checked);
-	showMessage(consts[lang].done);
-  });
+	$j('#tglcontext').click(function(){
+		Settings.set('context', +this.checked);
+		showMessage(consts[lang].done);
+	});
 
-  $j('#tglform').click(function(){
-	Settings.set('bottomform', +this.checked);
-	showMessage(consts[lang].done);
-  });
+	$j('#tglform').click(function(){
+		Settings.set('bottomform', +this.checked);
+		showMessage(consts[lang].done);
+	});
 
-  $id('tglcontext').checked = Settings.get('context') == 1 ? "checked" : "";
-  $id('tglform').checked = Settings.get('bottomform') == 1 ? "checked" : "";
+	$id('tglcontext').checked = Settings.get('context') == 1 ? "checked" : "";
+	$id('tglform').checked = Settings.get('bottomform') == 1 ? "checked" : "";
 }
 
 // Main load function.

@@ -54,7 +54,7 @@
 
 	<if $admin or scalar @{$$cfg{POMF_EXTENSIONS}} && $image_inp>
 	<tr><td class="postblock"><label for="nopomf"><var $$locale{S_NOPOMF}></label></td>
-	<td><label><input type="checkbox" name="no_pomf" value="on" id="nopomf" onclick="Settings.set('nopomf', +this.checked);" /> <var $$locale{S_NOPOMFDESC}></label></td>
+	<td><label><input type="checkbox" name="no_pomf" value="on" id="nopomf" /> <var $$locale{S_NOPOMFDESC}></label></td>
 	</tr>
 	</if>
 
