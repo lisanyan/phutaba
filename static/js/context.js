@@ -37,27 +37,17 @@ var consts = {
   }
 }
 
-/*------------------------------------------------------------------- COMMON CRAP -------------------------------------------------------------*/
-function $X(a,b){return document.evaluate(a,b||document,null,6,null)}
-function $x(a,b){return document.evaluate(a,b||document,null,8,null).singleNodeValue}
-function $del(a){a&&a.parentNode.removeChild(a)}
-function $each(a,b){if(a){var c=a.snapshotLength;if(0<c)for(;c--;)b(a.snapshotItem(c),c)}};
-function $offset(a,c){for(var b=0;a;)b+=a[c],a=a.offsetParent;return b}
-function $event(a,c){for(var b in c)a.addEventListener(b,c[b],!1)}
-function $new(a,c,b){a=document.createElement(a);c&&$attr(a,c);b&&$event(a,b);return a};
-function $attr(b,c){for(var a in c)"text"==a?b.textContent=c[a]:"value"==a?b.value=c[a]:"html"==a?b.innerHTML=c[a]:b.setAttribute(a,c[a]);return b};
-
 /*------------------------------------------------------------------- >>REFLINKS MAP IN POSTS -------------------------------------------------------------*/
 
 //reflink map
 function addRefLinkMap(node) {
-  $j(node||_selector).each(function(){
+  $j(node || _selector).each(function(){
 	//get id
 	var p_num = $j(this).attr('id');
 	postByNum[p_num] = $j(this);
   });
   
-  $j('.text', (node||_selector)).each(function(){
+  $j('.text', (node || _selector)).each(function(){
 	var $ref = $j(this);
 	if($ref.find('.backreflink a').text().indexOf('>>') == 0) {
 
@@ -172,7 +162,7 @@ function getNewPosts() {
 	if(window.thread_id !== null) {
 		origBtn = updBtn.html();
 		$j(updBtn).css('display','inline').find('a').click(loadNewPosts);
-		updater = setInterval(loadNewPosts, 45000);
+		UpdaterTimer = setInterval(loadNewPosts, 45000);
 	}
 }
 
@@ -183,7 +173,7 @@ function loadNewPosts() {
 	  $j(updBtn).html(origBtn).find('a').unbind('click').click(loadNewPosts);
 	}
 	$j(updBtn).html('['+consts[lang].load+']');
-	clearInterval(updater);
+	clearInterval(UpdaterTimer);
 
 	$j.ajax('/wakaba.pl?section='+window.board+'&task=show&thread='+window.thread_id+'&after='+aft,
 	  {async:true} )
@@ -211,7 +201,7 @@ function loadNewPosts() {
 			  if(isWindowFocused && data.error_code==400)
 			  	showMessage(consts[lang].newPostsNotFound);
 			}
-			updater = setInterval(loadNewPosts, 45000);
+			UpdaterTimer = setInterval(loadNewPosts, 45000);
 			restoreButton();
 		})
 		.fail(function() {

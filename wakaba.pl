@@ -77,10 +77,10 @@ BEGIN {
 # Import settings
 #
 BEGIN {
-    require "lib/site_config.pl";
-    require "lib/config_defaults.pl";
-    require "lib/wakautils.pl";
-    require "captcha.pl";
+  require "lib/site_config.pl";
+  require "lib/config_defaults.pl";
+  require "lib/wakautils.pl";
+  require "captcha.pl";
 }
 
 # fancy date-parsing module
@@ -927,8 +927,9 @@ sub show_page {
     my $output =
             $tpl->page({
                 postform     => ( $$cfg{ALLOW_TEXTONLY} or $$cfg{ALLOW_IMAGES} or $isAdmin ),
-                image_inp    => ($$cfg{ALLOW_IMAGES}),
+                image_inp    => ( $$cfg{ALLOW_IMAGES} or $isAdmin),
                 textonly_inp => ( $$cfg{ALLOW_IMAGES} and $$cfg{ALLOW_TEXTONLY} ),
+                captcha_inp  => need_captcha($$cfg{CAPTCHA_MODE}, $$cfg{CAPTCHA_SKIP}, $loc),
                 prevpage     => $prevpage,
                 nextpage     => $nextpage,
                 pages        => \@pages,
@@ -985,7 +986,8 @@ sub show_thread {
                 thread       => $thread,
                 title        => $thread[0]{subject},
                 postform     => ( ($$cfg{ALLOW_TEXT_REPLIES} or $$cfg{ALLOW_IMAGE_REPLIES} ) and !$locked or $isAdmin),
-                image_inp    => ( $$cfg{ALLOW_IMAGE_REPLIES} ),
+                image_inp    => ( $$cfg{ALLOW_IMAGE_REPLIES} or $isAdmin ),
+                captcha_inp  => need_captcha($$cfg{CAPTCHA_MODE}, $$cfg{CAPTCHA_SKIP}, $loc),
                 textonly_inp => 0,
                 dummy        => $thread[$#thread]{num},
                 loc          => $loc,
@@ -3505,18 +3507,18 @@ sub fetch_config
 }
 
 sub get_settings {
-    my ($dodo) = @_;
+    my ($config) = @_;
     my ($settings, $file);
     
-    if ( $dodo eq 'mods' ) {
+    if ( $config eq 'mods' ) {
         $file = './lib/config/moders.pl';
     }
-    elsif ( $dodo eq 'trips' ) {
+    elsif ( $config eq 'trips' ) {
         $file = './lib/config/trips.pl';
     }
-    elsif ( $dodo =~ /locale_(ru|en|de)/ ) {
-        my $dildo = $1 ? $1 : 'en'; # fall back to english if shit happens
-        $file = "./lib/config/strings_${dildo}.pl";
+    elsif ( $config =~ /locale_(ru|en|de)/ ) {
+        my $lc = $1 ? $1 : 'en'; # fall back to english if shit happens
+        $file = "./lib/config/strings_$lc.pl";
     }
     else {
         $file = './lib/config/settings.pl';
@@ -3691,7 +3693,7 @@ sub trim_database {
     my ( $sth, $row, $order );
 
     if   ( $$cfg{TRIM_METHOD} == 0 ) { $order = 'num ASC'; }
-    else                      { $order = 'lasthit ASC'; }
+    else                             { $order = 'lasthit ASC'; }
 
     if ($$cfg{MAX_AGE})            # needs testing
     {
@@ -3700,9 +3702,9 @@ sub trim_database {
         $sth =
           $dbh->prepare( "SELECT * FROM "
               . $$cfg{SQL_TABLE}
-              . " WHERE parent=0 AND timestamp<=$mintime AND (sticky=0 OR sticky IS NULL);"
+              . " WHERE parent=0 AND timestamp<=? AND (sticky=0 OR sticky IS NULL);"
           ) or make_error($$locale{S_SQLFAIL});
-        $sth->execute() or make_error($$locale{S_SQLFAIL});
+        $sth->execute($mintime) or make_error($$locale{S_SQLFAIL});
 
         while ( $row = $sth->fetchrow_hashref() ) {
             delete_post( $$row{num}, "", 0, 0 );
@@ -3713,7 +3715,7 @@ sub trim_database {
     my ( $posts, $size ) = count_posts();
     my $max_threads = ( $$cfg{MAX_THREADS}         or $threads );
     my $max_posts   = ( $$cfg{MAX_POSTS}           or $posts );
-    my $max_size    = $size; # ( $$cfg{MAX_MEGABYTES} * 1024 * 1024 or $size );
+    my $max_size    = ( $$cfg{MAX_MEGABYTES} * 1024 * 1024 or $size );
 
     while ($threads > $max_threads
         or $posts > $max_posts
@@ -3844,13 +3846,13 @@ sub thread_exists {
 
 sub get_decoded_hashref {
     my ($sth)=@_;
-    # !! no need to encode since we turned mysql_enable_utf8 on and not using super-old versions of perl
+    # !! no need to encode since we turned mysql_enable_utf8 on and not using outdated versions of perl
     $sth->fetchrow_hashref();
 }
 
 sub get_decoded_arrayref {
     my ($sth)=@_;
-    # !! no need to encode since we turned mysql_enable_utf8 on and not using super-old versions of perl
+    # !! no need to encode since we turned mysql_enable_utf8 on and not using outdated versions of perl
     $sth->fetchrow_arrayref();
 }
 

@@ -39,13 +39,6 @@
 	var msg_expand_field = "<var $$locale{S_JS_EXPAND}>";
 	var msg_shrink_field = "<var $$locale{S_JS_SHRINK}>";
 	var msg_remove_file = "<var $$locale{S_JS_REMOVEFILE}>";
-	window.onunload = function() {
-		if (style_cookie) {
-			var title = get_active_stylesheet();
-			title = title ? title : get_cookie(style_cookie);
-			set_cookie(style_cookie, title, 365);
-		}
-	};
 </script>
 
 <script type="text/javascript">

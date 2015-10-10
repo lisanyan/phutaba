@@ -44,7 +44,7 @@ var config = new Object();
 
 
 //===================  GLOBAL TOOLTIP CONFIGURATION  =========================//
-var tt_Debug	= true		// false or true - recommended: false once you release your page to the public
+var tt_Debug	= false		// false or true - recommended: false once you release your page to the public
 var tt_Enabled	= true		// Allows to (temporarily) suppress tooltips, e.g. by providing the user with a button that sets this global variable to false
 var TagsToTip	= true		// false or true - if true, HTML elements to be converted to tooltips via TagToTip() are automatically hidden;
 							// if false, you should hide those HTML elements yourself
@@ -946,7 +946,7 @@ function tt_Show()
 	var css = tt_aElt[0].style;
 
 	// Override the z-index of the topmost wz_dragdrop.js D&D item
-	css.zIndex = Math.max((window.dd && dd.z) ? (dd.z + 2) : 0, 1010);
+	css.zIndex = Math.max((window.dd && dd.z) ? (dd.z + 2) : 0, 10000 /*1010*/);
 	if(tt_aV[STICKY] || !tt_aV[FOLLOWMOUSE])
 		tt_iState &= ~0x4;
 	if(tt_aV[EXCLUSIVE])

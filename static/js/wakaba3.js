@@ -8,6 +8,13 @@ function $n(a){return document.getElementsByName(a)[0]}
 function $t(a,b){return(b||document).getElementsByTagName(a)}
 function $c(a,b){return(b||document).getElementsByClassName(a)};
 function $del(a){a&&a.parentNode&&a.parentNode.removeChild(a)};
+function $X(a,b){return document.evaluate(a,b||document,null,6,null)}
+function $x(a,b){return document.evaluate(a,b||document,null,8,null).singleNodeValue}
+function $each(a,b){if(a){var c=a.snapshotLength;if(0<c)for(;c--;)b(a.snapshotItem(c),c)}};
+function $offset(a,c){for(var b=0;a;)b+=a[c],a=a.offsetParent;return b}
+function $event(a,c){for(var b in c)a.addEventListener(b,c[b],!1)}
+function $new(a,c,b){a=document.createElement(a);c&&$attr(a,c);b&&$event(a,b);return a};
+function $attr(b,c){for(var a in c)"text"==a?b.textContent=c[a]:"value"==a?b.value=c[a]:"html"==a?b.innerHTML=c[a]:b.setAttribute(a,c[a]);return b};
 
 // ============================================================================================
 // Wakaba legacy
@@ -46,7 +53,7 @@ function get_password(name) {
 }
 
 function set_inputs(id) {
-	with (document.getElementById(id)) {
+	with ($id(id)) {
 		if (typeof nya1 == "object" && !nya1.value) nya1.value = get_cookie("name");
 		/* if (!nya2.value) nya2.value = get_cookie("email"); */
 		if (typeof gb2 == "object")	gb2[1].checked = (get_cookie("gb2") == "thread");
@@ -62,13 +69,13 @@ function set_inputs(id) {
 }
 
 function set_delpass(id) {
-	with (document.getElementById(id)) password.value = get_cookie("password");
+	with ($id(id)) password.value = get_cookie("password");
 }
 
 // ============================================================================================
 // Inputs and crap
 function resizeCommentfield(id, srcelement) {
-	var textarea = document.getElementById(id);
+	var textarea = $id(id);
 
 	if (resized == 1) {
 		textarea.cols = 48;
@@ -90,7 +97,7 @@ function file_input_change(max) {
 	var total = 0; // total number of file inputs
 	var empty = 0; // number of empty file inputs
 
-	var postfiles = document.getElementById("fileInput"); // table cell id that contains the file inputs and filename spans
+	var postfiles = $id("fileInput"); // table cell id that contains the file inputs and filename spans
 	var inputs = postfiles.getElementsByTagName("input"); // the actual file inputs
 
 	for (i = 0; i < inputs.length; i++) {
@@ -230,8 +237,8 @@ function insert(text) {
 }
 
 function update_captcha(el2) {
-	var el = $id('imgcaptcha');
-	if (el) { 
+	var el = el2;
+	if (el) {
 		var src = e.src;
 		src = src.replace(/dummy=\d*/, 'dummy=' + Math.round(Math.random()*1000000));
 	}
@@ -248,20 +255,16 @@ function areYouSure(el)
 // Post expanding
 function expand_post(id) {
 	//$j("#posttext_" + id).html($j("#posttext_full_" + id).html());
-	document.getElementById("posttext_" + id).innerHTML = document.getElementById("posttext_full_" + id).innerHTML;
+	var abbr = $id("posttext_" + id);
+	var full = $id("posttext_full_" + id);
+	abbr.innerHTML = full.innerHTML;
 	return false;
 }
 
 // http://stackoverflow.com/a/7557433/5628
 function isElementInViewport(el) {
 	var rect = el.getBoundingClientRect();
-
-	return (
-		rect.top >= 0 &&
-		rect.left >= 0 //&&
-		//rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
-		//rect.right <= (window.innerWidth || document.documentElement.clientWidth)
-	);
+	return ( rect.top >= 0 && rect.left >= 0 );
 }
 
 function expand(el, org_width, org_height, thumb_width, thumb_height, thumb, ext, huj) {
@@ -273,17 +276,18 @@ function expand(el, org_width, org_height, thumb_width, thumb_height, thumb, ext
 	var post = img.parentNode.parentNode.parentNode.parentNode.parentNode.parentNode.parentNode; // lol parentNode hell
 
 	if (ext=='WEBM' || ext=='MP4') { // Anal workaround on expanding videos
-    	var orightml = parent.innerHTML;
-        var filetag = '<a href="' + org + '" class="close-webm">[Close]</a>';
-        filetag += '<div><video controls="" autoplay="" '+ (Settings.get('webmVolume') === 0 ? 'muted ' : '') +'loop="1" name="media"><source src="'+org+'" type="video/'+ext.toLowerCase()+'" class="video"></video></div>';
-    	if(!huj) {
-    		parent.innerHTML = filetag;
+		var orightml = parent.innerHTML;
+		var filetag =  '<a href="' + org + '" class="close-webm">[Close]</a>';
+		    filetag += '<div><video controls="" autoplay="" '+ (Settings.get('webmVolume') === 0 ? 'muted ' : '')
+					+  'loop="1" name="media"><source src="'+org+'" type="video/'+ext.toLowerCase()+'" class="video"></video></div>';
+		if(!huj) {
+			parent.innerHTML = filetag;
 			var vid = $t('video', parent)[0];
 			var clbut = $c('close-webm', parent)[0];
 			clbut.addEventListener("click",
 				function(e) {
 					e.preventDefault ? e.preventDefault() : e.returnValue = false;
-					return expand(parent, org_width, org_height, thumb_width, thumb_height, thumb, ext, orightml)
+					return expand(parent, org_width, org_height, thumb_width, thumb_height, thumb, ext, orightml);
 				}
 			);
 			vid.onvolumechange = function() {
@@ -294,11 +298,11 @@ function expand(el, org_width, org_height, thumb_width, thumb_height, thumb, ext
 					vid.volume = Settings.get('webmVolume') / 100;
 				};
 			}
-    	} else {
-    		abortWebmDownload(el);
-    		el.innerHTML = huj;
+		} else {
+			abortWebmDownload(el);
+			el.innerHTML = huj;
 			if (!isElementInViewport(post)) post.scrollIntoView();
-    	}
+		}
 	}
 	else {
 		if (img.src != org) {
@@ -434,6 +438,14 @@ if(style_cookie)
 	var title=cookie?cookie:set_preferred_stylesheet();
 	set_stylesheet(title);
 }
+
+window.onunload = function() {
+	if (style_cookie) {
+		var title = get_active_stylesheet();
+		title = title ? title : get_cookie(style_cookie);
+		set_cookie(style_cookie, title, 365);
+	}
+};
 
 // ============================================================================================
 // TEH END
