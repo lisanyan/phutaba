@@ -77,10 +77,10 @@ BEGIN {
 # Import settings
 #
 BEGIN {
-    require "lib/site_config.pl";
-    require "lib/config_defaults.pl";
-    require "lib/wakautils.pl";
-    require "captcha.pl";
+  require "lib/site_config.pl";
+  require "lib/config_defaults.pl";
+  require "lib/wakautils.pl";
+  require "captcha.pl";
 }
 
 # fancy date-parsing module
@@ -108,8 +108,8 @@ my ($dbh, $query, $boardSection, $moders);
 
 my $cfg = my $locale = {};
 my $fcgi_counter = 0;
-my $maximum_allowed_loops = 250;
-my $tpl = SimpleCtemplate->new({tmpl_dir =>'tpl/board/'});
+my $max_fcgi_loops = 250;
+my $tpl = SimpleCtemplate->new({ tmpl_dir => 'tpl/board/' });
 
 return 1 if (caller); # stop here if we're being called externally
 
@@ -208,7 +208,7 @@ while($query=CGI::Fast->new)
         my $page   = $query->param("page");
         my $thread = $query->param("thread");
         my $post   = $query->param("post");
-        my $after   = $query->param("after");
+        my $after  = $query->param("after");
         my $admin  = $query->cookie("wakaadmin");
 
         # outputs a single post only
@@ -263,7 +263,7 @@ while($query=CGI::Fast->new)
         my $postfix    = $query->param("postfix");
         my $as_staff   = $query->param("as_staff");
         my $no_pomf    = $query->param("no_pomf");
-        my @files = $query->param("file"); # multiple uploads
+        my @files      = $query->param("file"); # multiple uploads
 
         post_stuff(
             $parent,  $spam1,   $spam2,     $name,     $email,  $gb2,
@@ -434,7 +434,7 @@ while($query=CGI::Fast->new)
         make_error("Invalid task") if (!$json);
     }
 
-    if ($fcgi_counter > $maximum_allowed_loops)
+    if ($fcgi_counter > $max_fcgi_loops)
     {
         $fcgi_counter = 0;
         exit(0); # Hoping this will help with memory leaks. fork() may be preferable
@@ -451,7 +451,7 @@ while($query=CGI::Fast->new)
 sub hide_row_els {
     my ($row) = @_;
     $$row{'location'} = (split(/<br \/>/, $$row{location}))[0] if $$cfg{SHOW_COUNTRIES};
-    undef($$row{'admin_post'} = $$row{'ip'} = $$row{'password'});
+    $$row{'admin_post'} = $$row{'ip'} = $$row{'password'} = undef;
     $$row{'location'} = $$cfg{SHOW_COUNTRIES} ? $$row{'location'} : undef;
 }
 
@@ -474,13 +474,13 @@ sub output_json_threads {
     $sth = $dbh->prepare(
             "SELECT * FROM "
           . $$cfg{SQL_TABLE}
-          . " FORCE INDEX(cover) WHERE parent IS NULL or parent=0 ORDER BY sticky DESC,lasthit DESC LIMIT ?,?"
+          . " WHERE parent IS NULL or parent=0 ORDER BY sticky DESC,lasthit DESC LIMIT ?,?"
     );
     $sth->execute($offset,$$cfg{IMAGES_PER_PAGE});
 
     my @thread;
 
-    my $posts = $dbh->prepare("SELECT * FROM ".$$cfg{SQL_TABLE}." FORCE INDEX(cover) WHERE parent=? ORDER BY num DESC LIMIT ?;");
+    my $posts = $dbh->prepare("SELECT * FROM ".$$cfg{SQL_TABLE}." WHERE parent=? ORDER BY num DESC LIMIT ?;");
 
     while ($row = get_decoded_hashref($sth)
             and $threadcount <= ( $$cfg{IMAGES_PER_PAGE} * ( $page ) ) )
@@ -580,7 +580,7 @@ sub output_json_threads {
 sub output_json_thread {
     my ($id) = @_;
     my ($sth, $row, $error, $code, %status, @data, %boardinfo, %json);
-    $sth = $dbh->prepare("SELECT * FROM " . $$cfg{SQL_TABLE} . " FORCE INDEX(cover) WHERE num=? OR parent=? ORDER BY num ASC;");
+    $sth = $dbh->prepare("SELECT * FROM " . $$cfg{SQL_TABLE} . " WHERE num=? OR parent=? ORDER BY num ASC;");
     $sth->execute($id, $id);
     $error = decode(CHARSET, $sth->errstr);
 
@@ -661,7 +661,7 @@ sub output_json_newposts {
     my ($after, $id) = @_;
     my ($sth, $row, $error, $code, %status, @data, %json);
 
-    $sth = $dbh->prepare("SELECT * FROM " . $$cfg{SQL_TABLE} . " FORCE INDEX(cover) WHERE parent=? and num>? ORDER BY num ASC;");
+    $sth = $dbh->prepare("SELECT * FROM " . $$cfg{SQL_TABLE} . " WHERE parent=? and num>? ORDER BY num ASC;");
     $sth->execute($id,$after);
     $error = $sth->errstr;
     if($sth->rows) {
@@ -784,7 +784,7 @@ sub show_newposts {
     }
 
     $sth = $dbh->prepare(
-            "SELECT * FROM " . $$cfg{SQL_TABLE} . " FORCE INDEX(cover) WHERE parent=? and num>? ORDER BY num ASC;" )
+            "SELECT * FROM " . $$cfg{SQL_TABLE} . " WHERE parent=? and num>? ORDER BY num ASC;" )
       or make_error($$locale{S_SQLFAIL});
     $sth->execute( $thread, $after ) or make_error($$locale{S_SQLFAIL});
 
@@ -840,7 +840,7 @@ sub show_page {
     $sth = $dbh->prepare(
             "SELECT * FROM "
           . $$cfg{SQL_TABLE}
-          . " FORCE INDEX(cover) WHERE parent=0 ORDER BY sticky DESC,lasthit DESC LIMIT ?,?"
+          . " WHERE parent=0 ORDER BY sticky DESC,lasthit DESC LIMIT ?,?"
     ) or make_error($$locale{S_SQLFAIL});
     $sth->execute( ceil( $page * $$cfg{IMAGES_PER_PAGE} - $$cfg{IMAGES_PER_PAGE} ), $$cfg{IMAGES_PER_PAGE} )
       or make_error($$locale{S_SQLFAIL});
@@ -850,7 +850,7 @@ sub show_page {
 
     my $posts =
       $dbh->prepare(
-        "SELECT * FROM ".$$cfg{SQL_TABLE}." FORCE INDEX(cover) WHERE parent=? ORDER BY num DESC LIMIT ?;"
+        "SELECT * FROM ".$$cfg{SQL_TABLE}." WHERE parent=? ORDER BY num DESC LIMIT ?;"
     ) or make_error($$locale{S_SQLFAIL});
 
     while ( $row = get_decoded_hashref($sth) )
@@ -927,8 +927,9 @@ sub show_page {
     my $output =
             $tpl->page({
                 postform     => ( $$cfg{ALLOW_TEXTONLY} or $$cfg{ALLOW_IMAGES} or $isAdmin ),
-                image_inp    => ($$cfg{ALLOW_IMAGES}),
+                image_inp    => ( $$cfg{ALLOW_IMAGES} or $isAdmin),
                 textonly_inp => ( $$cfg{ALLOW_IMAGES} and $$cfg{ALLOW_TEXTONLY} ),
+                captcha_inp  => need_captcha($$cfg{CAPTCHA_MODE}, $$cfg{CAPTCHA_SKIP}, $loc),
                 prevpage     => $prevpage,
                 nextpage     => $nextpage,
                 pages        => \@pages,
@@ -963,7 +964,7 @@ sub show_thread {
     }
 
     $sth = $dbh->prepare(
-            "SELECT * FROM " . $$cfg{SQL_TABLE} . " FORCE INDEX(cover) WHERE num=? OR parent=? ORDER BY num ASC;" )
+            "SELECT * FROM " . $$cfg{SQL_TABLE} . " WHERE num=? OR parent=? ORDER BY num ASC;" )
       or make_error($$locale{S_SQLFAIL});
     $sth->execute( $thread, $thread ) or make_error($$locale{S_SQLFAIL});
 
@@ -985,7 +986,8 @@ sub show_thread {
                 thread       => $thread,
                 title        => $thread[0]{subject},
                 postform     => ( ($$cfg{ALLOW_TEXT_REPLIES} or $$cfg{ALLOW_IMAGE_REPLIES} ) and !$locked or $isAdmin),
-                image_inp    => ( $$cfg{ALLOW_IMAGE_REPLIES} ),
+                image_inp    => ( $$cfg{ALLOW_IMAGE_REPLIES} or $isAdmin ),
+                captcha_inp  => need_captcha($$cfg{CAPTCHA_MODE}, $$cfg{CAPTCHA_SKIP}, $loc),
                 textonly_inp => 0,
                 dummy        => $thread[$#thread]{num},
                 loc          => $loc,
@@ -1002,7 +1004,7 @@ sub show_thread {
     print($output);
 }
 
-sub get_files($$$) {
+sub get_files {
     my ($threadid, $postid, $files) = @_;
     my ($sth, $res, $where, $uploadname);
 
@@ -1016,7 +1018,7 @@ sub get_files($$$) {
 
     $sth = $dbh->prepare(
           "SELECT * FROM "
-        . $$cfg{SQL_TABLE_IMG} . " FORCE INDEX(cover)" .
+        . $$cfg{SQL_TABLE_IMG} . "" .
           $where
     ) or make_error($$locale{S_SQLFAIL});
 
@@ -1026,10 +1028,7 @@ sub get_files($$$) {
         $sth->execute($postid) or make_error($$locale{S_SQLFAIL});
     }
 
-    my ($count, $size);
     while ($res = get_decoded_hashref($sth)) {
-        $count++;
-        $size += $$res{size};
         $uploadname = remove_path($$res{uploadname});
         $$res{uploadname} = clean_string($uploadname);
         $$res{displayname} = clean_string(get_displayname($uploadname));
@@ -1041,10 +1040,9 @@ sub get_files($$$) {
 
         push(@$files, $res);
     }
-    return ($count, $size);
 }
 
-sub add_images_to_thread(@) {
+sub add_images_to_thread {
     my (@posts) = @_;
     my ($sthfiles, $res, @files, $uploadname, $post);
 
@@ -1059,15 +1057,15 @@ sub add_images_to_thread(@) {
     }
 }
 
-sub add_images_to_row($) {
+sub add_images_to_row {
     my ($row) = @_;
     my @files = (); # all files of one post for loop-processing in the template
 
-    ($$row{imagecount}, $$row{total_imagesize}) = get_files(0, $$row{num}, \@files);
+    get_files(0, $$row{num}, \@files);
     $$row{files} = [@files] if (@files); # copy the array to an arrayref in the post
 }
 
-sub resolve_reflinks($) {
+sub resolve_reflinks {
     my ($comment) = @_;
 
     $comment =~ s|<!--reflink-->&gt;&gt;([0-9]+)|
@@ -1079,7 +1077,7 @@ sub resolve_reflinks($) {
     return $comment;
 }
 
-sub get_omit_message($$) {
+sub get_omit_message {
     my ($posts, $files) = @_;
     return "" if !$posts;
 
@@ -1093,7 +1091,7 @@ sub get_omit_message($$) {
     return $omitposts . $omitfiles . $$locale{S_ABBR_END};
 }
 
-sub get_abbrev_message($) {
+sub get_abbrev_message {
     my ($lines) = @_;
     return $$locale{S_ABBRTEXT1} if ($lines == 1);
     return sprintf($$locale{S_ABBRTEXT2}, $lines);
@@ -1190,7 +1188,7 @@ sub find_posts {
     if (length($lfind) >= 3) {
         # grab all posts, in thread order (ugh, ugly kludge)
         $sth = $dbh->prepare(
-            "SELECT * FROM " . $$cfg{SQL_TABLE} . " FORCE INDEX(cover) ORDER BY sticky DESC,lasthit DESC,CASE parent WHEN 0 THEN num ELSE parent END ASC,num ASC"
+            "SELECT * FROM " . $$cfg{SQL_TABLE} . " ORDER BY sticky DESC,lasthit DESC,CASE parent WHEN 0 THEN num ELSE parent END ASC,num ASC"
         ) or make_error($$locale{S_SQLFAIL});
         $sth->execute() or make_error($$locale{S_SQLFAIL});
 
@@ -1254,7 +1252,7 @@ sub post_stuff {
         $no_pomf, @files
     ) = @_;
 
-    my $file = @files; # file count
+    my $file = $files[0]; # file count
     # my $uploadname = $files[0];
 
     my $original_comment = $comment;
@@ -1331,6 +1329,7 @@ sub post_stuff {
     my $c_email    = $email;
     my $c_password = $password;
     my $c_gb2      = $gb2;
+    my $c_nopomf   = $no_pomf;
 
     # check if IP is whitelisted
     my $whitelisted = is_whitelisted($numip);
@@ -1446,7 +1445,7 @@ sub post_stuff {
             ($filename[$i], $md5[$i], $width[$i], $height[$i],
                 $thumbnail[$i], $tn_width[$i], $tn_height[$i],
                 $info[$i], $info_all[$i], $uploadname[$i])
-                = process_file($files[$i], $files[$i], $file_ts, $no_pomf);
+                = process_file($files[$i], $files[$i], $file_ts, $c_nopomf);
         }
     }
 
@@ -1541,6 +1540,7 @@ sub post_stuff {
         #email     => $c_email,
         gb2       => $c_gb2,
         password  => $c_password,
+        nopomf    => $c_nopomf,
         -charset  => CHARSET,
         -autopath => $$cfg{COOKIE_PATH},
         -expires  => time+14*24*3600
@@ -1550,12 +1550,12 @@ sub post_stuff {
     if ($c_gb2 =~ /thread/i)
     {
         # forward back to the page
-        if ($parent) { make_http_forward( urlenc($$cfg{SELFPATH}) . "/thread/" . $parent . ($new_post_id?"#$new_post_id":"") ); }
-        elsif($new_post_id) { make_http_forward( urlenc($$cfg{SELFPATH}) . "/thread/" . $new_post_id ); }
-        else { make_http_forward("/" . urlenc($$cfg{SELFPATH}) . "/"); } # shouldn't happen
+        if ($parent) { make_http_forward( get_board_path() . "thread/" . $parent . ( $new_post_id ? "#${new_post_id}" : "" ) ); }
+        elsif($new_post_id) { make_http_forward( get_board_path() . "thread/" . $new_post_id ); }
+        else { make_http_forward( get_board_path() ); } # shouldn't happen
     }
     else {
-        make_http_forward("/" . urlenc($$cfg{SELFPATH}) . "/");
+        make_http_forward( get_board_path() );
     }
 }
 
@@ -1947,7 +1947,7 @@ sub get_post {
     my ($thread) = @_;
     my ($sth,$ret);
 
-    $sth = $dbh->prepare( "SELECT * FROM " . $$cfg{SQL_TABLE} . " FORCE INDEX(cover) WHERE num=? LIMIT 1;" )
+    $sth = $dbh->prepare( "SELECT * FROM " . $$cfg{SQL_TABLE} . " WHERE num=? LIMIT 1;" )
       or make_error($$locale{S_SQLFAIL});
     $sth->execute($thread) or make_error($$locale{S_SQLFAIL});
     $ret = $sth->fetchrow_hashref();
@@ -1960,7 +1960,7 @@ sub get_parent_post {
     my ($thread) = @_;
     my ($sth,$ret);
 
-    $sth = $dbh->prepare( "SELECT * FROM " . $$cfg{SQL_TABLE} . " FORCE INDEX(cover) WHERE num=? and parent=0 LIMIT 1;" )
+    $sth = $dbh->prepare( "SELECT * FROM " . $$cfg{SQL_TABLE} . " WHERE num=? and parent=0 LIMIT 1;" )
       or make_error($$locale{S_SQLFAIL});
     $sth->execute($thread) or make_error($$locale{S_SQLFAIL});
     $ret = $sth->fetchrow_hashref();
@@ -2056,8 +2056,6 @@ sub process_file {
 
     # jpeg -> jpg
     $uploadname =~ s/\.jpeg$/\.jpg/i;
-    # dib -> bmp
-    # $uploadname =~ s/\.dib$/\.bmp/i;
 
     # make sure $uploadname file extension matches detected extension (for internal formats)
     my ($uploadext) = $uploadname =~ /\.([^\.]+)$/;
@@ -2212,7 +2210,7 @@ sub get_max_sticky {
     my $max = 0;
     
     # grab all posts from DB
-    my $sth=$dbh->prepare("SELECT sticky FROM ".$$cfg{SQL_TABLE}." FORCE INDEX(cover) ORDER BY sticky DESC,lasthit DESC,CASE parent WHEN 0 THEN num ELSE parent END ASC,num ASC;")
+    my $sth=$dbh->prepare("SELECT sticky FROM ".$$cfg{SQL_TABLE}." ORDER BY sticky DESC,lasthit DESC,CASE parent WHEN 0 THEN num ELSE parent END ASC,num ASC;")
          or make_error($$locale{S_SQLFAIL});
     $sth->execute() or make_error($$locale{S_SQLFAIL});   
     
@@ -2263,8 +2261,7 @@ sub thread_control {
     }
     log_action($action,$threadid,$admin);
 
-    # make_http_forward( get_script_name() . "?task=show&section=".$$cfg{SELFPATH});
-    make_http_forward( urlenc($$cfg{SELFPATH}) . "/thread/" . $threadid );
+    make_http_forward( get_board_path() . "thread/" . $threadid );
 }
 
 #
@@ -2352,10 +2349,10 @@ sub delete_stuff {
 
     unless (@errors) {
         if ($adminDel) {
-            make_http_forward( get_script_name() . "?task=show&section=".$$cfg{SELFPATH});
+            make_http_forward( get_board_path() );
         } elsif ( $noko == 1 and $parent ) {
-            make_http_forward($$cfg{SELFPATH}."/thread/" . $parent);
-        } else { make_http_forward("/" . urlenc($$cfg{SELFPATH}) . "/"); }
+            make_http_forward( get_board_path() . "/thread/" . $parent );
+        } else { make_http_forward( get_board_path() ); }
     }
     else {
         my $errstring = join("<br />", @errors);
@@ -2501,7 +2498,7 @@ sub make_rss { # hater ktory droczit na perenosy skobok sosi xD
     my (@items);
 
     # Retrieve records to be inserted into RSS.
-    $sth=$dbh->prepare("SELECT * FROM ".$$cfg{SQL_TABLE}." FORCE INDEX(cover) ORDER BY timestamp DESC LIMIT ".$$cfg{RSS_LENGTH}.";") or make_error($$locale{S_SQLFAIL});
+    $sth=$dbh->prepare("SELECT * FROM ".$$cfg{SQL_TABLE}." ORDER BY timestamp DESC LIMIT ".$$cfg{RSS_LENGTH}.";") or make_error($$locale{S_SQLFAIL});
     $sth->execute() or make_error($$locale{S_SQLFAIL});
 
     while ($row = get_decoded_hashref($sth))
@@ -2696,7 +2693,7 @@ sub make_admin_orphans {
     $_ =~ s/^${board_path}\/// for @thumbs;
 
     # gather all files/thumbs from database
-    $sth = $dbh->prepare("SELECT image, thumbnail FROM " . $$cfg{SQL_TABLE_IMG} . " FORCE INDEX(cover) WHERE size > 0 ORDER by num ASC;")
+    $sth = $dbh->prepare("SELECT image, thumbnail FROM " . $$cfg{SQL_TABLE_IMG} . " WHERE size > 0 ORDER by num ASC;")
       or make_error($$locale{S_SQLFAIL});
     $sth->execute() or make_error($$locale{S_SQLFAIL});
     while ($row = get_decoded_arrayref($sth)) {
@@ -2749,7 +2746,7 @@ sub make_admin_orphans {
     });
 }
 
-sub move_files($$){
+sub move_files{
     my ($admin, @files) = @_;
 
     my @session = check_password($admin,'');
@@ -3167,9 +3164,9 @@ sub edit_post {
     log_action("editpost",$num,$admin);
 
     # Go to thread
-    if($$post{parent}) { make_http_forward( urlenc($$cfg{SELFPATH}) . "/thread/" . $$post{parent} . ($num?"#$num":"")); }
-    elsif($num) { make_http_forward( urlenc($$cfg{SELFPATH}) . "/thread/" . $num ); }
-    else { make_http_forward("/" . urlenc($$cfg{SELFPATH}) . "/"); } # shouldn't happen
+    if($$post{parent}) { make_http_forward( get_board_path() . "thread/" . $$post{parent} . ($num?"#$num":"")); }
+    elsif($num) { make_http_forward( get_board_path() . "thread/" . $num ); }
+    else { make_http_forward( get_board_path() ); } # shouldn't happen
 }
 
 #
@@ -3272,7 +3269,7 @@ sub clear_log {
     $sth->execute() or "";
     $sth->finish;
     
-    make_http_forward(get_script_name()."?task=show&section=".$$cfg{SELFPATH});
+    make_http_forward( get_board_path() );
 }
 
 #
@@ -3350,6 +3347,10 @@ sub make_ban {
     }
 }
 
+sub get_board_path {
+    return "/" . urlenc($$cfg{SELFPATH}) . "/";
+}
+
 sub get_script_name {
     # return urlenc($ENV{SCRIPT_NAME});
     return $ENV{SCRIPT_NAME};
@@ -3379,8 +3380,7 @@ sub expand_image_filename {
     else { return expand_filename( clean_path($filename) ); }
 }
 
-sub get_stylesheets()
-{
+sub get_stylesheets {
     my $found=0;
     my @stylesheets=map
     {
@@ -3414,9 +3414,6 @@ sub get_reply_link {
 
 sub get_page_count {
     my ($total) = @_;
-    # if ( $total > $$cfg{MAX_SHOWN_THREADS} ) {
-    #     $total = $$cfg{MAX_SHOWN_THREADS};
-    # }
     return int( ( $total + ($$cfg{IMAGES_PER_PAGE}) - 1 ) / $$cfg{IMAGES_PER_PAGE} );
 }
 
@@ -3497,7 +3494,7 @@ sub get_remote_addr {
 # Config loaders
 #
 
-sub fetch_config($)
+sub fetch_config
 {
     my ($boardSection) = @_;
     my $settings = get_settings('settings');
@@ -3510,18 +3507,18 @@ sub fetch_config($)
 }
 
 sub get_settings {
-    my ($dodo) = @_;
+    my ($config) = @_;
     my ($settings, $file);
     
-    if ( $dodo eq 'mods' ) {
+    if ( $config eq 'mods' ) {
         $file = './lib/config/moders.pl';
     }
-    elsif ( $dodo eq 'trips' ) {
+    elsif ( $config eq 'trips' ) {
         $file = './lib/config/trips.pl';
     }
-    elsif ( $dodo =~ /locale_(ru|en|de)/ ) {
-        my $dildo = $1 ? $1 : 'en'; # fall back to english if shit happens
-        $file = "./lib/config/strings_${dildo}.pl";
+    elsif ( $config =~ /locale_(ru|en|de)/ ) {
+        my $lc = $1 ? $1 : 'en'; # fall back to english if shit happens
+        $file = "./lib/config/strings_$lc.pl";
     }
     else {
         $file = './lib/config/settings.pl';
@@ -3574,7 +3571,7 @@ sub init_database {
         "sticky INTEGER," .     # Thread is sticky (applied to all posts of a thread)
         "location TEXT," .      # Geo::IP information for the IP address if available
         "secure TEXT," .        # Cipher information if posted using SSL connection
-        "INDEX cover(parent,num)" . # table index
+        "INDEX parent(parent)" . # table index
 
         ");"
     ) or make_error($$locale{S_SQLFAIL});
@@ -3604,7 +3601,8 @@ sub init_files_database {
         "uploadname TEXT," .   # Original filename supplied by the user agent
         "info TEXT," .         # Short file information displayed in the post
         "info_all TEXT," .      # Full file information displayed in the tooltip
-        "INDEX cover(post,thread)" .
+        "INDEX post(post)," .
+        "INDEX thread(thread)" .
 
         ");"
     ) or make_error($$locale{S_SQLFAIL});
@@ -3683,8 +3681,7 @@ sub get_sql_autoincrement {
     make_error($$locale{S_SQLCONF});  # maybe there should be a sane default case instead?
 }
 
-sub get_sql_lastinsertid()
-{
+sub get_sql_lastinsertid {
     return 'LAST_INSERT_ID()' if(SQL_DBI_SOURCE=~/^DBI:mysql:/i);
     return 'last_insert_rowid()' if(SQL_DBI_SOURCE=~/^DBI:SQLite:/i);
     return 'last_insert_rowid()' if(SQL_DBI_SOURCE=~/^DBI:SQLite2:/i);
@@ -3696,7 +3693,7 @@ sub trim_database {
     my ( $sth, $row, $order );
 
     if   ( $$cfg{TRIM_METHOD} == 0 ) { $order = 'num ASC'; }
-    else                      { $order = 'lasthit ASC'; }
+    else                             { $order = 'lasthit ASC'; }
 
     if ($$cfg{MAX_AGE})            # needs testing
     {
@@ -3705,9 +3702,9 @@ sub trim_database {
         $sth =
           $dbh->prepare( "SELECT * FROM "
               . $$cfg{SQL_TABLE}
-              . " WHERE parent=0 AND timestamp<=$mintime AND (sticky=0 OR sticky IS NULL);"
+              . " WHERE parent=0 AND timestamp<=? AND (sticky=0 OR sticky IS NULL);"
           ) or make_error($$locale{S_SQLFAIL});
-        $sth->execute() or make_error($$locale{S_SQLFAIL});
+        $sth->execute($mintime) or make_error($$locale{S_SQLFAIL});
 
         while ( $row = $sth->fetchrow_hashref() ) {
             delete_post( $$row{num}, "", 0, 0 );
@@ -3718,7 +3715,7 @@ sub trim_database {
     my ( $posts, $size ) = count_posts();
     my $max_threads = ( $$cfg{MAX_THREADS}         or $threads );
     my $max_posts   = ( $$cfg{MAX_POSTS}           or $posts );
-    my $max_size    = $size; # ( $$cfg{MAX_MEGABYTES} * 1024 * 1024 or $size );
+    my $max_size    = ( $$cfg{MAX_MEGABYTES} * 1024 * 1024 or $size );
 
     while ($threads > $max_threads
         or $posts > $max_posts
@@ -3727,7 +3724,7 @@ sub trim_database {
         $sth =
           $dbh->prepare( "SELECT * FROM "
               . $$cfg{SQL_TABLE}
-              . " FORCE INDEX(cover) WHERE parent=0 AND (sticky=0 OR sticky IS NULL) ORDER BY $order LIMIT 1;"
+              . " WHERE parent=0 AND (sticky=0 OR sticky IS NULL) ORDER BY $order LIMIT 1;"
           ) or make_error($$locale{S_SQLFAIL});
         $sth->execute() or make_error($$locale{S_SQLFAIL});
 
@@ -3849,13 +3846,13 @@ sub thread_exists {
 
 sub get_decoded_hashref {
     my ($sth)=@_;
-    # !! no need to encode since we turned mysql_enable_utf8 on and not using super-old versions of perl
+    # !! no need to encode since we turned mysql_enable_utf8 on and not using outdated versions of perl
     $sth->fetchrow_hashref();
 }
 
 sub get_decoded_arrayref {
     my ($sth)=@_;
-    # !! no need to encode since we turned mysql_enable_utf8 on and not using super-old versions of perl
+    # !! no need to encode since we turned mysql_enable_utf8 on and not using outdated versions of perl
     $sth->fetchrow_arrayref();
 }
 

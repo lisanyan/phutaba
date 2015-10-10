@@ -11,9 +11,9 @@ use DBI;
 
 use lib '.';
 BEGIN {
-    require "lib/site_config.pl";
-    require "lib/config_defaults.pl";
-    require "lib/wakautils.pl";
+  require "lib/site_config.pl";
+  require "lib/config_defaults.pl";
+  require "lib/wakautils.pl";
 }
 
 return 1 if (caller);
@@ -126,17 +126,18 @@ sub fetch_config($)
 }
 
 sub get_settings {
-    my ($dodo) = @_;
+    my ($config) = @_;
     my ($settings, $file);
     
-    if ( $dodo eq 'mods' ) {
+    if ( $config eq 'mods' ) {
         $file = './lib/config/moders.pl';
     }
-    elsif ( $dodo eq 'trips' ) {
+    elsif ( $config eq 'trips' ) {
         $file = './lib/config/trips.pl';
     }
-    elsif ( $dodo =~ /locale_(ru|en|de)/ ) {
-        $file = "./lib/config/strings_$1.pl";
+    elsif ( $config =~ /locale_(ru|en|de)/ ) {
+        my $lc = $1 ? $1 : 'en'; # fall back to english if shit happens
+        $file = "./lib/config/strings_$lc.pl";
     }
     else {
         $file = './lib/config/settings.pl';
@@ -376,7 +377,7 @@ sub make_image {
     my ( $width, $height );
 
     @pixels=[]; # if you're using fcgi and won't do that 
-                #image will be drawn over previous image and so on..
+                # image will be drawn over previous image and so on..
     $pixel_w = $width;
     $pixel_h = $height;
 

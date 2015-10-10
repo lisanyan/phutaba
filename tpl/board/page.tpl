@@ -1,4 +1,4 @@
-<include %TMPLDIR%/head.tpl>
+<include %TMPLDIR%head.tpl>
 <perleval %admin=$admin; %thread=$thread />
 <if $postform>
 	<div class="postarea">
@@ -10,7 +10,7 @@
 		<input type="hidden" name="admin_post" value="yes" />
 	</if>
 	<if $thread><input type="hidden" name="parent" value="<var $thread>" /></if>
-	<if !$admin and !$image_inp and !$thread and $$cfg{ALLOW_TEXTONLY}>
+	<if !$image_inp and !$thread and $$cfg{ALLOW_TEXTONLY}>
 		<input type="hidden" name="nofile" value="1" />
 	</if>
 
@@ -45,17 +45,17 @@
 	<td><textarea id="field4" name="nya4" cols="48" rows="6"></textarea> <img onclick="resizeCommentfield('field4', this)" src="/img/icons/expand.png" alt="<var $$locale{S_IMGEXPAND}>" title="<var $$locale{S_IMGEXPAND}>" />
 	</td></tr>
 
-	<if $image_inp or $admin>
+	<if $image_inp>
 		<tr id="fileUploadField"><td class="postblock"><var $$locale{S_UPLOADFILE}> (max. <var $$cfg{MAX_FILES}>)</td>
 		<td id="fileInput"><div><input type="file" name="file" onchange="file_input_change(<var $$cfg{MAX_FILES}>)" /></div>
 		<if $textonly_inp>[<label><input type="checkbox" name="nofile" value="on" /><var $$locale{S_NOFILE}> ]</label></if>
 		</td></tr>
-	</if>
 
-	<if $admin or scalar @{$$cfg{POMF_EXTENSIONS}} && $image_inp>
-	<tr><td class="postblock"><label for="nopomf"><var $$locale{S_NOPOMF}></label></td>
-	<td><label><input type="checkbox" name="no_pomf" value="on" id="nopomf" onclick="Settings.set('nopomf', +this.checked);" /> <var $$locale{S_NOPOMFDESC}></label></td>
-	</tr>
+	 <if scalar @{$$cfg{POMF_EXTENSIONS}}>
+		<tr><td class="postblock"><label for="nopomf"><var $$locale{S_NOPOMF}></label></td>
+		<td><label><input type="checkbox" name="no_pomf" value="on" id="nopomf" /> <var $$locale{S_NOPOMFDESC}></label></td>
+		</tr>
+	 </if>
 	</if>
 
 	<tr id="trgetback"><td class="postblock"><var $$locale{S_NOKO}></td>
@@ -64,7 +64,7 @@
 	<label><input name="gb2" value="thread" type="radio" /> <var $$locale{S_NOKOON}></label>
 	</td></tr>
 
-	<if Wakaba::need_captcha($$cfg{CAPTCHA_MODE}, $$cfg{CAPTCHA_SKIP}, $loc)>
+	<if $captcha_inp>
 		<tr><td class="postblock"><var $$locale{S_CAPTCHA}> (<a href="/faq">?</a>) (<var $loc>)</td><td><input type="text" name="captcha" size="10" /> <img alt="" onclick="update_captcha(this);" id="imgcaptcha" src="/captcha.pl?key=<var get_captcha_key($thread)>&amp;dummy=<var $dummy>&amp;board=<var $$cfg{SELFPATH}>" /></td></tr>
 	</if>
 
@@ -93,7 +93,7 @@
 		<div id="thread_<var %thread>" class="thread">
 	</if>
 
-		<loop $posts><include %TMPLDIR%/post_view.tpl></loop>
+		<loop $posts><include %TMPLDIR%post_view.tpl></loop>
 
 		</div>
 	<!-- <p style="clear: both;"></p> -->
@@ -150,4 +150,4 @@
 
 <if $postform><div class="postarea" id="postform2"></div></if>
 
-<include %TMPLDIR%/foot.tpl>
+<include %TMPLDIR%foot.tpl>

@@ -126,8 +126,8 @@
 	<div class="filename"><var $$locale{S_PICNAME}><a target="_blank" title="<var Wakaba::clean_string($uploadname)>" href="<var Wakaba::expand_image_filename($image)><if $image!~/^\/\/a\.pomf/>/<var Wakaba::get_urlstring(Wakaba::clean_string($uploadname))></if>"><var Wakaba::clean_string($displayname)></a></div>
 	<div class="filesize"><var Wakaba::get_displaysize($size, $$cfg{DECIMAL_MARK})><if $width && $height>, <var $width>&nbsp;&times;&nbsp;<var $height></if><if $info>, <var $info></if></div>
 	<if $thumbnail>
-		<div class="filelink" onmouseover="TagToTip('imageinfo_<var Wakaba::md5_hex($image)>', TITLE, '<var $$locale{S_FILEINFO}>', WIDTH, -450)" onmouseout="UnTip()" id="exlink-<var Wakaba::md5_hex($image)>">
-		<a target="_blank" href="<var Wakaba::expand_image_filename($image)>" onclick="return expand(this, <var ($width  || 0)>, <var ($height  || 0)>, <var ($tn_width  || 0)>, <var ($tn_height  || 0)>, '<var Wakaba::expand_filename($thumbnail)>', '<var Wakaba::get_extension($image)>')">
+		<div class="filelink" id="exlink-<var Wakaba::md5_hex($image)>">
+		<a target="_blank" href="<var Wakaba::expand_image_filename($image)>" onclick="return expand(this, <var ($width  || 0)>, <var ($height  || 0)>, <var ($tn_width  || 0)>, <var ($tn_height  || 0)>, '<var Wakaba::expand_filename($thumbnail)>', '<var Wakaba::get_extension($image)>')" onmouseover="TagToTip('imageinfo_<var Wakaba::md5_hex($image)>', TITLE, '<var $$locale{S_FILEINFO}>', WIDTH, -450)" onmouseout="UnTip()">
 			<img src="<var Wakaba::expand_filename($thumbnail)>" width="<var $tn_width>" height="<var $tn_height>" alt="<var $size>" />
 		</a>
 		</div>
