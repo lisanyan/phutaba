@@ -38,14 +38,7 @@ my $tt = Template->new({
         ERROR => 'error.tt2',
         PRE_PROCESS  => 'header.tt2',
         POST_PROCESS => 'footer.tt2',
-        #DEFAULT_ENCODING => 'utf8',
-        ENCODING => 'utf8',
-        VARIABLES => {
-            ismain => $is_main,
-            total_gb => nya1k_to_gb($$disk_info{blocks}),
-            free_gb => nya1k_to_gb($$disk_info{bfree}), 
-            used_gb => nya1k_to_gb($$disk_info{used}), 
-        },
+        ENCODING => 'utf8'
 });
 
 my $ttfile = "content/" . $page . ".tt2";
@@ -68,7 +61,13 @@ elsif ($page eq 'err404') {
 }
 elsif (-e 'tpl/' . $ttfile) {
 	my $output;
-	$tt->process($ttfile, {'tracking_code' => TRACKING_CODE}, \$output)
+	$tt->process($ttfile, {
+		'tracking_code' => TRACKING_CODE,
+        'total_gb' => nya1k_to_gb($$disk_info{blocks}),
+        'free_gb' => nya1k_to_gb($$disk_info{bfree}), 
+        'used_gb' => nya1k_to_gb($$disk_info{used}),
+        'ismain' => $is_main,
+		}, \$output)
 	  or tpl_make_error({
 	  	'http' => '500 Boom',
 	  	'type' => "Fehler bei Scriptausf&uuml;hrung",
@@ -90,6 +89,23 @@ else {
 #
 # Subroutines
 #
+
+sub uptime {
+  open(FILE, '/proc/uptime') || return 0;
+  my $line = <FILE>;
+  my($uptime, $idle) = split /\s+/, $line;
+  close FILE;
+  return sec2human($uptime);
+}
+
+sub sec2human {
+    my $secs = shift;
+    if    ($secs >= 365*24*60*60) { return sprintf '%.1fy', $secs/(365 *24*60*60) }
+    elsif ($secs >=     24*60*60) { return sprintf '%.1fd', $secs/(24*60*60) }
+    elsif ($secs >=        60*60) { return sprintf '%.1fh', $secs/(60*60) }
+    elsif ($secs >=           60) { return sprintf '%.1fm', $secs/(60) }
+    else                          { return sprintf '%.1fs', $secs }
+}
 
 sub nya1k_to_gb {
     my $blocks = shift;

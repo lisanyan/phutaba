@@ -238,6 +238,6 @@ $translation{S_REDIR} =
   ;    # Redir message for html in REDIR_DIR
 
 $translation{S_DNSBL} =
-  'TOR nodes are not allowed!';    # error string for tor node check
+  'This IP was listed in <em>%s</em> blacklist!';    # error string for tor node check
 
 \%translation;

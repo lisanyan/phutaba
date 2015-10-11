@@ -58,7 +58,7 @@ my %font        = (
     my $key      = ( $query->param("key") or 'default' );
     my $selector = ( $query->param("selector") or ".captcha" );
     my $style    = ( $query->cookie("wakabastyle"));
-    my $board    = ( $query->param("board") or 'b');
+    my $board    = ( $query->param("board") or &DEFAULT_BOARD);
     my $ip = ($ENV{HTTP_CF_CONNECTING_IP} || $ENV{HTTP_X_REAL_IP} || $ENV{REMOTE_ADDR});
 
     my $settings = fetch_config($board);

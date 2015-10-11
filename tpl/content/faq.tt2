@@ -72,7 +72,7 @@
 
 	<header class="title">JSON API</header>
 	<section class="info">
-	<p>Some text&hellip;</p>
+	<!-- <p>Some text&hellip;</p> -->
 		<table>
 			<tr>
 				<th>&nbsp;</th>
@@ -98,10 +98,6 @@
 				<td>/board/api/post?id=n</td>
 				<td>Вернет пост n</td>
 			</tr>
-			<tr>
-				<td>/board/api/meta?post=n</td>
-				<td>Вернет метаданные файлов поста n</td>
-			</tr>
 		</table>
 
 	</section>
@@ -118,8 +114,9 @@
 	</section>
 
 
-	<!--<header class="title">Some shit</header>
+	<header class="title">System info</header>
 	<section class="info">
+	<p>Uptime: [% uptime %]</p>
 	<p>Disk space [GB]</p>
 		<table>
 			<tr>
@@ -133,6 +130,6 @@
 				<td>[% free_gb %]</td>
 			</tr>
 		</table>
-	</section>-->
+	</section>
 
 <!-- [Disk space] Total(GB): [% total_gb %] | Used: [% used_gb %] | Free: [% free_gb %] -->

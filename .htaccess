@@ -1,36 +1,45 @@
+ErrorDocument 403 /index.pl?p=err403
+ErrorDocument 404 /index.pl?p=err404
 
-ErrorDocument 502 /errors/50x.html
-ErrorDocument 503 /errors/50x.html
-ErrorDocument 504 /errors/50x.html
+ErrorDocument 500 /static/50x.html
+ErrorDocument 502 /static/50x.html
+ErrorDocument 503 /static/50x.html
+ErrorDocument 504 /static/50x.html
 
-ErrorDocument 500 /errors/50x.html
-ErrorDocument 403 /errors/403.html
-ErrorDocument 404 /errors/404.html
+Options -MultiViews
 
+# send content header for browser video playback
+AddType video/webm .webm
 
 # Enable Rewrite Engine
 RewriteEngine on
 RewriteBase /
 
+# force every request to ssl and the same host
+# NOTE: change it according your needs, disable in dev environment
+#RewriteCond %{HTTP_HOST} !^02ch\.in [OR]
+#RewriteCond %{HTTPS} !on
+#RewriteRule ^ https://02ch.in%{REQUEST_URI} [R=301,L]
+
 # if the request does not exist as a directory, pass it to the template system
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^([A-Za-z]+)$ index.pl?p=$1 [L,NS,DPI]
 
-# if a directory is requested, always try to use wakaba.pl as index-document
+# if a directory is requested that contains a config.pl, try calling wakaba.pl
 RewriteCond %{REQUEST_FILENAME} -d
-RewriteRule ^([^/]+)/$ $1/wakaba.pl [L]
+#RewriteCond %{REQUEST_FILENAME}config.pl -f
+RewriteRule ^([^/]+)/$ wakaba.pl?section=$1 [L]
 
 # requests to banner/[board] are directed to the rotate script
-RewriteRule ^banner/([^/]+)$ banner-redir.pl?board=$1 [L]
+RewriteRule ^banner/([^/]+)$ banner.pl?board=$1 [L,NS]
 
 # rest-paths for pages and threads
-RewriteRule ^([^/]+)/seite/(\d+)$ $1/wakaba.pl?task=show&page=$2 [L]
-RewriteRule ^([^/]+)/page/(\d+)$ $1/wakaba.pl?task=show&page=$2 [L]
-RewriteRule ^([^/]+)/faden/(\d+)$ $1/wakaba.pl?task=show&thread=$2 [L]
-RewriteRule ^([^/]+)/thread/(\d+)$ $1/wakaba.pl?task=show&thread=$2 [L]
+RewriteRule ^([^/]+)/board.rss$    wakaba.pl?task=rss&section=$1 [L]
+RewriteRule ^([^/]+)/api/([^/]+)$  wakaba.pl?json=$2&section=$1 [L]
+RewriteRule ^([^/]+)/seite/(\d+)$  wakaba.pl?task=show&section=$1&page=$2 [L]
+RewriteRule ^([^/]+)/page/(\d+)$   wakaba.pl?task=show&section=$1&page=$2 [L]
+RewriteRule ^([^/]+)/faden/(\d+)$  wakaba.pl?task=show&section=$1&thread=$2 [L]
+RewriteRule ^([^/]+)/thread/(\d+)$ wakaba.pl?task=show&section=$1&thread=$2 [L]
 
 # allow download of original filenames
 RewriteRule ^([^/]+)/src/([^/]+)/([^/]+)$ $1/src/$2 [L,NS,DPI]
-
-# send content header for browser video playback
-AddType video/webm .webm

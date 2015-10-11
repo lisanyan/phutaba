@@ -99,7 +99,7 @@ sub get_meta_markup {
 			"ChannelMode" => "Channel Mode",
 			"LameMethod" => "Codec Profile",
 			"Compression" => "Compression", 
-			"EncodingProcess" => "Encoding Process",
+			# "EncodingProcess" => "Encoding Process",
 			"FrameCount" => "Frames",
 			"Vendor" => "Library Producer",
 			"Album" => "Album",
@@ -465,16 +465,6 @@ sub do_math {
 		{
 			$return  = "$text = ";
 			$return .= $math->RandInt($1,$2);
-		}
-		elsif ( $text =~ m%(BinomialDist|GaussianDist)\(([\d-.]+?)&#44;([\d-.]+?)&#44;([\d-.]+?)\)$%g )
-		{
-			my $type = $1;
-			$return  = "$type: ";
-			if ($type=="GaussianDist") {
-				$return .= $math->GaussianDist($2,$3,$4);
-			} else {
-				$return .= $math->Binomial($2,$3,$4);
-			}
 		}
 		else
 		{
