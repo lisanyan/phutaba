@@ -274,6 +274,7 @@ function expand(el, org_width, org_height, thumb_width, thumb_height, thumb, ext
 	var org = el.href;
 	var parent = el.parentNode;
 	var post = img.parentNode.parentNode.parentNode.parentNode.parentNode.parentNode.parentNode; // lol parentNode hell
+	var post2 = img.parentNode.parentNode.parentNode.parentNode.parentNode.parentNode;
 
 	if (ext=='WEBM' || ext=='MP4') { // Anal workaround on expanding videos
 		var orightml = parent.innerHTML;
@@ -301,7 +302,7 @@ function expand(el, org_width, org_height, thumb_width, thumb_height, thumb, ext
 		} else {
 			abortWebmDownload(el);
 			el.innerHTML = huj;
-			if (!isElementInViewport(post)) post.scrollIntoView();
+			if (!isElementInViewport(post2)) post2.scrollIntoView();
 		}
 	}
 	else {

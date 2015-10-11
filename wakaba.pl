@@ -123,7 +123,7 @@ while($query=CGI::Fast->new)
 
     unless (0)
     {
-        $boardSection   = ($query->param("section") or "b");
+        $boardSection   = ($query->param("section") or &DEFAULT_BOARD);
         $cfg            = fetch_config($boardSection);
         $moders         = get_settings('mods');
         $locale         = get_settings($$cfg{BOARD_LOCALE})
@@ -1159,7 +1159,7 @@ sub dnsbl_check {
 
         foreach (@{$dnsbl_answers}) {
             if ( $result eq $_ ) {
-                push @errors, $dnsbl_host;
+                push @errors, sprintf($$locale{S_DNSBL}, $dnsbl_host);
             }
         }
     }
@@ -1337,7 +1337,7 @@ sub post_stuff {
 
     # process the tripcode - maybe the string should be decoded later
     my $trip;
-    ( $name, $trip ) = process_leetcode( $name, 1 ); # process a l33t tripcode
+    ( $name, $trip ) = process_leetcode( $name ); # process a l33t tripcode
     ( $name, $trip ) = process_tripcode( $name, $$cfg{TRIPKEY}, SECRET, CHARSET ) unless $trip;
 
     # get as number and owner
@@ -1824,22 +1824,23 @@ sub encode_string {
 
 sub process_leetcode {
     my ($name, $nonamedecoding) = @_;
-    my $trip;
+    my ($namepart, $trip);
 
     my $trips = get_settings('trips');
-    my $password = $1 if ( $name =~ /(?:#|nya:)(.+?)$/i );
+    if ( $name =~ /(.*?)(?:#|nya:)(.+)$/ ) {
+        ($namepart, $trip) = ($1, $2);
+        $namepart = clean_string($namepart);
+    }
 
-    if ($$trips{$password}) {
-        $trip = $$cfg{TRIPKEY} . $$trips{$password};
-        $name =~ s/nya:(.+?)$//gi;
-        $name =~ s/#(.+?)$//gi;
+    if ($$trips{$trip}) {
+        $trip = $$cfg{TRIPKEY} . $$trips{$trip};
     }
     else {
-        undef $trip;
+        return ( $name, undef );
     }
 
-    return ( clean_string($name), $trip ) if $nonamedecoding;
-    return ( clean_string( decode_string( $name, CHARSET ) ), $trip );
+    return ( $namepart, $trip ) if $nonamedecoding;
+    return ( decode_string( $namepart, CHARSET ), $trip );
 }
 
 sub make_anonymous {
@@ -2348,10 +2349,11 @@ sub delete_stuff {
     }
 
     unless (@errors) {
-        if ($adminDel) {
-            make_http_forward( get_board_path() );
-        } elsif ( $noko == 1 and $parent ) {
-            make_http_forward( get_board_path() . "/thread/" . $parent );
+        # if ($adminDel) {
+        #     make_http_forward( get_board_path() );
+        # }
+        if ( $noko == 1 and $parent ) {
+            make_http_forward( get_board_path() . "thread/" . $parent );
         } else { make_http_forward( get_board_path() ); }
     }
     else {
@@ -3136,13 +3138,13 @@ sub edit_post {
 
     # process tripcode
     my $trip;
-    if ($$post{trip} && !$killtrip) {
-        $name = clean_string($name);
-        $trip = $$post{trip};
-    }
-    else {
-        ( $name, $trip ) = process_leetcode( $name, 1 ); # process a l33t tripcode
-        ( $name, $trip ) = process_tripcode( $name, $$cfg{TRIPKEY}, SECRET, CHARSET ) unless $trip;
+    ( $name, $trip ) = process_leetcode( $name ); # process a l33t tripcode
+    ( $name, $trip ) = process_tripcode( $name, $$cfg{TRIPKEY}, SECRET, CHARSET ) unless $trip;
+
+    if (!$killtrip) {
+        $trip = $$post{trip} if !$trip;
+    } else {
+        $trip = '';
     }
 
     # fix up the email/link
@@ -3158,7 +3160,7 @@ sub edit_post {
 
     # finally, update
     $sth=$dbh->prepare("UPDATE ".$$cfg{SQL_TABLE}." SET name=?,email=?,trip=?,subject=?,comment=?,adminpost=?,admin_post=? WHERE num=?;") or make_error($$locale{S_SQLFAIL});
-    $sth->execute($name,$email,($killtrip ? undef : $trip),$subject,$comment,$adminpost,$admin_post,$num) or make_error($$locale{S_SQLFAIL});
+    $sth->execute($name,$email,$trip,$subject,$comment,$adminpost,$admin_post,$num) or make_error($$locale{S_SQLFAIL});
     $sth->finish;
 
     log_action("editpost",$num,$admin);
