@@ -98,7 +98,6 @@ sub uptime {
   return sec2human($uptime);
 }
 
-
 sub sec2human {
     my $secs = shift;
     if    ($secs >= 365*24*60*60) { return sprintf '%.1fy', $secs/(365 *24*60*60) }

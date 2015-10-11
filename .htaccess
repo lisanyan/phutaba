@@ -31,7 +31,7 @@ RewriteCond %{REQUEST_FILENAME} -d
 RewriteRule ^([^/]+)/$ wakaba.pl?section=$1 [L]
 
 # requests to banner/[board] are directed to the rotate script
-RewriteRule ^banner/([^/]+)$ banner.pl?section=$1 [L,NS]
+RewriteRule ^banner/([^/]+)$ banner.pl?board=$1 [L,NS]
 
 # rest-paths for pages and threads
 RewriteRule ^([^/]+)/board.rss$    wakaba.pl?task=rss&section=$1 [L]
