@@ -99,7 +99,7 @@ sub get_meta_markup {
 			"ChannelMode" => "Channel Mode",
 			"LameMethod" => "Codec Profile",
 			"Compression" => "Compression", 
-			"EncodingProcess" => "Encoding Process",
+			# "EncodingProcess" => "Encoding Process",
 			"FrameCount" => "Frames",
 			"Vendor" => "Library Producer",
 			"Album" => "Album",
