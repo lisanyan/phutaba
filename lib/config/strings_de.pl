@@ -231,6 +231,6 @@ $translation{S_REDIR} =
   'If the redirect didn\'t work, please choose one of the following mirrors:';    # Redir message for html in REDIR_DIR
 
 $translation{S_DNSBL} =
-  'TOR-Nodes sind nicht erlaubt!';    # error string for tor node check
+  'Deine IP wurde in der Blacklist <em>%s</em> gelistet!';    # error string for tor node check
 
 \%translation;
