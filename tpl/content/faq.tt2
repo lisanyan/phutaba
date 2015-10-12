@@ -116,8 +116,8 @@
 
 	<header class="title">System info</header>
 	<section class="info">
-	<p>Uptime: [% uptime %]</p>
-	<p>Disk space [GB]</p>
+	<p>Uptime: [% uptime.0 %]<br />CPU Idle: [% uptime.1 %]</p>
+	<p><br />Disk space [GB]:</p>
 		<table>
 			<tr>
 				<th>Total</th>

@@ -4,7 +4,6 @@ use utf8;
 
 # System config
 my ( %settings, %boards, %moders ); # hash
-use constant ADMIN_PASS => 'SAMPLEPSAA';			# Admin password. For fucks's sake, change this.
 use constant SECRET => 'SALTSALTSALT';				# Cryptographic secret. CHANGE THIS to something totally random, and long.
 use constant SQL_DBI_SOURCE => 'DBI:mysql:database=sampledb;host=127.0.0.1'; # DBI data source string (mysql version, put server and database name in here)
 use constant SQL_USERNAME => 'sampleuser';		# MySQL login name

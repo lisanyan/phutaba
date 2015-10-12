@@ -1,8 +1,17 @@
-# moderators (format $moders{nick}{param});
-my %moders;
+# moders
 use utf8;
+my %moders;
 
-#$moders{test}{password} = 'p4ssw0rd';
-#$moders{test}{boards} = ['board1','board2']; # EXAMPLE
+$moders{Admin} = {
+	class => 'admin',
+	password => 'imgay',
+	boards => [] # leave array empty to allow access to every board
+};
+
+$moders{sample} = {
+	class => 'mod',
+	password => 'lies',
+	boards => ['a','b','ö']
+};
 
 \%moders;

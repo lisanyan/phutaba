@@ -3,7 +3,7 @@
 use strict;
 use CGI;
 use Template;
-use Filesys::Df;
+use Filesys::Df qw/df/;
 
 use Encode;
 use DBI;
@@ -66,6 +66,7 @@ elsif (-e 'tpl/' . $ttfile) {
         'total_gb' => nya1k_to_gb($$disk_info{blocks}),
         'free_gb' => nya1k_to_gb($$disk_info{bfree}), 
         'used_gb' => nya1k_to_gb($$disk_info{used}),
+        'uptime' => uptime(),
         'ismain' => $is_main,
 		}, \$output)
 	  or tpl_make_error({
@@ -95,7 +96,7 @@ sub uptime {
   my $line = <FILE>;
   my($uptime, $idle) = split /\s+/, $line;
   close FILE;
-  return sec2human($uptime);
+  return [ sec2human($uptime), sec2human($idle) ];
 }
 
 sub sec2human {

@@ -3,7 +3,6 @@
 package Wakaba;
 
 use strict;
-# use 5.16.0;
 # umask 0022;    # Fix some problems
 
 use lib '.';
@@ -18,6 +17,7 @@ use List::Util qw(first);
 use Net::DNS; # DNSBL request
 use Net::IP qw(:PROC);
 use SimpleCtemplate;
+use Pomf qw(pomf_upload);
 
 $CGI::LIST_CONTEXT_WARN = 0; # UFOPORNO
 my $JSON = JSON::XS->new->pretty->utf8;
@@ -95,8 +95,10 @@ BEGIN {
 #
 # Optional modules
 #
-use Encode qw(decode encode);
-use Pomf qw(pomf_upload);
+my ($has_encode);
+
+eval 'use Encode qw(decode encode)';
+$has_encode = 1 unless $@;
 
 #
 # Global init
@@ -141,7 +143,7 @@ while($query=CGI::Fast->new)
     }
 
     $dbh = DBI->connect_cached(SQL_DBI_SOURCE,SQL_USERNAME,SQL_PASSWORD,
-        {AutoCommit => 1,mysql_enable_utf8 => 1} ) or make_error($$locale{S_SQLCONF});
+        {AutoCommit => 1} ) or make_error($$locale{S_SQLCONF});
 
     my $sth = $dbh->prepare("SET NAMES 'utf8'") or make_error("SPODRO BORDO");
     $sth->execute();
@@ -167,7 +169,7 @@ while($query=CGI::Fast->new)
             output_json_newposts($after, $id);
         }
     }
-    elsif ($json eq "threads") {
+    elsif ( $json eq "threads" ) {
         my $page=$query->param("page");
         $page=1 unless($page and $page =~ /^[+-]?\d+$/);
         output_json_threads($page);
@@ -192,8 +194,7 @@ while($query=CGI::Fast->new)
         });
     }
 
-    if ( !table_exists($$cfg{SQL_TABLE}) )    # check for comments table
-    {
+    if ( !table_exists($$cfg{SQL_TABLE}) ) {   # check for comments table
         init_database();
         init_files_database() unless table_exists($$cfg{SQL_TABLE_IMG});
         # if nothing exists show the first page.
@@ -237,7 +238,7 @@ while($query=CGI::Fast->new)
             show_page($page, $admin);
         }
     }
-    elsif ($task eq "search") {
+    elsif ( $task eq "search" ) {
         my $find            = $query->param("find");
         my $op_only         = $query->param("op");
         my $in_subject      = $query->param("subject");
@@ -277,10 +278,10 @@ while($query=CGI::Fast->new)
         my $fileonly = $query->param("fileonly");
         my $admin    = $query->cookie("wakaadmin");
         my $parent   = $query->param("parent");
-        my $admin_del = $query->param("admindel");
+        my $admindel = $query->param("admindel");
         my @posts    = $query->param("delete");
 
-        delete_stuff( $password, $fileonly, $admin, $admin_del, $parent, @posts );
+        delete_stuff( $password, $fileonly, $admin, $admindel, $parent, @posts );
     }
     elsif ( $task eq "sticky" ) {
         my $admin    = $query->cookie("wakaadmin");
@@ -298,8 +299,7 @@ while($query=CGI::Fast->new)
         my $threadid = $query->param("thread");
         thread_control( $admin, $threadid, "locked" );
     }
-    elsif($task eq "loginpanel")
-    {
+    elsif( $task eq "loginpanel" ) {
         my $admincookie = $query->cookie("wakaadmin");
         my $savelogin = $query->param("savelogin");
 
@@ -376,33 +376,31 @@ while($query=CGI::Fast->new)
         move_files($admin, @files);
     }
     # post editing
-    elsif($task eq "edit") {
-        my $admin=$query->cookie("wakaadmin");
-        my $post=$query->param("num");
-        my $noformat=$query->param("noformat");
-        make_edit_post_panel($admin,$post,$noformat);
+    elsif( $task eq "edit" ) {
+        my $admin = $query->cookie("wakaadmin");
+        my $post = $query->param("num");
+        my $noformat = $query->param("noformat");
+        make_edit_post_panel( $admin, $post, $noformat);
     }
-    elsif($task eq "doedit") {
-        my $admin=$query->cookie("wakaadmin");
-        my $num=$query->param("num");
-        my $name=$query->param("field1");
-        my $email=$query->param("field2");
-        my $subject=$query->param("field3");
-        my $comment=$query->param("field4");
-        my $no_format=$query->param("noformat");
-        my $capcode=$query->param("capcode");
-        my $killtrip=$query->param("notrip");
-        my $by_admin=$query->param("admin_post");
-        edit_post($admin,$num,$name,$email,$subject,$comment,$capcode,$killtrip,$by_admin,$no_format);
+    elsif( $task eq "doedit" ) {
+        my $admin = $query->cookie("wakaadmin");
+        my $num = $query->param("num");
+        my $name = $query->param("field1");
+        my $email = $query->param("field2");
+        my $subject = $query->param("field3");
+        my $comment = $query->param("field4");
+        my $no_format = $query->param("noformat");
+        my $capcode = $query->param("capcode");
+        my $killtrip = $query->param("notrip");
+        my $by_admin = $query->param("admin_post");
+        edit_post( $admin, $num, $name, $email, $subject, $comment, $capcode, $killtrip, $by_admin, $no_format);
     }
-    elsif($task eq "baneditwindow")
-    {
+    elsif( $task eq "baneditwindow" ) {
         my $admin = $query->cookie("wakaadmin");
         my $num = $query->param("num");
         make_admin_ban_edit($admin, $num);  
     }
-    elsif($task eq "adminedit")
-    {
+    elsif( $task eq "adminedit" ) {
         my $admin = $query -> cookie("wakaadmin");
         my $num = $query->param("num");
         my $comment = $query->param("comment");
@@ -415,21 +413,21 @@ while($query=CGI::Fast->new)
         my $noexpire = $query->param("noexpire");
         edit_admin_entry($admin,$num,$comment,$sec,$min,$hour,$day,$month,$year,$noexpire);
     }
-    elsif($task eq "rss") {
+    elsif( $task eq "rss" ) {
         make_rss();
     }
-    elsif($task eq "viewlog"){
+    elsif( $task eq "viewlog" ) {
         my $admin=$query->cookie("wakaadmin");
         my $page=$query->param("page");
         $page = 1 unless (defined($page) and $page =~ /^[+-]?\d+$/);
         make_view_log($admin, $page)
     }
-    elsif($task eq "clearlog"){
+    elsif( $task eq "clearlog" ) {
         my $admin=$query->cookie("wakaadmin");
         my $all=$query->param("clearall");
         clear_log($admin,$all);
     }
-    # lal
+    # return error on unknown task
     else {
         make_error("Invalid task") if (!$json);
     }
@@ -538,8 +536,7 @@ sub output_json_threads {
 
     if(scalar @threads ne 0) {
         $code = 200;
-    } 
-    elsif($sth->rows == 0) {
+    } elsif($sth->rows == 0) {
         $code = 404;
         $error = 'Element not found.';
     } else {
@@ -1267,17 +1264,22 @@ sub post_stuff {
       if ( $ENV{REQUEST_METHOD} and $ENV{REQUEST_METHOD} ne "POST" );
 
     # clean up invalid admin cookie/session or posting would fail
-    $admin = "" unless (check_password($admin,'', 'silent'));
+    my @neko = check_password( $admin, '', 'silent' );
+    $admin = "" unless ($neko[0]);
 
     if ($admin)  # check admin password
     {
-        check_password( $admin, '' );
         $admin_post = 1;
+        # don't allow mods to post html
+        make_error($$locale{S_NOPRIVILEGES}) if( $no_format and $neko[1] ne 'admin' );
     }
     else {
 
         # forbid admin-only features
         make_error($$locale{S_WRONGPASS}) if ( $no_format or $postfix or $as_staff );
+
+        # forbid posting if enabled
+        make_error($$locale{S_NONEWTHREADS}) if ($$cfg{DISABLE_POSTING});
 
         # check what kind of posting is allowed
         if ($parent) {
@@ -1287,7 +1289,6 @@ sub post_stuff {
         else {
             make_error($$locale{S_NOTALLOWED}) if ( $file  and !($$cfg{ALLOW_IMAGES}) );
             make_error($$locale{S_NOTALLOWED}) if ( !$file and !($$cfg{ALLOW_TEXTONLY}) );
-            make_error($$locale{S_NONEWTHREADS}) if ($$cfg{DISABLE_NEW_THREADS});
         }
     }
 
@@ -1299,8 +1300,8 @@ sub post_stuff {
     make_error($$locale{S_UNUSUAL}) if ( $subject =~ /[\n\r]/ );
 
     # check for excessive amounts of text
-    make_error($$locale{S_TOOLONG}) if ( length($name) > $$cfg{MAX_FIELD_LENGTH} );
-    make_error($$locale{S_TOOLONG}) if ( length($email) > $$cfg{MAX_FIELD_LENGTH} );
+    make_error($$locale{S_TOOLONG}) if ( length($name)    > $$cfg{MAX_FIELD_LENGTH} );
+    make_error($$locale{S_TOOLONG}) if ( length($email)   > $$cfg{MAX_FIELD_LENGTH} );
     make_error($$locale{S_TOOLONG}) if ( length($subject) > $$cfg{MAX_FIELD_LENGTH} );
     make_error($$locale{S_TOOLONG}) if ( length($comment) > $$cfg{MAX_COMMENT_LENGTH} );
 
@@ -1508,14 +1509,12 @@ sub post_stuff {
         }
     }
 
-    if ($parent)    # bumping
-    {
+    if ($parent) { # bumping
         # if parent has autosage set, the sage_count SQL query does not need to be executed
         my $bumplimit = ($autosage or $$cfg{MAX_RES} and sage_count($parent_res) > $$cfg{MAX_RES});
 
         # check for sage, or too many replies
-        unless ( $email =~ /sage/i or $bumplimit )
-        {
+        unless ( $email =~ /sage/i or $bumplimit ) {
             $sth =
               $dbh->prepare(
                 "UPDATE " . $$cfg{SQL_TABLE} . " SET lasthit=? WHERE num=? OR parent=?;"
@@ -1547,9 +1546,7 @@ sub post_stuff {
     );    # yum!
     $sth->finish;
 
-    if ($c_gb2 =~ /thread/i)
-    {
-        # forward back to the page
+    if ($c_gb2 =~ /thread/i) { # forward back to the page
         if ($parent) { make_http_forward( get_board_path() . "thread/" . $parent . ( $new_post_id ? "#${new_post_id}" : "" ) ); }
         elsif($new_post_id) { make_http_forward( get_board_path() . "thread/" . $new_post_id ); }
         else { make_http_forward( get_board_path() ); } # shouldn't happen
@@ -1697,7 +1694,7 @@ sub ban_check {
 
     while ( $row = get_decoded_arrayref($sth) ) { # TODO: use get_decoded_hashref()
         my $regexp = quotemeta $$row[0];
-        make_error($$locale{S_STRREF}) if ( $comment    =~ /$regexp/ );
+        make_error($$locale{S_STRREF}) if ( $comment =~ /$regexp/ );
         make_error($$locale{S_STRREF}) if ( $name    =~ /$regexp/ );
         make_error($$locale{S_STRREF}) if ( $subject =~ /$regexp/ );
     }
@@ -1834,8 +1831,7 @@ sub process_leetcode {
 
     if ($$trips{$trip}) {
         $trip = $$cfg{TRIPKEY} . $$trips{$trip};
-    }
-    else {
+    } else {
         return ( $name, undef );
     }
 
@@ -2216,16 +2212,15 @@ sub get_max_sticky {
     $sth->execute() or make_error($$locale{S_SQLFAIL});   
     
     my $row = ($sth->fetchrow_array())[0];
-    if (!$row) { return 0; }
+    if ( !$row ) { return 0; }
     
     # Calculate maximum `sticky` value
-    while ($row = $sth->fetchrow_arrayref()) 
-    {
+    while ( $row = $sth->fetchrow_arrayref() ) {
         $max = $$row[0] if ($$row[0] > $max);
     }
 
     $sth->finish;    
-    return ($max + 1);
+    return ( $max + 1 );
 }
 
 sub thread_control {
@@ -2274,8 +2269,7 @@ sub delete_all {
     my ($sth, $row, @posts);
     my @session = check_password( $admin, '' );
 
-    unless($go and $ip) # do not allow empty IP (as it would delete anonymized (staff) posts)
-    {
+    unless($go and $ip) { # do not allow empty IP (as it would delete anonymized (staff) posts)
         my ($pcount, $tcount);
 
         $sth = $dbh->prepare("SELECT count(`num`) FROM ".$$cfg{SQL_TABLE}." WHERE ip=? OR ip & ? = ? & ?;") or make_error($$locale{S_SQLFAIL});
@@ -2301,8 +2295,7 @@ sub delete_all {
             stylesheets => get_stylesheets()
         });
     }
-    else
-    {
+    else {
         $sth =
           $dbh->prepare( "SELECT num FROM " . $$cfg{SQL_TABLE} . " WHERE ip<>0 AND ip IS NOT NULL AND (ip & ? = ? & ? OR ip=?);" )
           or make_error($$locale{S_SQLFAIL});
@@ -2599,14 +2592,10 @@ sub make_admin_ban_edit # generating ban editing window
     my $sth = $dbh->prepare("SELECT * FROM ".$$cfg{SQL_ADMIN_TABLE}." WHERE num=?") or make_error($$locale{S_SQLFAIL});
     $sth->execute($num) or make_error($$locale{S_SQLFAIL});
     my @utctime;
-    while (my $row=get_decoded_hashref($sth))
-    {
-        if ($$row{expires} != 0)
-        {
+    while (my $row=get_decoded_hashref($sth)) {
+        if ($$row{expires} != 0) {
             @utctime = gmtime($$row{expires}); #($sec, $min, $hour, $day,$month,$year)
-        }
-        else
-        {
+        } else {
             @utctime = gmtime(time);
         }
         $$row{sec}=$utctime[0];
@@ -2779,11 +2768,7 @@ sub do_login {
         $crypt = crypt_password($password);
         check_password($crypt, '');
     }
-    elsif ( $admincookie eq crypt_password(ADMIN_PASS) ) {
-        $crypt    = $admincookie;
-        $nexttask = "show";
-    }
-    elsif ( check_moder($admincookie) ne 0 ) {
+    elsif ( ( check_moder($admincookie) )[0] ne 0 ) {
         $crypt    = $admincookie;
         $nexttask = "show";
     }
@@ -2827,7 +2812,6 @@ sub add_admin_entry {
             "error_msg" => 'Unauthorized'
         });
     }
-
     else {
         $comment = clean_string( decode_string( $comment, CHARSET ) );
 
@@ -2934,8 +2918,6 @@ sub edit_admin_entry # subroutine for editing entries in the admin table
     log_action("editadminentry",$num,$admin);
     
     make_http_forward( get_script_name() . "?task=bans&section=".$$cfg{SELFPATH});
-    # make_http_header();
-    # print encode_string(EDIT_SUCCESSFUL->(stylesheets => get_stylesheets(),cfg => $cfg));
 }
 
 sub remove_admin_entry {
@@ -2957,41 +2939,23 @@ sub make_expiration_date {
     my ($expires,$time)=@_;
 
     if($use_parsedate) { $expires=parsedate($expires); } # Sexy date parsing
-    else
-    {
-        my ($date)=grep { $$_{label} eq $expires } @{$$cfg{BAN_DATES}};
+    else {
+        my ($date) = grep { $$_{label} eq $expires } @{$$cfg{BAN_DATES}};
 
-        if(defined $date->{time})
-        {
-            if($date->{time}!=0) { $expires=$time+$date->{time}; } # Use a predefined expiration time
+        if(defined $date->{time}) {
+            if( $date->{time}!=0 ) { $expires = $time+$date->{time}; } # Use a predefined expiration time
             else { $expires=0 } # Never expire
         }
-        elsif($expires!=0) { $expires=$time+$expires } # Expire in X seconds
-        else { $expires=0 } # Never expire
+        elsif( $expires != 0 ) { $expires = $time+$expires } # Expire in X seconds
+        else { $expires = 0 } # Never expire
     }
 
     return $expires;
 }
 
-sub check_password {
-    my ( $admin, $password, $mode ) = @_;
-    my $moder = check_moder($admin, $mode);
-    my @class = qw/admin mod/;
-    my @adm = ('Admin', $class[0]);
-
-    # return @adm if ( $admin eq ADMIN_PASS );
-    return @adm if ( $admin eq crypt_password(ADMIN_PASS) );
-
-    if ($password ne "") {
-        return @adm if ( $admin eq crypt_password($password) );
-    }
-    else {
-        return ($moder, $class[1]) if ( $moder ne 0 );
-    }
-
-    make_error($$locale{S_WRONGPASS}) if($mode ne 'silent');
-    return 0;
-}
+#
+# Password check
+#
 
 sub crypt_password {
     my $crypt = hide_data( (shift) . get_remote_addr(), 18, "admin", SECRET, 1 ); # do not use $ENV{REMOTE_ADDR}
@@ -2999,29 +2963,43 @@ sub crypt_password {
     return $crypt;
 }
 
+sub check_password {
+    my ( $admin, $password, $mode ) = @_;
+    my @moder = check_moder( $admin, $mode );
+
+    if ($password ne "") {
+        return ('Admin', 'admin') if ( $admin eq crypt_password($password) );
+    }
+    else {
+        return @moder if ( $moder[0] ne 0 );
+    }
+
+    make_error($$locale{S_WRONGPASS}) if($mode ne 'silent');
+    return 0;
+}
+
+
 sub check_moder {
     my ($pass, $mode) = @_;
     my $nick = get_moder_nick($pass);
-    my $boards = $moders->{$nick}{boards};
+    my @info = ( $nick, $$moders{$nick}{class}, $$moders{$nick}{boards} );
 
-    return 0 unless( defined $nick );
-    return $nick unless( defined $boards ); # No board restriction
+    return 0     unless( defined $nick );
+    return @info unless( scalar @{$info[2]} ); # No board restriction
 
-    unless ( defined (first { $_ eq $$cfg{SELFPATH} } @$boards) )
+    unless ( defined (first { $_ eq $$cfg{SELFPATH} } @{$info[2]} ) )
     {
-        if($mode ne 'silent') {
-            make_error( sprintf($$locale{S_NOBOARDACC}, join(',', @$boards), get_script_name()) );
-        }
-        else {
-            return 0;
-        }
+        make_error(
+            sprintf( $$locale{S_NOBOARDACC}, join( ', ', @{$info[2]} ), get_script_name() )
+        ) if($mode ne 'silent');
+        return 0;
     }
-    return $nick;
+    return @info;
 }
 
 sub get_moder_nick {
     my ($pass) = @_;
-    first { crypt_password( $moders->{$_}{password} ) eq $pass } keys $moders;
+    first { crypt_password( $$moders{$_}{password} ) eq $pass } keys $moders;
 }
 
 #
@@ -3072,8 +3050,8 @@ sub tag_killa { # subroutine for stripping HTML tags and supplanting them with c
     $tag_killa =~ s%<img src="(?:.*?)/([^/\.]+)(\.[^\.]+)?" alt="" style="vertical-align: bottom;" />%:$1:%g;
 
     # $tag_killa =~ s/<pre>([^\n]*?)<\/pre>/<code>$1<\/code>/g;
-    $tag_killa =~ s%<pre><code>%\[code\]%g;    # shit
-    $tag_killa =~ s%</code></pre>%\[/code\]%g;  # shit
+    $tag_killa =~ s%<pre>%\[code\]%g;    # shit
+    $tag_killa =~ s%</pre>%\[/code\]%g;  # shit
     $tag_killa =~ s/<.*?>//g;
 
     $tag_killa;
@@ -3110,8 +3088,11 @@ sub make_edit_post_panel {
 
 
 sub edit_post {
-    my ($admin,$num,$name,$email,$subject,$comment,$capcode,$killtrip,$byadmin,$no_format)=@_;
-    my ($sth,$postfix);
+    my ( $admin,   $num,      $name,    $email,
+         $subject, $comment,  $capcode, $killtrip,
+         $byadmin, $no_format
+    ) = @_;
+    my ($sth, $postfix);
 
     my @neko = check_password($admin,'');
     make_error($$locale{S_NOPRIVILEGES}) if( $no_format and $neko[1] ne 'admin' );
@@ -3121,20 +3102,20 @@ sub edit_post {
     my $admin_post = $byadmin ? 1 : 0;
     my $ip = get_remote_addr();
 
-    make_error($$locale{S_UNUSUAL}) if($name=~/[\n\r]/);
-    make_error($$locale{S_UNUSUAL}) if($email=~/[\n\r]/);
-    make_error($$locale{S_UNUSUAL}) if($subject=~/[\n\r]/);
-    make_error($$locale{S_TOOLONG}) if(length($name)>$$cfg{MAX_FIELD_LENGTH});
-    make_error($$locale{S_TOOLONG}) if(length($email)>$$cfg{MAX_FIELD_LENGTH});
-    make_error($$locale{S_TOOLONG}) if(length($subject)>$$cfg{MAX_FIELD_LENGTH});
-    make_error($$locale{S_TOOLONG}) if(length($comment)>$$cfg{MAX_COMMENT_LENGTH});
+    make_error($$locale{S_UNUSUAL}) if( $name =~/[\n\r]/ );
+    make_error($$locale{S_UNUSUAL}) if( $email =~/[\n\r]/ );
+    make_error($$locale{S_UNUSUAL}) if( $subject =~/[\n\r]/ );
+    make_error($$locale{S_TOOLONG}) if( length($name) > $$cfg{MAX_FIELD_LENGTH} );
+    make_error($$locale{S_TOOLONG}) if( length($email) > $$cfg{MAX_FIELD_LENGTH} );
+    make_error($$locale{S_TOOLONG}) if( length($subject) > $$cfg{MAX_FIELD_LENGTH} );
+    make_error($$locale{S_TOOLONG}) if( length($comment) > $$cfg{MAX_COMMENT_LENGTH} );
 
     # clean inputs
-    $email   = clean_string(decode_string($email,CHARSET));
-    $subject = clean_string(decode_string($subject,CHARSET));
+    $email   = clean_string( decode_string( $email, CHARSET ) );
+    $subject = clean_string( decode_string( $subject, CHARSET ) );
 
-    if($email=~/sage/i) { $email='sage'; }
-    else { $email=''; }
+    if ( $email =~/sage/i ) { $email = 'sage'; }
+    else                     { $email = ''; }
 
     # process tripcode
     my $trip;
@@ -3159,16 +3140,24 @@ sub edit_post {
     $name = make_anonymous( $ip, time() ) unless $name or $trip;
 
     # finally, update
-    $sth=$dbh->prepare("UPDATE ".$$cfg{SQL_TABLE}." SET name=?,email=?,trip=?,subject=?,comment=?,adminpost=?,admin_post=? WHERE num=?;") or make_error($$locale{S_SQLFAIL});
-    $sth->execute($name,$email,$trip,$subject,$comment,$adminpost,$admin_post,$num) or make_error($$locale{S_SQLFAIL});
+    $sth = $dbh->prepare(
+      "UPDATE "
+      . $$cfg{SQL_TABLE}
+      . " SET name=?,email=?,trip=?,subject=?,comment=?,adminpost=?,admin_post=? WHERE num=?;")
+      or make_error($$locale{S_SQLFAIL}
+    );
+
+    $sth->execute(
+        $name,$email,$trip,$subject,$comment,$adminpost,$admin_post,$num
+    ) or make_error($$locale{S_SQLFAIL});
     $sth->finish;
 
     log_action("editpost",$num,$admin);
 
     # Go to thread
-    if($$post{parent}) { make_http_forward( get_board_path() . "thread/" . $$post{parent} . ($num?"#$num":"")); }
-    elsif($num) { make_http_forward( get_board_path() . "thread/" . $num ); }
-    else { make_http_forward( get_board_path() ); } # shouldn't happen
+    if( $$post{parent} ) { make_http_forward( get_board_path() . "thread/" . $$post{parent} . ($num?"#$num":"")); }
+    elsif( $num )        { make_http_forward( get_board_path() . "thread/" . $num ); }
+    else                 { make_http_forward( get_board_path() ); } # shouldn't happen
 }
 
 #
@@ -3200,7 +3189,7 @@ sub log_action {
 
 sub make_view_log {
     my ($admin, $page) = @_;
-    my ($row,$sth,@log);
+    my ($row, $sth, @log);
 
     my @session = check_password($admin, '');
     make_error($$locale{S_NOPRIVILEGES}) if $session[1] ne 'admin';
@@ -3212,12 +3201,12 @@ sub make_view_log {
     my $emax=$emin+$$cfg{ENTRIES_PER_LOGPAGE};
     my $entcount = 0;
 
-    while($row = $sth->fetchrow_hashref){
+    while($row = $sth->fetchrow_hashref) {
         $entcount++;
         if($entcount>$emin and $entcount<=$emax) {
             $$row{rowtype} = @log % 2 + 1;
             push @log,$row;
-        };
+        }
     }
 
     # make the list of pages
@@ -3229,8 +3218,7 @@ sub make_view_log {
         if ( $$p{page} == $page ) { $$p{current} = 1 }   # current page, no link
     }
 
-    if($page<=0 or $page>$totalCount)
-    {
+    if($page<=0 or $page>$totalCount) {
         make_error($$locale{S_INVALID_PAGE});
     }
 
@@ -3301,7 +3289,7 @@ sub make_error {
 
     make_http_header(defined $not_found ? $not_found : undef);
 
-    my $out = $tpl->error({
+    print $tpl->error({
         error          => $error,
         error_page     => 'Error occurred',
         error_title    => 'Error occurred',
@@ -3309,9 +3297,6 @@ sub make_error {
         cfg            => $cfg,
         locale         => $locale
     });
-    $out =~ s/^\s+//; # remove whitespace at the beginning
-    $out =~ s/^\s+\n//mg; # remove empty lines
-    print $out;
 
     if (ERRORLOG)    # could print even more data, really.
     {
@@ -3407,9 +3392,7 @@ sub get_stylesheets {
 
 sub get_reply_link {
     my ( $reply, $parent, $force_http ) = @_;
-    # my $brd = $$cfg{SELFPATH};
 
-    # return expand_filename( "thread/" . $reply, $force_http ) . '#' . $reply if (!$parent and $sprolo);
     return expand_filename( "thread/" . $parent, $force_http ) . '#' . $reply if ($parent);
     return expand_filename( "thread/" . $reply, $force_http );
 }
@@ -3614,8 +3597,8 @@ sub init_files_database {
 sub init_log_database {
     my ($sth);
     
-    $sth=$dbh->do("DROP TABLE ".$$cfg{SQL_LOG_TABLE}.";") if(table_exists($$cfg{SQL_LOG_TABLE}));
-    $sth=$dbh->prepare(
+    $sth = $dbh->do("DROP TABLE ".$$cfg{SQL_LOG_TABLE}.";") if(table_exists($$cfg{SQL_LOG_TABLE}));
+    $sth = $dbh->prepare(
         "CREATE TABLE ".$$cfg{SQL_LOG_TABLE}." (".
         "num ".get_sql_autoincrement().",".
         "user TEXT,".
@@ -3624,7 +3607,8 @@ sub init_log_database {
         "board TEXT,".
         "time INTEGER,".
         "ip TEXT".  
-    ");") or make_error($$locale{S_SQLFAIL});
+    ");"
+    ) or make_error($$locale{S_SQLFAIL});
     $sth->execute() or make_error($$locale{S_SQLFAIL});
 }
 
@@ -3847,15 +3831,29 @@ sub thread_exists {
 }
 
 sub get_decoded_hashref {
-    my ($sth)=@_;
-    # !! no need to encode since we turned mysql_enable_utf8 on and not using outdated versions of perl
-    $sth->fetchrow_hashref();
+    my ($sth) = @_;
+
+    my $row = $sth->fetchrow_hashref();
+
+    if ( $row and $has_encode ) {
+            # don't blame me for this shit, I got this from perlunicode.
+        do { defined && /[^\000-\177]/ && Encode::_utf8_on($_) for $row->{$_} } for ( keys %$row );
+    }
+
+    return $row;
 }
 
 sub get_decoded_arrayref {
-    my ($sth)=@_;
-    # !! no need to encode since we turned mysql_enable_utf8 on and not using outdated versions of perl
-    $sth->fetchrow_arrayref();
+    my ($sth) = @_;
+
+    my $row = $sth->fetchrow_arrayref();
+
+    if ( $row and $has_encode ) {
+        # don't blame me for this shit, I got this from perlunicode.
+        defined && /[^\000-\177]/ && Encode::_utf8_on($_) for @$row;
+    }
+
+    return $row;
 }
 
 sub get_fcgicounter {

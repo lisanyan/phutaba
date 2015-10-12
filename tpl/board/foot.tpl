@@ -30,8 +30,8 @@
 </if>
 
 <if $postform>
-<script type="text/javascript">set_inputs("postform")</script></if>
-<script type="text/javascript">set_delpass("delform")</script>
+<script type="text/javascript">set_inputs("postform")</script>
+<script type="text/javascript">set_delpass("delform")</script></if>
 
 <script type="text/javascript">
 	var board = "<var $$cfg{SELFPATH}>", thread_id = <if $thread><var $thread></if><if !$thread>null</if>;
