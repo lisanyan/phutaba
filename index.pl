@@ -31,7 +31,7 @@ if ($page eq "") {
         exit print $q->redirect("/".DEFAULT_BOARD."/");
 }
 
-#print $q->header(-charset => 'utf-8');
+# print $q->header(-charset => 'utf-8');
 
 my $tt = Template->new({
         INCLUDE_PATH => 'tpl/',
@@ -115,7 +115,7 @@ sub nya1k_to_gb {
 
 sub tpl_make_error($) {
 	my ($error) = @_;
-	print $q->header(-status=>$$error{http});
+	print $q->header(-status=>$$error{http}, -charset => 'utf-8');
         $tt->process("error.tt2", {
 			'tracking_code' => TRACKING_CODE,
 			'error' => $error
