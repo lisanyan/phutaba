@@ -115,7 +115,7 @@ my $tpl = SimpleCtemplate->new({ tmpl_dir => 'tpl/board/' });
 
 return 1 if (caller); # stop here if we're being called externally
 
-pm_manage(n_processes => 4, die_timeout => 10, pm_title => '02ch-fcgi-pm');
+pm_manage(n_processes => 4, die_timeout => 10, pm_title => 'perl-fcgi-pm-02ch');
 
 # FCGI init
 while($query=CGI::Fast->new)
@@ -126,11 +126,10 @@ while($query=CGI::Fast->new)
     unless (0)
     {
         $boardSection   = ($query->param("section") or &DEFAULT_BOARD);
-        $cfg            = fetch_config($boardSection);
+        $cfg            = fetch_config(decode_string($boardSection, CHARSET));
         $moders         = get_settings('mods');
         $locale         = get_settings($$cfg{BOARD_LOCALE})
                             unless ($$cfg{NOTFOUND});
-        $$cfg{SELFPATH} = $boardSection;
 
         if( $$cfg{NOTFOUND} ) {
             print ("Content-type: text/plain\n\nBoard not found.");
@@ -844,7 +843,6 @@ sub show_page {
 
     $total = 1 if ($sth && !$sth->rows && !$total);
 
-
     my $posts =
       $dbh->prepare(
         "SELECT * FROM ".$$cfg{SQL_TABLE}." WHERE parent=? ORDER BY num DESC LIMIT ?;"
@@ -905,7 +903,6 @@ sub show_page {
         $$p{filename} = expand_filename( "page/" . $$p{page} );
         if ( $$p{page} == $page ) { $$p{current} = 1 }   # current page, no link
     }
-
 
     my ( $prevpage, $nextpage );
     # phutaba pages:    1 2 3
@@ -1163,7 +1160,6 @@ sub dnsbl_check {
     make_ban( $$locale{S_BADHOSTPROXY}, { ip => $ip, showmask => 0, reason => shift(@errors) } ) if scalar @errors;
 }
 
-
 sub find_posts {
     my ($find, $op_only, $in_subject, $in_filenames, $in_comment) = @_;
     # TODO: add $admin / admin-reflinks?
@@ -1236,7 +1232,6 @@ sub find_posts {
     $output =~ s/^\s+\n//mg;
     print($output);
 }
-
 
 #
 # Posting
@@ -1705,7 +1700,6 @@ sub ban_check {
     return (0);
 }
 
-
 sub flood_check {
     my ( $ip, $time, $comment, $file, $parent ) = @_;
     my ( $sth, $maxtime );
@@ -1773,7 +1767,6 @@ sub format_comment {
 
         return $line;
     };
-
 
     if ($$cfg{ENABLE_WAKABAMARK}) {
         $comment = do_wakabamark($comment, $handler);
@@ -2152,6 +2145,7 @@ sub process_file {
                     make_thumbnail(
                         $filename,         $thumbnail,
                         $tn_width,         $tn_height,
+                        $$cfg{ENABLE_AFMOD},
                         $$cfg{THUMBNAIL_QUALITY},
                         $$cfg{CONVERT_COMMAND}
                     )
@@ -2350,7 +2344,7 @@ sub delete_stuff {
         } else { make_http_forward( get_board_path() ); }
     }
     else {
-        my $errstring = join("<br />", @errors);
+        my $errstring = "<span class=\"prewrap\">" . join("\n", @errors) . "</span>";
         make_error($errstring);
     }
 }
@@ -2978,7 +2972,6 @@ sub check_password {
     return 0;
 }
 
-
 sub check_moder {
     my ($pass, $mode) = @_;
     my $nick = get_moder_nick($pass);
@@ -3085,7 +3078,6 @@ sub make_edit_post_panel {
         locale => $locale
     });
 }
-
 
 sub edit_post {
     my ( $admin,   $num,      $name,    $email,
@@ -3481,14 +3473,16 @@ sub get_remote_addr {
 
 sub fetch_config
 {
-    my ($boardSection) = @_;
+    my ($board) = @_;
     my $settings = get_settings('settings');
 
-    unless ($$settings{$boardSection}) {
-        $$settings{$boardSection}{NOTFOUND} = 1;
+    unless ($$settings{$board}) {
+        $$settings{$board}{NOTFOUND} = 1;
     }
 
-    $$settings{$boardSection};
+    $$settings{$board}{SELFPATH} = $board;
+
+    return $$settings{$board};
 }
 
 sub get_settings {
@@ -3637,7 +3631,6 @@ sub init_admin_database {
     ) or make_error($$locale{S_SQLFAIL});
     $sth->execute() or make_error($$locale{S_SQLFAIL});
 }
-
 
 sub repair_database {
     my ( $sth, $row, @threads, $thread );
