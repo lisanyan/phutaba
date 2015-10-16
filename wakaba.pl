@@ -164,8 +164,8 @@ while($query=CGI::Fast->new)
     if ( $json eq "newposts" ) {
         my $id = $query->param("id");
         my $after = $query->param("after");
-        if ( defined $id and defined $after &&
-             $after =~ /^[+-]?\d+$/ and $id =~ /^[+-]?\d+$/ ) {
+        if ( defined $id && defined $after and
+             $after =~ /^[+-]?\d+$/ && $id =~ /^[+-]?\d+$/ ) {
             output_json_newposts($after, $id);
         }
     }
@@ -1167,7 +1167,7 @@ sub dnsbl_check {
             }
         }
     }
-    make_ban( $$locale{S_BADHOSTPROXY}, { ip => $ip, showmask => 0, reason => shift(@errors) } ) if scalar @errors;
+    make_ban( $$locale{S_BADHOSTPROXY}, { ip => $ip, showmask => 0, reason => shift(@errors) } ) if @errors;
 }
 
 sub find_posts {
@@ -1358,9 +1358,13 @@ sub post_stuff {
     make_error($$locale{S_NOTEXT}) if ( $comment =~ /^\s*$/ and !$file );
 
     # get file size, and check for limitations.
-    my @size;
+    my (@size, @file_errors);
     for (my $i = 0; $i < $$cfg{MAX_FILES}; $i++) {
-        $size[$i] = get_file_size($files[$i]) if ($files[$i]);
+        ($size[$i], @file_errors[$i]) = get_file_size($files[$i], $no_pomf) if ($files[$i]);
+    }
+    if( grep { defined($_) } @file_errors ) {
+        my $errstr = "<span class=\"prewrap\">" . join "\n" . "</span>", @file_errors;
+        make_error($errstr);
     }
 
     # find IP
@@ -2053,6 +2057,7 @@ sub get_file_size {
     my ($file, $nopomf) = @_;
     my (@filestats, $errfname, $errfsize, $max_size);
     my $size = 0;
+    my $err = undef;
     my $ext = $file =~ /\.([^\.]+)$/;
     my $sizehash = $$cfg{FILESIZES};
 
@@ -2060,15 +2065,15 @@ sub get_file_size {
     $size = $filestats[7];
     $max_size = $$cfg{MAX_KB};
     $max_size = $$sizehash{$ext} if ($$sizehash{$ext});
-    $errfname = clean_string(decode_string($file, CHARSET));
+    $errfname = get_displayname(clean_string(decode_string($file, CHARSET)));
     # or round using: int($size / 1024 + 0.5)
     $errfsize = sprintf("%.2f", $size / 1024) . " kB &gt; " . $max_size . " kB";
 
-    make_error($$locale{S_TOOBIG} . " ($errfname: $errfsize)") 
-        if ($size > $max_size * 1024 and !$nopomf and grep {$_ eq $ext} @{$$cfg{POMF_EXTENSIONS}});
-    make_error($$locale{S_TOOBIGORNONE} . " ($errfname)") if ($size == 0);  # check for small files, too?
+    $err = $$locale{S_TOOBIG} . " ($errfname: $errfsize)" 
+      if ( $nopomf eq 'on' && !grep {$_ eq $ext} @{$$cfg{POMF_EXTENSIONS}} and $size > $max_size * 1024 );
+    $err = $$locale{S_TOOBIGORNONE} . " ($errfname)" if ($size == 0);  # check for small files, too?
 
-    return ($size);
+    return ($size, $err);
 }
 
 sub get_preview {
@@ -2244,7 +2249,7 @@ sub process_file {
     chmod 0644, $filename; # Make file world-readable
     chmod 0644, $thumbnail if defined($thumbnail); # Make thumbnail (if any) world-readable
 
-    if ( !$nopomf and grep {$_ eq $ext} @{$$cfg{POMF_EXTENSIONS}} )
+    if ( $nopomf ne 'on' && grep {$_ eq $ext} @{$$cfg{POMF_EXTENSIONS}} )
     {
         my $pomf = pomf_upload($filename);
         unlink $filename; # remove file from the disk
@@ -2981,7 +2986,7 @@ sub edit_admin_entry # subroutine for editing entries in the admin table
     $sth->finish;
     
     # Add log entry
-    log_action( "editadminentry",$num,$admin );
+    log_action( "editadminentry", $num, $admin );
     
     make_http_forward( get_script_name() . "?task=bans&section=".$$cfg{SELFPATH});
 }
@@ -2991,7 +2996,7 @@ sub remove_admin_entry {
     my ($sth);
 
     check_password( $admin, '' );
-    log_action( "removeadminentry",$num,$admin );
+    log_action( "removeadminentry", $num, $admin );
 
     $sth = $dbh->prepare( "DELETE FROM " . $$cfg{SQL_ADMIN_TABLE} . " WHERE num=?;" )
       or make_error($$locale{S_SQLFAIL});
@@ -3051,7 +3056,7 @@ sub check_moder {
     my @info = ( $nick, $$moders{$nick}{class}, $$moders{$nick}{boards} );
 
     return 0     unless( defined $nick );
-    return @info unless( scalar @{$info[2]} ); # No board restriction
+    return @info unless( @{$info[2]} ); # No board restriction
 
     unless ( defined (first { $_ eq $$cfg{SELFPATH} } @{$info[2]} ) )
     {
