@@ -27,7 +27,7 @@
 		<tr><td class="postblock">HTML</td>
 		<td><label><input type="checkbox" name="no_format" value="1" /> <var $$locale{S_NOTAGS2}></label></td></tr>
 	</if>
-	<if !($$cfg{FORCED_ANON}) or $admin><tr><td class="postblock"><label for="name"><var $$locale{S_NAME}></label></td><td><input type="text" name="nya1" id="name" /></td></tr></if>
+	<if !$$cfg{FORCED_ANON} or $admin or $leet><tr><td class="postblock"><label for="name"><var $$locale{S_NAME}></label></td><td><input type="text" name="nya1" id="name" /></td></tr></if>
 
 	<tr><td class="postblock"><label for="subject"><var $$locale{S_SUBJECT}></label></td><td><input type="text" name="nya3" id="subject" />
 	<input type="submit" id="postform_submit" value="<if $thread><var $$locale{S_BTREPLY}> /<var $$cfg{SELFPATH}>/<var $thread></if><if !$thread><var $$locale{S_BTNEWTHREAD}></if>" /></td>

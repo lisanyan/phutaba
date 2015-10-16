@@ -164,8 +164,8 @@ while($query=CGI::Fast->new)
     if ( $json eq "newposts" ) {
         my $id = $query->param("id");
         my $after = $query->param("after");
-        if ( defined $id && defined $after and
-             $after =~ /^[+-]?\d+$/ && $id =~ /^[+-]?\d+$/ ) {
+        if ( defined $id and defined $after &&
+             $after =~ /^[+-]?\d+$/ and $id =~ /^[+-]?\d+$/ ) {
             output_json_newposts($after, $id);
         }
     }
@@ -202,8 +202,9 @@ while($query=CGI::Fast->new)
     }
     elsif ( !$task and !$json ) {
         my $admin  = $query->cookie("wakaadmin");
+        my $c_name = $query->cookie("name");
         # when there is no task, show the first page.
-        show_page(1, $admin);
+        show_page(1, $admin, $c_name);
     }
     elsif ( $task eq "show" ) {
         my $page   = $query->param("page");
@@ -211,13 +212,14 @@ while($query=CGI::Fast->new)
         my $post   = $query->param("post");
         my $after  = $query->param("after");
         my $admin  = $query->cookie("wakaadmin");
+        my $c_name = $query->cookie("name");
 
         # outputs a single post only
         if (defined($post) and $post =~ /^[+-]?\d+$/)
         {
             show_post($post, $admin);
         }
-        elsif (defined($after) and $thread =~ /^[+-]?\d+$/ && $after =~ /^[+-]?\d+$/)
+        elsif (defined($after) && $thread =~ /^[+-]?\d+$/ and $after =~ /^[+-]?\d+$/)
         {
             show_newposts($after, $thread, $admin);
         }
@@ -225,7 +227,7 @@ while($query=CGI::Fast->new)
         elsif (defined($thread) and $thread =~ /^[+-]?\d+$/)
         {
             if($thread ne 0) {
-                show_thread($thread, $admin);
+                show_thread($thread, $admin, $c_name);
             } else {
                 make_error($$locale{S_STOP_FOOLING});
             }
@@ -235,7 +237,7 @@ while($query=CGI::Fast->new)
         {
             # fallback to page 1 if parameter was empty or incorrect
             $page = 1 unless (defined($page) and $page =~ /^[+-]?\d+$/);
-            show_page($page, $admin);
+            show_page($page, $admin, $c_name);
         }
     }
     elsif ( $task eq "search" ) {
@@ -399,6 +401,7 @@ while($query=CGI::Fast->new)
         my $by_admin = $query->param("admin_post");
         edit_post( $admin, $num, $name, $email, $subject, $comment, $capcode, $killtrip, $by_admin, $no_format);
     }
+    # ban editing
     elsif( $task eq "baneditwindow" ) {
         my $admin = $query->cookie("wakaadmin");
         my $num = $query->param("num");
@@ -820,7 +823,7 @@ sub show_newposts {
 }
 
 sub show_page {
-    my ($pageToShow, $admin) = @_;
+    my ($pageToShow, $admin, $name) = @_;
     my ( $sth, $row, @threads, @thread, @session );
     my $page = $pageToShow <=0 ? 1 : $pageToShow;
 
@@ -846,7 +849,7 @@ sub show_page {
     $sth->execute( ceil( $page * $$cfg{IMAGES_PER_PAGE} - $$cfg{IMAGES_PER_PAGE} ), $$cfg{IMAGES_PER_PAGE} )
       or make_error($$locale{S_SQLFAIL});
 
-    $total = 1 if ($sth && !$sth->rows && !$total);
+    $total = 1 if ($sth and !$sth->rows and !$total);
 
     my $posts =
       $dbh->prepare(
@@ -936,6 +939,7 @@ sub show_page {
                 threads      => \@threads,
                 admin        => $isAdmin,
                 modclass     => $session[1],
+                leet         => is_leet($name),
                 stylesheets  => get_stylesheets(),
                 cfg          => $cfg,
                 locale       => $locale,
@@ -947,7 +951,7 @@ sub show_page {
 }
 
 sub show_thread {
-    my ($thread, $admin, $adm_cookie) = @_;
+    my ($thread, $admin, $name) = @_;
     my ( $sth, $row, @thread );
     my ( $filename, $tmpname );
     my @session;
@@ -994,6 +998,7 @@ sub show_thread {
                 admin        => $isAdmin, 
                 modclass     => $session[1],
                 locked       => $locked,
+                leet         => is_leet($name),
                 stylesheets  => get_stylesheets(),
                 cfg          => $cfg,
                 locale       => $locale,
@@ -1251,12 +1256,13 @@ sub post_stuff {
 
     my $file = $files[0]; # file count
 
+    # I HAVE AN OCD SO LEAVE IT AS IS
+    my $admin_post = 0;
     my $original_comment = $comment;
     # get a timestamp for future use
     my $time = time();
-    my $admin_post = 0;
-    my $sth;
 
+    # sticky should never be NULL
     $sticky = 0 unless $sticky;
 
     # check that the request came in as a POST, or from the command line
@@ -1270,14 +1276,12 @@ sub post_stuff {
     if ($admin)  # check admin password
     {
         $admin_post = 1;
-        # don't allow mods to post html
-        make_error($$locale{S_NOPRIVILEGES}) if( $no_format and $neko[1] ne 'admin' );
     }
     else {
 
         # forbid admin-only features
         make_error($$locale{S_WRONGPASS})
-            if ( $no_format or $postfix or $as_staff or $sticky or $locked or $autosage );
+          if ( $no_format or $postfix or $as_staff or $sticky or $locked or $autosage );
 
         # forbid posting if enabled
         make_error($$locale{S_NONEWTHREADS}) if ($$cfg{DISABLE_POSTING});
@@ -1331,6 +1335,9 @@ sub post_stuff {
         }
     }
 
+    # don't allow mods to post html
+    make_error($$locale{S_NOPRIVILEGES}) if( $no_format and $neko[1] ne 'admin' );
+
     # check for weird characters
     make_error($$locale{S_UNUSUAL}) if ( $parent  =~ /[^0-9]/ );
     make_error($$locale{S_UNUSUAL}) if ( length($parent) > 10 );
@@ -1376,8 +1383,8 @@ sub post_stuff {
     dnsbl_check($ip) if ( !$whitelisted and $$cfg{ENABLE_DNSBL_CHECK} );
 
     # process the tripcode - maybe the string should be decoded later
-    my $trip;
-    ( $name, $trip ) = process_leetcode( $name ); # process a l33t tripcode
+    my ($trip, $spectrip);
+    ( $name, $trip, $spectrip ) = process_leetcode( $name ); # process a l33t tripcode
     ( $name, $trip ) = process_tripcode( $name, $$cfg{TRIPKEY}, SECRET, CHARSET ) unless $trip;
 
     # get as number and owner
@@ -1440,8 +1447,8 @@ sub post_stuff {
     }
 
     # kill the name if anonymous posting is being enforced
-    #  and we've not entered special tripcode...
-    if ($$cfg{FORCED_ANON} && !$admin_post) {
+    # and we've not entered special tripcode...
+    if ($$cfg{FORCED_ANON} && !$admin_post and !$spectrip) {
         $name = '';
         $trip = '';
         if($$cfg{ENABLE_RANDOM_NAMES}) {
@@ -1468,10 +1475,9 @@ sub post_stuff {
     # insert default values for empty fields
     $parent = 0 unless $parent;
     $name    = make_anonymous( $ip, $time ) unless $name or $trip;
-    $subject = $$cfg{S_ANOTITLE}           unless $subject;
-    $comment = $$cfg{S_ANOTEXT}            unless $comment;
-    $original_comment = "empty"         unless $original_comment;
-#    $original_comment =~ s/\n/ /gm;
+    $subject = $$cfg{S_ANOTITLE}            unless $subject;
+    $comment = $$cfg{S_ANOTEXT}             unless $comment;
+    $original_comment = "empty"             unless $original_comment;
     # flood protection - must happen after inputs have been cleaned up
     flood_check( $numip, $time, $comment, $file, $parent );
 
@@ -1492,9 +1498,11 @@ sub post_stuff {
         }
     }
 
-    $numip = "0" if ($$cfg{ANONYMIZE_IP_ADDRESSES} && $admin_post);
+    $numip = "0" if ($$cfg{ANONYMIZE_IP_ADDRESSES} and $admin_post);
     if ($as_staff) { $as_staff = 1; }
     else           { $as_staff = 0; }
+
+    my $sth;
 
     # finally, write to the database
     eval {
@@ -1526,7 +1534,7 @@ sub post_stuff {
     my $new_post_id = ($sth->fetchrow_array())[0];
 
     # log admin post
-    log_action("adminpost",$new_post_id,$admin) if($admin_post and $no_format || $as_staff);
+    log_action( "adminpost", $new_post_id, $admin ) if($admin_post and $as_staff);
 
     # insert file information into database
     if ($file) {
@@ -1586,7 +1594,7 @@ sub post_stuff {
         -charset  => CHARSET,
         -autopath => $$cfg{COOKIE_PATH},
         -expires  => time+14*24*3600
-    );    # yum!
+    );  # yum!
     $sth->finish;
 
     if ($c_gb2 =~ /thread/i) { # forward back to the page
@@ -1634,6 +1642,21 @@ sub is_trusted {
     $sth->finish;
 
     return 1 if ( $ret );
+    return 0;
+}
+
+
+sub is_leet {
+    my ($name) = @_;
+    my $trip;
+
+    my $trips   = get_settings('trips');
+    my $tripkey = $$cfg{TRIPKEY} || "!";
+    if ( $name =~ /(.*?)(?:#|$tripkey|nya:)(.+)$/ ) {
+        $trip = $2;
+    }
+
+    return 1 if $$trips{$trip};
     return 0;
 }
 
@@ -1865,7 +1888,8 @@ sub process_leetcode {
     my ($namepart, $trip);
 
     my $trips = get_settings('trips');
-    if ( $name =~ /(.*?)(?:#|nya:)(.+)$/ ) {
+    my $tripkey = $$cfg{TRIPKEY} || "!";
+    if ( $name =~ /(.*?)(?:#|$tripkey|nya:)(.+)$/ ) {
         ($namepart, $trip) = ($1, $2);
         $namepart = clean_string($namepart);
     }
@@ -1873,11 +1897,11 @@ sub process_leetcode {
     if ($$trips{$trip}) {
         $trip = $$cfg{TRIPKEY} . $$trips{$trip};
     } else {
-        return ( $name, undef );
+        return ( $name, undef, undef );
     }
 
-    return ( $namepart, $trip ) if $nonamedecoding;
-    return ( decode_string( $namepart, CHARSET ), $trip );
+    return ( $namepart, $trip, 1 ) if $nonamedecoding;
+    return ( decode_string( $namepart, CHARSET ), $trip, 1 );
 }
 
 sub make_anonymous {
@@ -2041,7 +2065,7 @@ sub get_file_size {
     $errfsize = sprintf("%.2f", $size / 1024) . " kB &gt; " . $max_size . " kB";
 
     make_error($$locale{S_TOOBIG} . " ($errfname: $errfsize)") 
-        if ($size > $max_size * 1024 and !$nopomf && grep {$_ eq $ext} @{$$cfg{POMF_EXTENSIONS}});
+        if ($size > $max_size * 1024 and !$nopomf and grep {$_ eq $ext} @{$$cfg{POMF_EXTENSIONS}});
     make_error($$locale{S_TOOBIGORNONE} . " ($errfname)") if ($size == 0);  # check for small files, too?
 
     return ($size);
@@ -2220,7 +2244,7 @@ sub process_file {
     chmod 0644, $filename; # Make file world-readable
     chmod 0644, $thumbnail if defined($thumbnail); # Make thumbnail (if any) world-readable
 
-    if ( !$nopomf && grep {$_ eq $ext} @{$$cfg{POMF_EXTENSIONS}} )
+    if ( !$nopomf and grep {$_ eq $ext} @{$$cfg{POMF_EXTENSIONS}} )
     {
         my $pomf = pomf_upload($filename);
         unlink $filename; # remove file from the disk
@@ -2296,7 +2320,7 @@ sub thread_control {
         $sth->execute( $check, $threadid, $threadid) or make_error($$locale{S_SQLFAIL});
         $sth->finish();
     }
-    log_action($action,$threadid,$admin);
+    log_action( $action, $threadid, $admin );
 
     make_http_forward( $ENV{HTTP_REFERER} || get_board_path() . "thread/" . $threadid );
 }
@@ -2344,7 +2368,7 @@ sub delete_all {
         while ( $row = $sth->fetchrow_hashref() ) { push( @posts, $$row{num} ); }
         $sth->finish;
 
-        log_action("delall",$ip,$admin);
+        log_action( "delall", $ip, $admin );
         delete_stuff('', 0, $admin, 1, 0, @posts);
     }
 }
@@ -2420,8 +2444,8 @@ sub delete_post {
         return "This was posted by a moderator or admin and cannot be deleted this way." if (!$admin_del and $$row{admin_post} eq 1);
 
         unless ($fileonly) {
-            if(defined $admin_del && $password eq ""){
-                log_action("deletepost",$post,$admin);
+            if( defined($admin_del) and $password eq "" ) {
+                log_action( "deletepost", $post, $admin );
             }
 
             # remove files from comment and possible replies
@@ -2496,8 +2520,8 @@ sub delete_post {
         }
         else    # remove just the image(s) and update the database
         {
-            if(defined $admin_del && $password eq ""){
-                log_action("deletefile",$post,$admin);
+            if( defined($admin_del) and $password eq "" ) {
+                log_action( "deletefile", $post, $admin );
             }
             $sth = $dbh->prepare(
                     "SELECT image,thumbnail FROM " . $$cfg{SQL_TABLE_IMG} . " WHERE post=?" )
@@ -2889,7 +2913,7 @@ sub add_admin_entry {
         );
         if($type eq 'ipban'){
             my $obj = dec_to_dot($ival1)." /".get_mask_len($ival2);
-            log_action("ipban", $obj, $admin);
+            log_action( "ipban", $obj, $admin );
         }
     }
     if ($ajax) {
@@ -2928,7 +2952,10 @@ sub check_admin_entry {
 
 sub edit_admin_entry # subroutine for editing entries in the admin table
 {
-    my ($admin,$num,$comment,$sec,$min,$hour,$day,$month,$year,$noexpire)=@_;
+    my ( $admin, $num, $comment, 
+         $sec,   $min, $hour, $day, $month, $year,
+         $noexpire
+    )=@_;
     my ($sth, $expiration, $changes);
     my @session = check_password( $admin, '' );
     
@@ -2939,11 +2966,10 @@ sub edit_admin_entry # subroutine for editing entries in the admin table
     $verify->execute($num) or make_error($$locale{S_SQLFAIL});
     my $row = get_decoded_hashref($verify);
     make_error("Entry has not created or was removed.") if !$row;
-    # make_error("Cannot change entry type.") if $type ne $$row{type};
     $comment = clean_string( decode_string( $comment, CHARSET ) );
 
     # New expiration Date   
-    $expiration = (!$noexpire) ? (timegm($sec, $min, $hour, $day,$month-1,$year) || make_error("date problem")) : 0;
+    $expiration = (!$noexpire) ? (timegm($sec, $min, $hour, $day,$month-1,$year) or make_error("date problem")) : 0;
 
     # Close old handler
     $verify->finish;
@@ -2955,7 +2981,7 @@ sub edit_admin_entry # subroutine for editing entries in the admin table
     $sth->finish;
     
     # Add log entry
-    log_action("editadminentry",$num,$admin);
+    log_action( "editadminentry",$num,$admin );
     
     make_http_forward( get_script_name() . "?task=bans&section=".$$cfg{SELFPATH});
 }
@@ -2965,7 +2991,7 @@ sub remove_admin_entry {
     my ($sth);
 
     check_password( $admin, '' );
-    log_action("removeadminentry",$num,$admin);
+    log_action( "removeadminentry",$num,$admin );
 
     $sth = $dbh->prepare( "DELETE FROM " . $$cfg{SQL_ADMIN_TABLE} . " WHERE num=?;" )
       or make_error($$locale{S_SQLFAIL});
@@ -3008,7 +3034,8 @@ sub check_password {
     my @moder = check_moder( $admin, $mode );
 
     if ($password ne "") {
-        return ('Admin', 'admin') if ( $admin eq crypt_password($password) );
+        return ('Admin', 'admin')
+          if ( $admin eq crypt_password($password) );
     }
     else {
         return @moder if ( $moder[0] ne 0 );
@@ -3190,7 +3217,7 @@ sub edit_post {
     ) or make_error($$locale{S_SQLFAIL});
     $sth->finish;
 
-    log_action("editpost",$num,$admin);
+    log_action( "editpost", $num, $admin );
 
     # Go to thread
     if( $$post{parent} ) { make_http_forward( get_board_path() . "thread/" . $$post{parent} . ($num?"#$num":"")); }
@@ -3249,7 +3276,7 @@ sub make_view_log {
 
     # make the list of pages
     my $totalCount = int( ( $entcount + ($$cfg{ENTRIES_PER_LOGPAGE}-1))/$$cfg{ENTRIES_PER_LOGPAGE} );
-    $totalCount = 1 if ($sth && !$sth->rows);
+    $totalCount = 1 if ($sth and !$sth->rows);
     my @pages = map +{ page => $_ }, ( 1 .. $totalCount );
     foreach my $p (@pages) {
         $$p{filename} = get_script_name(). "?task=viewlog&amp;section=".$$cfg{SELFPATH}."&amp;page=" . $$p{page};
