@@ -164,7 +164,8 @@ while($query=CGI::Fast->new)
     if ( $json eq "newposts" ) {
         my $id = $query->param("id");
         my $after = $query->param("after");
-        if ( defined $id && defined $after and join('', ($id,$after)) =~ /^[+-]?\d+$/ ) {
+        if ( defined $id && defined $after and
+             $after =~ /^[+-]?\d+$/ && $id =~ /^[+-]?\d+$/ ) {
             output_json_newposts($after, $id);
         }
     }
@@ -263,12 +264,16 @@ while($query=CGI::Fast->new)
         my $postfix    = $query->param("postfix");
         my $as_staff   = $query->param("as_staff");
         my $no_pomf    = $query->param("no_pomf");
+        my $sticky     = $query->param("sticky");
+        my $locked     = $query->param("lock");
+        my $autosage   = $query->param("autosage");
         my @files      = $query->param("file"); # multiple uploads
 
         post_stuff(
-            $parent,  $spam1,   $spam2,     $name,     $email,  $gb2,
-            $subject, $comment, $password,  $nofile,   $captcha,
-            $admin,   $no_format, $postfix, $as_staff, $no_pomf,
+            $parent,  $spam1,     $spam2,     $name,     $email,  $gb2,
+            $subject, $comment,   $password,  $nofile,   $captcha,
+            $admin,   $no_format, $postfix,   $as_staff, $no_pomf,
+            $sticky,  $locked,    $autosage,
             @files
         );
     }
@@ -1241,18 +1246,18 @@ sub post_stuff {
         $parent,  $spam1,   $spam2,     $name,      $email,
         $gb2,     $subject, $comment,   $password,  $nofile,
         $captcha, $admin,   $no_format, $postfix,   $as_staff,
-        $no_pomf, @files
+        $no_pomf, $sticky,  $locked,    $autosage,  @files
     ) = @_;
 
     my $file = $files[0]; # file count
-    # my $uploadname = $files[0];
 
     my $original_comment = $comment;
     # get a timestamp for future use
     my $time = time();
     my $admin_post = 0;
-    my $sticky = 0;
     my $sth;
+
+    $sticky = 0 unless $sticky;
 
     # check that the request came in as a POST, or from the command line
     make_error($$locale{S_UNJUST})
@@ -1271,7 +1276,8 @@ sub post_stuff {
     else {
 
         # forbid admin-only features
-        make_error($$locale{S_WRONGPASS}) if ( $no_format or $postfix or $as_staff );
+        make_error($$locale{S_WRONGPASS})
+            if ( $no_format or $postfix or $as_staff or $sticky or $locked or $autosage );
 
         # forbid posting if enabled
         make_error($$locale{S_NONEWTHREADS}) if ($$cfg{DISABLE_POSTING});
@@ -1284,6 +1290,44 @@ sub post_stuff {
         else {
             make_error($$locale{S_NOTALLOWED}) if ( $file  and !($$cfg{ALLOW_IMAGES}) );
             make_error($$locale{S_NOTALLOWED}) if ( !$file and !($$cfg{ALLOW_TEXTONLY}) );
+        }
+    }
+
+    if($sticky) {
+        $sticky=get_max_sticky();
+        if($parent) {
+            my $stickyupdate=$dbh->prepare(
+                "UPDATE "
+                . $$cfg{SQL_TABLE} 
+                . " SET sticky=? WHERE num=? OR parent=?;") or make_error($$locale{S_SQLFAIL});
+            $stickyupdate->execute($sticky, $parent, $parent) or make_error($$locale{S_SQLFAIL});
+            $stickyupdate->finish();
+        }
+    }
+    
+    if ($locked) {
+        $locked=1;
+        if ($parent) {
+            my $lockupdate=$dbh->prepare(
+                "UPDATE ".$$cfg{SQL_TABLE}
+                . " SET locked=? WHERE num=? OR parent=?;")
+                or make_error($$locale{S_SQLFAIL});
+            $lockupdate->execute($locked, $parent, $parent) or make_error($$locale{S_SQLFAIL});
+            $lockupdate->finish();
+        }
+    }
+
+    if ($autosage) {
+        $autosage=1;
+        if ($parent) {
+            my $lockupdate=$dbh->prepare(
+                "UPDATE "
+                . $$cfg{SQL_TABLE}
+                . " SET autosage=? WHERE num=? OR parent=?;")
+                or make_error($$locale{S_SQLFAIL});
+            $lockupdate->execute($autosage, $parent, $parent)
+                or make_error($$locale{S_SQLFAIL});
+            $lockupdate->finish();
         }
     }
 
@@ -1383,10 +1427,13 @@ sub post_stuff {
     my ( $parent_res, $lasthit, $autosage );
     if ($parent) {
         $parent_res = get_parent_post($parent) or make_error($$locale{S_NOTHREADERR});
+
         $lasthit = $$parent_res{lasthit};
         $sticky = $$parent_res{sticky};
+        $locked = $$parent_res{locked};
         $autosage = $$parent_res{autosage};
-        make_error($$locale{S_LOCKED}) if ($$parent_res{locked} and !$admin_post);
+
+        make_error($$locale{S_LOCKED}) if ($locked and !$admin_post);
     }
     else {
         $lasthit = $time;
@@ -1455,14 +1502,15 @@ sub post_stuff {
 
         $sth = $dbh->prepare(
             "INSERT INTO " . $$cfg{SQL_TABLE} . "
-            VALUES(null,?,?,?,?,?,?,?,?,?,?,null,null,?,?,null,?,?,?);"
+            VALUES(null,?,?,?,?,?,?,?,?,?,?,null,?,?,?,?,?,?,?);"
         ) or make_error($$locale{S_SQLFAIL});
 
         $sth->execute(
-            $parent,    $time,     $lasthit,      $numip,
-            $name,      $trip,     $email,        $subject,
-            $password,  $comment,  $as_staff,     $admin_post,
-            $sticky,    $loc,      $ssl
+            $parent,     $time,     $lasthit,      $numip,
+            $name,       $trip,     $email,        $subject,
+            $password,   $comment,  $autosage,     $as_staff,
+            $admin_post, $locked,   $sticky,       $loc,
+            $ssl
         ) or make_error($$locale{S_SQLFAIL});
 
         $dbh->commit();
@@ -2199,17 +2247,16 @@ sub process_file {
 
 sub get_max_sticky {
     my $max = 0;
-    
+
     # grab all posts from DB
     my $sth=$dbh->prepare("SELECT sticky FROM ".$$cfg{SQL_TABLE}." ORDER BY sticky DESC,lasthit DESC,CASE parent WHEN 0 THEN num ELSE parent END ASC,num ASC;")
          or make_error($$locale{S_SQLFAIL});
     $sth->execute() or make_error($$locale{S_SQLFAIL});   
     
-    my $row = ($sth->fetchrow_array())[0];
-    if ( !$row ) { return 0; }
+    if ( !$sth->rows ) { return 0; }
     
     # Calculate maximum `sticky` value
-    while ( $row = $sth->fetchrow_arrayref() ) {
+    while ( my $row = $sth->fetchrow_arrayref() ) {
         $max = $$row[0] if ($$row[0] > $max);
     }
 
@@ -2251,7 +2298,7 @@ sub thread_control {
     }
     log_action($action,$threadid,$admin);
 
-    make_http_forward( get_board_path() . "thread/" . $threadid );
+    make_http_forward( $ENV{HTTP_REFERER} || get_board_path() . "thread/" . $threadid );
 }
 
 #
@@ -2336,12 +2383,11 @@ sub delete_stuff {
     }
 
     unless (@errors) {
-        # if ($adminDel) {
-        #     make_http_forward( get_board_path() );
-        # }
         if ( $noko == 1 and $parent ) {
             make_http_forward( get_board_path() . "thread/" . $parent );
-        } else { make_http_forward( get_board_path() ); }
+        } else {
+            make_http_forward( get_board_path() );
+        }
     }
     else {
         my $errstring = "<span class=\"prewrap\">" . join("\n", @errors) . "</span>";
@@ -3251,7 +3297,7 @@ sub clear_log {
     $sth->execute() or "";
     $sth->finish;
     
-    make_http_forward( get_board_path() );
+    make_http_forward( get_script_name(). "?task=viewlog&amp;section=".$$cfg{SELFPATH} );
 }
 
 #
