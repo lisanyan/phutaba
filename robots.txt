@@ -12,4 +12,4 @@ Disallow: /wakaba.pl
 # disallow indexing stuff not for public use
 Disallow: /tmp/
 # disallow indexing THE SECRET BOARD
-Disallow: /beta/
+Disallow: /test/

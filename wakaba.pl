@@ -115,7 +115,7 @@ my $tpl = SimpleCtemplate->new({ tmpl_dir => 'tpl/board/' });
 
 return 1 if (caller); # stop here if we're being called externally
 
-pm_manage(n_processes => 4, die_timeout => 10, pm_title => '02ch-fcgi-pm');
+pm_manage(n_processes => 4, die_timeout => 10, pm_title => 'perl-fcgi-pm-02ch');
 
 # FCGI init
 while($query=CGI::Fast->new)
@@ -126,11 +126,10 @@ while($query=CGI::Fast->new)
     unless (0)
     {
         $boardSection   = ($query->param("section") or &DEFAULT_BOARD);
-        $cfg            = fetch_config($boardSection);
+        $cfg            = fetch_config(decode_string($boardSection, CHARSET));
         $moders         = get_settings('mods');
         $locale         = get_settings($$cfg{BOARD_LOCALE})
                             unless ($$cfg{NOTFOUND});
-        $$cfg{SELFPATH} = $boardSection;
 
         if( $$cfg{NOTFOUND} ) {
             print ("Content-type: text/plain\n\nBoard not found.");
@@ -165,7 +164,8 @@ while($query=CGI::Fast->new)
     if ( $json eq "newposts" ) {
         my $id = $query->param("id");
         my $after = $query->param("after");
-        if ( defined $id && defined $after and join('', ($id,$after)) =~ /^[+-]?\d+$/ ) {
+        if ( defined $id && defined $after and
+             $after =~ /^[+-]?\d+$/ && $id =~ /^[+-]?\d+$/ ) {
             output_json_newposts($after, $id);
         }
     }
@@ -264,12 +264,16 @@ while($query=CGI::Fast->new)
         my $postfix    = $query->param("postfix");
         my $as_staff   = $query->param("as_staff");
         my $no_pomf    = $query->param("no_pomf");
+        my $sticky     = $query->param("sticky");
+        my $locked     = $query->param("lock");
+        my $autosage   = $query->param("autosage");
         my @files      = $query->param("file"); # multiple uploads
 
         post_stuff(
-            $parent,  $spam1,   $spam2,     $name,     $email,  $gb2,
-            $subject, $comment, $password,  $nofile,   $captcha,
-            $admin,   $no_format, $postfix, $as_staff, $no_pomf,
+            $parent,  $spam1,     $spam2,     $name,     $email,  $gb2,
+            $subject, $comment,   $password,  $nofile,   $captcha,
+            $admin,   $no_format, $postfix,   $as_staff, $no_pomf,
+            $sticky,  $locked,    $autosage,
             @files
         );
     }
@@ -844,7 +848,6 @@ sub show_page {
 
     $total = 1 if ($sth && !$sth->rows && !$total);
 
-
     my $posts =
       $dbh->prepare(
         "SELECT * FROM ".$$cfg{SQL_TABLE}." WHERE parent=? ORDER BY num DESC LIMIT ?;"
@@ -905,7 +908,6 @@ sub show_page {
         $$p{filename} = expand_filename( "page/" . $$p{page} );
         if ( $$p{page} == $page ) { $$p{current} = 1 }   # current page, no link
     }
-
 
     my ( $prevpage, $nextpage );
     # phutaba pages:    1 2 3
@@ -1163,7 +1165,6 @@ sub dnsbl_check {
     make_ban( $$locale{S_BADHOSTPROXY}, { ip => $ip, showmask => 0, reason => shift(@errors) } ) if scalar @errors;
 }
 
-
 sub find_posts {
     my ($find, $op_only, $in_subject, $in_filenames, $in_comment) = @_;
     # TODO: add $admin / admin-reflinks?
@@ -1237,7 +1238,6 @@ sub find_posts {
     print($output);
 }
 
-
 #
 # Posting
 #
@@ -1246,18 +1246,18 @@ sub post_stuff {
         $parent,  $spam1,   $spam2,     $name,      $email,
         $gb2,     $subject, $comment,   $password,  $nofile,
         $captcha, $admin,   $no_format, $postfix,   $as_staff,
-        $no_pomf, @files
+        $no_pomf, $sticky,  $locked,    $autosage,  @files
     ) = @_;
 
     my $file = $files[0]; # file count
-    # my $uploadname = $files[0];
 
     my $original_comment = $comment;
     # get a timestamp for future use
     my $time = time();
     my $admin_post = 0;
-    my $sticky = 0;
     my $sth;
+
+    $sticky = 0 unless $sticky;
 
     # check that the request came in as a POST, or from the command line
     make_error($$locale{S_UNJUST})
@@ -1276,7 +1276,8 @@ sub post_stuff {
     else {
 
         # forbid admin-only features
-        make_error($$locale{S_WRONGPASS}) if ( $no_format or $postfix or $as_staff );
+        make_error($$locale{S_WRONGPASS})
+            if ( $no_format or $postfix or $as_staff or $sticky or $locked or $autosage );
 
         # forbid posting if enabled
         make_error($$locale{S_NONEWTHREADS}) if ($$cfg{DISABLE_POSTING});
@@ -1289,6 +1290,44 @@ sub post_stuff {
         else {
             make_error($$locale{S_NOTALLOWED}) if ( $file  and !($$cfg{ALLOW_IMAGES}) );
             make_error($$locale{S_NOTALLOWED}) if ( !$file and !($$cfg{ALLOW_TEXTONLY}) );
+        }
+    }
+
+    if($sticky) {
+        $sticky=get_max_sticky();
+        if($parent) {
+            my $stickyupdate=$dbh->prepare(
+                "UPDATE "
+                . $$cfg{SQL_TABLE} 
+                . " SET sticky=? WHERE num=? OR parent=?;") or make_error($$locale{S_SQLFAIL});
+            $stickyupdate->execute($sticky, $parent, $parent) or make_error($$locale{S_SQLFAIL});
+            $stickyupdate->finish();
+        }
+    }
+    
+    if ($locked) {
+        $locked=1;
+        if ($parent) {
+            my $lockupdate=$dbh->prepare(
+                "UPDATE ".$$cfg{SQL_TABLE}
+                . " SET locked=? WHERE num=? OR parent=?;")
+                or make_error($$locale{S_SQLFAIL});
+            $lockupdate->execute($locked, $parent, $parent) or make_error($$locale{S_SQLFAIL});
+            $lockupdate->finish();
+        }
+    }
+
+    if ($autosage) {
+        $autosage=1;
+        if ($parent) {
+            my $lockupdate=$dbh->prepare(
+                "UPDATE "
+                . $$cfg{SQL_TABLE}
+                . " SET autosage=? WHERE num=? OR parent=?;")
+                or make_error($$locale{S_SQLFAIL});
+            $lockupdate->execute($autosage, $parent, $parent)
+                or make_error($$locale{S_SQLFAIL});
+            $lockupdate->finish();
         }
     }
 
@@ -1388,10 +1427,13 @@ sub post_stuff {
     my ( $parent_res, $lasthit, $autosage );
     if ($parent) {
         $parent_res = get_parent_post($parent) or make_error($$locale{S_NOTHREADERR});
+
         $lasthit = $$parent_res{lasthit};
         $sticky = $$parent_res{sticky};
+        $locked = $$parent_res{locked};
         $autosage = $$parent_res{autosage};
-        make_error($$locale{S_LOCKED}) if ($$parent_res{locked} and !$admin_post);
+
+        make_error($$locale{S_LOCKED}) if ($locked and !$admin_post);
     }
     else {
         $lasthit = $time;
@@ -1460,14 +1502,15 @@ sub post_stuff {
 
         $sth = $dbh->prepare(
             "INSERT INTO " . $$cfg{SQL_TABLE} . "
-            VALUES(null,?,?,?,?,?,?,?,?,?,?,null,null,?,?,null,?,?,?);"
+            VALUES(null,?,?,?,?,?,?,?,?,?,?,null,?,?,?,?,?,?,?);"
         ) or make_error($$locale{S_SQLFAIL});
 
         $sth->execute(
-            $parent,    $time,     $lasthit,      $numip,
-            $name,      $trip,     $email,        $subject,
-            $password,  $comment,  $as_staff,     $admin_post,
-            $sticky,    $loc,      $ssl
+            $parent,     $time,     $lasthit,      $numip,
+            $name,       $trip,     $email,        $subject,
+            $password,   $comment,  $autosage,     $as_staff,
+            $admin_post, $locked,   $sticky,       $loc,
+            $ssl
         ) or make_error($$locale{S_SQLFAIL});
 
         $dbh->commit();
@@ -1705,7 +1748,6 @@ sub ban_check {
     return (0);
 }
 
-
 sub flood_check {
     my ( $ip, $time, $comment, $file, $parent ) = @_;
     my ( $sth, $maxtime );
@@ -1773,7 +1815,6 @@ sub format_comment {
 
         return $line;
     };
-
 
     if ($$cfg{ENABLE_WAKABAMARK}) {
         $comment = do_wakabamark($comment, $handler);
@@ -2152,6 +2193,7 @@ sub process_file {
                     make_thumbnail(
                         $filename,         $thumbnail,
                         $tn_width,         $tn_height,
+                        $$cfg{ENABLE_AFMOD},
                         $$cfg{THUMBNAIL_QUALITY},
                         $$cfg{CONVERT_COMMAND}
                     )
@@ -2205,17 +2247,16 @@ sub process_file {
 
 sub get_max_sticky {
     my $max = 0;
-    
+
     # grab all posts from DB
     my $sth=$dbh->prepare("SELECT sticky FROM ".$$cfg{SQL_TABLE}." ORDER BY sticky DESC,lasthit DESC,CASE parent WHEN 0 THEN num ELSE parent END ASC,num ASC;")
          or make_error($$locale{S_SQLFAIL});
     $sth->execute() or make_error($$locale{S_SQLFAIL});   
     
-    my $row = ($sth->fetchrow_array())[0];
-    if ( !$row ) { return 0; }
+    if ( !$sth->rows ) { return 0; }
     
     # Calculate maximum `sticky` value
-    while ( $row = $sth->fetchrow_arrayref() ) {
+    while ( my $row = $sth->fetchrow_arrayref() ) {
         $max = $$row[0] if ($$row[0] > $max);
     }
 
@@ -2257,7 +2298,7 @@ sub thread_control {
     }
     log_action($action,$threadid,$admin);
 
-    make_http_forward( get_board_path() . "thread/" . $threadid );
+    make_http_forward( $ENV{HTTP_REFERER} || get_board_path() . "thread/" . $threadid );
 }
 
 #
@@ -2342,15 +2383,14 @@ sub delete_stuff {
     }
 
     unless (@errors) {
-        # if ($adminDel) {
-        #     make_http_forward( get_board_path() );
-        # }
         if ( $noko == 1 and $parent ) {
             make_http_forward( get_board_path() . "thread/" . $parent );
-        } else { make_http_forward( get_board_path() ); }
+        } else {
+            make_http_forward( get_board_path() );
+        }
     }
     else {
-        my $errstring = join("<br />", @errors);
+        my $errstring = "<span class=\"prewrap\">" . join("\n", @errors) . "</span>";
         make_error($errstring);
     }
 }
@@ -2978,7 +3018,6 @@ sub check_password {
     return 0;
 }
 
-
 sub check_moder {
     my ($pass, $mode) = @_;
     my $nick = get_moder_nick($pass);
@@ -3085,7 +3124,6 @@ sub make_edit_post_panel {
         locale => $locale
     });
 }
-
 
 sub edit_post {
     my ( $admin,   $num,      $name,    $email,
@@ -3259,7 +3297,7 @@ sub clear_log {
     $sth->execute() or "";
     $sth->finish;
     
-    make_http_forward( get_board_path() );
+    make_http_forward( get_script_name(). "?task=viewlog&amp;section=".$$cfg{SELFPATH} );
 }
 
 #
@@ -3481,14 +3519,16 @@ sub get_remote_addr {
 
 sub fetch_config
 {
-    my ($boardSection) = @_;
+    my ($board) = @_;
     my $settings = get_settings('settings');
 
-    unless ($$settings{$boardSection}) {
-        $$settings{$boardSection}{NOTFOUND} = 1;
+    unless ($$settings{$board}) {
+        $$settings{$board}{NOTFOUND} = 1;
     }
 
-    $$settings{$boardSection};
+    $$settings{$board}{SELFPATH} = $board;
+
+    return $$settings{$board};
 }
 
 sub get_settings {
@@ -3637,7 +3677,6 @@ sub init_admin_database {
     ) or make_error($$locale{S_SQLFAIL});
     $sth->execute() or make_error($$locale{S_SQLFAIL});
 }
-
 
 sub repair_database {
     my ( $sth, $row, @threads, $thread );

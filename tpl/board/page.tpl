@@ -21,14 +21,12 @@
 
 	<table>
 	<tbody id="postTableBody">
-		<if $admin>
-			<tr><td class="postblock">## Team ##</td>
-			<td><label><input type="checkbox" name="as_staff" value="1" />  <var $$locale{S_POSTASADMIN}></label></td></tr>
-		</if>
-		<if $admin>
-			<tr><td class="postblock">HTML</td>
-			<td><label><input type="checkbox" name="no_format" value="1" /> <var $$locale{S_NOTAGS2}></label></td></tr>
-		</if>
+	<if $admin>
+		<tr><td class="postblock">## Team ##</td>
+		<td><label><input type="checkbox" name="as_staff" value="1" />  <var $$locale{S_POSTASADMIN}></label></td></tr>
+		<tr><td class="postblock">HTML</td>
+		<td><label><input type="checkbox" name="no_format" value="1" /> <var $$locale{S_NOTAGS2}></label></td></tr>
+	</if>
 	<if !($$cfg{FORCED_ANON}) or $admin><tr><td class="postblock"><label for="name"><var $$locale{S_NAME}></label></td><td><input type="text" name="nya1" id="name" /></td></tr></if>
 
 	<tr><td class="postblock"><label for="subject"><var $$locale{S_SUBJECT}></label></td><td><input type="text" name="nya3" id="subject" />
@@ -63,6 +61,16 @@
 	<label><input name="gb2" value="board" checked="checked" type="radio" /> <var $$locale{S_NOKOOFF}></label>
 	<label><input name="gb2" value="thread" type="radio" /> <var $$locale{S_NOKOON}></label>
 	</td></tr>
+
+	<if $admin>
+		<tr><td class="postblock"><var $$locale{S_OPTIONS}></td>
+		<td>
+		<label><input type="checkbox" name="sticky" value="1" /> <var $$locale{S_MPSTICKY}></label>
+		<label><input type="checkbox" name="lock" value="1" /> <var $$locale{S_MPLOCK}></label>
+		<label><input type="checkbox" name="autosage" value="1" /> <var $$locale{S_MPSETSAGE}></label>
+		</td></tr>
+	</if>
+
 
 	<if $captcha_inp>
 		<tr><td class="postblock"><var $$locale{S_CAPTCHA}> (<a href="/faq">?</a>) (<var $loc>)</td><td><input type="text" name="captcha" size="10" /> <img alt="" onclick="update_captcha(this);" id="imgcaptcha" src="/captcha.pl?key=<var get_captcha_key($thread)>&amp;dummy=<var $dummy>&amp;board=<var $$cfg{SELFPATH}>" /></td></tr>

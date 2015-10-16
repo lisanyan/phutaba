@@ -11,7 +11,6 @@
 </loop>
 <link rel="alternate" type="application/rss+xml" title="RSS" href="<var Wakaba::expand_filename("board.rss", 1)>" />
 
-<if $$cfg{STYLESHEET}><link rel="stylesheet" type="text/css" href="<var $$cfg{STYLESHEET}>" /></if>
 <if Wakaba::test_afmod($$cfg{ENABLE_AFMOD})><link rel="stylesheet" type="text/css" href="/static/css/af.css" /></if>
 
 <link rel="shortcut icon" type="image/x-icon" href="/img/favicon.ico" />

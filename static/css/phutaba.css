@@ -505,6 +505,10 @@ input[type='password'] {
 	background-color: #BFB5A1;
 }
 
+.prewrap {
+	white-space: pre-wrap;
+}
+
 /* for static templates in tpl/ */
 .title, .info th {
 	background-color: #706B5E;
