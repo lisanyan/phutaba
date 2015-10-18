@@ -463,7 +463,7 @@ sub do_math {
         }
         elsif ( $text =~ m%rand\(([\d-]+?)&#44;([\d-]+?)\)$%g )
         {
-            $return  = "$text = ";
+            $return  = "[$text] = ";
             $return .= $math->RandInt($1,$2);
         }
         else
