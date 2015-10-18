@@ -1429,8 +1429,8 @@ sub post_stuff {
     $city = clean_string($city);
     
     # check captcha
-    check_captcha( $dbh, $captcha, $ip, $parent, $locale, $$cfg{SELFPATH} )
-      if ( (need_captcha($$cfg{CAPTCHA_MODE}, $$cfg{CAPTCHA_SKIP}, $loc) and !$admin_post) or ($$cfg{ENABLE_CAPTCHA} and !$admin_post and !is_trusted($trip)) );
+    check_captcha( $dbh, $captcha, $ip, $parent, $$cfg{SELFPATH}, $locale, $cfg )
+      if ( need_captcha($$cfg{CAPTCHA_MODE}, $$cfg{CAPTCHA_SKIP}, $loc) and !$admin_post and !is_trusted($trip) );
 
     $loc = join("<br />", $loc, $country_name, $region_name, $city, $as_info);
 
@@ -2403,7 +2403,8 @@ sub delete_stuff {
     my @errors;
     foreach $post (@posts) {
         $ip = delete_post( $post, $password, $fileonly, $deletebyip, $admin_del, $admin );
-        if ($ip !~ /(:){2,}/ && $ip !~ /\d+\.\d+\.\d+\.\d+/) # Function returned with error string
+        # (:){2,}
+        if ($ip !~ /:/ && $ip !~ /\d+\.\d+\.\d+\.\d+/) # Function returned with error string
         {
             push (@errors,"Post $post: ".$ip);
             next;

@@ -53,16 +53,18 @@ my %font        = (
     ' ' => [3],
 );
 
+my $settings = my $locale = {};
+
 # sub main {
-    my $query    = CGI->new;
+    my $query    = new CGI;
     my $key      = ( $query->param("key") or 'default' );
     my $selector = ( $query->param("selector") or ".captcha" );
     my $style    = ( $query->cookie("wakabastyle"));
     my $board    = ( $query->param("board") or &DEFAULT_BOARD);
-    my $ip = ($ENV{HTTP_CF_CONNECTING_IP} || $ENV{HTTP_X_REAL_IP} || $ENV{REMOTE_ADDR});
+    my $ip       = ( $ENV{HTTP_CF_CONNECTING_IP} || $ENV{HTTP_X_REAL_IP} || $ENV{REMOTE_ADDR} );
 
-    my $settings = fetch_config($board);
-    my $locale = get_settings($$settings{BOARD_LOCALE}); # edit this to change locale
+    $settings = fetch_config(decode_string($board, CHARSET));
+    $locale = get_settings($$settings{BOARD_LOCALE}); # edit this to change locale
 
     if( $$settings{NOTFOUND} ) {
         print ("Content-type: text/plain\n\nBoard not found.");
@@ -75,8 +77,8 @@ my %font        = (
     my @background = ( 0xff, 0xff, 0xff ); #( 0xff, 0xff, 0xff );
 
     my $dbh =
-      DBI->connect( SQL_DBI_SOURCE, SQL_USERNAME, SQL_PASSWORD,
-        { AutoCommit => 1 } )
+      DBI->connect_cached( SQL_DBI_SOURCE, SQL_USERNAME, SQL_PASSWORD,
+        { AutoCommit => 1, mysql_enable_utf8=>1 } )
       or die $$locale{S_SQLCONF};
     init_captcha_database($dbh)
       unless ( table_exists_captcha( $dbh, $$settings{SQL_CAPTCHA_TABLE} ) );
@@ -102,7 +104,7 @@ my %font        = (
 
     make_image($word);
 
-    $dbh->disconnect();
+    # $dbh->disconnect();
 # }
 
 #
@@ -113,16 +115,18 @@ my %font        = (
 # Config loaders
 #
 
-sub fetch_config($)
+sub fetch_config
 {
-    my ($boardSection) = @_;
+    my ($board) = @_;
     my $settings = get_settings('settings');
 
-    unless ($$settings{$boardSection}) {
-        $$settings{$boardSection}{NOTFOUND} = 1;
+    unless ($$settings{$board}) {
+        $$settings{$board}{NOTFOUND} = 1;
     }
 
-    $$settings{$boardSection};
+    $$settings{$board}{SELFPATH} = $board;
+
+    return $$settings{$board};
 }
 
 sub get_settings {
@@ -216,7 +220,7 @@ sub get_captcha_key {
 #
 
 sub get_captcha_word {
-    my ( $dbh, $ip, $key, $board ) = @_;
+    my ( $dbh, $ip, $key, $board, $settings ) = @_;
     my ( $sth, $row );
 
     $sth =
@@ -225,8 +229,7 @@ sub get_captcha_word {
           . " WHERE ip=? AND pagekey=? AND board=?;" )
       or return undef;
     $sth->execute( $ip, $key, $board )
-      or return
-      undef
+      or return undef
       ;    # the captcha script creates the database, so it might not exist yet
     return @{$row} if ( $row = $sth->fetchrow_arrayref() );
 
@@ -258,19 +261,19 @@ sub save_captcha_word {
 }
 
 sub check_captcha {
-    my ( $dbh, $captcha, $ip, $parent, $locale, $board ) = @_;
+    my ( $dbh, $captcha, $ip, $parent, $board, $locale, $settings ) = @_;
 
     my $key = get_captcha_key($parent);
-    my ($word) = get_captcha_word( $dbh, $ip, $key, $board );
+    my ($word) = get_captcha_word( $dbh, $ip, $key, $board, $settings );
     make_error($$locale{S_NOCAPTCHA}) unless ($word);
     make_error($$locale{S_BADCAPTCHA}) if ( $word ne lc($captcha) );
 
-    delete_captcha_word( $dbh, $ip, $key, $board )
+    delete_captcha_word( $dbh, $ip, $key, $board, $settings )
       ; # should the captcha word be deleted on an UNSUCCESSFUL try, too, maybe?
 }
 
 sub delete_captcha_word {
-    my ( $dbh, $ip, $key, $board ) = @_;
+    my ( $dbh, $ip, $key, $board, $settings ) = @_;
 
     my $sth = $dbh->prepare(
         "DELETE FROM " . $$settings{SQL_CAPTCHA_TABLE} . " WHERE ip=? AND pagekey=? AND board=?;" )
