@@ -426,8 +426,9 @@ while($query=CGI::Fast->new)
     elsif( $task eq "viewlog" ) {
         my $admin=$query->cookie("wakaadmin");
         my $page=$query->param("page");
+        my $filter=$query->param("filter");
         $page = 1 unless (defined($page) and $page =~ /^[+-]?\d+$/);
-        make_view_log($admin, $page)
+        make_view_log($admin, $page, $filter);
     }
     elsif( $task eq "clearlog" ) {
         my $admin=$query->cookie("wakaadmin");
@@ -462,7 +463,7 @@ sub hide_row_els {
 
 sub output_json_threads {
     my ($pageToShow) = @_;
-    my $page = $pageToShow <=0 ? 1 : $pageToShow;
+    my $page = $pageToShow <= 0 ? 1 : $pageToShow;
     my ( $sth, $row, @threads );
     my ( $code, $error );
     my @session;
@@ -825,7 +826,7 @@ sub show_newposts {
 sub show_page {
     my ($pageToShow, $admin, $name) = @_;
     my ( $sth, $row, @threads, @thread, @session );
-    my $page = $pageToShow <=0 ? 1 : $pageToShow;
+    my $page = $pageToShow <= 0 ? 1 : $pageToShow;
 
     # if we try to call show_page with admin parameter
     # the admin password will be checked and this
@@ -1427,7 +1428,7 @@ sub post_stuff {
     $region_name = "" if ($region_name eq $city);
     $region_name = clean_string($region_name);
     $city = clean_string($city);
-    
+
     # check captcha
     check_captcha( $dbh, $captcha, $ip, $parent, $$cfg{SELFPATH}, $locale, $cfg )
       if ( need_captcha($$cfg{CAPTCHA_MODE}, $$cfg{CAPTCHA_SKIP}, $loc) and !$admin_post and !is_trusted($trip) );
@@ -1538,7 +1539,7 @@ sub post_stuff {
     my $new_post_id = ($sth->fetchrow_array())[0];
 
     # log admin post
-    log_action( "adminpost", $new_post_id, $admin ) if($admin_post and $as_staff);
+    log_action( "adminpost", $new_post_id, '', $admin ) if($admin_post and $as_staff);
 
     # insert file information into database
     if ($file) {
@@ -2325,7 +2326,7 @@ sub thread_control {
         $sth->execute( $check, $threadid, $threadid) or make_error($$locale{S_SQLFAIL});
         $sth->finish();
     }
-    log_action( $action, $threadid, $admin );
+    log_action( $action, $threadid, '', $admin );
 
     make_http_forward( $ENV{HTTP_REFERER} || get_board_path() . "thread/" . $threadid );
 }
@@ -2373,7 +2374,7 @@ sub delete_all {
         while ( $row = $sth->fetchrow_hashref() ) { push( @posts, $$row{num} ); }
         $sth->finish;
 
-        log_action( "delall", $ip, $admin );
+        log_action( "delall", $ip, '', $admin );
         delete_stuff('', 0, $admin, 1, 0, @posts);
     }
 }
@@ -2451,7 +2452,15 @@ sub delete_post {
 
         unless ($fileonly) {
             if( defined($admin_del) and $password eq "" ) {
-                log_action( "deletepost", $post, $admin );
+                log_action( "deletepost", $post, '', $admin );
+            }
+            else {
+                my $post_tooltip =
+                  '<strong>' . dec_to_dot($$row{ip})
+                  . ' / ' . $$row{name} . $$row{trip} . ' '
+                  . make_date( $$row{timestamp}, "2ch" )
+                  . '</strong><br />' . $$row{comment};
+                log_action( "deletepost", $post, $post_tooltip, $admin );
             }
 
             # remove files from comment and possible replies
@@ -2527,7 +2536,7 @@ sub delete_post {
         else    # remove just the image(s) and update the database
         {
             if( defined($admin_del) and $password eq "" ) {
-                log_action( "deletefile", $post, $admin );
+                log_action( "deletefile", $post, '', $admin );
             }
             $sth = $dbh->prepare(
                     "SELECT image,thumbnail FROM " . $$cfg{SQL_TABLE_IMG} . " WHERE post=?" )
@@ -2919,7 +2928,7 @@ sub add_admin_entry {
         );
         if($type eq 'ipban'){
             my $obj = dec_to_dot($ival1)." /".get_mask_len($ival2);
-            log_action( "ipban", $obj, $admin );
+            log_action( "ipban", $obj, '', $admin );
         }
     }
     if ($ajax) {
@@ -2987,7 +2996,7 @@ sub edit_admin_entry # subroutine for editing entries in the admin table
     $sth->finish;
     
     # Add log entry
-    log_action( "editadminentry", $num, $admin );
+    log_action( "editadminentry", $num, '', $admin );
     
     make_http_forward( get_script_name() . "?task=bans&section=".$$cfg{SELFPATH});
 }
@@ -2997,7 +3006,7 @@ sub remove_admin_entry {
     my ($sth);
 
     check_password( $admin, '' );
-    log_action( "removeadminentry", $num, $admin );
+    log_action( "removeadminentry", $num, '', $admin );
 
     $sth = $dbh->prepare( "DELETE FROM " . $$cfg{SQL_ADMIN_TABLE} . " WHERE num=?;" )
       or make_error($$locale{S_SQLFAIL});
@@ -3223,7 +3232,7 @@ sub edit_post {
     ) or make_error($$locale{S_SQLFAIL});
     $sth->finish;
 
-    log_action( "editpost", $num, $admin );
+    log_action( "editpost", $num, '', $admin );
 
     # Go to thread
     if( $$post{parent} ) { make_http_forward( get_board_path() . "thread/" . $$post{parent} . ($num?"#$num":"")); }
@@ -3236,43 +3245,52 @@ sub edit_post {
 #
 
 sub log_action {
-    my ($action,$object,$admin)=@_;
+    my ($action,$object,$object2,$admin)=@_;
     my ($time,$sth);
+
     my @neko = check_password($admin, '', 'silent');
-    
+    @neko = qw/User/ unless $admin;
+
     return 0 unless @neko;
 
     $time=time();
     eval {
         $dbh->begin_work();
 
-        $sth=$dbh->prepare("INSERT INTO ".$$cfg{SQL_LOG_TABLE}." VALUES(null,?,?,?,?,?,?);") or make_error($dbh->errstr);
-        $sth->execute($neko[0],$action,$object,($$cfg{SELFPATH}),$time,dot_to_dec(get_remote_addr())) or make_error($dbh->errstr);
+        $sth=$dbh->prepare("INSERT INTO ".$$cfg{SQL_LOG_TABLE}." VALUES(null,?,?,?,?,?,?,?);") or return $dbh->errstr;
+        $sth->execute($neko[0],$action,$object,$object2,($$cfg{SELFPATH}),$time,dot_to_dec(get_remote_addr())) or return $dbh->errstr;
         $sth->finish;
 
         $dbh->commit();
     };
     if ($@) {
         eval { $dbh->rollback() };
-        make_error($$locale{S_SQLFAIL});
+        return $$locale{S_SQLFAIL};
     }
 }
 
 sub make_view_log {
-    my ($admin, $page) = @_;
+    my ($admin, $page, $filter) = @_;
     my ($row, $sth, @log);
 
     my @session = check_password($admin, '');
     make_error($$locale{S_NOPRIVILEGES}) if $session[1] ne 'admin';
-    
-    $sth = $dbh->prepare("SELECT * FROM ".$$cfg{SQL_LOG_TABLE}." ORDER BY num DESC;") or make_error($$locale{S_SQLFAIL});
+
+    $filter = 'on' unless $filter;
+    my $append = $filter ne 'off' ? " WHERE user <>'User'" : "";
+
+    $sth = $dbh->prepare(
+        "SELECT * FROM "
+        . $$cfg{SQL_LOG_TABLE}
+        . $append . " ORDER BY num DESC;")
+          or make_error($$locale{S_SQLFAIL});
     $sth->execute() or make_error($$locale{S_SQLFAIL});
 
     my $emin=($page-1)*$$cfg{ENTRIES_PER_LOGPAGE};
     my $emax=$emin+$$cfg{ENTRIES_PER_LOGPAGE};
     my $entcount = 0;
 
-    while($row = $sth->fetchrow_hashref) {
+    while($row = get_decoded_hashref($sth)) {
         $entcount++;
         if($entcount>$emin and $entcount<=$emax) {
             $$row{rowtype} = @log % 2 + 1;
@@ -3285,11 +3303,12 @@ sub make_view_log {
     $totalCount = 1 if ($sth and !$sth->rows);
     my @pages = map +{ page => $_ }, ( 1 .. $totalCount );
     foreach my $p (@pages) {
-        $$p{filename} = get_script_name(). "?task=viewlog&amp;section=".$$cfg{SELFPATH}."&amp;page=" . $$p{page};
+        $$p{filename} = 
+          get_script_name(). "?task=viewlog&amp;section=".$$cfg{SELFPATH}."&amp;page=" . $$p{page} . "&amp;filter=$filter";
         if ( $$p{page} == $page ) { $$p{current} = 1 }   # current page, no link
     }
 
-    if($page<=0 or $page>$totalCount) {
+    if($page <= 0 or $page > $totalCount) {
         make_error($$locale{S_INVALID_PAGE});
     }
 
@@ -3307,6 +3326,7 @@ sub make_view_log {
         pages => \@pages,
         prevpage => $prevpage,
         nextpage => $nextpage,
+        filter => $filter,
         stylesheets => get_stylesheets(),
         cfg => $cfg,
         locale => $locale
@@ -3314,13 +3334,13 @@ sub make_view_log {
 }
 
 sub clear_log {
-    my ($admin,$where)=@_;
+    my ($admin,$all)=@_;
     my @session = check_password($admin, '');
     my $sth;
     make_error($$locale{S_NOPRIVILEGES}) if $session[1] ne 'admin';
 
     my $board_path = $$cfg{SELFPATH};
-    if ($where) {
+    if (!$all) {
         $sth=$dbh->prepare("DELETE FROM ".$$cfg{SQL_LOG_TABLE}." WHERE board=?;") or make_error($$locale{S_SQLFAIL});
         $sth->bind_param(1, $board_path);
     }
@@ -3676,7 +3696,8 @@ sub init_log_database {
         "num ".get_sql_autoincrement().",".
         "user TEXT,".
         "action TEXT,".
-        "object TEXT,". 
+        "object TEXT,".
+        "object2 TEXT,".
         "board TEXT,".
         "time INTEGER,".
         "ip TEXT".  

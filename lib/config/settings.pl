@@ -7,7 +7,7 @@ $settings{SQL_TABLE_IMG} = 'board_img';		# Table (NOT DATABASE) used by image bo
 $settings{SQL_TABLE} = 'board';				# Table (NOT DATABASE) used by image board
 $settings{SQL_ADMIN_TABLE} = 'admin';		# Table used for admin information
 $settings{SQL_LOG_TABLE} = 'modlog';		# Table used for mod log
-$settings{BOARD_LOCALE} = 'locale_ru';		# Locale used for board, currently available translations: (ru, en, de)
+$settings{BOARD_LOCALE} = 'locale_en';		# Locale used for board, currently available translations: (ru, en, de)
 $settings{BOARD_ENABLED} = 1;
 $settings{DISABLE_NEW_THREADS} = 0;
 $settings{ENABLE_WEBSOCKET_NOTIFY} = 0;
@@ -15,11 +15,11 @@ $settings{ENABLE_HIDE_THREADS} = 1;
 $settings{ENABLE_AFMOD} = 1;
 
 # Page look
-$settings{ADMIN_EMAIL} = 'admin@02ch.in';
+$settings{ADMIN_EMAIL} = 'admin@host.local';
 $settings{ENABLE_RSS} = 1;
 $settings{RSS_LENGTH} = 10;
 $settings{TITLE} = '02ch';	# Name of this image board
-$settings{BOARD_NAME} = 'Дилдо додо';
+$settings{BOARD_NAME} = 'Dildo dodo';
 $settings{BOARD_DESC} = 0;
 $settings{SHOWTITLETXT} = 1;				# Show TITLE at top (1: yes  0: no)
 $settings{SHOWTITLEIMG} = 0;				# Show image at top (0: no, 1: single, 2: rotating)
@@ -187,8 +187,8 @@ $settings{DNSBL_INFOS} =
 # board-specific config
 $boards{b} = { # sample
 	%settings,
-	BOARD_NAME => 'Бред',
-	BOARD_DESC => 'Мертвечина',
+	BOARD_NAME => 'Random',
+	BOARD_DESC => 'Gay bar',
 	SQL_TABLE => 'b_comments',
 	SQL_TABLE_IMG => 'b_img',
 	MAX_THREADS => 250,
@@ -199,13 +199,12 @@ $boards{b} = { # sample
 };
 $boards{d} = {
 	%settings,
-	BOARD_NAME => 'Отделение',
+	BOARD_NAME => 'Discussions',
 	SQL_TABLE => 'd_comments',
 	SQL_TABLE_IMG => 'd_img',
 	ALLOW_TEXT_REPLIES => 1,
 	ALLOW_TEXTONLY => 1,
 	ALLOW_IMAGE_REPLIES => 0,
-	ALLOW_IMAGES => 0,
-	ADDITIONAL_RULES => q{<li>Обсуждение работы борды.</li>}
+	ALLOW_IMAGES => 0
 };
 \%boards;

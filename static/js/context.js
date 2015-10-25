@@ -5,8 +5,7 @@ function highlight() {
 
 // WARNING!! Shitty code!
 (function(){
-var isWindowFocused = true, newPosts = 0, UpdaterTimer;
-var old_t = document.title;
+var isWindowFocused = true, newPosts = 0, UpdaterTimer, old_t;
 var origBtn, updBtn = $j('#updater');
 var perdelki = Settings.get('context');
 
@@ -325,6 +324,7 @@ var slowload = function() {
   eventLoader();
   if (Settings.get('context')==1)
   {
+  	old_t = document.title;
 	$j('.content').append($j('<div>', {id:'appendix'}));
 	$j(document).keydown(hotkeyMommy);
 	scriptCSS();

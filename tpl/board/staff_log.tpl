@@ -2,6 +2,11 @@
 [<a onclick="return areYouSure(this)" href="<var %self>?task=clearlog&amp;section=<var $$cfg{SELFPATH}>">Clear Log</a>]
 [<a onclick="return areYouSure(this)" href="<var %self>?task=clearlog&amp;clearall=1&amp;section=<var $$cfg{SELFPATH}>">Clear All</a>]
 
+<div style="text-align:center">
+<if $filter ne "off">[<a href="<var %self>?task=viewlog&amp;section=<var $$cfg{SELFPATH}>&amp;filter=off#tbl">Filter off</a>]</if>
+<if $filter eq "off">[<a href="<var %self>?task=viewlog&amp;section=<var $$cfg{SELFPATH}>#tbl">Filter on</a>]</if>
+</div>
+<a id="tbl"></a>
 <table align="center" style="white-space: nowrap; width: auto;">
 <thead>
 	<tr class="managehead">
@@ -25,7 +30,12 @@
 				<var $object>
 			</if>
 			<if $action =~ /post|file|sticky|lock|autosage/>
-				No.<var $object>
+				<if $object2>
+					<div id="post_<var $object>" class="hidden"><var $object2></div>
+					<span onmouseover="TagToTip('post_<var $object>', TITLE, '<var $$locale{S_POSTINFO}>', DELAY, 0, CLICKSTICKY, true, WIDTH, -450)" onmouseout="UnTip()">[No. <var $object>]</span>
+				</else/>
+					No.<var $object>
+				</if>
 			</if>
 			<if $action =~ /^removeadminentry|^editadminentry$/>
 				No.<var $object>
