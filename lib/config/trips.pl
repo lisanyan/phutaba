@@ -1,6 +1,6 @@
 # Supah cool tripcodes
-my %trips;
 use utf8;
+my %trips;
 
 # $trips{'p4ssw0rd'} = 'EXAMPLE';
 

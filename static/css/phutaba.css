@@ -680,6 +680,7 @@ dl.menu dd.hidden {
 
 /* Dollchan Extension Tools */
 /* Will remove this later */
+.de-pview .doubledash { display: none }
 .de-pview .post { margin-left:0; border:none }
 #de-pform img[src^="/img/icons/expand.png"] { display: none }
 #de-win-reply { float:left; margin-left:2em }
