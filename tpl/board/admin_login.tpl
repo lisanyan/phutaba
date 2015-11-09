@@ -13,6 +13,8 @@
 <option value="mpanel"><var $$locale{S_MANATOOLS}></option>
 <option value="bans"><var $$locale{S_MANABANS}></option>
 <option value="orphans"><var $$locale{S_MANAORPH}></option>
+<option value="postbackups"><var $$locale{S_MANABACKS}></option>
+<option value="viewlog"><var $$locale{S_MANALOG}></option>
 </select>
 <input type="submit" value="<var $$locale{S_MANASUB}>" />
 </form></div>

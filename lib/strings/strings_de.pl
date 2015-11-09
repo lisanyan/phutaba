@@ -103,6 +103,7 @@ $translation{S_MANAORPH} = 'Verwaiste Dateien';
 $translation{S_MANALOGOUT} = 'Abmelden';          #
 $translation{S_MANASAVE} = 'Speichern';    # Defines Label for the login cookie checbox
 $translation{S_MANALOG} = 'Log';
+$translation{S_MANABACKS} = 'Post Backups';
 $translation{S_MANASUB} = 'Los';          # Defines name for submit button in Manager Mode
 
 $translation{S_NOTAGS} = '<p>Formatierung nur mit HTML-Tags. Keine Parser-Verarbeitung.</p>';               # Prints message on Management Board
@@ -140,6 +141,7 @@ $translation{S_MPLOCK} = 'Thread schlie&szlig;en';
 $translation{S_MPUNLOCK} = 'Thread &ouml;ffnen';
 $translation{S_MPEDIT} = 'Post-Text bearbeiten';
 $translation{S_MPRESET} = 'Resetten';        # Defines name for field reset button in Management Panel
+$translation{S_MPRESTORE} = 'Restore';        # Defines name for field reset button in Management Panel
 $translation{S_MPONLYPIC} = 'Nur Datei';  # Sets whether or not to delete only file, or entire post/thread
 $translation{S_MPDELETEALL} = 'Alle&nbsp;Posts&nbsp;dieser&nbsp;IP&nbsp;l&ouml;schen';    #
 $translation{S_MPBAN} = 'Bann';    # Sets whether or not to delete only file, or entire post/thread

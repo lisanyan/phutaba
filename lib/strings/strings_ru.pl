@@ -103,6 +103,7 @@ $translation{S_MANAORPH} = 'Файлы-сироты';
 $translation{S_MANALOGOUT} = 'Выход';
 $translation{S_MANASAVE} = 'Запомнить';    # Defines Label for the login cookie checbox
 $translation{S_MANASUB} = 'Го!';          # Defines name for submit button in Manager Mode
+$translation{S_MANABACKS} = 'Бэкапы';
 $translation{S_MANALOG} = 'Лог';
 
 $translation{S_NOTAGS} = '<p>HTML tags are also possible. No WakabaMark.</p>';
@@ -140,6 +141,7 @@ $translation{S_MPUNSTICKY} = 'Открепить';
 $translation{S_MPLOCK} = 'Закрыть';
 $translation{S_MPUNLOCK} = 'Открыть';
 $translation{S_MPRESET} = 'Сброс';        # Defines name for field reset button in Management Panel
+$translation{S_MPRESTORE} = 'Восстановить';
 $translation{S_MPONLYPIC} = 'Только файл';  # Sets whether or not to delete only file, or entire post/thread
 $translation{S_MPDELETEALL} = 'Удалить все посты с этого IP';    #
 $translation{S_MPBAN} = 'Ban';    # Sets whether or not to delete only file, or entire post/thread

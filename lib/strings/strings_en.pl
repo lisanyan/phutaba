@@ -14,18 +14,17 @@ $translation{S_COMMENT} = 'Comment';  # Describes comment field
 $translation{S_UPLOADFILE} = 'File';  # Describes file field
 $translation{S_NOFILE} = 'No File';   # Describes file/no file checkbox
 $translation{S_CAPTCHA} = 'Captcha';  # Describes captcha field
-$translation{S_PARENT} =
-  'Thread #';    # Describes parent field on admin post page
+$translation{S_PARENT} = 'Thread #';
+  # Describes parent field on admin post page
 $translation{S_DELPASS} = 'Password';    # Describes password field
-$translation{S_DELEXPL} =
-  '(Optional)';    # Prints explanation for password box (to the right)
+$translation{S_DELEXPL} = '(Optional)';
+  # Prints explanation for password box (to the right)
 $translation{S_SPAMTRAP} = '';
 $translation{S_ALLOWED} = 'Allowed file formats (max. %s or given)';
 
 $translation{S_THUMB} = '';    # Prints instructions for viewing real source
 $translation{S_HIDDEN} = '';    # Prints instructions for viewing hidden image reply
-$translation{S_NOTHUMB} =
-  'File';    # Printed when there's no thumbnail
+$translation{S_NOTHUMB} = 'File'; # Printed when there's no thumbnail
 $translation{S_PICNAME} = '';             # Prints text before upload name/link
 $translation{S_REPLY} = 'Reply';    # Prints text for reply link
 $translation{S_OLD} = 'Marked for deletion (old).'; 
@@ -89,11 +88,11 @@ $translation{S_MANARET} = 'Return';    # Returns to HTML file instead of PHP--th
 $translation{S_MANAMODE} = 'Administration';   # Prints heading on top of Manager page
 
 $translation{S_MANALOGIN} = 'Login';
- # Defines Management Panel radio button--allows the user to view the management panel (overview of all posts)
+  # Defines Management Panel radio button--allows the user to view the management panel (overview of all posts)
 $translation{S_ADMINPASS} = 'Password:';    # Prints login prompt
 
-$translation{S_MANAPANEL} = 'Management Panel'
-; # Defines Management Panel radio button--allows the user to view the management panel (overview of all posts)
+$translation{S_MANAPANEL} = 'Management Panel';
+  # Defines Management Panel radio button--allows the user to view the management panel (overview of all posts)
 $translation{S_MANATOOLS} = 'Tools';
 $translation{S_MANAGEOINFO} = 'GeoIP-Information';
 $translation{S_MANABANS} = 'Bans';         # Defines Bans Panel button
@@ -102,10 +101,11 @@ $translation{S_MANAORPH} = 'Orphans';
 $translation{S_MANALOGOUT} = 'Logout';
 $translation{S_MANASAVE} = 'Remember me';    # Defines Label for the login cookie checbox
 $translation{S_MANASUB} = 'Go';          # Defines name for submit button in Manager Mode
+$translation{S_MANABACKS} = 'Post Backups';
 $translation{S_MANALOG} = 'Log';
 
-$translation{S_NOTAGS} = '<p>HTML tags are also possible. No WakabaMark.</p>'
-  ;               # Prints message on Management Board
+$translation{S_NOTAGS} = '<p>HTML tags are also possible. No WakabaMark.</p>';
+  # Prints message on Management Board
 
 $translation{S_POSTASADMIN} = 'Post with an admin mark';
 $translation{S_NOTAGS2} = 'Comment willn\'t be processed through parser.';
@@ -130,25 +130,28 @@ $translation{S_FILEDELETED} = 'File is deleted';
 
 $translation{S_POSTINFO} = 'IP-Informationen';
 $translation{S_MPDELETEIP} = 'Delete all';
-$translation{S_MPDELETE} =
-  'Delete';    # Defines for deletion button in Management Panel
-$translation{S_MPEDIT} = 'Edit';    # Defines for deletion button in Management Panel
+$translation{S_MPDELETE} = 'Delete';
+  # Defines for deletion button in Management Panel
+$translation{S_MPEDIT} = 'Edit';
+  # Defines for deletion button in Management Panel
 $translation{S_MPDELFILE} = 'Remove file';
 $translation{S_MPARCHIVE} = 'Archive';
 $translation{S_MPSTICKY} = 'Sticky';
 $translation{S_MPUNSTICKY} = 'Unsticky';
 $translation{S_MPLOCK} = 'Lock thread';
 $translation{S_MPUNLOCK} = 'Unlock thread';
-$translation{S_MPRESET} =
-  'Reset';        # Defines name for field reset button in Management Panel
-$translation{S_MPONLYPIC} =
-  'File Only';  # Sets whether or not to delete only file, or entire post/thread
+$translation{S_MPRESET} = 'Reset';
+  # Defines name for field reset button in Management Panel
+$translation{S_MPRESTORE} = 'Restore';
+$translation{S_MPONLYPIC} = 'File Only';
+  # Sets whether or not to delete only file, or entire post/thread
 $translation{S_MPDELETEALL} = 'Delete&nbsp;All&nbsp;Posts&nbsp;from&nbsp;this&nbsp;IP';    #
-$translation{S_MPBAN} =
-  'Ban';    # Sets whether or not to delete only file, or entire post/thread
-$translation{S_MPTABLE} = '<th>No.</th><th>Date</th><th>Subject</th>'
-  . '<th>Name</th><th>Comment</th><th>IP</th>'
-  ;          # Explains names for Management Panel
+$translation{S_MPBAN} = 'Ban';
+  # Sets whether or not to delete only file, or entire post/thread
+$translation{S_MPTABLE} =
+    '<th>No.</th><th>Date</th><th>Subject</th>'
+  . '<th>Name</th><th>Comment</th><th>IP</th>';
+    # Explains names for Management Panel
 $translation{S_IMGSPACEUSAGE} = '[ Space used: %s, %s Files, %s Posts (%s Threads) ]'
   ;          # Prints space used KB by the board under Management Panel
 $translation{S_DELALLMSG} = 'Affected';
@@ -156,9 +159,9 @@ $translation{S_DELALLCOUNT} = '%s Posts (%s Threads)';
 
 $translation{S_BANFILTER} = 'Hide expired bans';
 $translation{S_BANSHOWALL} = 'Shwo expired bans';
-$translation{S_BANTABLE} =
-  '<th>Type</th><th colspan="2">Value</th><th>Comment</th><th>Date</th><th>Expires</th><th>Action</th>'
-  ;          # Explains names for Ban Panel
+$translation{S_BANTABLE} = 
+  '<th>Type</th><th colspan="2">Value</th><th>Comment</th><th>Date</th><th>Expires</th><th>Action</th>';
+    # Explains names for Ban Panel
 $translation{S_BANIPLABEL} = 'IP';
 $translation{S_BANMASKLABEL} = 'Mask';
 $translation{S_BANCOMMENTLABEL} = 'Comment';

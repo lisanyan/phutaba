@@ -15,7 +15,7 @@ eval 'use Digest::MD5 qw(md5)';
 $has_md5 = 1 unless $@;
 
 my $has_encode = 0;
-eval 'use Encode qw(decode)';
+eval 'use Encode qw(decode encode)';
 $has_encode = 1 unless $@;
 
 use constant MAX_UNICODE => 1114111;
@@ -59,7 +59,7 @@ sub get_meta {
     my (%data, $exifData);
     my $exifTool = new Image::ExifTool;
     @tagList = qw(-Directory -FileName -FileAccessDate -FileCreateDate -FileModifyDate -FilePermissions -Warning -ExifToolVersion) unless (@tagList);
-    $exifData = $exifTool->ImageInfo($file, \@tagList) if ($file);
+    $exifData = $exifTool->ImageInfo($file, \@tagList, { Charset => $charset } ) if ($file);
     foreach (keys %$exifData) {
         my $val = $$exifData{$_};
         if (ref $val eq 'ARRAY') {
@@ -174,7 +174,7 @@ sub get_meta_markup {
     $markup .= "<strong>$options{MIMEType}:</strong> " . delete($$exifData{MIMEType}) . "<br />";
 
     # merge all codec values into one array
-    my @codec_list = map { my $tag = $_; grep {/^$tag/} keys $exifData } @codec_tags;
+    my @codec_list = map { my $tag = $_; grep {/^$tag/} keys %$exifData } @codec_tags;
     my @codecs = map { delete($$exifData{$_}) } @codec_list;
 
     # replace english names with their translations
@@ -484,8 +484,7 @@ sub do_bbcode {
         'b'         => ['<strong>', '</strong>'],
         'u'         => ['<span class="underline">', '</span>'],
         's'         => ['<span class="strike">', '</span>'],
-        'inline'    => ['<code>', '</code>'],
-        'code'      => ['<pre>', '</pre>'],
+        'code'      => ['<pre><code>', '</code></pre>'],
         'sup'       => ['<sup>', '</sup>'],
         'sub'       => ['<sub>', '</sub>'],
         'spoiler'   => ['<span class="spoiler">', '</span>'],
@@ -739,6 +738,7 @@ sub do_spans {
             'KappaHD' => '/img/emotes/kappahd.png',
             'KappaPride' => '/img/emotes/kappapride.png',
             'Keepo' => '/img/emotes/keepo.png',
+            'Kreygasm' => '/img/emotes/kreygasm.png',
             'OpieOP' => '/img/emotes/opieop.png',
             'PJSalt' => '/img/emotes/pjsalt.png',
             %steamemotes,
@@ -2056,52 +2056,53 @@ sub get_pretty_html($$) {
     return $text;
 }
 
-sub get_post_info($$) {
-    my ($board, $data) = @_;
+sub get_geo_array {
+    my ($board, $data, $as, $hide) = @_;
+
     my @items = split(/<br \/>/, $data);
+    my @loc;
     return '(n/a)' unless (@items);
 
-    # country flag
-    $items[0] = 'UNKNOWN' if ($items[0] eq 'unk' or $items[0] eq 'A1' or $items[0] eq 'A2');
+    $items[0] = 'UNKNOWN' if ($items[0] eq 'unk' or $items[0] =~ /^A(1|2)$/);
+    @items = qw/UNKNOWN/ if $hide;
     my $flag = '<img style="vertical-align:initial" alt="" src="/img/flags/' . $items[0] . '.PNG"> ';
 
-    if (scalar @items == 1) { # for legacy entries
-        return $flag . $items[0];
+    if (scalar @items > 1) { # for legacy entries
+        @loc = grep {$_} ($items[1], $items[2], $items[3]);
+        if ($as and $board) {
+            $items[4] =~ /^AS(\d+) / ;
+            $items[4] .= ' [<a href="' . $ENV{SCRIPT_NAME}
+                . '?section='.$board.'&amp;task=addstring&amp;type=asban&amp;string=' . $1
+                . '&amp;comment=' . urlenc($items[4]) . '">Lock</a>]';
+        }
+    }
+    return (\@items, \@loc, $flag);
+}
+
+sub get_post_info {
+    my ($board, $data) = @_;
+    my ($items, $loc, $flag) = get_geo_array($board, $data, 1);
+
+    if (scalar @$items == 1) { # for legacy entries
+        return $flag . $$items[0];
     } else {
-        # geo location
-        my @loc = grep {$_} ($items[1], $items[2], $items[3]);
-        my $location = join(', ', @loc);
-
-        # as num, name and ban link
-        $items[4] =~ /^AS(\d+) /;
-        $items[4] .= ' [<a href="' . $ENV{SCRIPT_NAME}
-            . '?section='.$board.'&amp;task=addstring&amp;type=asban&amp;string=' . $1
-            . '&amp;comment=' . urlenc($items[4]) . '">Lock</a>]';
-
-        return $flag . $location . '<br />' . $items[4];
+        my $location = join(', ', @$loc);
+        return $flag . $location . '<br />' . $$items[4];
     }
 }
 
-sub get_post_info2($;$) {
-    my ($data, $adm) = @_;
-    my @items = split(/<br \/>/, $data);
-    return '(n/a)' unless (@items);
+sub get_post_info2 {
+    my ($board, $data, $hide) = @_;
+    my ($items, $loc, $flag) = get_geo_array($board, $data, 0, $hide);
+    my $ret;
 
-    $items[0] = 'UNKNOWN' if ($items[0] eq 'unk' or $items[0] eq 'A1' or $items[0] eq 'A2');
-    @items = qw/UNKNOWN/ if ($adm);
-    my $flag = '<img style="vertical-align:text-top" alt="" src="/img/flags/' . $items[0] . '.PNG"> ';
-    my $ret = $flag;
-
-    if (scalar @items == 1) { # for legacy entries
-        $ret = $items[0];
+    if (scalar @$items == 1) { # for legacy entries
+        $ret = $$items[0];
     } else {
-        # geo location
-        my @loc = grep {$_} ($items[1], $items[2], $items[3]);
-        my $location = clean_string( join(', ', @loc));
+        my $location = clean_string( join(', ', @$loc));
         $ret = $location;
     }
-    $ret = sprintf('<span class="countryflag" onmouseover="Tip(\'%s\', DELAY, 0, WIDTH, -450)" onmouseout="UnTip()">%s</span>', $ret, $flag);
-    return $ret;
+    return sprintf('<span class="countryflag" onmouseover="Tip(\'%s\', DELAY, 0, WIDTH, -450)" onmouseout="UnTip()">%s</span>', $ret, $flag);
 }
 
 sub rev {
@@ -2109,6 +2110,5 @@ sub rev {
     push @r, pop @_ while @_;
     @r
 }
-
 
 1;
