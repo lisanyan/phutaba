@@ -10,6 +10,7 @@ use CGI::Carp qw(fatalsToBrowser set_message);
 use CGI::Fast;
 use DBI;
 use Digest::MD5 qw(md5 md5_hex md5_base64);
+use File::Copy;
 use FCGI::ProcManager qw(pm_manage pm_pre_dispatch 
                          pm_post_dispatch);
 use JSON::XS;
@@ -83,20 +84,10 @@ BEGIN {
   require "captcha.pl";
 }
 
-# fancy date-parsing module
-# in persistent environments, this won't be run more than once
-our ($use_parsedate);
-BEGIN {
-    our $use_parsedate;
-    $use_parsedate //= USE_PARSEDATE && eval { require Time::ParseDate; 1 };
-    Time::ParseDate->import(qw(parsedate)) if ($use_parsedate);
-}
-
 #
 # Optional modules
 #
 my ($has_encode);
-
 eval 'use Encode qw(decode encode)';
 $has_encode = 1 unless $@;
 
@@ -153,7 +144,18 @@ while($query=CGI::Fast->new)
 
     # check for admin table
     init_admin_database() if ( !table_exists($$cfg{SQL_ADMIN_TABLE}) );
+
+    # check for log table
     init_log_database() if ( !table_exists($$cfg{SQL_LOG_TABLE}) );
+
+    # check for backup tables
+    init_backup_database() if ( !table_exists($$cfg{SQL_BACKUP_TABLE}) );
+    init_backup_files_database() if ( !table_exists($$cfg{SQL_BACKUP_IMG_TABLE}) );
+
+    # cleanup backups table
+    cleanup_backups_database();
+    # cleanup logs table
+    cleanup_log_database();
 
     if ( $json eq "post" ) {
         my $id = $query->param("id");
@@ -386,7 +388,7 @@ while($query=CGI::Fast->new)
         my $admin = $query->cookie("wakaadmin");
         my $post = $query->param("num");
         my $noformat = $query->param("noformat");
-        make_edit_post_panel( $admin, $post, $noformat);
+        make_edit_post_panel( $admin, $post, $noformat );
     }
     elsif( $task eq "doedit" ) {
         my $admin = $query->cookie("wakaadmin");
@@ -426,14 +428,40 @@ while($query=CGI::Fast->new)
     elsif( $task eq "viewlog" ) {
         my $admin=$query->cookie("wakaadmin");
         my $page=$query->param("page");
-        my $filter=$query->param("filter");
+        # my $filter=$query->param("filter");
         $page = 1 unless (defined($page) and $page =~ /^[+-]?\d+$/);
-        make_view_log($admin, $page, $filter);
+        make_view_log_panel($admin, $page);
     }
     elsif( $task eq "clearlog" ) {
         my $admin=$query->cookie("wakaadmin");
         my $all=$query->param("clearall");
         clear_log($admin,$all);
+    }
+    # Post Backups (Staff Only)
+    elsif ($task eq "postbackups")
+    {   
+        my $admin = $query->cookie("wakaadmin");
+        my $page = $query->param("page");
+        my $perpage = $query->param("perpage");
+
+        make_backup_posts_panel($admin, $page, $perpage);
+    }
+    elsif ($task eq "restorebackups")
+    {
+        my $admin = $query->cookie("wakaadmin");
+        my @num = $query->param("num");
+        my $board_name = $query->param("board") || $$cfg{SELFPATH};
+        my $handle = lc $query->param("handle");
+
+        if ($handle eq "restore"
+            or decode_string($handle, CHARSET) eq $$locale{S_MPRESTORE})
+        {
+            restore_stuff($admin, $board_name, @num);
+        }
+        else
+        {
+            remove_post_from_backup($admin, $board_name, @num);
+        }
     }
     # return error on unknown task
     else {
@@ -451,12 +479,14 @@ while($query=CGI::Fast->new)
 }
 
 #
-# JSON
+# JSON stuff
 #
 
 sub hide_row_els {
     my ($row) = @_;
-    $$row{'location'} = (split(/<br \/>/, $$row{location}))[0] if $$cfg{SHOW_COUNTRIES};
+    my ($items, $loc) = get_geo_array($$cfg{SELFPATH}, $$row{location}, 0);
+    $$row{'location'} = (@$loc ? join(', ', @$loc) : $$items[0])
+      if $$cfg{SHOW_COUNTRIES};
     $$row{'admin_post'} = $$row{'ip'} = $$row{'password'} = undef;
     $$row{'location'} = $$cfg{SHOW_COUNTRIES} ? $$row{'location'} : undef;
 }
@@ -485,7 +515,6 @@ sub output_json_threads {
     $sth->execute($offset,$$cfg{IMAGES_PER_PAGE});
 
     my @thread;
-
     my $posts = $dbh->prepare("SELECT * FROM ".$$cfg{SQL_TABLE}." WHERE parent=? ORDER BY num DESC LIMIT ?;");
 
     while ($row = get_decoded_hashref($sth)
@@ -511,13 +540,12 @@ sub output_json_threads {
 
         # split off the parent post, and count the replies and images
         my ( $parent, @replies ) = @{ $$thread{posts} };
-        my $size;
         my ($replies, $size, $images) = count_posts($$parent{num});
 
         # count files in replies - TODO: check for size == 0 for ignoring deleted files
 
         my $curr_images = 0;
-        my $curr_replies = scalar @replies;
+        my $curr_replies = @replies;
         do { $curr_images +=  @{$$_{files}} if (exists $$_{files}) } for (@replies);
 
         # write the shortened list of replies back
@@ -542,7 +570,7 @@ sub output_json_threads {
         }
     }
 
-    if(scalar @threads ne 0) {
+    if(@threads) {
         $code = 200;
     } elsif($sth->rows == 0) {
         $code = 404;
@@ -576,7 +604,7 @@ sub output_json_threads {
         "data" => \@threads
     );
 
-    my $loc = get_geolocation(get_remote_addr());
+    # my $loc = get_geolocation(get_remote_addr());
 
     make_json_header();
     print $JSON->encode(\%json);
@@ -733,6 +761,10 @@ sub output_json_stats {
     print $JSON->encode(\%json);
 }
 
+#
+# Page rendering stuff
+#
+
 # sub show_post
 # shows a single post out of a thread, essential for the reloadless view of threads
 # takes an integer as argument
@@ -861,7 +893,7 @@ sub show_page {
     {
         $posts->execute($$row{num}, count_maxreplies($row));
         add_images_to_row($row);
-        @thread=($row);
+        @thread = ($row);
 
         my @replies;
         while( my $post=get_decoded_hashref($posts) ) {
@@ -878,12 +910,11 @@ sub show_page {
 
         # split off the parent post, and count the replies and images
         my ( $parent, @replies ) = @{ $$thread{posts} };
-        my $size;
         my ($replies, $size, $images) = count_posts($$parent{num});
 
         # count files in replies - TODO: check for size == 0 for ignoring deleted files
         my $curr_images = 0;
-        my $curr_replies = scalar @replies;
+        my $curr_replies = @replies;
         do { $curr_images +=  @{$$_{files}} if (exists $$_{files}) } for (@replies);
 
         # write the shortened list of replies back
@@ -943,8 +974,7 @@ sub show_page {
                 leet         => is_leet($name),
                 stylesheets  => get_stylesheets(),
                 cfg          => $cfg,
-                locale       => $locale,
-                parsedate    => $use_parsedate
+                locale       => $locale
             });
 
     $output =~ s/^\s+\n//mg;
@@ -1002,15 +1032,14 @@ sub show_thread {
                 leet         => is_leet($name),
                 stylesheets  => get_stylesheets(),
                 cfg          => $cfg,
-                locale       => $locale,
-                parsedate    => $use_parsedate
+                locale       => $locale
             });
     $output =~ s/^\s+\n//mg;
     print($output);
 }
 
 sub get_files {
-    my ($threadid, $postid, $files) = @_;
+    my ($threadid, $postid, $backup, $files) = @_;
     my ($sth, $res, $where, $uploadname);
 
     if ($threadid) {
@@ -1023,8 +1052,8 @@ sub get_files {
 
     $sth = $dbh->prepare(
           "SELECT * FROM "
-        . $$cfg{SQL_TABLE_IMG} . "" .
-          $where
+        . ( $backup ? $$cfg{SQL_BACKUP_IMG_TABLE} : $$cfg{SQL_TABLE_IMG} )
+        . $where
     ) or make_error($$locale{S_SQLFAIL});
 
     if ($threadid) {
@@ -1042,6 +1071,12 @@ sub get_files {
         $$res{thumbnail} = undef if ($$res{thumbnail} =~ m|^\.\./img/|);        
 
         # board path is added by expand_filename
+        if($backup) {
+            $$res{image} =~ s!^.*[\\/]!!;
+            $$res{thumbnail} =~ s!^.*[\\/]!!;
+            $$res{image} = '/' . $$cfg{SELFPATH} . '/' . $$cfg{ORPH_DIR} . $$cfg{BACKUP_DIR} . $$res{image};
+            $$res{thumbnail} = '/' . $$cfg{SELFPATH} . '/' . $$cfg{ORPH_DIR} . $$cfg{BACKUP_DIR} . $$res{thumbnail};
+        }
 
         push(@$files, $res);
     }
@@ -1052,7 +1087,7 @@ sub add_images_to_thread {
     my ($sthfiles, $res, @files, $uploadname, $post);
 
     @files = ();
-    get_files($posts[0]{num}, 0, \@files);
+    get_files($posts[0]{num}, 0, 0, \@files);
     return unless (@files);
 
     foreach $post (@posts) {
@@ -1063,19 +1098,31 @@ sub add_images_to_thread {
 }
 
 sub add_images_to_row {
-    my ($row) = @_;
+    my ($row, $backup) = @_;
     my @files = (); # all files of one post for loop-processing in the template
 
-    get_files(0, $$row{num}, \@files);
+    if ($backup) {
+        get_files(0, $$row{postnum}, 1, \@files);
+    } else {
+        get_files(0, $$row{num}, 0, \@files);
+    }
     $$row{files} = [@files] if (@files); # copy the array to an arrayref in the post
 }
 
 sub resolve_reflinks {
-    my ($comment) = @_;
+    my ($comment, $board) = @_;
+
+    $comment =~ s|<!--reflink-->&gt;&gt;&gt;(.+?)/([0-9]+)|
+        my $res = get_cb_post($2,$1);
+        if ($res) { '<span class="backreflink"><a href="'.get_reply_link($$res{num},$$res{parent},0,$1).'">&gt;&gt;&gt;/'.$1.'/'.$2.'</a></span>' }
+        else { '<span class="backreflink"><del>&gt;&gt;&gt;/'.$1.'/'.$2.'</del></span>'; }
+    |ge;
 
     $comment =~ s|<!--reflink-->&gt;&gt;([0-9]+)|
-        my $res = get_post($1);
-        if ($res) { '<span class="backreflink"><a href="'.get_reply_link($$res{num},$$res{parent}).'">&gt;&gt;'.$1.'</a></span>' }
+        my $res;
+        if($board) { $res = get_cb_post($1,$board) }
+        else { $res = get_post($1) }
+        if ($res) { '<span class="backreflink"><a href="'.get_reply_link($$res{num},$$res{parent},0,$board).'">&gt;&gt;'.$1.'</a></span>' }
         else { '<span class="backreflink"><del>&gt;&gt;'.$1.'</del></span>'; }
     |ge;
 
@@ -1124,51 +1171,6 @@ sub print_page {
         print PAGE $contents;
         close PAGE;
     }
-}
-
-sub dnsbl_check {
-    my ($ip) = @_;
-    my @errors;
-
-    return if ($ip =~ /:/); # IPv6
-
-    foreach my $dnsbl_info ( @{$$cfg{DNSBL_INFOS}} ) {
-        my $dnsbl_host   = @$dnsbl_info[0];
-        my $dnsbl_answers = @$dnsbl_info[1];
-        my ($result, $resolver);
-        my $reverse_ip    = join( '.', reverse split /\./, $ip );
-        my $dnsbl_request = join( '.', $reverse_ip,        $dnsbl_host );
-
-        $resolver = Net::DNS::Resolver->new;
-        my $bgsock = $resolver->bgsend($dnsbl_request);
-        my $sel    = IO::Select->new($bgsock);
-
-        my @ready = $sel->can_read($$cfg{DNSBL_TIMEOUT});
-        if (@ready) {
-            foreach my $sock (@ready) {
-                if ( $sock == $bgsock ) {
-                    my $packet = $resolver->bgread($bgsock);
-                    if ($packet) {
-                        foreach my $rr ( $packet->answer ) {
-                            next unless $rr->type eq "A";
-                            $result = $rr->address;
-                            last;
-                        }
-                    }
-                    undef($bgsock);
-                }
-                $sel->remove($sock);
-                undef($sock);
-            }
-        }
-
-        foreach (@{$dnsbl_answers}) {
-            if ( $result eq $_ ) {
-                push @errors, sprintf($$locale{S_DNSBL}, $dnsbl_host);
-            }
-        }
-    }
-    make_ban( $$locale{S_BADHOSTPROXY}, { ip => $ip, showmask => 0, reason => shift(@errors) } ) if @errors;
 }
 
 sub find_posts {
@@ -1271,8 +1273,8 @@ sub post_stuff {
       if ( $ENV{REQUEST_METHOD} and $ENV{REQUEST_METHOD} ne "POST" );
 
     # clean up invalid admin cookie/session or posting would fail
-    my @neko = check_password( $admin, '', 'silent' );
-    $admin = "" unless ($neko[0]);
+    my @session = check_password( $admin, '', 'silent' );
+    $admin = "" unless ($session[0]);
 
     if ($admin)  # check admin password
     {
@@ -1285,7 +1287,7 @@ sub post_stuff {
           if ( $no_format or $postfix or $as_staff or $sticky or $locked or $autosage );
 
         # forbid posting if enabled
-        make_error($$locale{S_NONEWTHREADS}) if ($$cfg{DISABLE_POSTING});
+        make_error($$locale{S_NOPOSTING}) if ($$cfg{DISABLE_POSTING});
 
         # check what kind of posting is allowed
         if ($parent) {
@@ -1306,7 +1308,7 @@ sub post_stuff {
                 . $$cfg{SQL_TABLE} 
                 . " SET sticky=? WHERE num=? OR parent=?;") or make_error($$locale{S_SQLFAIL});
             $stickyupdate->execute($sticky, $parent, $parent) or make_error($$locale{S_SQLFAIL});
-            $stickyupdate->finish();
+            $stickyupdate->finish;
         }
     }
     
@@ -1318,7 +1320,7 @@ sub post_stuff {
                 . " SET locked=? WHERE num=? OR parent=?;")
                 or make_error($$locale{S_SQLFAIL});
             $lockupdate->execute($locked, $parent, $parent) or make_error($$locale{S_SQLFAIL});
-            $lockupdate->finish();
+            $lockupdate->finish;
         }
     }
 
@@ -1332,12 +1334,12 @@ sub post_stuff {
                 or make_error($$locale{S_SQLFAIL});
             $lockupdate->execute($autosage, $parent, $parent)
                 or make_error($$locale{S_SQLFAIL});
-            $lockupdate->finish();
+            $lockupdate->finish;
         }
     }
 
     # don't allow mods to post html
-    make_error($$locale{S_NOPRIVILEGES}) if( $no_format and $neko[1] ne 'admin' );
+    make_error($$locale{S_NOPRIVILEGES}) if( $no_format and $session[1] ne 'admin' );
 
     # check for weird characters
     make_error($$locale{S_UNUSUAL}) if ( $parent  =~ /[^0-9]/ );
@@ -1539,7 +1541,7 @@ sub post_stuff {
     my $new_post_id = ($sth->fetchrow_array())[0];
 
     # log admin post
-    log_action( "adminpost", $new_post_id, '', $admin ) if($admin_post and $as_staff);
+    log_action( 'adminpost', $new_post_id, '', $admin ) if($admin_post and $as_staff);
 
     # insert file information into database
     if ($file) {
@@ -1776,6 +1778,51 @@ sub ban_check {
     return (0);
 }
 
+sub dnsbl_check {
+    my ($ip) = @_;
+    my @errors;
+
+    return if ($ip =~ /:/); # IPv6
+
+    foreach my $dnsbl_info ( @{$$cfg{DNSBL_INFOS}} ) {
+        my $dnsbl_host   = @$dnsbl_info[0];
+        my $dnsbl_answers = @$dnsbl_info[1];
+        my ($result, $resolver);
+        my $reverse_ip    = join( '.', reverse split /\./, $ip );
+        my $dnsbl_request = join( '.', $reverse_ip,        $dnsbl_host );
+
+        $resolver = Net::DNS::Resolver->new;
+        my $bgsock = $resolver->bgsend($dnsbl_request);
+        my $sel    = IO::Select->new($bgsock);
+
+        my @ready = $sel->can_read($$cfg{DNSBL_TIMEOUT});
+        if (@ready) {
+            foreach my $sock (@ready) {
+                if ( $sock == $bgsock ) {
+                    my $packet = $resolver->bgread($bgsock);
+                    if ($packet) {
+                        foreach my $rr ( $packet->answer ) {
+                            next unless $rr->type eq "A";
+                            $result = $rr->address;
+                            last;
+                        }
+                    }
+                    undef($bgsock);
+                }
+                $sel->remove($sock);
+                undef($sock);
+            }
+        }
+
+        foreach (@{$dnsbl_answers}) {
+            if ( $result eq $_ ) {
+                push @errors, sprintf($$locale{S_DNSBL}, $dnsbl_host);
+            }
+        }
+    }
+    make_ban( $$locale{S_BADHOSTPROXY}, { ip => $ip, showmask => 0, reason => shift(@errors) } ) if @errors;
+}
+
 sub flood_check {
     my ( $ip, $time, $comment, $file, $parent ) = @_;
     my ( $sth, $maxtime );
@@ -1830,6 +1877,8 @@ sub flood_check {
 sub format_comment {
     my ($comment) = @_;
 
+    # hide >>/board/1 references from the quoting code
+    $comment =~ s/&gt;&gt;&gt;(\/?)(.+)\/([0-9\-]+)/&gt&gt&gt;$1$2\/$3/g;
     # hide >>1 references from the quoting code
     $comment =~ s/&gt;&gt;([0-9\-]+)/&gtgt;$1/g;
 
@@ -1839,6 +1888,7 @@ sub format_comment {
 
         # ref-links will be resolved on every page creation to support links to deleted (and also future) posts.
         # ref-links are marked with a html-comment and checked/generated on every page output.
+        $line =~ s/&gt&gt&gt;\/?(.+)\/([0-9]+)/<!--reflink-->&gt;&gt;&gt;$1\/$2/g;
         $line =~ s/&gtgt;([0-9]+)/<!--reflink-->&gt;&gt;$1/g;
 
         return $line;
@@ -1858,6 +1908,7 @@ sub format_comment {
 
     # restore >>1 references hidden in code blocks
     $comment =~ s/&gtgt;/&gt;&gt;/g;
+    $comment =~ s/&gt&gt&gt;/&gt;&gt;&gt;/g;
 
     return $comment;
 }
@@ -1888,27 +1939,6 @@ sub encode_string {
     return encode( CHARSET, $str, 0x0400 );
 }
 
-sub process_leetcode {
-    my ($name, $nonamedecoding) = @_;
-    my ($namepart, $trip);
-
-    my $trips = get_settings('trips');
-    my $tripkey = $$cfg{TRIPKEY} || "!";
-    if ( $name =~ /(.*?)(?:#|$tripkey|nya:)(.+)$/ ) {
-        ($namepart, $trip) = ($1, $2);
-        $namepart = clean_string($namepart);
-    }
-
-    if ($$trips{$trip}) {
-        $trip = $$cfg{TRIPKEY} . $$trips{$trip};
-    } else {
-        return ( $name, undef, undef );
-    }
-
-    return ( $namepart, $trip, 1 ) if $nonamedecoding;
-    return ( decode_string( $namepart, CHARSET ), $trip, 1 );
-}
-
 sub make_anonymous {
     my ( $ip, $time ) = @_;
 
@@ -1916,12 +1946,12 @@ sub make_anonymous {
 
     my $string = $ip;
     $string .= "," . int( $time / 86400 ) if ( $$cfg{SILLY_ANONYMOUS} =~ /day/i );
-    $string .= "," . $ENV{SCRIPT_NAME} if ( $$cfg{SILLY_ANONYMOUS} =~ /board/i );
+    $string .= "," . $$cfg{SELFPATH} if ( $$cfg{SILLY_ANONYMOUS} =~ /board/i );
 
     srand unpack "N", hide_data( $string, 4, "silly", SECRET );
 
     return cfg_expand(
-        "%Z% %W%",
+        "%G% %W%",
         W => [
             "%B%%V%%M%%I%%V%%F%", "%B%%V%%M%%E%",
             "%O%%E%",             "%B%%V%%M%%I%%V%%F%",
@@ -1967,7 +1997,6 @@ sub make_anonymous {
             "dale",  "water", "hood",  "ridge", "ville", "spear",
             "forth", "will"
         ],
-        Z => [ @{$$cfg{RANDOM_NAMES}}, "%G" ],
         G => [
             "Albert",    "Alice",     "Angus",     "Archie",
             "Augustus",  "Barnaby",   "Basil",     "Beatrice",
@@ -1986,7 +2015,7 @@ sub make_anonymous {
             "Polly",     "Priscilla", "Rebecca",   "Reuben",
             "Samuel",    "Sidney",    "Simon",     "Sophie",
             "Thomas",    "Walter",    "Wesley",    "William"
-        ],
+        ]
     );
 }
 
@@ -2002,7 +2031,7 @@ sub make_id_code {
 
     my $string = "";
     $string .= "," . int( $time / 86400 ) if ( $$cfg{DISPLAY_ID} =~ /day/i );
-    $string .= "," . $ENV{SCRIPT_NAME} if ( $$cfg{DISPLAY_ID} =~ /board/i );
+    $string .= "," . $$cfg{SELFPATH} if ( $$cfg{DISPLAY_ID} =~ /board/i );
 
     return mask_ip( get_remote_addr(), make_key( "mask", SECRET, 32 ) . $string )
       if ( $$cfg{DISPLAY_ID} =~ /mask/i );
@@ -2010,13 +2039,52 @@ sub make_id_code {
     return hide_data( $ip . $string, 6, "id", SECRET, 1 );
 }
 
+sub process_leetcode {
+    my ($name, $nonamedecoding) = @_;
+    my ($namepart, $trip);
+
+    my $trips = get_settings('trips');
+    my $tripkey = $$cfg{TRIPKEY} || "!";
+    if ( $name =~ /(.*?)(?:#|$tripkey|nya:)(.+)$/ ) {
+        ($namepart, $trip) = ($1, $2);
+        $namepart = clean_string($namepart);
+    }
+
+    if ($$trips{$trip}) {
+        $trip = $$cfg{TRIPKEY} . $$trips{$trip};
+    } else {
+        return ( $name, undef, undef );
+    }
+
+    return ( $namepart, $trip, 1 ) if $nonamedecoding;
+    return ( decode_string( $namepart, CHARSET ), $trip, 1 );
+}
+
+sub get_cb_post {
+    my ($thread, $board) = @_;
+    my ($sth,$ret);
+
+    return unless( $board && grep { $_ eq $board } @{$$cfg{BOARDS}} );
+    $$cfg{SQL_TABLE} = $board . '_comments';
+
+    $sth = $dbh->prepare(
+        "SELECT * FROM " . $$cfg{SQL_TABLE} . " WHERE num=? LIMIT 1;"
+    ) or '';
+    $sth->execute($thread) or '';
+    $ret = $sth->fetchrow_hashref();
+    $sth->finish;
+
+    return $ret;
+}
+
 sub get_post {
     my ($thread) = @_;
     my ($sth,$ret);
 
-    $sth = $dbh->prepare( "SELECT * FROM " . $$cfg{SQL_TABLE} . " WHERE num=? LIMIT 1;" )
-      or make_error($$locale{S_SQLFAIL});
-    $sth->execute($thread) or make_error($$locale{S_SQLFAIL});
+    $sth = $dbh->prepare(
+        "SELECT * FROM " . $$cfg{SQL_TABLE} . " WHERE num=? LIMIT 1;"
+    ) or '';
+    $sth->execute($thread) or '';
     $ret = $sth->fetchrow_hashref();
     $sth->finish;
 
@@ -2027,9 +2095,10 @@ sub get_parent_post {
     my ($thread) = @_;
     my ($sth,$ret);
 
-    $sth = $dbh->prepare( "SELECT * FROM " . $$cfg{SQL_TABLE} . " WHERE num=? and parent=0 LIMIT 1;" )
-      or make_error($$locale{S_SQLFAIL});
-    $sth->execute($thread) or make_error($$locale{S_SQLFAIL});
+    $sth = $dbh->prepare(
+        "SELECT * FROM " . $$cfg{SQL_TABLE} . " WHERE num=? and parent=0 LIMIT 1;"
+    ) or '';
+    $sth->execute($thread) or '';
     $ret = $sth->fetchrow_hashref();
     $sth->finish;
 
@@ -2323,8 +2392,8 @@ sub thread_control {
         else {
             make_error("dildo dodo");
         }
-        $sth->execute( $check, $threadid, $threadid) or make_error($$locale{S_SQLFAIL});
-        $sth->finish();
+        $sth->execute( $check, $threadid, $threadid ) or make_error($$locale{S_SQLFAIL});
+        $sth->finish;
     }
     log_action( $action, $threadid, '', $admin );
 
@@ -2374,7 +2443,7 @@ sub delete_all {
         while ( $row = $sth->fetchrow_hashref() ) { push( @posts, $$row{num} ); }
         $sth->finish;
 
-        log_action( "delall", $ip, '', $admin );
+        log_action( 'delall', $ip, '', $admin );
         delete_stuff('', 0, $admin, 1, 0, @posts);
     }
 }
@@ -2438,29 +2507,34 @@ sub delete_post {
     my $thumb   = $$cfg{THUMB_DIR};
     my $src     = $$cfg{IMG_DIR};
     my $numip   = dot_to_dec(get_remote_addr()); # do not use $ENV{REMOTE_ADDR}
+
     $sth = $dbh->prepare( "SELECT * FROM " . $$cfg{SQL_TABLE} . " WHERE num=?;" )
       or return $$locale{S_SQLFAIL};
     $sth->execute($post) or return $$locale{S_SQLFAIL};
 
     if ( $row = $sth->fetchrow_hashref() ) {
         my $parent_post = get_post($$row{parent});
-        return $$locale{S_BADDELPASS} if ( $password and $$row{password} ne $password );
-        return $$locale{S_BADDELIP} if ( $deletebyip and ( $numip and $$row{ip} ne $numip ) );
-        return $$locale{S_RENZOKU4} if ( $$row{timestamp} + $$cfg{RENZOKU4} >= time() and !$admin_del );
-        return $$locale{S_LOCKED} if ($$parent_post{locked} and !$admin_del);
-        return "This was posted by a moderator or admin and cannot be deleted this way." if (!$admin_del and $$row{admin_post} eq 1);
+        my @geoinfo = get_geo_array($$cfg{SELFPATH}, $$row{location}, 1);
+
+        return $$locale{S_BADDELPASS} 
+          if ( $password and $$row{password} ne $password );
+        return $$locale{S_BADDELIP}
+          if ( $deletebyip and ( $numip and $$row{ip} ne $numip ) );
+        return $$locale{S_RENZOKU4}
+          if ( $$row{timestamp} + $$cfg{RENZOKU4} >= time() and !$admin_del );
+        return $$locale{S_LOCKED}
+          if ( $parent_post && $$parent_post{locked} and !$admin_del );
+        return decode_string("Заебал удалять посты.", CHARSET)
+          if (!$admin_del and $geoinfo[4] && $geoinfo[4] == 42610);
+        return "This was posted by a moderator or admin and cannot be deleted this way."
+          if (!$admin_del and $$row{admin_post} eq 1);
+
+        backup_stuff($row) if ($$cfg{ENABLE_POST_BACKUP});
 
         unless ($fileonly) {
+
             if( defined($admin_del) and $password eq "" ) {
-                log_action( "deletepost", $post, '', $admin );
-            }
-            else {
-                my $post_tooltip =
-                  '<strong>' . dec_to_dot($$row{ip})
-                  . ' / ' . $$row{name} . $$row{trip} . ' '
-                  . make_date( $$row{timestamp}, "2ch" )
-                  . '</strong><br />' . $$row{comment};
-                log_action( "deletepost", $post, $post_tooltip, $admin );
+                log_action( 'deletepost', $post, '', $admin );
             }
 
             # remove files from comment and possible replies
@@ -2536,7 +2610,7 @@ sub delete_post {
         else    # remove just the image(s) and update the database
         {
             if( defined($admin_del) and $password eq "" ) {
-                log_action( "deletefile", $post, '', $admin );
+                log_action( 'deletefile', $post, '', $admin );
             }
             $sth = $dbh->prepare(
                     "SELECT image,thumbnail FROM " . $$cfg{SQL_TABLE_IMG} . " WHERE post=?" )
@@ -2592,6 +2666,555 @@ sub make_rss { # hater ktory droczit na perenosy skobok sosi xD
     });
     $out =~ s/^\n//mg;
     print($out);
+}
+
+#
+# Editing/Deletion Undoing
+#
+
+# Present backup posts to admin
+sub make_backup_posts_panel {
+    my ($admin, $page)=@_;
+    my ($sth,$row,@threads);
+
+    my @session = check_password($admin, '');
+    make_error($$cfg{S_NOPRIVILEGES}) if ($session[1] ne 'admin');
+
+    my $isAdmin = 0;
+    if (@session) { $isAdmin = 1; }
+
+    # Grab board posts
+    if ($page =~ /^t\d+$/)
+    {
+        $page =~ s/^t//g;
+        $sth=$dbh->prepare(
+              "SELECT * FROM "
+              . $$cfg{SQL_BACKUP_TABLE}
+              . " WHERE (postnum=? OR parent=?) AND board_name = ? ORDER BY postnum ASC;"
+            ) or make_error($$locale{S_SQLFAIL});
+        $sth->execute($page,$page,$$cfg{SELFPATH}) or make_error($$locale{S_SQLFAIL});
+        
+        $row = get_decoded_hashref($sth);
+        add_images_to_row($row, 1);
+        make_error("Thread not found in backup.") if !$row;
+        my @thread;
+        push @thread, $row;
+        while ($row=get_decoded_hashref($sth))
+        {
+            add_images_to_row($row, 1);
+            push @thread, $row;
+        }
+        push @threads,{posts => [@thread]};
+        
+        make_http_header();
+        my $output = $tpl->backup_panel({
+            admin => $isAdmin,
+            threads => \@threads,
+            thread => $page,
+            locked => $thread[0]{locked},
+            parent => $page,
+            modclass => $session[1],
+            stylesheets => get_stylesheets(),
+            cfg => $cfg,
+            locale => $locale
+        });
+        $output =~ s/^\s+//; # remove whitespace at the beginning
+        $output =~ s/^\s+\n//mg; # remove empty lines
+
+        print($output);
+    }
+    else
+    {
+        # Grab count of threads and orphaned posts.
+        $sth=$dbh->prepare(
+            "SELECT COUNT(1) FROM "
+            . $$cfg{SQL_BACKUP_TABLE}
+            . " A  WHERE (parent=0 OR (parent>0 AND NOT EXISTS (SELECT * FROM "
+            . $$cfg{SQL_BACKUP_TABLE}
+            . " B WHERE A.parent = B.postnum LIMIT 1))) AND board_name=?;"
+        ) or make_error($$locale{S_SQLFAIL});
+        $sth->execute($$cfg{SELFPATH}) or make_error($$locale{S_SQLFAIL});
+
+        my $threadcount = ($sth->fetchrow_array)[0];
+        $sth->finish();
+        
+        # Handle page variable
+        my $total = get_page_count($threadcount); 
+        $total = 1 unless $total;
+        $page = $total if ( $page > $total );
+        $page = 1 if ( $page !~ /^\d+$/ or $page <= 0 or !$page );
+        my $thread_offset = ceil($page*$$cfg{IMAGES_PER_PAGE}-$$cfg{IMAGES_PER_PAGE});
+
+        # Grab the parent posts and posts without parent threads
+        $sth=$dbh->prepare(
+            "SELECT * FROM "
+            . $$cfg{SQL_BACKUP_TABLE}
+            . " A WHERE (parent=0 OR (parent>0 AND NOT EXISTS (SELECT * FROM "
+            . $$cfg{SQL_BACKUP_TABLE}
+            . " B WHERE A.parent = B.postnum LIMIT 1))) AND board_name=? ORDER BY timestampofarchival DESC, num ASC LIMIT ?,?;"
+        ) or make_error($$locale{S_SQLFAIL});
+        $sth->execute($$cfg{SELFPATH}, $thread_offset, $$cfg{IMAGES_PER_PAGE}) or make_error($$locale{S_SQLFAIL});
+
+        my $threadquery=$dbh->prepare(
+            "SELECT * FROM "
+            . $$cfg{SQL_BACKUP_TABLE}
+            . " WHERE parent=? ORDER BY timestampofarchival DESC, num ASC LIMIT ?,?;"
+        ) or make_error($$locale{S_SQLFAIL});
+
+        # Grab the thread posts in each thread
+        while ($row=get_decoded_hashref($sth))
+        {
+            add_images_to_row($row, 1);
+            $$row{comment} = resolve_reflinks($$row{comment});
+            my @thread = ($row);
+
+            my ($curr_replies, $curr_images);
+            my $max_replies = count_maxreplies($row);
+            my $threadnumber = $$row{postnum};
+            my ($imgcount, $postcount) = ( 0, 0 );
+            $$row{standalone} = 1; # Indicates extracted post is orphaned in the database (i.e., without a parent thread)
+
+            unless ($$row{parent}) # We are grabbing both threads and orphaned posts, here.
+            {
+                $$row{standalone} = 0;
+
+                # Grab thread replies
+                my $postcountquery = $dbh->prepare(
+                    "SELECT (SELECT COUNT(*) FROM "
+                     . $$cfg{SQL_BACKUP_TABLE}
+                     . " WHERE parent=?) AS postcount, (SELECT count(*) FROM "
+                     . $$cfg{SQL_BACKUP_IMG_TABLE}
+                     ." WHERE thread=?) AS imgcount FROM dual;"
+                ) or make_error($$locale{S_SQLFAIL});
+                $postcountquery->execute($threadnumber, $threadnumber)
+                  or make_error($$locale{S_SQLFAIL});
+                my $pc = $postcountquery->fetchrow_hashref();
+                $postcount = $$pc{postcount};
+                $imgcount = $$pc{imgcount};
+                $postcountquery->finish();
+            
+                # Grab limits for SQL query
+                my $offset = ( $postcount > $max_replies ) ? $postcount - $max_replies : 0;
+                $threadquery->execute($threadnumber, $offset, $max_replies) or make_error($$locale{S_SQLFAIL});
+
+                while (my $inner_row=get_decoded_hashref($threadquery))
+                {
+                    add_images_to_row($inner_row, 1);
+                    $$inner_row{comment} = resolve_reflinks($$inner_row{comment});
+                    $curr_images +=  @{$$inner_row{files}} if (exists $$inner_row{files});
+                    ++$curr_replies;
+                    push @thread, $inner_row;
+                }
+                $threadquery->finish();
+            }
+
+            push @threads, { 
+                posts => [@thread],
+                omitmsg => get_omit_message( $postcount - $curr_replies, ($imgcount-1) - $curr_images ),
+                postnum => $$row{postnum}
+            };
+        }
+        $sth->finish();
+
+        # make the list of pages
+        my @pages = map +{ page => $_ }, (1..$total);
+        foreach my $p (@pages)
+        {
+            $$p{filename} = get_script_name() . '?task=postbackups&amp;section=' . $$cfg{SELFPATH} . '&amp;page='.$$p{page};
+            if($$p{page} == $page) { $$p{current}=1 } # current page, no link
+        }
+        
+        my ($prevpage, $nextpage);
+        $prevpage = $pages[ $page - 2 ]{filename} if ( $page != 1 );
+        $nextpage = $pages[ $page     ]{filename} if ( $page != $total );
+    
+        make_http_header();
+
+        my $output = $tpl->backup_panel({
+            admin => $isAdmin,
+            nextpage => $nextpage,
+            prevpage => $prevpage,
+            threads => \@threads,
+            modclass => $session[1],
+            pages => \@pages,
+            stylesheets => get_stylesheets(),
+            cfg => $cfg,
+            locale => $locale
+        });
+        $output =~ s/^\s+//; # remove whitespace at the beginning
+        $output =~ s/^\s+\n//mg; # remove empty lines
+
+        print($output);
+    }
+}
+
+# Backup post to backup table.
+sub backup_stuff # Delete post or thread.
+{
+    my $row = $_[0]; # First argument is post drug from database.
+    my $affected_board = $_[1] || $$cfg{SELFPATH}; # Second (optional) argument is name of board.
+    
+    my $timestamp = time();
+
+    backup_post($row,$affected_board, $timestamp);
+    
+    if (!$$row{parent})
+    {
+        # Bring up comment table for requested board.
+        my $this_board;
+        if ($affected_board ne $$cfg{SELFPATH})
+        {
+            $this_board = fetch_config($affected_board)
+                or make_error("Post ".$affected_board.",".$$row{num}." backed up, but board resolution failed.");
+        }
+        else
+        {
+            $this_board = $cfg;
+        }
+        
+        # Grab all responses.
+        my $sth = $dbh->prepare("SELECT * FROM ".$$this_board{SQL_TABLE}." WHERE parent=? ORDER BY num ASC;") 
+            or make_error($$locale{S_SQLFAIL});
+        $sth->execute($$row{num}) or make_error($$locale{S_SQLFAIL});
+
+        my $res;
+        my $error;
+        while ($res=$sth->fetchrow_hashref())
+        {
+            $error = backup_post($res,$$this_board{SELFPATH},$timestamp);
+        }
+        make_error($error) if $error;
+    }
+}
+
+sub backup_post # Delete single post.
+{
+    my $row = $_[0]; # First argument is post drug from database.
+    my $affected_board = $_[1] || $$cfg{SELFPATH}; # Second (optional) argument is name of board.
+    my $timestamp = $_[2] || time(); # Time the post was archived, for interface sorting and thread deletion.
+
+    my $sth; # Database variable.
+    
+    # If post has already been backed up, delete any extraneous copies.
+    $sth=$dbh->prepare("DELETE FROM ".$$cfg{SQL_BACKUP_TABLE}." WHERE board_name=? AND postnum=?;") or return $$locale{S_SQLFAIL};
+    $sth->execute($affected_board,$$row{num}) or return $$locale{S_SQLFAIL};
+
+    # If images have already been backed up, delete any extraneous copies.
+    $sth=$dbh->prepare("DELETE FROM ".$$cfg{SQL_BACKUP_IMG_TABLE}." WHERE board_name=? AND post=?;") or return $$locale{S_SQLFAIL};
+    $sth->execute($affected_board,$$row{num}) or return $$locale{S_SQLFAIL};
+
+    # Backup post.
+    $sth=$dbh->prepare(
+          "INSERT INTO "
+          . $$cfg{SQL_BACKUP_TABLE}
+          . " VALUES(null,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);"
+        ) or return $$locale{S_SQLFAIL};
+    $sth->execute(
+            $$row{num},
+            $affected_board,  $$row{parent},    $$row{timestamp},  $$row{lasthit},
+            $$row{ip},        $$row{name},      $$row{trip},       $$row{email},
+            $$row{subject},   $$row{password},  $$row{comment},    $$row{banned},
+            $$row{autosage},  $$row{adminpost}, $$row{admin_post}, $$row{locked},
+            $$row{sticky},    $$row{location},  $$row{secure},     $timestamp
+        ) or return $$locale{S_SQLFAIL};
+    $sth->finish();
+
+    $sth = $dbh->prepare(
+          "SELECT * FROM "
+          . $$cfg{SQL_TABLE_IMG}
+          . " WHERE post=? or thread=? ORDER BY num ASC;"
+        ) or return $$locale{S_SQLFAIL};
+    $sth->execute($$row{num}, $$row{num});
+
+    my $sth2 = $dbh->prepare(
+        "INSERT INTO "
+          . $$cfg{SQL_BACKUP_IMG_TABLE}
+          . " VALUES(null,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);"
+        ) or return $$locale{S_SQLFAIL};
+
+    my $this_board;
+    if ($affected_board ne $$cfg{SELFPATH})
+    {
+        $this_board = fetch_config($affected_board)
+            or return "Post ".$affected_board.",".$$row{num}." backed up, but board resolution failed.";
+    }
+    else
+    {
+        $this_board = $cfg;
+    }
+
+    while (my $res = get_decoded_hashref($sth))
+    {
+        $sth2->execute(
+            $$res{num},       $affected_board,
+            $$res{thread},    $$res{post},      $$res{image},      $$res{size},       $$res{md5},  $$res{width},    $$res{height},
+            $$res{thumbnail}, $$res{tn_width},  $$res{tn_height},  $$res{uploadname}, $$res{info}, $$res{info_all}, $timestamp
+        ) or return $$locale{S_SQLFAIL};
+
+        my $base_filename = $$res{image};
+        $base_filename =~ s!^.*[\\/]!!;           # cut off any directory in filename
+
+        my $base_thumbnail = $$res{thumbnail};
+        $base_thumbnail =~ s!^.*[\\/]!!;    # Do the same for the thumbnail.
+        
+        # Move image.
+        copy(
+              $$this_board{SELFPATH} . '/' . $$res{image},
+              $$this_board{SELFPATH} . '/' . $$this_board{ORPH_DIR} . $$this_board{BACKUP_DIR} . $base_filename
+            )  and chmod 0644, $$this_board{SELFPATH} . '/' . $$this_board{BACKUP_DIR} . $base_filename
+            if ( -e $$this_board{SELFPATH} . '/' . $$res{image} );
+
+        # Move thumbnail.
+        my $thumb_dir = $$this_board{THUMB_DIR};
+        if (  $$res{thumbnail} =~ /^$thumb_dir/ )
+        {
+            copy(
+                $$this_board{SELFPATH} . '/' . $$res{thumbnail},
+                $$this_board{SELFPATH} . '/' . $$this_board{ORPH_DIR} . $$this_board{BACKUP_DIR} . $base_thumbnail
+            ) and chmod 0644, $$this_board{BACKUP_DIR} . $base_thumbnail
+            if ( -e $$this_board{SELFPATH} . '/' . $$res{thumbnail} );
+        }
+    }
+
+    $sth2->finish() if $sth2;
+    $sth->finish();
+
+    return 0;
+}
+
+sub restore_stuff {
+    my ($admin, $board_name, @num) = @_;
+
+    # Confirm administrative rights.
+    my @session = check_password($admin,'');
+    make_error($$locale{S_NOPRIVILEGES}) if($session[1] ne 'admin');
+
+    my $error;
+    foreach my $id (@num)
+    {
+        $error = restore_post_or_thread($id, $board_name);
+        log_action( 'backup_restore', $id, '', $admin );
+    }
+    make_error($error) if $error;
+
+    make_http_forward($ENV{HTTP_REFERER});
+}
+
+sub restore_post_or_thread {
+    my ($num,$board_name,$recursive_instance) = @_;
+
+    my ($sth, $res);                    # Database handler.
+    my $updated_lasthit = 0;    # Update for the lasthit field when recovering replies to an OP.
+    my $stickied_thread = 0;    # Update for stickied field based on whether thread is stickied.
+    my $this_board;             # Object for affected board.
+    my $locked_thread = 0;      # Update for locked field based on whether thread is locked.
+    my $autosage_on = 0;        # ?
+
+    # Resolve board name and set to current board
+    if ($board_name ne $$cfg{SELFPATH})
+    {
+        $this_board=fetch_config($board_name) or return "Failed to resolve board $board_name.";
+    }
+    else
+    {
+        $this_board=$cfg;
+    }
+    
+    # Grab post contents
+    $sth=$dbh->prepare("SELECT * FROM ".$$cfg{SQL_BACKUP_TABLE}." WHERE board_name=? AND postnum=?;") or return $$locale{S_SQLFAIL};
+    $sth->execute($board_name,$num) or return $$locale{S_SQLFAIL};
+    my $row = $sth->fetchrow_hashref();
+    $sth->finish();
+    
+    return "Post restoration failed: Backup of post in $board_name with original ID $num not found." if (!$row);
+
+    # Delete original post, if applicable.
+    $sth=$dbh->prepare("DELETE FROM ".$$this_board{SQL_TABLE}." WHERE num=?;") or return $$locale{S_SQLFAIL};
+    $sth->execute($num) or return $$locale{S_SQLFAIL};
+    $sth->finish();
+
+    # Check if post belongs to thread and thread is deleted. We cannot bring back a single post from a neutered thread.
+    if ($$row{parent})
+    {
+        my $parent_row = get_post($$row{parent});
+
+        ($updated_lasthit, $stickied_thread, $locked_thread, $autosage_on) =
+            ($$parent_row{lasthit}, $$parent_row{stickied}, $$parent_row{locked}, $$parent_row{autosage});
+
+        $sth->finish();
+
+        if (!$updated_lasthit)
+        {
+            return "Post restoration failed: Post $board_name,$num is a member of a deleted thread.";
+        }
+
+        # ...Otherwise, use the updated lasthit field, as it must be in common with the rest of the thread for proper display.
+        # Also match the stickied field.
+    }
+    
+    # Restore post.
+    $sth=$dbh->prepare(
+          "INSERT INTO "
+          . $$this_board{SQL_TABLE}
+          . " VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);"
+        ) or return $$locale{S_SQLFAIL};
+    $sth->execute(
+            $$row{postnum},  $$row{parent},    $$row{timestamp},  $updated_lasthit || time(),
+            $$row{ip},       $$row{name},      $$row{trip},       $$row{email},
+            $$row{subject},  $$row{password},  $$row{comment},    $$row{banned},
+            $$row{autosage}, $$row{adminpost}, $$row{admin_post}, $$row{locked},
+            $$row{sticky},   $$row{location},  $$row{secure}
+        ) or return $$locale{S_SQLFAIL};
+
+    # Restore images.
+    $sth = $dbh->prepare(
+          "SELECT * FROM "
+          . $$cfg{SQL_BACKUP_IMG_TABLE}
+          . " WHERE post=? AND board_name=?;"
+        ) or return $$locale{S_SQLFAIL};
+    $sth->execute($$row{postnum}, $board_name) or return $$locale{S_SQLFAIL};
+
+    # Restore images.
+    my $sth2 = $dbh->prepare(
+        "INSERT INTO " . $$cfg{SQL_TABLE_IMG} . " VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?);"
+        ) or return $$locale{S_SQLFAIL};
+
+    while ($res = get_decoded_hashref($sth))
+    {
+        $sth2->execute(
+            $$res{imgnum},    $$res{thread},    $$res{post},       $$res{image},      $$res{size},      $$res{md5},
+            $$res{width},     $$res{height},    $$res{thumbnail},  $$res{tn_width},   $$res{tn_height}, $$res{uploadname},
+            $$res{info},      $$res{info_all}
+        ) or return $$locale{S_SQLFAIL};
+
+        my $base_filename = $$res{image};
+        $base_filename =~ s!^.*[\\/]!!; # cut off any directory in filename
+        rename (
+                  $$this_board{SELFPATH} . '/' . $$this_board{ORPH_DIR} . $$this_board{BACKUP_DIR} . $base_filename, 
+                  $$this_board{SELFPATH} . '/' . $$res{image}
+               ) and chmod 0644, $$this_board{SELFPATH}.'/'.$$res{image}
+            if ( -e $$this_board{SELFPATH} . '/' . $$this_board{ORPH_DIR} . $$this_board{BACKUP_DIR} . $base_filename );
+
+        # Move thumbnail, if applicable.
+        my $thumb_dir = $$this_board{THUMB_DIR};
+        if ($$res{thumbnail} =~ /^$thumb_dir/)
+        {
+            $base_filename = $$res{thumbnail};
+            $base_filename =~ s!^.*[\\/]!!; # cut off any directory in filename
+            rename (
+                    $$this_board{SELFPATH} . '/' . $$this_board{ORPH_DIR} . $$this_board{BACKUP_DIR} . $base_filename,
+                    $$this_board{SELFPATH} . '/' . $$res{thumbnail}
+                   ) and chmod 0644, $$this_board{SELFPATH} . '/' . $$res{thumbnail}
+              if ( -e $$this_board{SELFPATH} . '/' . $$this_board{ORPH_DIR} . $$this_board{BACKUP_DIR} . $base_filename );
+        }
+    }
+    $sth2->finish() if $sth2;
+
+    # Delete backup.
+    $sth=$dbh->prepare("DELETE FROM ".$$cfg{SQL_BACKUP_TABLE}." WHERE postnum=? AND board_name=?");
+    $sth->execute($$row{postnum},$board_name);
+    $sth->finish();
+
+    # Delete images
+    $sth=$dbh->prepare("DELETE FROM ".$$cfg{SQL_BACKUP_IMG_TABLE}." WHERE post=? AND board_name=?");
+    $sth->execute($$row{postnum}, $board_name);
+    $sth->finish();
+
+    # If thread is being restored, make sure that all posts backed up *prior* to thread backup is restored. We can base this decision on lasthit. The thread is to be restored as it was prior to deletion.
+    if (!$$row{parent})
+    {
+        $sth=$dbh->prepare("SELECT * FROM ".$$cfg{SQL_BACKUP_TABLE}." WHERE num>? AND parent=? ORDER BY num ASC;");
+        $sth->execute($$row{num},$$row{postnum});
+        
+        # Add recursive instance code variable to prevent excessive caching/redirects.
+        while (my $res=$sth->fetchrow_hashref())
+        {
+            restore_post_or_thread($$res{postnum}, $$this_board{SELFPATH}, 1);
+        }
+        
+        $sth->finish();
+    }
+
+    # Rebuild relevant caches.
+    if (!$recursive_instance)
+    {
+        repair_database();
+    }
+}
+
+sub cleanup_backups_database()
+{
+    my $sth = $dbh->prepare(
+          "SELECT postnum, board_name FROM "
+          . $$cfg{SQL_BACKUP_TABLE}
+          . " WHERE timestampofarchival < ?;"
+        );
+    $sth->execute(time - $$cfg{POST_BACKUP_EXPIRE});
+
+    while (my $expired_backup_row = $sth->fetchrow_hashref())
+    {
+        remove_backup( $$expired_backup_row{postnum}, $$expired_backup_row{board_name} );
+    }
+}
+
+sub remove_post_from_backup($$@)
+{
+    my ($admin, $board_name, @id) = @_;
+    my @session = check_password( $admin, '' );
+    make_error($$locale{S_NOPRIVILEGES}) if($session[1] ne 'admin');
+
+    foreach my $post (@id)
+    {
+        remove_backup( $post, $board_name );
+        log_action( 'backup_remove', $post, '', $admin );
+    }
+
+    make_http_forward( $ENV{HTTP_REFERER} );
+}
+
+sub remove_backup {
+    my ($id, $board_name) = @_;
+
+    my $sth = $dbh->prepare(
+          "SELECT post,image,thumbnail FROM "
+          . $$cfg{SQL_BACKUP_IMG_TABLE}
+          . " WHERE post=? AND board_name=?;"
+        );
+    $sth->execute($id, $board_name);
+
+    my $delete = $dbh->prepare(
+        "DELETE FROM " . $$cfg{SQL_BACKUP_IMG_TABLE} . " WHERE post=?;" )
+      or return $$locale{S_SQLFAIL};
+
+    if ( my $this_board = fetch_config($board_name) ) {
+        my $thumb = $$this_board{THUMB_DIR};
+        while ( my $res = $sth->fetchrow_hashref() ) {
+            # delete images if they exist
+            my $base_filename = $$res{image};
+            my $base_thumbnail = $$res{thumbnail};
+            $base_filename =~ s!^.*[\\/]!!;
+            $base_thumbnail =~ s!^.*[\\/]!!;
+
+            unlink $$this_board{SELFPATH} . '/' . $$this_board{ORPH_DIR} . $$this_board{BACKUP_DIR} . $base_filename;
+            unlink $$this_board{SELFPATH} . '/' . $$this_board{ORPH_DIR} . $$this_board{BACKUP_DIR} . $base_thumbnail
+              if ($$res{thumbnail} =~ /^$thumb/);
+
+            # Delete entries from table
+            $delete->execute( $$res{post} ) or return $$locale{S_SQLFAIL};
+        }
+    }
+
+    # Delete post data.
+    $sth = $dbh->prepare(
+          "DELETE FROM "
+          . $$cfg{SQL_BACKUP_TABLE}
+          . " WHERE postnum=? AND board_name=?;"
+        ) or return $$locale{S_SQLFAIL};
+    $sth->execute($id, $board_name) or return $$locale{S_SQLFAIL};
+
+    # Close handles.
+    $sth->finish();
+    $delete->finish() if $delete;
 }
 
 #
@@ -2739,7 +3362,6 @@ sub make_admin_ban_panel {
         cfg => $cfg,
         locale => $locale,
         bans => \@bans,
-        parsedate => $use_parsedate,
         stylesheets => get_stylesheets()
     });
 }
@@ -2873,6 +3495,10 @@ sub do_logout {
     make_http_forward( get_script_name() . "?task=loginpanel&section=".$$cfg{SELFPATH});
 }
 
+#
+# Ban utils
+#
+
 sub add_admin_entry {
     my ($admin, $type, $comment, $ival1, $ival2, $sval1, $postid, $expires, $ban_sign, $ajax) = @_;
     my ($sth, $utf8_encoded_json_text, $authorized);
@@ -2923,12 +3549,12 @@ sub add_admin_entry {
                 "banned_mask" => dec_to_dot($ival2),
                 "reason" => $comment,
                 "postid" => $postid,
-                "expires" => make_date($expires, "2ch"),
+                "expires" => make_date($expires, '2ch'),
             }
         );
         if($type eq 'ipban'){
             my $obj = dec_to_dot($ival1)." /".get_mask_len($ival2);
-            log_action( "ipban", $obj, '', $admin );
+            log_action( 'ipban', $obj, '', $admin );
         }
     }
     if ($ajax) {
@@ -2977,7 +3603,11 @@ sub edit_admin_entry # subroutine for editing entries in the admin table
     make_error("no comment") unless $comment;
 
     # Sanity check
-    my $verify=$dbh->prepare("SELECT * FROM ".$$cfg{SQL_ADMIN_TABLE}." WHERE num=?") or make_error($$locale{S_SQLFAIL});
+    my $verify=$dbh->prepare(
+          "SELECT * FROM "
+          . $$cfg{SQL_ADMIN_TABLE}
+          . " WHERE num=?;"
+        ) or make_error($$locale{S_SQLFAIL});
     $verify->execute($num) or make_error($$locale{S_SQLFAIL});
     my $row = get_decoded_hashref($verify);
     make_error("Entry has not created or was removed.") if !$row;
@@ -2990,13 +3620,19 @@ sub edit_admin_entry # subroutine for editing entries in the admin table
     $verify->finish;
 
     # Revise database entry
-    $sth=$dbh->prepare("UPDATE ".$$cfg{SQL_ADMIN_TABLE}." SET comment=?, expires=? WHERE num=?")  
-        or make_error($$locale{S_SQLFAIL});
+    $sth=$dbh->prepare(
+          "UPDATE "
+          . $$cfg{SQL_ADMIN_TABLE}
+          . " SET comment=?, expires=? WHERE num=?"
+          ) or make_error($$locale{S_SQLFAIL});
     $sth->execute($comment, $expiration, $num) or make_error($$locale{S_SQLFAIL});
     $sth->finish;
     
     # Add log entry
-    log_action( "editadminentry", $num, '', $admin );
+    my $obj;
+    $obj = dec_to_dot($$row{ival1}) . " /" . get_mask_len($$row{ival2})
+              . "<br /> " . $$row{comment} if($$row{type} eq 'ipban');
+    log_action( 'editadminentry', $num, $obj, $admin );
     
     make_http_forward( get_script_name() . "?task=bans&section=".$$cfg{SELFPATH});
 }
@@ -3006,7 +3642,17 @@ sub remove_admin_entry {
     my ($sth);
 
     check_password( $admin, '' );
-    log_action( "removeadminentry", $num, '', $admin );
+
+    $sth = $dbh->prepare( "SELECT * FROM " . $$cfg{SQL_ADMIN_TABLE} . " WHERE num=?;" )
+      or make_error($$locale{S_SQLFAIL});
+    $sth->execute($num) or make_error($$locale{S_SQLFAIL});
+    my $row = get_decoded_hashref($sth);
+    $sth->finish();
+
+    my $obj;
+    $obj = dec_to_dot($$row{ival1}) . " /" . get_mask_len($$row{ival2})
+              . "<br /> " . $$row{comment} if($$row{type} eq 'ipban');
+    log_action( 'removeadminentry', $num, $obj, $admin );
 
     $sth = $dbh->prepare( "DELETE FROM " . $$cfg{SQL_ADMIN_TABLE} . " WHERE num=?;" )
       or make_error($$locale{S_SQLFAIL});
@@ -3019,17 +3665,14 @@ sub remove_admin_entry {
 sub make_expiration_date {
     my ($expires,$time)=@_;
 
-    if($use_parsedate) { $expires=parsedate($expires); } # Sexy date parsing
-    else {
-        my ($date) = grep { $$_{label} eq $expires } @{$$cfg{BAN_DATES}};
+    my ($date) = grep { $$_{label} eq $expires } @{$$cfg{BAN_DATES}};
 
-        if(defined $date->{time}) {
-            if( $date->{time}!=0 ) { $expires = $time+$date->{time}; } # Use a predefined expiration time
-            else { $expires=0 } # Never expire
-        }
-        elsif( $expires != 0 ) { $expires = $time+$expires } # Expire in X seconds
-        else { $expires = 0 } # Never expire
+    if(defined $date->{time}) {
+        if( $date->{time}!=0 ) { $expires = $time+$date->{time}; } # Use a predefined expiration time
+        else { $expires=0 } # Never expire
     }
+    elsif( $expires != 0 ) { $expires = $time+$expires } # Expire in X seconds
+    else { $expires = 0 } # Never expire
 
     return $expires;
 }
@@ -3084,7 +3727,7 @@ sub get_moder_nick {
 }
 
 #
-# Editing
+# Post Editing
 #
 
 sub tag_killa { # subroutine for stripping HTML tags and supplanting them with corresponding wakabamark
@@ -3126,13 +3769,11 @@ sub tag_killa { # subroutine for stripping HTML tags and supplanting them with c
     $tag_killa =~ s%<strong>(.*?)</strong>%\[b\]$1\[/b\]%g;
     $tag_killa =~ s%<sup>(.*?)</sup>%\[sup\]$1\[/sup\]%g;
     $tag_killa =~ s%<sub>(.*?)</sub>%\[sub\]$1\[/sub\]%g;
-    $tag_killa =~ s%<span class="redtext">(.*?)</span>%\[nyaaaaaa\]$1\[/nyaaaaaa\]%g;
+    $tag_killa =~ s%<span class="redtext">(.*?)</span>%\[buttsex\]$1\[/buttsex\]%g;
     $tag_killa =~ s%<span class="unkfunc">(.*?)</span>%\[quote\]$1\[/quote\]%g;
     $tag_killa =~ s%<img src="(?:.*?)/([^/\.]+)(\.[^\.]+)?" alt="" style="vertical-align: bottom;" />%:$1:%g;
 
-    # $tag_killa =~ s/<pre>([^\n]*?)<\/pre>/<code>$1<\/code>/g;
-    $tag_killa =~ s%<pre>%\[code\]%g;    # shit
-    $tag_killa =~ s%</pre>%\[/code\]%g;  # shit
+    $tag_killa =~ s%<pre><code>([\s\S]+?)</code></pre>%\[code\]$1\[/code\]%mg; # shit
     $tag_killa =~ s/<.*?>//g;
 
     $tag_killa;
@@ -3174,13 +3815,15 @@ sub edit_post {
     ) = @_;
     my ($sth, $postfix);
 
-    my @neko = check_password($admin,'');
-    make_error($$locale{S_NOPRIVILEGES}) if( $no_format and $neko[1] ne 'admin' );
+    my @session = check_password($admin,'');
+    make_error($$locale{S_NOPRIVILEGES}) if( $no_format and $session[1] ne 'admin' );
 
     my $post=get_post($num) or make_error(sprintf "Post %d doesn't exist",$num);
     my $adminpost  = $capcode ? 1 : undef;
     my $admin_post = $byadmin ? 1 : 0;
     my $ip = get_remote_addr();
+
+    backup_stuff($post) if ($$cfg{ENABLE_POST_BACKUP});
 
     make_error($$locale{S_UNUSUAL}) if( $name =~/[\n\r]/ );
     make_error($$locale{S_UNUSUAL}) if( $email =~/[\n\r]/ );
@@ -3232,7 +3875,7 @@ sub edit_post {
     ) or make_error($$locale{S_SQLFAIL});
     $sth->finish;
 
-    log_action( "editpost", $num, '', $admin );
+    log_action( 'editpost', $num, '', $admin );
 
     # Go to thread
     if( $$post{parent} ) { make_http_forward( get_board_path() . "thread/" . $$post{parent} . ($num?"#$num":"")); }
@@ -3241,24 +3884,22 @@ sub edit_post {
 }
 
 #
-# Mochelog
+# Admin logging
 #
 
 sub log_action {
     my ($action,$object,$object2,$admin)=@_;
     my ($time,$sth);
 
-    my @neko = check_password($admin, '', 'silent');
-    @neko = qw/User/ unless $admin;
-
-    return 0 unless @neko;
+    my @session = check_password($admin, '', 'silent');
+    return 0 unless @session;
 
     $time=time();
     eval {
         $dbh->begin_work();
 
         $sth=$dbh->prepare("INSERT INTO ".$$cfg{SQL_LOG_TABLE}." VALUES(null,?,?,?,?,?,?,?);") or return $dbh->errstr;
-        $sth->execute($neko[0],$action,$object,$object2,($$cfg{SELFPATH}),$time,dot_to_dec(get_remote_addr())) or return $dbh->errstr;
+        $sth->execute($session[0],$action,$object,$object2,($$cfg{SELFPATH}),$time,dot_to_dec(get_remote_addr())) or return $dbh->errstr;
         $sth->finish;
 
         $dbh->commit();
@@ -3269,52 +3910,51 @@ sub log_action {
     }
 }
 
-sub make_view_log {
-    my ($admin, $page, $filter) = @_;
+sub make_view_log_panel {
+    my ($admin, $page) = @_;
     my ($row, $sth, @log);
 
     my @session = check_password($admin, '');
     make_error($$locale{S_NOPRIVILEGES}) if $session[1] ne 'admin';
 
-    $filter = 'on' unless $filter;
-    my $append = $filter ne 'off' ? " WHERE user <>'User'" : "";
-
     $sth = $dbh->prepare(
-        "SELECT * FROM "
-        . $$cfg{SQL_LOG_TABLE}
-        . $append . " ORDER BY num DESC;")
-          or make_error($$locale{S_SQLFAIL});
+          "SELECT * FROM "
+          . $$cfg{SQL_LOG_TABLE}
+          . " ORDER BY num DESC;"
+        ) or make_error($$locale{S_SQLFAIL});
     $sth->execute() or make_error($$locale{S_SQLFAIL});
 
-    my $emin=($page-1)*$$cfg{ENTRIES_PER_LOGPAGE};
-    my $emax=$emin+$$cfg{ENTRIES_PER_LOGPAGE};
+    my $emin = ( $page - 1 ) * $$cfg{ENTRIES_PER_LOGPAGE};
+    my $emax = $emin + $$cfg{ENTRIES_PER_LOGPAGE};
     my $entcount = 0;
 
     while($row = get_decoded_hashref($sth)) {
         $entcount++;
-        if($entcount>$emin and $entcount<=$emax) {
+        if( $entcount>$emin and $entcount<=$emax ) {
             $$row{rowtype} = @log % 2 + 1;
+            $$row{object2} = resolve_reflinks($$row{object2}, $$row{board});
             push @log,$row;
         }
     }
 
     # make the list of pages
-    my $totalCount = int( ( $entcount + ($$cfg{ENTRIES_PER_LOGPAGE}-1))/$$cfg{ENTRIES_PER_LOGPAGE} );
+    my $totalCount = int( ( $entcount + ($$cfg{ENTRIES_PER_LOGPAGE} - 1) ) / $$cfg{ENTRIES_PER_LOGPAGE} );
     $totalCount = 1 if ($sth and !$sth->rows);
+
     my @pages = map +{ page => $_ }, ( 1 .. $totalCount );
     foreach my $p (@pages) {
         $$p{filename} = 
-          get_script_name(). "?task=viewlog&amp;section=".$$cfg{SELFPATH}."&amp;page=" . $$p{page} . "&amp;filter=$filter";
+          get_script_name(). "?task=viewlog&amp;section=".$$cfg{SELFPATH}."&amp;page=" . $$p{page};
         if ( $$p{page} == $page ) { $$p{current} = 1 }   # current page, no link
     }
 
-    if($page <= 0 or $page > $totalCount) {
+    if( $page <= 0 or $page > $totalCount ) {
         make_error($$locale{S_INVALID_PAGE});
     }
 
     my ($prevpage,$nextpage);
-    $prevpage=$pages[$page-2]{filename} if($page!=1);
-    $nextpage=$pages[$page  ]{filename} if($page!=$totalCount);
+    $prevpage = $pages[$page-2]{filename} if( $page != 1);
+    $nextpage = $pages[$page  ]{filename} if( $page != $totalCount);
 
     $sth->finish;
 
@@ -3326,7 +3966,6 @@ sub make_view_log {
         pages => \@pages,
         prevpage => $prevpage,
         nextpage => $nextpage,
-        filter => $filter,
         stylesheets => get_stylesheets(),
         cfg => $cfg,
         locale => $locale
@@ -3347,15 +3986,41 @@ sub clear_log {
     else {
         $sth=$dbh->prepare("DELETE FROM ".$$cfg{SQL_LOG_TABLE}.";") or make_error($$locale{S_SQLFAIL});
     }
-    $sth->execute() or "";
+    $sth->execute() or '';
     $sth->finish;
     
     make_http_forward( get_script_name(). "?task=viewlog&amp;section=".$$cfg{SELFPATH} );
 }
 
+sub cleanup_log_database()
+{
+    return unless $$cfg{LOG_EXPIRE};
+    my $sth = $dbh->prepare("DELETE FROM " . $$cfg{SQL_LOG_TABLE} . " WHERE time < ?;");
+    $sth->execute(time - $$cfg{LOG_EXPIRE});
+    $sth->finish();
+}
+
 #
 # Page creation utils
 #
+
+sub expand_filename {
+    my ($filename, $force_http) = @_;
+
+    return $filename if ( $filename =~ m!^/! );
+    return $filename if ( $filename =~ m!^\w+:! );
+
+    my ($self_path) = $ENV{SCRIPT_NAME} =~ m!^(.*/)[^/]+$!;
+    $self_path = 'https://'.$ENV{SERVER_NAME}.$self_path if ($force_http);
+    return decode(CHARSET, $self_path) . $$cfg{SELFPATH} . '/' . $filename;
+}
+
+sub expand_image_filename {
+    my $filename = shift;
+
+    if ( $filename =~ m%^//${pomf_domain}% ) { return $filename; } # is file on an external server?
+    else { return expand_filename( clean_path($filename) ); }
+}
 
 sub make_http_header {
     my ($not_found) = @_;
@@ -3440,52 +4105,14 @@ sub get_secure_script_name {
     return $ENV{SCRIPT_NAME};
 }
 
-sub expand_filename {
-    my ($filename, $force_http) = @_;
-
-    return $filename if ( $filename =~ m!^/! );
-    return $filename if ( $filename =~ m!^\w+:! );
-
-    my ($self_path) = $ENV{SCRIPT_NAME} =~ m!^(.*/)[^/]+$!;
-    $self_path = 'https://'.$ENV{SERVER_NAME}.$self_path if ($force_http);
-    return decode(CHARSET, $self_path) . $$cfg{SELFPATH} . '/' . $filename;
-}
-
-sub expand_image_filename {
-    my $filename = shift;
-
-    if ( $filename =~ m%^//${pomf_domain}% ) { return $filename; } # is file on an external server?
-    else { return expand_filename( clean_path($filename) ); }
-}
-
-sub get_stylesheets {
-    my $found=0;
-    my @stylesheets=map
-    {
-        my %sheet;
-
-        $_=lc($_.".css");
-        $sheet{filename}=$_;
-
-        ($sheet{title})=m!([^/]+)\.css$!i;
-        $sheet{title}=ucfirst $sheet{title};
-        $sheet{title}=~s/_/ /g;
-        $sheet{title}=~s/ ([a-z])/ \u$1/g;
-        $sheet{title}=~s/([a-z])([A-Z])/$1 $2/g;
-
-        \%sheet;
-    } ( @{$$cfg{STYLESHEETS}} );
-
-    $stylesheets[0]{default}=1 if(@stylesheets and !$found);
-
-    return \@stylesheets;
-}
-
 sub get_reply_link {
-    my ( $reply, $parent, $force_http ) = @_;
+    my ( $reply, $parent, $force_http, $board ) = @_;
 
-    return expand_filename( "thread/" . $parent, $force_http ) . '#' . $reply if ($parent);
-    return expand_filename( "thread/" . $reply, $force_http );
+    $board =
+      ( $board and grep { $_ eq $board } @{$$cfg{BOARDS}} ) ? "/$board/" : "";
+
+    return expand_filename( $board . "thread/" . $parent, $force_http ) . '#' . $reply if ($parent);
+    return expand_filename( $board . "thread/" . $reply, $force_http );
 }
 
 sub get_page_count {
@@ -3542,6 +4169,37 @@ sub get_filetypes_table {
     return join("</tr><tr>\n", @rows) . "</tr>\n</table>";
 }
 
+sub get_stylesheets {
+    my $found=0;
+    my @stylesheets=map
+    {
+        my %sheet;
+
+        $_=lc($_.".css");
+        $sheet{filename}=$_;
+
+        ($sheet{title})=m!([^/]+)\.css$!i;
+        $sheet{title}=ucfirst $sheet{title};
+        $sheet{title}=~s/_/ /g;
+        $sheet{title}=~s/ ([a-z])/ \u$1/g;
+        $sheet{title}=~s/([a-z])([A-Z])/$1 $2/g;
+
+        \%sheet;
+    } ( @{$$cfg{STYLESHEETS}} );
+
+    $stylesheets[0]{default}=1 if(@stylesheets and !$found);
+
+    return \@stylesheets;
+}
+
+#
+# IP Utils
+#
+
+sub get_remote_addr {
+    return ($ENV{HTTP_CF_CONNECTING_IP} || $ENV{HTTP_X_REAL_IP} || $ENV{REMOTE_ADDR});
+}
+
 sub parse_range {
     my ( $ip, $mask ) = @_;
 
@@ -3562,10 +4220,6 @@ sub parse_range {
     return ( $ip, $mask );
 }
 
-sub get_remote_addr {
-    return ($ENV{HTTP_CF_CONNECTING_IP} || $ENV{HTTP_X_REAL_IP} || $ENV{REMOTE_ADDR});
-}
-
 #
 # Config loaders
 #
@@ -3579,6 +4233,7 @@ sub fetch_config
         $$settings{$board}{NOTFOUND} = 1;
     }
 
+    $$settings{$board}{BOARDS} = [ keys %$settings ];
     $$settings{$board}{SELFPATH} = $board;
 
     return $$settings{$board};
@@ -3596,7 +4251,7 @@ sub get_settings {
     }
     elsif ( $config =~ /locale_(ru|en|de)/ ) {
         my $lc = $1 ? $1 : 'en'; # fall back to english if shit happens
-        $file = "./lib/config/strings_$lc.pl";
+        $file = "./lib/strings/strings_$lc.pl";
     }
     else {
         $file = './lib/config/settings.pl';
@@ -3687,25 +4342,6 @@ sub init_files_database {
     $sth->execute() or make_error($$locale{S_SQLFAIL});
 }
 
-sub init_log_database {
-    my ($sth);
-    
-    $sth = $dbh->do("DROP TABLE ".$$cfg{SQL_LOG_TABLE}.";") if(table_exists($$cfg{SQL_LOG_TABLE}));
-    $sth = $dbh->prepare(
-        "CREATE TABLE ".$$cfg{SQL_LOG_TABLE}." (".
-        "num ".get_sql_autoincrement().",".
-        "user TEXT,".
-        "action TEXT,".
-        "object TEXT,".
-        "object2 TEXT,".
-        "board TEXT,".
-        "time INTEGER,".
-        "ip TEXT".  
-    ");"
-    ) or make_error($$locale{S_SQLFAIL});
-    $sth->execute() or make_error($$locale{S_SQLFAIL});
-}
-
 sub init_admin_database {
     my ($sth);
 
@@ -3728,6 +4364,98 @@ sub init_admin_database {
           "expires INTEGER" .         
 
           ");"
+    ) or make_error($$locale{S_SQLFAIL});
+    $sth->execute() or make_error($$locale{S_SQLFAIL});
+}
+
+sub init_backup_database {
+    my ($sth);
+
+    $sth = $dbh->do( "DROP TABLE " . $$cfg{SQL_BACKUP_TABLE} . ";" )
+      if ( table_exists($$cfg{SQL_BACKUP_TABLE}) );
+    $sth = $dbh->prepare(
+        "CREATE TABLE " . $$cfg{SQL_BACKUP_TABLE} . " (" .
+
+        "num " . get_sql_autoincrement() . "," . # Auto-increment
+        "postnum INTEGER," .    # Post num
+        "board_name VARCHAR(25) NOT NULL,". # Board name
+        "parent INTEGER," .     # Parent post for replies in threads. For original posts, must be set to 0 (and not null)
+        "timestamp INTEGER," .  # Timestamp in seconds for when the post was created
+        "lasthit INTEGER," .    # Last activity in thread. Must be set to the same value for BOTH the original post and all replies!
+
+        "ip TEXT," .            # IP number of poster, in integer form! Stored as text because IPv6 128 bit integers are not always supported.
+        "name TEXT," .          # Name of the poster
+        "trip TEXT," .          # Tripcode (encoded)
+        "email TEXT," .         # Email address
+        "subject TEXT," .       # Subject
+        "password TEXT," .      # Deletion password (in plaintext)
+        "comment TEXT," .       # Comment text, HTML encoded.
+
+        "banned INTEGER," .     # Timestamp when the post was banned
+        "autosage INTEGER," .   # Flag to indicate that thread is on bump limit
+        "adminpost INTEGER," .  # Post was made by a staff member
+        "admin_post INTEGER," . # Post was made by a staff member...
+        "locked INTEGER," .     # Thread is locked (applied to parent post only)
+        "sticky INTEGER," .     # Thread is sticky (applied to all posts of a thread)
+        "location TEXT," .      # Geo::IP information for the IP address if available
+        "secure TEXT," .        # Cipher information if posted using SSL connection
+        "timestampofarchival INTEGER,". # When was this backed up?
+        "INDEX parent(parent)" . # table index
+
+        ");"
+    ) or make_error($$locale{S_SQLFAIL});
+    $sth->execute() or make_error($$locale{S_SQLFAIL});
+}
+
+sub init_backup_files_database {
+    my ($sth);
+
+    $sth = $dbh->do( "DROP TABLE " . $$cfg{SQL_BACKUP_IMG_TABLE} . ";" )
+      if ( table_exists($$cfg{SQL_BACKUP_IMG_TABLE}) );
+    $sth = $dbh->prepare(
+        "CREATE TABLE " . $$cfg{SQL_BACKUP_IMG_TABLE} . " (" .
+
+        "num " . get_sql_autoincrement() . "," . # Primary key
+        "imgnum INTEGER," .
+        "board_name VARCHAR(25) NOT NULL,". # Board name
+        "thread INTEGER," .    # Thread ID / parent (num in comments table) of file's post
+                               # Reduces queries needed for thread output and thread deletion
+        "post INTEGER," .      # Post ID (num in comments table) where file belongs to
+        "image TEXT," .        # Image filename with path and extension (IE, src/1081231233721.jpg)
+        "size INTEGER," .      # File size in bytes
+        "md5 TEXT," .          # md5 sum in hex
+        "width INTEGER," .     # Width of image in pixels
+        "height INTEGER," .    # Height of image in pixels
+        "thumbnail TEXT," .    # Thumbnail filename with path and extension
+        "tn_width INTEGER," .  # Thumbnail width in pixels
+        "tn_height INTEGER," . # Thumbnail height in pixels
+        "uploadname TEXT," .   # Original filename supplied by the user agent
+        "info TEXT," .         # Short file information displayed in the post
+        "info_all TEXT," .      # Full file information displayed in the tooltip
+        "timestampofarchival INTEGER,". # When was this backed up?
+        "INDEX post(post)," .
+        "INDEX thread(thread)" .
+
+        ");"
+    ) or make_error($$locale{S_SQLFAIL});
+    $sth->execute() or make_error($$locale{S_SQLFAIL});
+}
+
+sub init_log_database {
+    my ($sth);
+    
+    $sth = $dbh->do("DROP TABLE ".$$cfg{SQL_LOG_TABLE}.";") if(table_exists($$cfg{SQL_LOG_TABLE}));
+    $sth = $dbh->prepare(
+        "CREATE TABLE ".$$cfg{SQL_LOG_TABLE}." (".
+        "num ".get_sql_autoincrement().",".
+        "user TEXT,".
+        "action TEXT,".
+        "object TEXT,".
+        "object2 TEXT,".
+        "board TEXT,".
+        "time INTEGER,".
+        "ip TEXT".  
+    ");"
     ) or make_error($$locale{S_SQLFAIL});
     $sth->execute() or make_error($$locale{S_SQLFAIL});
 }
@@ -3766,6 +4494,88 @@ sub get_sql_lastinsertid {
     return 'last_insert_rowid()' if(SQL_DBI_SOURCE=~/^DBI:SQLite2:/i);
 
     make_error($$locale{S_SQLCONF});
+}
+
+sub count_maxreplies {
+    my ($row, $images)=@_;
+
+    my $max_replies = $$cfg{REPLIES_PER_THREAD};
+    # in case of a locked thread use custom number of replies
+    if ( $$row{locked} ) {
+        $max_replies = $$cfg{REPLIES_PER_LOCKED_THREAD};
+    }
+
+    # in case of a sticky thread, use custom number of replies
+    # NOTE: has priority over locked thread
+    if ( $$row{sticky} ) {
+        $max_replies = $$cfg{REPLIES_PER_STICKY_THREAD};
+    }
+
+    return $max_replies;
+}
+
+sub count_threads {
+    my ($sth);
+
+    $sth = $dbh->prepare(
+          "SELECT count(`num`) FROM "
+          . $$cfg{SQL_TABLE}
+          . " WHERE parent=0;"
+        )
+      or make_error($$locale{S_SQLFAIL});
+    $sth->execute() or make_error($$locale{S_SQLFAIL});
+    my $return = ($sth->fetchrow_array())[0];
+    $sth->finish;
+
+    return $return;
+}
+
+sub count_posts {
+    my ($parent) = @_;
+    my ($sth, $count, $size, $files, $row);
+
+    if ($parent) {
+        $sth = $dbh->prepare(
+              "SELECT count(`num`) FROM "
+              . $$cfg{SQL_TABLE}
+              . " WHERE parent=? or num=?;"
+            ) or make_error($$locale{S_SQLFAIL});
+        $sth->bind_param(1, $parent);
+        $sth->bind_param(2, $parent);
+    } else {
+        $sth = $dbh->prepare(
+              "SELECT count(`num`) FROM "
+              . $$cfg{SQL_TABLE} . ";"
+            ) or make_error($$locale{S_SQLFAIL});
+    }
+    $sth->execute() or '';
+    $count = ($sth->fetchrow_array())[0];
+
+    if ($parent) {
+        $sth = $dbh->prepare(
+              "SELECT size, image FROM "
+              . $$cfg{SQL_TABLE_IMG}
+              . " WHERE thread=?;"
+            ) or make_error($$locale{S_SQLFAIL});
+        $sth->bind_param( 1, $parent );
+    } else {
+        $sth = $dbh->prepare(
+              "SELECT size, image FROM "
+              . $$cfg{SQL_TABLE_IMG} . ";"
+            ) or make_error($$locale{S_SQLFAIL});        
+    }
+    $sth->execute() or '';
+    while ( $row = $sth->fetchrow_arrayref() )
+    {
+        unless ( $$row[1] =~ m%^//${pomf_domain}% ) # file is on an external server
+        {
+            $size += $$row[0];
+        }
+        $files += 1;
+    }
+    $sth->finish;
+
+    return ($count, $size, $files);
 }
 
 sub trim_database {
@@ -3829,84 +4639,6 @@ sub table_exists {
     return 0 unless($sth->execute());
     $sth->finish;
     return 1;
-}
-
-sub count_maxreplies {
-    my ($row, $images)=@_;
-
-    my $max_replies = $$cfg{REPLIES_PER_THREAD};
-    # in case of a locked thread use custom number of replies
-    if ( $$row{locked} ) {
-        $max_replies = $$cfg{REPLIES_PER_LOCKED_THREAD};
-        # $max_images = ( $$cfg{IMAGE_REPLIES_PER_LOCKED_THREAD} or $images );
-    }
-
-    # in case of a sticky thread, use custom number of replies
-    # NOTE: has priority over locked thread
-    if ( $$row{sticky} ) {
-        $max_replies = $$cfg{REPLIES_PER_STICKY_THREAD};
-        # $max_images = ( $$cfg{IMAGE_REPLIES_PER_STICKY_THREAD} or $images );
-    }
-
-    return $max_replies;
-}
-
-sub count_threads {
-    my ($sth);
-
-    $sth =
-      $dbh->prepare( "SELECT count(`num`) FROM " . $$cfg{SQL_TABLE} . " WHERE parent=0;" )
-      or make_error($$locale{S_SQLFAIL});
-    $sth->execute() or make_error($$locale{S_SQLFAIL});
-    my $return = ($sth->fetchrow_array())[0];
-    $sth->finish;
-
-    return $return;
-}
-
-sub count_posts {
-    my ($parent) = @_;
-    my ($sth, $count, $size, $files, $row);
-
-    if ($parent) {
-        $sth = $dbh->prepare(
-            "SELECT count(`num`) FROM " . $$cfg{SQL_TABLE} . " WHERE parent=? or num=?;" )
-          or make_error($$locale{S_SQLFAIL});
-        $sth->bind_param(1, $parent);
-        $sth->bind_param(2, $parent);
-    }
-    else {
-        $sth = $dbh->prepare(
-            "SELECT count(`num`) FROM " . $$cfg{SQL_TABLE} . ";" )
-          or make_error($$locale{S_SQLFAIL});
-    }
-    $sth->execute() or "";
-    $count = ($sth->fetchrow_array())[0];
-
-    if ($parent) {
-        $sth = $dbh->prepare(
-            "SELECT size, image FROM " . $$cfg{SQL_TABLE_IMG} . " WHERE thread=?;" )
-        or make_error($$locale{S_SQLFAIL});
-        $sth->bind_param( 1, $parent );
-    }
-    else {
-        $sth = $dbh->prepare(
-            "SELECT size, image FROM " . $$cfg{SQL_TABLE_IMG} . ";" )
-        or make_error($$locale{S_SQLFAIL});        
-    }
-    $sth->execute() or "";
-    # $size = ($sth->fetchrow_array())[0];
-    while ( $row = $sth->fetchrow_arrayref() )
-    {
-        unless ( $$row[1] =~ m%^//${pomf_domain}% ) # file is on an external server
-        {
-            $size += $$row[0];
-        }
-        $files += 1;
-    }
-    $sth->finish;
-
-    return ($count, $size, $files);
 }
 
 sub thread_exists {

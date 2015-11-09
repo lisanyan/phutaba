@@ -6,6 +6,7 @@
 	[<a href="<var %self>?task=bans&amp;section=<var $$cfg{SELFPATH}>"><var $$locale{S_MANABANS}></a>]
 	<if $modclass eq "admin">
 	[<a href="<var %self>?task=orphans&amp;section=<var $$cfg{SELFPATH}>"><var $$locale{S_MANAORPH}></a>]
+	[<a href="<var %self>?task=postbackups&amp;section=<var $$cfg{SELFPATH}>"><var $$locale{S_MANABACKS}></a>]
 	[<a href="<var %self>?task=viewlog&amp;section=<var $$cfg{SELFPATH}>"><var $$locale{S_MANALOG}></a>]
 	</if>
 	[<a href="<var %self>?task=logout&amp;section=<var $$cfg{SELFPATH}>"><var $$locale{S_MANALOGOUT}></a>]

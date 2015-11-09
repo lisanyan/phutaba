@@ -119,7 +119,7 @@
 	<div class="header">
 		<div class="banner">
 			<a href="/<var $$cfg{SELFPATH}>/">
-				<if $$cfg{ENABLE_BANNERZ}><img src="/banner.pl?board=<var $$cfg{SELFPATH}>" alt="<var $$cfg{SELFPATH}>" /></if>
+				<if $$cfg{ENABLE_BANNERS}><img src="/banner.pl?board=<var $$cfg{SELFPATH}>" alt="<var $$cfg{SELFPATH}>" /></if>
 			</a>
 		</div>
 		<div class="boardname" <if $$cfg{BOARD_DESC}>style="margin-bottom: 5px;"</if>>/<var $$cfg{SELFPATH}>/ &ndash; <var $$cfg{BOARD_NAME}></div>
@@ -127,4 +127,4 @@
 	</div>
 </header>
 
-<if $postform or $locked><hr /></if>
+<if $postform or $admin or $locked><hr /></if>

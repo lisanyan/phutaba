@@ -1,11 +1,12 @@
 <include %TMPLDIR%head.tpl>
+
+<p style="text-align:center">
 [<a onclick="return areYouSure(this)" href="<var %self>?task=clearlog&amp;section=<var $$cfg{SELFPATH}>">Clear Log</a>]
 [<a onclick="return areYouSure(this)" href="<var %self>?task=clearlog&amp;clearall=1&amp;section=<var $$cfg{SELFPATH}>">Clear All</a>]
+<br />
+<if $$cfg{LOG_EXPIRE}><em>Wakaba is currently set to purge all logs older than <var ($$cfg{LOG_EXPIRE} / 24 / 3600)> day(s).</em></if>
+</p>
 
-<div style="text-align:center">
-<if $filter ne "off">[<a href="<var %self>?task=viewlog&amp;section=<var $$cfg{SELFPATH}>&amp;filter=off#tbl">Filter off</a>]</if>
-<if $filter eq "off">[<a href="<var %self>?task=viewlog&amp;section=<var $$cfg{SELFPATH}>#tbl">Filter on</a>]</if>
-</div>
 <a id="tbl"></a>
 <table align="center" style="white-space: nowrap; width: auto;">
 <thead>
@@ -29,16 +30,13 @@
 			<if $action=~/ipban$/>
 				<var $object>
 			</if>
-			<if $action =~ /post|file|sticky|lock|autosage/>
+			<if $action =~ /post|file|sticky|lock|autosage|backup/ or $action =~ /^removeadminentry|^editadminentry$/>
 				<if $object2>
-					<div id="post_<var $object>" class="hidden"><var $object2></div>
-					<span onmouseover="TagToTip('post_<var $object>', TITLE, '<var $$locale{S_POSTINFO}>', DELAY, 0, CLICKSTICKY, true, WIDTH, -450)" onmouseout="UnTip()">[No. <var $object>]</span>
+					<div id="obj_<var $object>" class="hidden"><var $object2></div>
+					<span onmouseover="TagToTip('obj_<var $object>', TITLE, '<var $$locale{S_POSTINFO}>', DELAY, 0, CLICKSTICKY, true, WIDTH, -450)" onmouseout="UnTip()">[No. <var $object>]</span>
 				</else/>
 					No.<var $object>
 				</if>
-			</if>
-			<if $action =~ /^removeadminentry|^editadminentry$/>
-				No.<var $object>
 			</if>
 		</td>
 		<td>/<var $board>/</td>

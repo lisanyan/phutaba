@@ -3,54 +3,55 @@ my (%settings, %boards);
 use utf8;
 
 # System config
-$settings{SQL_TABLE_IMG} = 'board_img';		# Table (NOT DATABASE) used by image board for secondary images
-$settings{SQL_TABLE} = 'board';				# Table (NOT DATABASE) used by image board
-$settings{SQL_ADMIN_TABLE} = 'admin';		# Table used for admin information
+$settings{SQL_TABLE_IMG} = 'board_img';		 # Table (NOT DATABASE) used by image board for secondary images
+$settings{SQL_TABLE} = 'board';				 # Table (NOT DATABASE) used by image board
+$settings{SQL_ADMIN_TABLE} = 'admin';		 # Table used for admin information
+$settings{SQL_BACKUP_TABLE} = 'waka_backup'; # Table used for backups
+$settings{SQL_BACKUP_IMG_TABLE} = 'waka_backup_img'; # Table used for image backups
 $settings{SQL_LOG_TABLE} = 'modlog';		# Table used for mod log
-$settings{BOARD_LOCALE} = 'locale_en';		# Locale used for board, currently available translations: (ru, en, de)
 $settings{BOARD_ENABLED} = 1;
-$settings{DISABLE_NEW_THREADS} = 0;
-$settings{ENABLE_WEBSOCKET_NOTIFY} = 0;
-$settings{ENABLE_HIDE_THREADS} = 1;
+$settings{BOARD_LOCALE} = 'locale_ru';		# Locale used for board, currently available translations: (ru, en, de)
+$settings{DISABLE_POSTING} = 0;
 $settings{ENABLE_AFMOD} = 1;
+$settings{ENABLE_HIDE_THREADS} = 1;
+$settings{ENABLE_POST_BACKUP} = 1;
+$settings{ENABLE_WEBSOCKET_NOTIFY} = 0;
 
 # Page look
-$settings{ADMIN_EMAIL} = 'admin@host.local';
-$settings{ENABLE_RSS} = 1;
-$settings{RSS_LENGTH} = 10;
-$settings{TITLE} = '02ch';	# Name of this image board
+$settings{TITLE} = 'Gay bar';	# Name of this image board
 $settings{BOARD_NAME} = 'Dildo dodo';
 $settings{BOARD_DESC} = 0;
+$settings{ENABLE_BANNERS} = 1;
 $settings{SHOWTITLETXT} = 1;				# Show TITLE at top (1: yes  0: no)
 $settings{SHOWTITLEIMG} = 0;				# Show image at top (0: no, 1: single, 2: rotating)
 $settings{TITLEIMG} = 'title.jpg';			# Title image (point to a script file if rotating)
-$settings{ENABLE_BANNERZ} = 1;
+$settings{FAVICON} = '';					# Favicon.ico file
+$settings{HOME} = '/'; 						# Site home directory (up one level by default)
 $settings{SSL_ICON} = ''; # '/img/icons/ssl.png';
-$settings{FAVICON} = '';			# Favicon.ico file
-$settings{HOME} = '/';					# Site home directory (up one level by default)
+$settings{SHOW_COUNTRIES} = 0;
 $settings{IMAGES_PER_PAGE} = 12;			# Images per page
 $settings{REPLIES_PER_THREAD} = 4;			# Replies shown
 $settings{IMAGE_REPLIES_PER_THREAD} = 0;	# Number of image replies per thread to show, set to 0 for no limit.
 $settings{REPLIES_PER_STICKY_THREAD} = 2; # Replies shown per sticky thread
-$settings{IMAGE_REPLIES_PER_STICKY_THREAD} = 0; # Number of image replies per sticky thread to show, set to 0 for no limit.
 $settings{REPLIES_PER_LOCKED_THREAD} = 1; # Replies shown per sticky thread
-$settings{IMAGE_REPLIES_PER_LOCKED_THREAD} = 0; # Number of image replies per sticky thread to show, set to 0 for no limit.
-$settings{ENTRIES_PER_LOGPAGE} = 50;			# Images per page
+$settings{ENTRIES_PER_LOGPAGE} = 50;
 $settings{S_ANONAME} = 'Аноним';			# Defines what to print if there is no text entered in the name field
 $settings{S_ANOTEXT} = '';					# Defines what to print if there is no text entered in the comment field
 $settings{S_ANOTITLE} = '';					# Defines what to print if there is no text entered into subject field
 $settings{SILLY_ANONYMOUS} = '';			# Make up silly names for anonymous people (0 or '': don't display, any combination of 'day' or 'board': make names change for each day or board, 'static': static names)
-$settings{SHOW_COUNTRIES} = 0;
 $settings{PREVENT_GHOST_BUMPING} = 1;
+$settings{ADMIN_EMAIL} = 'admin@host.local';
+$settings{ENABLE_RSS} = 1;
+$settings{RSS_LENGTH} = 10;
 
 # Limitations
-$settings{MAX_FILES} = 4;
+$settings{MAX_FILES} = 4;					# Maximum file uploads per post	
 $settings{MAX_KB} = 10240;					# Maximum upload size in KB
 $settings{MAX_W} = 200;						# Images exceeding this width will be thumbnailed
 $settings{MAX_H} = 200;						# Images exceeding this height will be thumbnailed
 $settings{MAX_RES} = 500;					# Maximum topic bumps
 $settings{MAX_POSTS} = 0;					# Maximum number of posts (set to 0 to disable)
-$settings{MAX_THREADS} = 500;					# Maximum number of threads (set to 0 to disable)
+$settings{MAX_THREADS} = 500;				# Maximum number of threads (set to 0 to disable)
 $settings{MAX_SHOWN_THREADS} = 120;
 $settings{MAX_SEARCH_RESULTS} = 200;
 $settings{MAX_AGE} = 0;						# Maximum age of a thread in hours (set to 0 to disable)
@@ -118,15 +119,45 @@ $settings{STYLE_COOKIE} = 'wakastyle';
 $settings{ADDITIONAL_CSS} = ''; # code
 $settings{ADDITIONAL_RULES} = '';
 $settings{ANONYMIZE_IP_ADDRESSES} = 0;
+$settings{LOG_EXPIRE} = 3600*24*31;
+$settings{POST_BACKUP_EXPIRE} = 3600*24*14;
 
 # Internal paths and files - might as well leave this alone.
 $settings{IMG_DIR} = 'src/';				# Image directory (needs to be writeable by the script)
 $settings{THUMB_DIR} = 'thumb/';			# Thumbnail directory (needs to be writeable by the script)
 $settings{RES_DIR} = 'res/';				# Reply cache directory (needs to be writeable by the script)
+$settings{BACKUP_DIR} = 'backup/';
 $settings{ORPH_DIR} = 'orphans/';
 $settings{REDIR_DIR} = 'redir/';			# Redir directory, used for redirecting clients when load balancing
 $settings{HTML_SELF} = 'wakaba.pl';
 $settings{JS_FILE} = 'wakaba.js';			# Location of the js file
+
+# More system settings
+$settings{CONVERT_COMMAND} = '/usr/bin/convert';
+$settings{VIDEO_CONVERT_COMMAND} = '/opt/ffmpeg/ffmpeg-10bit';
+$settings{BAN_DATES} = # Ban expiration options to be shown in the admin panel.
+[
+	{ label=>'Never', time=>0 },
+	{ label=>'1 hour', time=>3600 },
+	{ label=>'1 day', time=>3600*24 },
+	{ label=>'3 days', time=>3600*24*3, default=>1 },
+	{ label=>'1 week', time=>3600*24*7 },
+	{ label=>'2 weeks', time=>3600*24*14 },
+	{ label=>'1 month', time=>3600*24*30 },
+	{ label=>'1 year', time=>3600*24*365 }
+];
+$settings{ENABLE_DNSBL_CHECK} = 1;
+$settings{DNSBL_TIMEOUT} = '0.1';
+$settings{DNSBL_INFOS} =
+[
+	[ 'tor.dnsbl.sectoor.de', ['127.0.0.1'] ],
+	[ 'torexit.dan.me.uk', ['127.0.0.100'] ],
+	# [ 'b.barracudacentral.org', ['127.0.0.2'] ],
+	[ 'dnsbl.dronebl.org', ['127.0.0.1', '127.0.0.8', '127.0.0.9', '127.0.0.14'] ],
+	[ 'http.dnsbl.sorbs.net', ['127.0.0.2'] ],
+	[ 'socks.dnsbl.sorbs.net', ['127.0.0.3'] ],
+	# [ 'zen.spamhaus.org', ['127.0.0.2', '127.0.0.3', '127.0.0.4'] ],
+];
 
 # Icons for filetypes - file extensions specified here will not be renamed, and will get icons
 # (except for the built-in image formats). These example icons can be found in the extras/ directory.
@@ -159,31 +190,6 @@ $settings{FILEGROUPS} = {
 $settings{GROUPORDER} = 'image video archive audio doc other'; # other has to be last
 $settings{POMF_EXTENSIONS} = [qw(mp4 webm xz zip flac mp3 wav)];
 
-# More system settings
-$settings{CONVERT_COMMAND} = '/usr/bin/convert';
-$settings{VIDEO_CONVERT_COMMAND} = '/opt/ffmpeg/ffmpeg-10bit';
-$settings{BAN_DATES} = # Ban expiration options to be shown in the admin panel.
-	[
-		{ label=>'Never', time=>0 },
-		{ label=>'1 hour', time=>3600 },
-		{ label=>'1 day', time=>3600*24 },
-		{ label=>'3 days', time=>3600*24*3, default=>1 },
-		{ label=>'1 week', time=>3600*24*7 },
-		{ label=>'2 weeks', time=>3600*24*14 },
-		{ label=>'1 month', time=>3600*24*30 },
-		{ label=>'1 year', time=>3600*24*365 }
-	];
-$settings{ENABLE_DNSBL_CHECK} = 1;
-$settings{DNSBL_TIMEOUT} = '0.1';
-$settings{DNSBL_INFOS} =
-	[
-		[ 'tor.dnsbl.sectoor.de', ['127.0.0.1'] ],
-		[ 'torexit.dan.me.uk', ['127.0.0.100'] ],
-		# [ 'b.barracudacentral.org', ['127.0.0.2'] ],
-		[ 'dnsbl.dronebl.org', ['127.0.0.1', '127.0.0.8', '127.0.0.9', '127.0.0.14'] ],
-		# [ 'zen.spamhaus.org', ['127.0.0.2', '127.0.0.3', '127.0.0.4'] ],
-	];
-
 # board-specific config
 $boards{b} = { # sample
 	%settings,
@@ -207,4 +213,5 @@ $boards{d} = {
 	ALLOW_IMAGE_REPLIES => 0,
 	ALLOW_IMAGES => 0
 };
+
 \%boards;

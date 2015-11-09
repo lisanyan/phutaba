@@ -141,7 +141,7 @@ sub get_settings {
     }
     elsif ( $config =~ /locale_(ru|en|de)/ ) {
         my $lc = $1 ? $1 : 'en'; # fall back to english if shit happens
-        $file = "./lib/config/strings_$lc.pl";
+        $file = "./lib/strings/strings_$lc.pl";
     }
     else {
         $file = './lib/config/settings.pl';

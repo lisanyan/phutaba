@@ -5,6 +5,7 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1" />
 	<title><var $$cfg{TITLE}> &raquo; <var $error_page></title>
 	<link rel="stylesheet" type="text/css" href="/static/css/phutaba.css" />
+	<loop $stylesheets><link rel="alternate stylesheet" type="text/css" href="/static/css/<var lc($filename)>" title="<var $title>" /></loop>
 	<link rel="shortcut icon" type="image/x-icon" href="/img/favicon.ico" />
 	<link rel="icon" type="image/x-icon" href="/img/favicon.ico" />
 	<link rel="apple-touch-icon-precomposed" href="/img/favicon-152.png" />
@@ -29,7 +30,7 @@
 
 <header>
 	<div class="header">
-		<div class="banner"><a href="/"><if $$cfg{ENABLE_BANNERZ}><img src="/banner.pl" alt="" /></if></a></div>
+		<div class="banner"><a href="/"><if $$cfg{ENABLE_BANNERS}><img src="/banner.pl" alt="" /></if></a></div>
 		<div class="boardname"><var $$cfg{TITLE}></div>
 	</div>
 </header>
