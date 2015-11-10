@@ -401,7 +401,13 @@ while($query=CGI::Fast->new)
         my $capcode = $query->param("capcode");
         my $killtrip = $query->param("notrip");
         my $by_admin = $query->param("admin_post");
-        edit_post( $admin, $num, $name, $email, $subject, $comment, $capcode, $killtrip, $by_admin, $no_format);
+        my $nopomf = $query->param("nopomf");
+        my @files = $query->param("file");
+        edit_post(
+          $admin,     $num,       $name,    $email,
+          $subject,   $comment,   $capcode, $killtrip,
+          $by_admin,  $no_format, $nopomf,  @files
+        );
     }
     # ban editing
     elsif( $task eq "baneditwindow" ) {
@@ -2523,6 +2529,7 @@ sub delete_post {
         return $$locale{S_RENZOKU4}
           if ( $$row{timestamp} + $$cfg{RENZOKU4} >= time() and !$admin_del );
         return $$locale{S_LOCKED}
+        # remove this if you wanna use this wakaba in production... lol
           if ( $parent_post && $$parent_post{locked} and !$admin_del );
         return decode_string("Заебал удалять посты.", CHARSET)
           if (!$admin_del and $geoinfo[4] && $geoinfo[4] == 42610);
@@ -2696,15 +2703,20 @@ sub make_backup_posts_panel {
         
         $row = get_decoded_hashref($sth);
         add_images_to_row($row, 1);
+        $$row{comment} = resolve_reflinks($$row{comment});
         make_error("Thread not found in backup.") if !$row;
+
         my @thread;
         push @thread, $row;
         while ($row=get_decoded_hashref($sth))
         {
+            $$row{comment} = resolve_reflinks($$row{comment});
+            $$row{parent_alive} = thread_exists($$row{parent});
             add_images_to_row($row, 1);
             push @thread, $row;
         }
         push @threads,{posts => [@thread]};
+        $sth->finish();
         
         make_http_header();
         my $output = $tpl->backup_panel({
@@ -2736,7 +2748,6 @@ sub make_backup_posts_panel {
         $sth->execute($$cfg{SELFPATH}) or make_error($$locale{S_SQLFAIL});
 
         my $threadcount = ($sth->fetchrow_array)[0];
-        $sth->finish();
         
         # Handle page variable
         my $total = get_page_count($threadcount); 
@@ -2766,6 +2777,7 @@ sub make_backup_posts_panel {
         {
             add_images_to_row($row, 1);
             $$row{comment} = resolve_reflinks($$row{comment});
+            $$row{parent_alive} = thread_exists($$row{parent});
             my @thread = ($row);
 
             my ($curr_replies, $curr_images);
@@ -2801,6 +2813,7 @@ sub make_backup_posts_panel {
                 {
                     add_images_to_row($inner_row, 1);
                     $$inner_row{comment} = resolve_reflinks($$inner_row{comment});
+                    $$inner_row{parent_alive} = thread_exists($$inner_row{parent});
                     $curr_images +=  @{$$inner_row{files}} if (exists $$inner_row{files});
                     ++$curr_replies;
                     push @thread, $inner_row;
@@ -2853,12 +2866,13 @@ sub backup_stuff # Delete post or thread.
 {
     my $row = $_[0]; # First argument is post drug from database.
     my $affected_board = $_[1] || $$cfg{SELFPATH}; # Second (optional) argument is name of board.
-    
+    my $edit = $_[2];
+
     my $timestamp = time();
 
     backup_post($row,$affected_board, $timestamp);
     
-    if (!$$row{parent})
+    if (!$$row{parent} and !$edit)
     {
         # Bring up comment table for requested board.
         my $this_board;
@@ -2894,14 +2908,46 @@ sub backup_post # Delete single post.
     my $timestamp = $_[2] || time(); # Time the post was archived, for interface sorting and thread deletion.
 
     my $sth; # Database variable.
-    
+
+    my $this_board;
+    if ($affected_board ne $$cfg{SELFPATH})
+    {
+        $this_board = fetch_config($affected_board)
+            or return "Post was not backed up, board resolution failed.";
+    }
+    else
+    {
+        $this_board = $cfg;
+    }
+
     # If post has already been backed up, delete any extraneous copies.
     $sth=$dbh->prepare("DELETE FROM ".$$cfg{SQL_BACKUP_TABLE}." WHERE board_name=? AND postnum=?;") or return $$locale{S_SQLFAIL};
     $sth->execute($affected_board,$$row{num}) or return $$locale{S_SQLFAIL};
 
-    # If images have already been backed up, delete any extraneous copies.
-    $sth=$dbh->prepare("DELETE FROM ".$$cfg{SQL_BACKUP_IMG_TABLE}." WHERE board_name=? AND post=?;") or return $$locale{S_SQLFAIL};
+    $sth=$dbh->prepare("SELECT * FROM ".$$cfg{SQL_BACKUP_IMG_TABLE}." WHERE board_name=? AND post=?;") or return $$locale{S_SQLFAIL};
     $sth->execute($affected_board,$$row{num}) or return $$locale{S_SQLFAIL};
+
+    # If images have already been backed up, delete any extraneous copies.
+    my $delete = $dbh->prepare(
+        "DELETE FROM " . $$cfg{SQL_BACKUP_IMG_TABLE} . " WHERE post=?;" )
+      or return $$locale{S_SQLFAIL};
+
+    my $img_dir = $$this_board{IMG_DIR};
+    my $thumb_dir = $$this_board{THUMB_DIR};
+    while ( my $res = $sth->fetchrow_hashref() ) {
+        # delete images if they exist
+        my $base_filename = $$res{image};
+        my $base_thumbnail = $$res{thumbnail};
+        $base_filename =~ s!^.*[\\/]!!;
+        $base_thumbnail =~ s!^.*[\\/]!!;
+
+        unlink $$this_board{SELFPATH} . '/' . $$this_board{ORPH_DIR} . $$this_board{BACKUP_DIR} . $base_filename;
+        unlink $$this_board{SELFPATH} . '/' . $$this_board{ORPH_DIR} . $$this_board{BACKUP_DIR} . $base_thumbnail
+          if ($$res{thumbnail} =~ /^$thumb_dir/);
+    }
+
+    # Delete entries from table
+    $delete->execute( $$row{num} ) or return $$locale{S_SQLFAIL};
 
     # Backup post.
     $sth=$dbh->prepare(
@@ -2917,7 +2963,6 @@ sub backup_post # Delete single post.
             $$row{autosage},  $$row{adminpost}, $$row{admin_post}, $$row{locked},
             $$row{sticky},    $$row{location},  $$row{secure},     $timestamp
         ) or return $$locale{S_SQLFAIL};
-    $sth->finish();
 
     $sth = $dbh->prepare(
           "SELECT * FROM "
@@ -2932,17 +2977,6 @@ sub backup_post # Delete single post.
           . " VALUES(null,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);"
         ) or return $$locale{S_SQLFAIL};
 
-    my $this_board;
-    if ($affected_board ne $$cfg{SELFPATH})
-    {
-        $this_board = fetch_config($affected_board)
-            or return "Post ".$affected_board.",".$$row{num}." backed up, but board resolution failed.";
-    }
-    else
-    {
-        $this_board = $cfg;
-    }
-
     while (my $res = get_decoded_hashref($sth))
     {
         $sth2->execute(
@@ -2952,9 +2986,8 @@ sub backup_post # Delete single post.
         ) or return $$locale{S_SQLFAIL};
 
         my $base_filename = $$res{image};
-        $base_filename =~ s!^.*[\\/]!!;           # cut off any directory in filename
-
         my $base_thumbnail = $$res{thumbnail};
+        $base_filename =~ s!^.*[\\/]!!;           # cut off any directory in filename
         $base_thumbnail =~ s!^.*[\\/]!!;    # Do the same for the thumbnail.
         
         # Move image.
@@ -2962,18 +2995,14 @@ sub backup_post # Delete single post.
               $$this_board{SELFPATH} . '/' . $$res{image},
               $$this_board{SELFPATH} . '/' . $$this_board{ORPH_DIR} . $$this_board{BACKUP_DIR} . $base_filename
             )  and chmod 0644, $$this_board{SELFPATH} . '/' . $$this_board{BACKUP_DIR} . $base_filename
-            if ( -e $$this_board{SELFPATH} . '/' . $$res{image} );
+          if ( -e $$this_board{SELFPATH} . '/' . $$res{image} );
 
         # Move thumbnail.
-        my $thumb_dir = $$this_board{THUMB_DIR};
-        if (  $$res{thumbnail} =~ /^$thumb_dir/ )
-        {
-            copy(
-                $$this_board{SELFPATH} . '/' . $$res{thumbnail},
-                $$this_board{SELFPATH} . '/' . $$this_board{ORPH_DIR} . $$this_board{BACKUP_DIR} . $base_thumbnail
-            ) and chmod 0644, $$this_board{BACKUP_DIR} . $base_thumbnail
-            if ( -e $$this_board{SELFPATH} . '/' . $$res{thumbnail} );
-        }
+        copy(
+            $$this_board{SELFPATH} . '/' . $$res{thumbnail},
+            $$this_board{SELFPATH} . '/' . $$this_board{ORPH_DIR} . $$this_board{BACKUP_DIR} . $base_thumbnail
+        ) and chmod 0644, $$this_board{BACKUP_DIR} . $base_thumbnail
+          if ( $$res{thumbnail} =~ /^$thumb_dir/ && -e $$this_board{SELFPATH} . '/' . $$res{thumbnail} );
     }
 
     $sth2->finish() if $sth2;
@@ -3024,14 +3053,16 @@ sub restore_post_or_thread {
     $sth=$dbh->prepare("SELECT * FROM ".$$cfg{SQL_BACKUP_TABLE}." WHERE board_name=? AND postnum=?;") or return $$locale{S_SQLFAIL};
     $sth->execute($board_name,$num) or return $$locale{S_SQLFAIL};
     my $row = $sth->fetchrow_hashref();
-    $sth->finish();
-    
+
     return "Post restoration failed: Backup of post in $board_name with original ID $num not found." if (!$row);
 
     # Delete original post, if applicable.
     $sth=$dbh->prepare("DELETE FROM ".$$this_board{SQL_TABLE}." WHERE num=?;") or return $$locale{S_SQLFAIL};
-    $sth->execute($num) or return $$locale{S_SQLFAIL};
-    $sth->finish();
+    $sth->execute($$row{postnum}) or return $$locale{S_SQLFAIL};
+
+    # Delete op images, if applicable.
+    $sth=$dbh->prepare("DELETE FROM ".$$this_board{SQL_TABLE_IMG}." WHERE post=?;") or return $$locale{S_SQLFAIL};
+    $sth->execute($$row{postnum}) or return $$locale{S_SQLFAIL};
 
     # Check if post belongs to thread and thread is deleted. We cannot bring back a single post from a neutered thread.
     if ($$row{parent})
@@ -3040,8 +3071,6 @@ sub restore_post_or_thread {
 
         ($updated_lasthit, $stickied_thread, $locked_thread, $autosage_on) =
             ($$parent_row{lasthit}, $$parent_row{stickied}, $$parent_row{locked}, $$parent_row{autosage});
-
-        $sth->finish();
 
         if (!$updated_lasthit)
         {
@@ -3079,6 +3108,8 @@ sub restore_post_or_thread {
         "INSERT INTO " . $$cfg{SQL_TABLE_IMG} . " VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?);"
         ) or return $$locale{S_SQLFAIL};
 
+    my $thumb_dir = $$this_board{THUMB_DIR};
+    my $img_dir = $$this_board{IMG_DIR};
     while ($res = get_decoded_hashref($sth))
     {
         $sth2->execute(
@@ -3088,37 +3119,32 @@ sub restore_post_or_thread {
         ) or return $$locale{S_SQLFAIL};
 
         my $base_filename = $$res{image};
+        my $base_thumbnail = $$res{thumbnail};
         $base_filename =~ s!^.*[\\/]!!; # cut off any directory in filename
+        $base_thumbnail =~ s!^.*[\\/]!!; # do the same for thumbnail
+
         rename (
                   $$this_board{SELFPATH} . '/' . $$this_board{ORPH_DIR} . $$this_board{BACKUP_DIR} . $base_filename, 
                   $$this_board{SELFPATH} . '/' . $$res{image}
                ) and chmod 0644, $$this_board{SELFPATH}.'/'.$$res{image}
-            if ( -e $$this_board{SELFPATH} . '/' . $$this_board{ORPH_DIR} . $$this_board{BACKUP_DIR} . $base_filename );
+          if ( -e $$this_board{SELFPATH} . '/' . $$this_board{ORPH_DIR} . $$this_board{BACKUP_DIR} . $base_filename );
 
         # Move thumbnail, if applicable.
-        my $thumb_dir = $$this_board{THUMB_DIR};
-        if ($$res{thumbnail} =~ /^$thumb_dir/)
-        {
-            $base_filename = $$res{thumbnail};
-            $base_filename =~ s!^.*[\\/]!!; # cut off any directory in filename
-            rename (
-                    $$this_board{SELFPATH} . '/' . $$this_board{ORPH_DIR} . $$this_board{BACKUP_DIR} . $base_filename,
-                    $$this_board{SELFPATH} . '/' . $$res{thumbnail}
-                   ) and chmod 0644, $$this_board{SELFPATH} . '/' . $$res{thumbnail}
-              if ( -e $$this_board{SELFPATH} . '/' . $$this_board{ORPH_DIR} . $$this_board{BACKUP_DIR} . $base_filename );
-        }
+        rename (
+                $$this_board{SELFPATH} . '/' . $$this_board{ORPH_DIR} . $$this_board{BACKUP_DIR} . $base_thumbnail,
+                $$this_board{SELFPATH} . '/' . $$res{thumbnail}
+               ) and chmod 0644, $$this_board{SELFPATH} . '/' . $$res{thumbnail}
+          if ( $$res{thumbnail} =~ /^$thumb_dir/ && -e $$this_board{SELFPATH} . '/' . $$this_board{ORPH_DIR} . $$this_board{BACKUP_DIR} . $base_thumbnail );
     }
     $sth2->finish() if $sth2;
 
     # Delete backup.
     $sth=$dbh->prepare("DELETE FROM ".$$cfg{SQL_BACKUP_TABLE}." WHERE postnum=? AND board_name=?");
     $sth->execute($$row{postnum},$board_name);
-    $sth->finish();
 
     # Delete images
     $sth=$dbh->prepare("DELETE FROM ".$$cfg{SQL_BACKUP_IMG_TABLE}." WHERE post=? AND board_name=?");
     $sth->execute($$row{postnum}, $board_name);
-    $sth->finish();
 
     # If thread is being restored, make sure that all posts backed up *prior* to thread backup is restored. We can base this decision on lasthit. The thread is to be restored as it was prior to deletion.
     if (!$$row{parent})
@@ -3127,13 +3153,12 @@ sub restore_post_or_thread {
         $sth->execute($$row{num},$$row{postnum});
         
         # Add recursive instance code variable to prevent excessive caching/redirects.
-        while (my $res=$sth->fetchrow_hashref())
+        while (my $res = $sth->fetchrow_hashref())
         {
             restore_post_or_thread($$res{postnum}, $$this_board{SELFPATH}, 1);
         }
-        
-        $sth->finish();
     }
+    $sth->finish() if $sth;
 
     # Rebuild relevant caches.
     if (!$recursive_instance)
@@ -3199,9 +3224,9 @@ sub remove_backup {
             unlink $$this_board{SELFPATH} . '/' . $$this_board{ORPH_DIR} . $$this_board{BACKUP_DIR} . $base_thumbnail
               if ($$res{thumbnail} =~ /^$thumb/);
 
-            # Delete entries from table
-            $delete->execute( $$res{post} ) or return $$locale{S_SQLFAIL};
         }
+        # Delete entries from table
+        $delete->execute( $id ) or return $$locale{S_SQLFAIL};
     }
 
     # Delete post data.
@@ -3647,7 +3672,6 @@ sub remove_admin_entry {
       or make_error($$locale{S_SQLFAIL});
     $sth->execute($num) or make_error($$locale{S_SQLFAIL});
     my $row = get_decoded_hashref($sth);
-    $sth->finish();
 
     my $obj;
     $obj = dec_to_dot($$row{ival1}) . " /" . get_mask_len($$row{ival2})
@@ -3809,9 +3833,9 @@ sub make_edit_post_panel {
 }
 
 sub edit_post {
-    my ( $admin,   $num,      $name,    $email,
-         $subject, $comment,  $capcode, $killtrip,
-         $byadmin, $no_format
+    my ( $admin,   $num,       $name,    $email,
+         $subject, $comment,   $capcode, $killtrip,
+         $byadmin, $no_format, $no_pomf, @files
     ) = @_;
     my ($sth, $postfix);
 
@@ -3822,8 +3846,10 @@ sub edit_post {
     my $adminpost  = $capcode ? 1 : undef;
     my $admin_post = $byadmin ? 1 : 0;
     my $ip = get_remote_addr();
+    my $file = $files[0]; # file count
+    my $time = time;
 
-    backup_stuff($post) if ($$cfg{ENABLE_POST_BACKUP});
+    backup_stuff($post, 0, 1) if ($$cfg{ENABLE_POST_BACKUP});
 
     make_error($$locale{S_UNUSUAL}) if( $name =~/[\n\r]/ );
     make_error($$locale{S_UNUSUAL}) if( $email =~/[\n\r]/ );
@@ -3832,6 +3858,16 @@ sub edit_post {
     make_error($$locale{S_TOOLONG}) if( length($email) > $$cfg{MAX_FIELD_LENGTH} );
     make_error($$locale{S_TOOLONG}) if( length($subject) > $$cfg{MAX_FIELD_LENGTH} );
     make_error($$locale{S_TOOLONG}) if( length($comment) > $$cfg{MAX_COMMENT_LENGTH} );
+
+    # get file size, and check for limitations.
+    my (@size, @file_errors);
+    for (my $i = 0; $i < $$cfg{MAX_FILES}; $i++) {
+        ($size[$i], @file_errors[$i]) = get_file_size($files[$i], $no_pomf) if ($files[$i]);
+    }
+    if( grep { defined($_) } @file_errors ) {
+        my $errstr = "<span class=\"prewrap\">" . join "\n" . "</span>", @file_errors;
+        make_error($errstr);
+    }
 
     # clean inputs
     $email   = clean_string( decode_string( $email, CHARSET ) );
@@ -3851,6 +3887,7 @@ sub edit_post {
         $trip = '';
     }
 
+    $name = make_anonymous( $ip, time() ) unless $name or $trip;
     # fix up the email/link
     $email = "mailto:$email" if $email and $email !~ /^$protocol_re:/;
 
@@ -3860,7 +3897,60 @@ sub edit_post {
         unless $no_format;
     $comment.=$postfix;
 
-    $name = make_anonymous( $ip, time() ) unless $name or $trip;
+    # copy file, do checksums, make thumbnail, etc
+    my (@filename, @md5, @width, @height, @thumbnail, @tn_width, @tn_height, @info, @info_all, @uploadname);
+    foreach (my $i = 0; $i < $$cfg{MAX_FILES}; $i++) {
+        if ($files[$i]) {
+            # TODO: replace by $time when open_unique works
+            my $file_ts = time() . sprintf("-%03d", int(rand(1000)));
+            $file_ts = $time unless ($i);
+
+            ($filename[$i], $md5[$i], $width[$i], $height[$i],
+                $thumbnail[$i], $tn_width[$i], $tn_height[$i],
+                $info[$i], $info_all[$i], $uploadname[$i])
+                = process_file($files[$i], $files[$i], $file_ts, $no_pomf);
+        }
+    }
+
+    # insert file information into database
+    if ($file) {
+        eval {
+            $dbh->begin_work();
+
+            # remove files from comment and possible replies
+            $sth = $dbh->prepare(
+                    "SELECT image,thumbnail FROM " . $$cfg{SQL_TABLE_IMG} . " WHERE post=?" )
+              or return $$locale{S_SQLFAIL};
+            $sth->execute( $num ) or return $$locale{S_SQLFAIL};
+
+            my $thumb = $$cfg{THUMB_DIR};
+            while ( my $res = $sth->fetchrow_hashref() ) {
+                # delete images if they exist
+                unlink $$cfg{SELFPATH}.'/'.$$res{image};
+                unlink $$cfg{SELFPATH}.'/'.$$res{thumbnail} if ( $$res{thumbnail} =~ /^$thumb/ );
+            }
+
+            # We need to delete images here or crap like 4 same images in post will happen..
+            $sth = $dbh->prepare("DELETE FROM " . $$cfg{SQL_TABLE_IMG} . " WHERE post=?;" )
+                or make_error($$cfg{S_SQLFAIL});
+            $sth->execute($num);
+            $sth->finish();
+
+            $sth = $dbh->prepare("INSERT INTO " . $$cfg{SQL_TABLE_IMG} . " VALUES(null,?,?,?,?,?,?,?,?,?,?,?,?,?);" )
+                or make_error($$cfg{S_SQLFAIL});
+    
+            foreach (my $i = 0; $i < $$cfg{MAX_FILES}; $i++) {
+                ($sth->execute(
+                    $$post{parent}, $num, $filename[$i], $size[$i], $md5[$i], $width[$i], $height[$i],
+                    $thumbnail[$i], $tn_width[$i], $tn_height[$i], $uploadname[$i], $info[$i], $info_all[$i]
+                ) or make_error($$cfg{S_SQLFAIL})) if ($files[$i]);
+            }
+        };
+        if ($@) {
+            eval { $dbh->rollback() };
+            make_error($$locale{S_SQLFAIL});
+        }
+    }
 
     # finally, update
     $sth = $dbh->prepare(
@@ -4628,7 +4718,7 @@ sub trim_database {
         }
         else { last; }    # shouldn't happen
     }
-    $sth->finish() if($sth);
+    $sth->finish() if $sth;
 }
 
 sub table_exists {
