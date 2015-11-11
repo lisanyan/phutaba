@@ -348,14 +348,17 @@ function set_stylesheet(styletitle,target)
 
 	var links = target ? target.document.getElementsByTagName("link") : document.getElementsByTagName("link");
 	var found=false;
+
 	for(var i=0;i<links.length;i++)
 	{
 		var rel=links[i].getAttribute("rel");
 		var title=links[i].getAttribute("title");
-		if(rel.indexOf("style")!=-1&&title)
+		if(rel.indexOf("style")>=0&&title)
 		{
 			links[i].disabled=true; // IE needs this to work. IE needs to die.
 			if(styletitle==title) { links[i].disabled=false; found=true; }
+			// ugly hack
+			if(styletitle===null) { links[i].disabled=true; found=true}
 		}
 	}
 	if(!found)
@@ -372,7 +375,7 @@ function set_preferred_stylesheet(target)
 	{
 		var rel=links[i].getAttribute("rel");
 		var title=links[i].getAttribute("title");
-		if(rel.indexOf("style")!=-1&&title) links[i].disabled=(rel.indexOf("alt")!=-1);
+		if(rel.indexOf("style")>=0&&title) links[i].disabled=(rel.indexOf("alt")>=0);
 	}
 }
 
@@ -383,7 +386,7 @@ function get_active_stylesheet()
 	{
 		var rel=links[i].getAttribute("rel");
 		var title=links[i].getAttribute("title");
-		if(rel.indexOf("style")!=-1&&title&&!links[i].disabled) return title;
+		if(rel.indexOf("style")>=0&&title&&!links[i].disabled) return title;
 	}
 	return null;
 }

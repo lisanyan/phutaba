@@ -41,7 +41,7 @@
         No. <var $postnum>
 	</span>
 
-	<if !$parent || $standalone>
+	<if !$parent>
 		<if $sticky><span class="sticky"><img src="/img/icons/pin.png" onmouseover="Tip('<var $$locale{S_STICKYTITLE}>')" onmouseout="UnTip()" alt="Pin" /></span></if>
 		<if $locked><span class="locked"><img src="/img/icons/locked.png" onmouseover="Tip('<var $$locale{S_LOCKEDTITLE}>')" onmouseout="UnTip()" alt="Lock" /></span></if>
 		<if !$autosage><if $email><span class="sage"><var $$locale{S_SAGE}></span></if></if>
@@ -52,7 +52,7 @@
 		<if $email><span class="sage"><var $$locale{S_SAGE}></span></if>
 	</if>
 
-	<if $standalone><span><em>(Orphaned From Parent: <a href="<var Wakaba::get_reply_link($parent)>"><var $parent></a> )</em></span></if>
+	<if $standalone><span><em>(Orphaned From Parent: <if $parent_alive or !$parent><a href="<var Wakaba::get_reply_link($parent)>"><var $parent></a></else/><var $parent></if> )</em></span></if>
 	<if !$parent && !%thread>
 		<span class="replylink">[<a href="<var $self>?task=postbackups&amp;section=<var $$cfg{SELFPATH}>&amp;page=t<var $postnum>">View</a>]</span>
 	</if>
@@ -64,9 +64,9 @@
 		<span onmouseover="TagToTip('postinfo_<var $postnum>', TITLE, '<var $$locale{S_POSTINFO}>', DELAY, 0, CLICKSTICKY, true, WIDTH, -450)" onmouseout="UnTip()">[<var Wakaba::dec_to_dot($ip)>]</span>
 		</if>
 		<!-- buttons here -->
-		<span onmouseover="Tip('<var $$locale{S_MPDELETE}>')" onmouseout="UnTip()"><a onclick="return areYouSure(this)" href="<var %self>?task=restorebackups&amp;num=<var $num>&amp;handle=delete&amp;section=<var $$cfg{SELFPATH}>"><img src="/img/icons/delete.png"></a></span>
-		<if !$parent || $standalone>
-			<span onmouseover="Tip('<var $$locale{S_MPRESTORE}>')" onmouseout="UnTip()"><a onclick="return areYouSure(this)" href="<var %self>?task=restorebackups&amp;num=<var $num>&amp;handle=restore&amp;section=<var $$cfg{SELFPATH}>"><img src="/img/icons/expand.png"></a></span>
+		<span onmouseover="Tip('<var $$locale{S_MPDELETE}>')" onmouseout="UnTip()"><a onclick="return areYouSure(this)" href="<var %self>?task=restorebackups&amp;num=<var $postnum>&amp;handle=delete&amp;section=<var $$cfg{SELFPATH}>"><img src="/img/icons/delete.png"></a></span>
+		<if $parent_alive or $standalone or !$parent>
+			<span onmouseover="Tip('<var $$locale{S_MPRESTORE}>')" onmouseout="UnTip()"><a onclick="return areYouSure(this)" href="<var %self>?task=restorebackups&amp;num=<var $postnum>&amp;handle=restore&amp;section=<var $$cfg{SELFPATH}>"><img src="/img/icons/expand.png"></a></span>
 		</if>
 	</if>
 
@@ -91,7 +91,7 @@
 		<hr />
 		<var Wakaba::get_pretty_html($info_all, "\n\t\t")>
 	</div>
-	<div class="filename"><var $$locale{S_PICNAME}><a target="_blank" title="<var Wakaba::clean_string($uploadname)>" href="<var Wakaba::expand_image_filename($image)><if $image!~/^\/\/a\.pomf/>/<var Wakaba::get_urlstring(Wakaba::clean_string($uploadname))></if>"><var Wakaba::clean_string($displayname)></a></div>
+	<div class="filename"><var $$locale{S_PICNAME}><a target="_blank" title="<var Wakaba::clean_string($uploadname)>" href="<var Wakaba::expand_image_filename($image)><if $image !~ /^\/\/$pomf_domain/>/<var Wakaba::get_urlstring(Wakaba::clean_string($uploadname))></if>"><var Wakaba::clean_string($displayname)></a></div>
 	<div class="filesize"><var Wakaba::get_displaysize($size, $$cfg{DECIMAL_MARK})><if $width && $height>, <var $width>&nbsp;&times;&nbsp;<var $height></if><if $info>, <var $info></if></div>
 	<if $thumbnail>
 		<div class="filelink" id="exlink-<var Wakaba::md5_hex($image)>">

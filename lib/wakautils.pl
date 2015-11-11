@@ -450,29 +450,24 @@ sub describe_allowed {
     } sort keys %tags;
 }
 
-sub do_math {
-    my ($handler, $text) = @_;
+sub do_dices {
+    my ($text, $handler) = @_;
     eval 'use Math::NumberCruncher';
     unless($@) {
         my $math = Math::NumberCruncher->new;
-        my $return;
-        if( $text =~ /(\d+?)d(\d+?)(\+\d+)?$/g )
+        my $result;
+        while( $text =~ /\[(\d+?)d(\d+?)(\+\d+)?\]/g )
         {
-            $return  = "[$text] = ";
-            $return .= $math->Dice($1, $2, $3);
+            $result =  $math->Dice($1, $2, $3);
+            $text   =~ s/\[(\d+?)d(\d+?)(\+\d+)?\]/<span class="math">$1d$2$3 = $result<\/span> /;
         }
-        elsif ( $text =~ m%rand\(([\d-]+?)&#44;([\d-]+?)\)$%g )
+        while ( $text =~ /\[rand\(([\d-]+?)&#44;([\d-]+?)\)\]/g )
         {
-            $return  = "[$text] = ";
-            $return .= $math->RandInt($1,$2);
+            $result =  $math->RandInt($1,$2);
+            $text   =~ s/\[rand\(([\d-]+?)&#44;([\d-]+?)\)\]/<span class="math">rand\($1&#44;$2\) = $result<\/span> /;
         }
-        else
-        {
-            return;
-        }
-
-        return $return;
     }
+    return $text;
 }
 
 sub do_bbcode {
@@ -489,8 +484,7 @@ sub do_bbcode {
         'sub'       => ['<sub>', '</sub>'],
         'spoiler'   => ['<span class="spoiler">', '</span>'],
         'buttsex'   => ['<span class="redtext">', '</span>'],
-        'quote'     => ['<span class="unkfunc">', '</span>'],
-        'math'      => ['<span class="math">','</span>']
+        'quote'     => ['<span class="unkfunc">', '</span>']
     );
 
     my @bbtags = keys %html;
@@ -504,7 +498,6 @@ sub do_bbcode {
 
     while (@lines)
     {
-
         # do not allow more than one consecutive empty line
         while ( $lines[0] =~ m/^\s*$/ and $lines[1] =~ m/^\s*$/ ) { shift @lines; }
 
@@ -533,11 +526,6 @@ sub do_bbcode {
             # if the tag is unknown or not properly nested, it will be added back to the output
             $insert = '[' . $closing . $tag . ']' if ( $tag );
             $closetags = '';
-
-            if( $opentags[$#opentags] eq 'math' )
-            {
-                $textpart = do_math($handler, $textpart);
-            }
 
             if ( grep {$_ eq $tag} @bbtags ) # check for a known tag
             {
@@ -574,11 +562,6 @@ sub do_bbcode {
             if ( $opentags[$#opentags] ne 'code' )
             {
                 $textend = do_spans( $handler, $textend );
-            }
-
-            if( $opentags[$#opentags] eq 'math' )
-            {
-                $textend = do_math($handler, $textend);
             }
 
             $output .= $textpart . $closetags . $insert . $textend;

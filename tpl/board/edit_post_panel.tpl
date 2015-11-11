@@ -19,6 +19,16 @@
 <input type="submit" value="<var $$locale{S_SUBMIT}>" /></td></tr>
 <tr><td class="postblock"><var $$locale{S_COMMENT}></td>
 <td><textarea name="field4" cols="48" rows="6"><if $noformat><var $comment></else/><var Wakaba::tag_killa($comment)></if></textarea></td></tr>
+<!-- files -->
+<tr id="fileUploadField"><td class="postblock"><var $$locale{S_UPLOADFILE}> (max. <var $$cfg{MAX_FILES}>)</td>
+<td id="fileInput"><div><input type="file" name="file" onchange="file_input_change(<var $$cfg{MAX_FILES}>)" /></div>
+</td></tr>
+<if scalar @{$$cfg{POMF_EXTENSIONS}}>
+	<tr><td class="postblock"><label for="nopomf"><var $$locale{S_NOPOMF}></label></td>
+	<td><label><input type="checkbox" name="no_pomf" value="on" id="nopomf" /> <var $$locale{S_NOPOMFDESC}></label></td>
+	</tr>
+</if>
+<!-- files -->
 <tr><td class="postblock"><var $$locale{S_OPTIONS}></td><td>
 <label><input type="checkbox" name="capcode" value="on" <if $adminpost>checked="checked"</if> /> ## Team ## </label>
 |<label><input type="checkbox" name="admin_post" value="on" <if $admin_post>checked="checked"</if> /> Admin post </label>
