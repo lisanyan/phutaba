@@ -5,7 +5,7 @@ function highlight() {
 
 // WARNING!! Shitty code!
 (function(){
-var isWindowFocused = true, newPosts = 0, UpdaterTimer, old_t;
+var error = false, isWindowFocused = true, newPosts = 0, UpdaterTimer, old_t;
 var origBtn, updBtn = $j('#updater');
 var perdelki = Settings.get('context');
 
@@ -22,7 +22,8 @@ var consts = {
 	load: "Loading...",
 	replies: "Replies: ",
 	reply: "Replying to thread №",
-	done: "Success"
+	done: "Success",
+	err: "Error updating thread, try again."
   },
   ru: {
 	newPostsNotFound: "Нет новых постов.",
@@ -32,7 +33,8 @@ var consts = {
 	load: "\u0417агрузка...",
 	replies: "Ответы: ",
 	reply: "Ответ в тред №",
-	done: "Изгнание ебсов успешно завершено."
+	done: "Изгнание ебсов успешно завершено.",
+	err: "Ошибка обновления, попробуйте еще раз."
   }
 }
 
@@ -40,103 +42,105 @@ var consts = {
 
 //reflink map
 function addRefLinkMap(node) {
-  $j(node || _selector).each(function(){
-	//get id
-	var p_num = $j(this).attr('id');
-	postByNum[p_num] = $j(this);
-  });
-  
-  $j('.text', (node || _selector)).each(function(){
-	var $ref = $j(this);
-	if($ref.find('.backreflink a').text().indexOf('>>') == 0) {
+	var sparde = node || _selector;
+	$j(sparde).each(function(){
+		//get id
+		var p_num = $j(this).attr('id');
+		postByNum[p_num] = $j(this);
+	});
 
-	  $ref.find('.backreflink a').each(function() {
-		var r_num = $j(this).text().match(/\d+/);
-		
-		if(postByNum[r_num]) {
-		  getRefMap($ref.parent().parent().parent().find('.reflink a').text().match(/\d+/), r_num);
+	$j('.text', sparde).each(function(){
+		var $ref = $j(this);
+		if($ref.find('.backreflink a').text().indexOf('>>') == 0) {
+
+		$ref.find('.backreflink a').each(function() {
+			var r_num = $j(this).text().match(/\d+/);
+
+			if(postByNum[r_num]) {
+			  getRefMap($ref.parent().parent().parent().find('.reflink a').text().match(/\d+/), r_num);
+			}
+		});
 		}
-	  });
-	}
-  });
+	});
 
-  for(var rNum in refMap)
-	showRefMap(postByNum[rNum], rNum, Boolean(node));
+	for(var rNum in refMap)
+		showRefMap(postByNum[rNum], rNum, Boolean(node));
 }
 
 function getRefMap(pNum, rNum)
 {
-  if(!refMap[rNum]) refMap[rNum] = [];
+	if(!refMap[rNum]) refMap[rNum] = [];
 
-  if((',' + refMap[rNum].toString() + ',').indexOf(',' + pNum + ',') < 0)
-	refMap[rNum].push(pNum);
+	if((',' + refMap[rNum].toString() + ',').indexOf(',' + pNum + ',') < 0)
+		refMap[rNum].push(pNum);
 }
 
 function showRefMap(post, p_num, isUpd) {
-  if(typeof refMap[p_num] !== 'object' || !post) return;
+	if(typeof refMap[p_num] !== 'object' || !post) return;
 
-  var data = consts[lang].replies + refMap[p_num].toString().replace(/(\d+)/g, ' <span class="backreflink"><a href="#$1">>>$1</a></span>');
-  var map_b = isUpd ? $id("pidarok_refmap_"+p_num) : null;
+	var data = consts[lang].replies + refMap[p_num].toString().replace(/(\d+)/g, ' <span class="backreflink"><a href="#$1">>>$1</a></span>');
+	var map_b = isUpd ? $id("pidarok_refmap_"+p_num) : null;
 
-  if(!map_b) {
-	map_b = $j('<div class="pidarok_refmap" id="pidarok_refmap_'+p_num+'">'+data+'</div>');
-	$j('.post_body .text', $j(post).find('.post')).append(map_b);
-  }
-  else {
-	$j(map_b).html(data);
-  }
+	if(!map_b) {
+		map_b = $j('<div class="pidarok_refmap" id="pidarok_refmap_'+p_num+'">'+data+'</div>');
+		$j('.post_body .text', $j(post).find('.post')).append(map_b);
+	}
+	else {
+		$j(map_b).html(data);
+	}
 }
 
 /*------------------------------------------------------------------- >>REFLINKS PREVIEW -------------------------------------------------------------*/
 
 function showPostPreview(e)
 {
-  var ref  = e.target;
-  var pNum = $j(this).text().match(/\d+/);
-  var scrW = document.body.clientWidth, scrH = window.innerHeight;
-  x = $offset(ref, 'offsetLeft') + ref.offsetWidth/2;
-  y = $offset(ref, 'offsetTop');
+	var ref  = e.target;
+	var pNum = $j(this).text().match(/\d+/);
+	var brd = $j(this)[0].toString().split('/')[3] || window.board;
+	var scrW = document.body.clientWidth, scrH = window.innerHeight;
+	x = $offset(ref, 'offsetLeft') + ref.offsetWidth/2;
+	y = $offset(ref, 'offsetTop');
 
-  if(e.clientY < scrH*0.75) y += ref.offsetHeight - 10;
+	if(e.clientY < scrH*0.75) y += ref.offsetHeight - 10;
 
-  cln = $new('div',
-	{
-	  'id': 'pstprev_' + pNum,
-	  'class': 'thread_reply post_preview',
-	  'style':
-	  ( (x < scrW/2 ? 'left:' + x : 'right:' + parseInt(scrW - x + 2)) + 'px; '
-	  + (e.clientY < scrH*0.75 ? 'top:' + y : 'bottom:' + parseInt(scrH - y - 10)) + 'px')
-	},
-  {
-  });
+	cln = $new('div',
+		{
+			'id': 'pstprev_' + pNum,
+			'class': 'thread_reply post_preview',
+			'style':
+			( (x < scrW/2 ? 'left:' + x : 'right:' + parseInt(scrW - x + 2)) + 'px; '
+			+ (e.clientY < scrH*0.75 ? 'top:' + y : 'bottom:' + parseInt(scrH - y - 10)) + 'px')
+		},
+		{/* nothing */}
+	);
 
-  var mkPreview = function(cln, html) {
-	  cln.innerHTML = html;
-	  addPreview(cln);
-  };
+	var mkPreview = function(cln, html) {
+		cln.innerHTML = html;
+		addPreview(cln);
+	};
 
-  cln.innerHTML = consts[lang].load;
+	cln.innerHTML = consts[lang].load;
 
-  //если пост найден в дереве.
-  if($j('div[id='+pNum+']').length > 0) {
-	  var postdata = $j('div[id='+pNum+']').html();
-	  mkPreview(cln, postdata);
-  }
-  //ajax api
-  else {
-	  $j.ajax('/wakaba.pl?task=show&post='+pNum+'&section='+window.board, {async:true})
-		  .success(function(data) {
-			  var postdata = $j(data).html();
-			  mkPreview(cln, postdata);
+	//если пост найден в дереве.
+	if($j('div[id='+pNum+']').length > 0) {
+		var postdata = $j('div[id='+pNum+']').html();
+		mkPreview(cln, postdata);
+	}
+	//ajax api
+	else {
+	  $j.ajax('/wakaba.pl?task=show&post='+pNum+'&section='+brd, {async:true})
+		.success(function(data) {
+			var postdata = $j(data).html();
+			mkPreview(cln, postdata);
 
-		  })//if error
-		  .error(function() {
-			  cln.innerHTML = consts[lang].pNotFound;
-		  });
-  }
-  $del($id(cln.id));
-  $j(cln).unbind('mouseout').mouseout(delPreview);
-  $j('#appendix').append(cln);
+		})//if error
+		.error(function() {
+			cln.innerHTML = consts[lang].pNotFound;
+		});
+	}
+	$del($id(cln.id));
+	$j(cln).unbind('mouseout').mouseout(delPreview);
+	$j('#appendix').append(cln);
 }
 
 function delPreview(e) {
@@ -150,7 +154,8 @@ function delPreview(e) {
 	}
 }
 function addPreview(a) {
-	$j(a || ".thread .text").find(".backreflink a").each(function(){
+	var sparde = a || ".thread .text";
+	$j(sparde).find(".backreflink a").each(function(){
 		$event(this, { mouseover:showPostPreview, mouseout:delPreview })
 	})};
 
@@ -169,7 +174,7 @@ function loadNewPosts() {
 	//last post id
 	var aft = $j(_selector, '#delform').last().attr('id');
 	var restoreButton = function () {
-	  $j(updBtn).html(origBtn).find('a').unbind('click').click(loadNewPosts);
+		$j(updBtn).html(origBtn).find('a').unbind('click').click(loadNewPosts);
 	}
 	$j(updBtn).html('['+consts[lang].load+']');
 	clearInterval(UpdaterTimer);
@@ -187,50 +192,61 @@ function loadNewPosts() {
 					$j('.thread').append($j(this).hide().fadeIn("normal"));
 				});
 				if (newPosts > 0 ) {
-				if ( !isWindowFocused )
-					$j('title').text('['+newPosts+'] '+old_t);
-				if ( isWindowFocused ) {
-					showMessage(consts[lang].newPostsFound+newPosts, 1800);
-					newPosts = 0;
-					defTitle();
+					if ( !isWindowFocused )
+						$j('title').text('['+newPosts+'] ' + old_t);
+					if ( isWindowFocused ) {
+						showMessage(consts[lang].newPostsFound+newPosts, 1800);
+						newPosts = 0;
+						defTitle();
+					}
 				}
-			  }
 			}
 			else {
-			  if(isWindowFocused && data.error_code==400)
-			  	showMessage(consts[lang].newPostsNotFound);
+				if(isWindowFocused && data.error_code==400) {
+					showMessage(consts[lang].newPostsNotFound);
+					defTitle();
+				}
 			}
 			UpdaterTimer = setInterval(loadNewPosts, 45000);
 			restoreButton();
+			error = false;
 		})
 		.fail(function() {
-			setTimeout(restoreButton, 1500);
-			console.log('Error.');
+			if ( isWindowFocused ) {
+				showMessage(consts[lang].err, 2500);
+			}
+			$j('title').text('[Error] '+old_t);
+			// console.log('Error.');
+			restoreButton();
+			error = true;
 		});
 }
 
 function titleNewPosts() {
   $j(window).on("blur focus", function(e) {
-	  var prevType = $j(this).data("prevType");
-
-	  if (prevType != e.type) {   //  reduce double fire issues
-		  switch (e.type) {
-			  case "blur":
-				  // do work
-				  isWindowFocused = false;
-				  break;
-			  case "focus":
-				  // do work
-				  isWindowFocused = true;
-				  if(newPosts>0){
+	var prevType = $j(this).data("prevType");
+	if (prevType != e.type) {   //  reduce double fire issues
+		switch (e.type) {
+			case "blur":
+				// do work
+				isWindowFocused = false;
+				break;
+			case "focus":
+				// do work
+				isWindowFocused = true;
+				if(error) {
+					showMessage(consts[lang].err, 2500);
+					// error = false;
+				}
+				if(newPosts>0){
 					showMessage(consts[lang].newPostsFound+newPosts, 1800);
 					newPosts = 0;
 					defTitle();
-				  }
-				  break;
-		  }
-	  }
-	  $j(this).data("prevType", e.type);
+				}
+				break;
+		}
+	}
+	$j(this).data("prevType", e.type);
   })
 }
 
@@ -321,20 +337,27 @@ function eventLoader() {
 
 // Main load function.
 var slowload = function() {
-  eventLoader();
-  if (Settings.get('context')==1)
-  {
-  	old_t = document.title;
-	$j('.content').append($j('<div>', {id:'appendix'}));
-	$j(document).keydown(hotkeyMommy);
-	scriptCSS();
-	addRefLinkMap();
-	addPreview();
-	titleNewPosts();
-	getNewPosts();
-  }
-  if (Settings.get('bottomform') == 1)
-  	moveForm($j('#postform'));
+	eventLoader();
+	if (Settings.get('context')==1)
+	{
+		old_t = document.title;
+		$j('.content').append($j('<div>', {id:'appendix'}));
+		$j(document).keydown(hotkeyMommy);
+		scriptCSS();
+		if (!$j('input[value="restorebackups"]').length)
+		{
+			addRefLinkMap();
+			addPreview();
+			titleNewPosts();
+			getNewPosts();
+		}
+		else
+		{
+			addPreview();
+		}
+	}
+	if (Settings.get('bottomform') == 1)
+		moveForm($j('#postform'));
 }
 
 $j(document).ready(slowload);

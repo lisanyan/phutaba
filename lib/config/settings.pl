@@ -31,7 +31,8 @@ $settings{SSL_ICON} = ''; # '/img/icons/ssl.png';
 $settings{SHOW_COUNTRIES} = 0;
 $settings{IMAGES_PER_PAGE} = 12;			# Images per page
 $settings{REPLIES_PER_THREAD} = 4;			# Replies shown
-$settings{IMAGE_REPLIES_PER_THREAD} = 0;	# Number of image replies per thread to show, set to 0 for no limit.
+# Currently doesn't work, i will fix this later...
+# $settings{IMAGE_REPLIES_PER_THREAD} = 0;	# Number of image replies per thread to show, set to 0 for no limit.
 $settings{REPLIES_PER_STICKY_THREAD} = 2; # Replies shown per sticky thread
 $settings{REPLIES_PER_LOCKED_THREAD} = 1; # Replies shown per sticky thread
 $settings{ENTRIES_PER_LOGPAGE} = 50;

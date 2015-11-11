@@ -173,7 +173,7 @@ while($query=CGI::Fast->new)
     }
     elsif ( $json eq "threads" ) {
         my $page = $query->param("page");
-        $page = 1 unless($page and $page =~ /^[+-]?\d+$/ and $page >= 0);
+        $page = 1 unless($page and $page =~ /^[+-]?\d+$/ and $page > 0);
         output_json_threads($page);
     }
     elsif ($json eq "thread") {
@@ -238,7 +238,7 @@ while($query=CGI::Fast->new)
         else
         {
             # fallback to page 1 if parameter was empty or incorrect
-            $page = 1 unless (defined($page) and $page =~ /^[+-]?\d+$/ and $page >= 0);
+            $page = 1 unless (defined($page) and $page =~ /^[+-]?\d+$/ and $page > 0);
             show_page($page, $admin, $c_name);
         }
     }
@@ -435,7 +435,7 @@ while($query=CGI::Fast->new)
         my $admin = $query->cookie("wakaadmin");
         my $page = $query->param("page");
         # my $filter=$query->param("filter");
-        $page = 1 unless (defined($page) and $page =~ /^[+-]?\d+$/ and $page >= 0);
+        $page = 1 unless (defined($page) and $page =~ /^[+-]?\d+$/ and $page > 0);
         make_view_log_panel($admin, $page);
     }
     elsif( $task eq "clearlog" ) {
