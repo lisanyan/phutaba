@@ -172,8 +172,8 @@ while($query=CGI::Fast->new)
         }
     }
     elsif ( $json eq "threads" ) {
-        my $page=$query->param("page");
-        $page=1 unless($page and $page =~ /^[+-]?\d+$/);
+        my $page = $query->param("page");
+        $page = 1 unless($page and $page =~ /^[+-]?\d+$/ and $page >= 0);
         output_json_threads($page);
     }
     elsif ($json eq "thread") {
@@ -238,7 +238,7 @@ while($query=CGI::Fast->new)
         else
         {
             # fallback to page 1 if parameter was empty or incorrect
-            $page = 1 unless (defined($page) and $page =~ /^[+-]?\d+$/);
+            $page = 1 unless (defined($page) and $page =~ /^[+-]?\d+$/ and $page >= 0);
             show_page($page, $admin, $c_name);
         }
     }
@@ -432,10 +432,10 @@ while($query=CGI::Fast->new)
         make_rss();
     }
     elsif( $task eq "viewlog" ) {
-        my $admin=$query->cookie("wakaadmin");
-        my $page=$query->param("page");
+        my $admin = $query->cookie("wakaadmin");
+        my $page = $query->param("page");
         # my $filter=$query->param("filter");
-        $page = 1 unless (defined($page) and $page =~ /^[+-]?\d+$/);
+        $page = 1 unless (defined($page) and $page =~ /^[+-]?\d+$/ and $page >= 0);
         make_view_log_panel($admin, $page);
     }
     elsif( $task eq "clearlog" ) {
@@ -445,7 +445,7 @@ while($query=CGI::Fast->new)
     }
     # Post Backups (Staff Only)
     elsif ($task eq "postbackups")
-    {   
+    {
         my $admin = $query->cookie("wakaadmin");
         my $page = $query->param("page");
         my $perpage = $query->param("perpage");
@@ -456,7 +456,7 @@ while($query=CGI::Fast->new)
     {
         my $admin = $query->cookie("wakaadmin");
         my @num = $query->param("num");
-        my $board_name = $query->param("board") || $$cfg{SELFPATH};
+        my $board_name = $query->param("board") or $$cfg{SELFPATH};
         my $handle = lc $query->param("handle");
 
         if ($handle eq "restore"
@@ -498,8 +498,7 @@ sub hide_row_els {
 }
 
 sub output_json_threads {
-    my ($pageToShow) = @_;
-    my $page = $pageToShow <= 0 ? 1 : $pageToShow;
+    my ($page) = @_;
     my ( $sth, $row, @threads );
     my ( $code, $error );
     my @session;
@@ -523,12 +522,29 @@ sub output_json_threads {
     my @thread;
     my $posts = $dbh->prepare("SELECT * FROM ".$$cfg{SQL_TABLE}." WHERE parent=? ORDER BY num DESC LIMIT ?;");
 
-    while ($row = get_decoded_hashref($sth)
-            and $threadcount <= ( $$cfg{IMAGES_PER_PAGE} * ( $page ) ) )
+    # Grab thread reply count
+    my $postcountquery = $dbh->prepare(
+        "SELECT (SELECT COUNT(*) FROM "
+          . $$cfg{SQL_TABLE}
+          . " WHERE parent=?) AS postcount, (SELECT count(*) FROM "
+          . $$cfg{SQL_TABLE_IMG}
+          ." WHERE thread=? AND post<>?) AS imgcount FROM dual;"
+        ) or make_error($$locale{S_SQLFAIL});
+
+    while ($row = get_decoded_hashref($sth))
     {
+        my $threadnum = $$row{num};
+        $postcountquery->execute($threadnum, $threadnum, $threadnum)
+          or make_error($$locale{S_SQLFAIL});
+        my $pc = $postcountquery->fetchrow_hashref();
+        $$row{postcount} = $$pc{postcount};
+        $$row{imgcount} = $$pc{imgcount};
+        $postcountquery->finish();
+
         add_images_to_row($row);
         hide_row_els($row);
-        $posts->execute($$row{num}, count_maxreplies($row));
+        $posts->execute($threadnum, count_maxreplies($row));
+
         @thread=($row);
         my @replies;
         while( my $post=get_decoded_hashref( $posts ) ) {
@@ -546,7 +562,7 @@ sub output_json_threads {
 
         # split off the parent post, and count the replies and images
         my ( $parent, @replies ) = @{ $$thread{posts} };
-        my ($replies, $size, $images) = count_posts($$parent{num});
+        my ($replies, $images) = ($$parent{postcount}, $$parent{imgcount});
 
         # count files in replies - TODO: check for size == 0 for ignoring deleted files
 
@@ -557,8 +573,8 @@ sub output_json_threads {
         # write the shortened list of replies back
         $$thread{posts}      = [ $parent, @replies ];
         $$thread{num}        = ${$$thread{posts}}[0]{num};
-        $$thread{omit}       = ($replies-1)-$curr_replies;
-        $$thread{omitimages} = ($images-1)-$curr_images;
+        $$thread{omit}       = $replies - $curr_replies;
+        $$thread{omitimages} = $images - $curr_images;
 
         # abbreviate the remaining posts
         foreach ( @{ $$thread{posts} } ) {
@@ -862,9 +878,8 @@ sub show_newposts {
 }
 
 sub show_page {
-    my ($pageToShow, $admin, $name) = @_;
+    my ($page, $admin, $name) = @_;
     my ( $sth, $row, @threads, @thread, @session );
-    my $page = $pageToShow <= 0 ? 1 : $pageToShow;
 
     # if we try to call show_page with admin parameter
     # the admin password will be checked and this
@@ -895,12 +910,29 @@ sub show_page {
         "SELECT * FROM ".$$cfg{SQL_TABLE}." WHERE parent=? ORDER BY num DESC LIMIT ?;"
     ) or make_error($$locale{S_SQLFAIL});
 
+    # Grab thread reply count
+    my $postcountquery = $dbh->prepare(
+        "SELECT (SELECT COUNT(*) FROM "
+          . $$cfg{SQL_TABLE}
+          . " WHERE parent=?) AS postcount, (SELECT count(*) FROM "
+          . $$cfg{SQL_TABLE_IMG}
+          ." WHERE thread=? and post<>?) AS imgcount FROM dual;"
+        ) or make_error($$locale{S_SQLFAIL});
+
     while ( $row = get_decoded_hashref($sth) )
     {
+        my $threadnum = $$row{num};
+        $postcountquery->execute($threadnum, $threadnum, $threadnum)
+          or make_error($$locale{S_SQLFAIL});
+        my $pc = $postcountquery->fetchrow_hashref();
+        $$row{postcount} = $$pc{postcount};
+        $$row{imgcount} = $$pc{imgcount};
+        $postcountquery->finish();
+
         $posts->execute($$row{num}, count_maxreplies($row));
         add_images_to_row($row);
+ 
         @thread = ($row);
-
         my @replies;
         while( my $post=get_decoded_hashref($posts) ) {
             add_images_to_row($post);
@@ -916,7 +948,7 @@ sub show_page {
 
         # split off the parent post, and count the replies and images
         my ( $parent, @replies ) = @{ $$thread{posts} };
-        my ($replies, $size, $images) = count_posts($$parent{num});
+        my ($replies, $images) = ($$parent{postcount}, $$parent{imgcount});
 
         # count files in replies - TODO: check for size == 0 for ignoring deleted files
         my $curr_images = 0;
@@ -925,7 +957,7 @@ sub show_page {
 
         # write the shortened list of replies back
         $$thread{posts}      = [ $parent, @replies ];
-        $$thread{omitmsg}    = get_omit_message( ($replies-1) - $curr_replies, ($images-1) - $curr_images);
+        $$thread{omitmsg}    = get_omit_message( $replies - $curr_replies, $images - $curr_images);
         $$thread{num}        = ${$$thread{posts}}[0]{num};
 
         # abbreviate the remaining posts
@@ -1048,6 +1080,8 @@ sub get_files {
     my ($threadid, $postid, $backup, $files) = @_;
     my ($sth, $res, $where, $uploadname);
 
+    $$cfg{SQL_TABLE_IMG} = $$cfg{SQL_BACKUP_IMG_TABLE} if $backup;
+
     if ($threadid) {
         # get all files of a thread with one query
         $where = " WHERE thread=? OR post=? ORDER BY post ASC, num ASC;";
@@ -1057,9 +1091,7 @@ sub get_files {
     }
 
     $sth = $dbh->prepare(
-          "SELECT * FROM "
-        . ( $backup ? $$cfg{SQL_BACKUP_IMG_TABLE} : $$cfg{SQL_TABLE_IMG} )
-        . $where
+          "SELECT * FROM " . $$cfg{SQL_TABLE_IMG} . $where
     ) or make_error($$locale{S_SQLFAIL});
 
     if ($threadid) {
@@ -1072,15 +1104,18 @@ sub get_files {
         $uploadname = remove_path($$res{uploadname});
         $$res{uploadname} = clean_string($uploadname);
         $$res{displayname} = clean_string(get_displayname($uploadname));
+        $$res{pomf_domain} = $pomf_domain;
 
         # static thumbs are not used anymore (for old posts)
         $$res{thumbnail} = undef if ($$res{thumbnail} =~ m|^\.\./img/|);        
 
         # board path is added by expand_filename
         if($backup) {
-            $$res{image} =~ s!^.*[\\/]!!;
+            if ( $$res{image} !~ m%^//$pomf_domain% ) {
+                $$res{image} =~ s!^.*[\\/]!!;
+                $$res{image} = '/' . $$cfg{SELFPATH} . '/' . $$cfg{ORPH_DIR} . $$cfg{BACKUP_DIR} . $$res{image};
+            }
             $$res{thumbnail} =~ s!^.*[\\/]!!;
-            $$res{image} = '/' . $$cfg{SELFPATH} . '/' . $$cfg{ORPH_DIR} . $$cfg{BACKUP_DIR} . $$res{image};
             $$res{thumbnail} = '/' . $$cfg{SELFPATH} . '/' . $$cfg{ORPH_DIR} . $$cfg{BACKUP_DIR} . $$res{thumbnail};
         }
 
@@ -1310,9 +1345,10 @@ sub post_stuff {
         $sticky=get_max_sticky();
         if($parent) {
             my $stickyupdate=$dbh->prepare(
-                "UPDATE "
-                . $$cfg{SQL_TABLE} 
-                . " SET sticky=? WHERE num=? OR parent=?;") or make_error($$locale{S_SQLFAIL});
+                  "UPDATE "
+                  . $$cfg{SQL_TABLE} 
+                  . " SET sticky=? WHERE num=? OR parent=?;"
+                ) or make_error($$locale{S_SQLFAIL});
             $stickyupdate->execute($sticky, $parent, $parent) or make_error($$locale{S_SQLFAIL});
             $stickyupdate->finish;
         }
@@ -1322,9 +1358,9 @@ sub post_stuff {
         $locked=1;
         if ($parent) {
             my $lockupdate=$dbh->prepare(
-                "UPDATE ".$$cfg{SQL_TABLE}
-                . " SET locked=? WHERE num=? OR parent=?;")
-                or make_error($$locale{S_SQLFAIL});
+                  "UPDATE ".$$cfg{SQL_TABLE}
+                  . " SET locked=? WHERE num=? OR parent=?;"
+                ) or make_error($$locale{S_SQLFAIL});
             $lockupdate->execute($locked, $parent, $parent) or make_error($$locale{S_SQLFAIL});
             $lockupdate->finish;
         }
@@ -1334,10 +1370,10 @@ sub post_stuff {
         $autosage=1;
         if ($parent) {
             my $lockupdate=$dbh->prepare(
-                "UPDATE "
-                . $$cfg{SQL_TABLE}
-                . " SET autosage=? WHERE num=? OR parent=?;")
-                or make_error($$locale{S_SQLFAIL});
+                  "UPDATE "
+                  . $$cfg{SQL_TABLE}
+                  . " SET autosage=? WHERE num=? OR parent=?;"
+                ) or make_error($$locale{S_SQLFAIL});
             $lockupdate->execute($autosage, $parent, $parent)
                 or make_error($$locale{S_SQLFAIL});
             $lockupdate->finish;
@@ -1664,7 +1700,7 @@ sub is_leet {
     my $trip;
 
     my $trips   = get_settings('trips');
-    my $tripkey = $$cfg{TRIPKEY} || "!";
+    my $tripkey = $$cfg{TRIPKEY} or "!";
     if ( $name =~ /(.*?)(?:#|$tripkey|nya:)(.+)$/ ) {
         $trip = $2;
     }
@@ -1900,6 +1936,7 @@ sub format_comment {
         return $line;
     };
 
+    $comment = do_dices($comment, $handler);
     if ($$cfg{ENABLE_WAKABAMARK}) {
         $comment = do_wakabamark($comment, $handler);
     } elsif ($$cfg{ENABLE_BBCODE}) {
@@ -2050,7 +2087,7 @@ sub process_leetcode {
     my ($namepart, $trip);
 
     my $trips = get_settings('trips');
-    my $tripkey = $$cfg{TRIPKEY} || "!";
+    my $tripkey = $$cfg{TRIPKEY} or "!";
     if ( $name =~ /(.*?)(?:#|$tripkey|nya:)(.+)$/ ) {
         ($namepart, $trip) = ($1, $2);
         $namepart = clean_string($namepart);
@@ -2070,7 +2107,7 @@ sub get_cb_post {
     my ($thread, $board) = @_;
     my ($sth,$ret);
 
-    return unless( $board && grep { $_ eq $board } @{$$cfg{BOARDS}} );
+    return unless( $board and grep { $_ eq $board } @{$$cfg{BOARDS}} );
     $$cfg{SQL_TABLE} = $board . '_comments';
 
     $sth = $dbh->prepare(
@@ -2325,7 +2362,7 @@ sub process_file {
     chmod 0644, $filename; # Make file world-readable
     chmod 0644, $thumbnail if defined($thumbnail); # Make thumbnail (if any) world-readable
 
-    if ( $nopomf ne 'on' && grep {$_ eq $ext} @{$$cfg{POMF_EXTENSIONS}} )
+    if ( $nopomf ne 'on' and grep {$_ eq $ext} @{$$cfg{POMF_EXTENSIONS}} )
     {
         my $pomf = pomf_upload($filename);
         unlink $filename; # remove file from the disk
@@ -2480,7 +2517,7 @@ sub delete_stuff {
     foreach $post (@posts) {
         $ip = delete_post( $post, $password, $fileonly, $deletebyip, $admin_del, $admin );
         # (:){2,}
-        if ($ip !~ /:/ && $ip !~ /\d+\.\d+\.\d+\.\d+/) # Function returned with error string
+        if ($ip !~ /:/ and $ip !~ /\d+\.\d+\.\d+\.\d+/) # Function returned with error string
         {
             push (@errors,"Post $post: ".$ip);
             next;
@@ -2529,8 +2566,8 @@ sub delete_post {
         return $$locale{S_RENZOKU4}
           if ( $$row{timestamp} + $$cfg{RENZOKU4} >= time() and !$admin_del );
         return $$locale{S_LOCKED}
-        # remove this if you wanna use this wakaba in production... lol
           if ( $parent_post && $$parent_post{locked} and !$admin_del );
+        # remove this if you wanna use this wakaba in production... lol
         return decode_string("Заебал удалять посты.", CHARSET)
           if (!$admin_del and $geoinfo[4] && $geoinfo[4] == 42610);
         return "This was posted by a moderator or admin and cannot be deleted this way."
@@ -2750,8 +2787,7 @@ sub make_backup_posts_panel {
         my $threadcount = ($sth->fetchrow_array)[0];
         
         # Handle page variable
-        my $total = get_page_count($threadcount); 
-        $total = 1 unless $total;
+        my $total = get_page_count($threadcount) or 1;
         $page = $total if ( $page > $total );
         $page = 1 if ( $page !~ /^\d+$/ or $page <= 0 or !$page );
         my $thread_offset = ceil($page*$$cfg{IMAGES_PER_PAGE}-$$cfg{IMAGES_PER_PAGE});
@@ -2769,7 +2805,16 @@ sub make_backup_posts_panel {
         my $threadquery=$dbh->prepare(
             "SELECT * FROM "
             . $$cfg{SQL_BACKUP_TABLE}
-            . " WHERE parent=? ORDER BY timestampofarchival DESC, num ASC LIMIT ?,?;"
+            . " WHERE parent=? ORDER BY timestampofarchival DESC, num DESC LIMIT ?;"
+        ) or make_error($$locale{S_SQLFAIL});
+
+        # Grab thread replies
+        my $postcountquery = $dbh->prepare(
+            "SELECT (SELECT COUNT(*) FROM "
+             . $$cfg{SQL_BACKUP_TABLE}
+             . " WHERE parent=?) AS postcount, (SELECT count(*) FROM "
+             . $$cfg{SQL_BACKUP_IMG_TABLE}
+             ." WHERE thread=? AND post<>?) AS imgcount FROM dual;"
         ) or make_error($$locale{S_SQLFAIL});
 
         # Grab the thread posts in each thread
@@ -2782,7 +2827,7 @@ sub make_backup_posts_panel {
 
             my ($curr_replies, $curr_images);
             my $max_replies = count_maxreplies($row);
-            my $threadnumber = $$row{postnum};
+            my $threadnum = $$row{postnum};
             my ($imgcount, $postcount) = ( 0, 0 );
             $$row{standalone} = 1; # Indicates extracted post is orphaned in the database (i.e., without a parent thread)
 
@@ -2790,25 +2835,16 @@ sub make_backup_posts_panel {
             {
                 $$row{standalone} = 0;
 
-                # Grab thread replies
-                my $postcountquery = $dbh->prepare(
-                    "SELECT (SELECT COUNT(*) FROM "
-                     . $$cfg{SQL_BACKUP_TABLE}
-                     . " WHERE parent=?) AS postcount, (SELECT count(*) FROM "
-                     . $$cfg{SQL_BACKUP_IMG_TABLE}
-                     ." WHERE thread=?) AS imgcount FROM dual;"
-                ) or make_error($$locale{S_SQLFAIL});
-                $postcountquery->execute($threadnumber, $threadnumber)
+                $postcountquery->execute($threadnum, $threadnum, $threadnum)
                   or make_error($$locale{S_SQLFAIL});
                 my $pc = $postcountquery->fetchrow_hashref();
                 $postcount = $$pc{postcount};
                 $imgcount = $$pc{imgcount};
                 $postcountquery->finish();
-            
-                # Grab limits for SQL query
-                my $offset = ( $postcount > $max_replies ) ? $postcount - $max_replies : 0;
-                $threadquery->execute($threadnumber, $offset, $max_replies) or make_error($$locale{S_SQLFAIL});
 
+                $threadquery->execute($threadnum, $max_replies) or make_error($$locale{S_SQLFAIL});
+
+                my @reps;
                 while (my $inner_row=get_decoded_hashref($threadquery))
                 {
                     add_images_to_row($inner_row, 1);
@@ -2816,14 +2852,15 @@ sub make_backup_posts_panel {
                     $$inner_row{parent_alive} = thread_exists($$inner_row{parent});
                     $curr_images +=  @{$$inner_row{files}} if (exists $$inner_row{files});
                     ++$curr_replies;
-                    push @thread, $inner_row;
+                    push @reps, $inner_row;
                 }
+                push @thread, rev(@reps);
                 $threadquery->finish();
             }
 
-            push @threads, { 
+            push @threads, {
                 posts => [@thread],
-                omitmsg => get_omit_message( $postcount - $curr_replies, ($imgcount-1) - $curr_images ),
+                omitmsg => get_omit_message( $postcount - $curr_replies, $imgcount - $curr_images ),
                 postnum => $$row{postnum}
             };
         }
@@ -3002,7 +3039,7 @@ sub backup_post # Delete single post.
             $$this_board{SELFPATH} . '/' . $$res{thumbnail},
             $$this_board{SELFPATH} . '/' . $$this_board{ORPH_DIR} . $$this_board{BACKUP_DIR} . $base_thumbnail
         ) and chmod 0644, $$this_board{BACKUP_DIR} . $base_thumbnail
-          if ( $$res{thumbnail} =~ /^$thumb_dir/ && -e $$this_board{SELFPATH} . '/' . $$res{thumbnail} );
+          if ( $$res{thumbnail} =~ /^$thumb_dir/ and -e $$this_board{SELFPATH} . '/' . $$res{thumbnail} );
     }
 
     $sth2->finish() if $sth2;
@@ -3134,7 +3171,7 @@ sub restore_post_or_thread {
                 $$this_board{SELFPATH} . '/' . $$this_board{ORPH_DIR} . $$this_board{BACKUP_DIR} . $base_thumbnail,
                 $$this_board{SELFPATH} . '/' . $$res{thumbnail}
                ) and chmod 0644, $$this_board{SELFPATH} . '/' . $$res{thumbnail}
-          if ( $$res{thumbnail} =~ /^$thumb_dir/ && -e $$this_board{SELFPATH} . '/' . $$this_board{ORPH_DIR} . $$this_board{BACKUP_DIR} . $base_thumbnail );
+          if ( $$res{thumbnail} =~ /^$thumb_dir/ and -e $$this_board{SELFPATH} . '/' . $$this_board{ORPH_DIR} . $$this_board{BACKUP_DIR} . $base_thumbnail );
     }
     $sth2->finish() if $sth2;
 
@@ -4007,44 +4044,42 @@ sub make_view_log_panel {
     my @session = check_password($admin, '');
     make_error($$locale{S_NOPRIVILEGES}) if $session[1] ne 'admin';
 
+    my $offset = ceil($page*$$cfg{ENTRIES_PER_LOGPAGE}-$$cfg{ENTRIES_PER_LOGPAGE});
+
+    $sth = $dbh->prepare(
+          "SELECT count(`num`) FROM " . $$cfg{SQL_LOG_TABLE} . ";"
+        ) or make_error($$locale{S_SQLFAIL});
+    $sth->execute() or make_error($$locale{S_SQLFAIL});
+    my $entcount = ($sth->fetchrow_array())[0]; 
+    my $total = int( ( $entcount + ($$cfg{ENTRIES_PER_LOGPAGE}) - 1 ) / $$cfg{ENTRIES_PER_LOGPAGE} ) or 1;
+
     $sth = $dbh->prepare(
           "SELECT * FROM "
           . $$cfg{SQL_LOG_TABLE}
-          . " ORDER BY num DESC;"
+          . " ORDER BY num DESC LIMIT ?,?;"
         ) or make_error($$locale{S_SQLFAIL});
-    $sth->execute() or make_error($$locale{S_SQLFAIL});
-
-    my $emin = ( $page - 1 ) * $$cfg{ENTRIES_PER_LOGPAGE};
-    my $emax = $emin + $$cfg{ENTRIES_PER_LOGPAGE};
-    my $entcount = 0;
+    $sth->execute($offset, $$cfg{ENTRIES_PER_LOGPAGE}) or make_error($$locale{S_SQLFAIL});
 
     while($row = get_decoded_hashref($sth)) {
-        $entcount++;
-        if( $entcount>$emin and $entcount<=$emax ) {
-            $$row{rowtype} = @log % 2 + 1;
-            $$row{object2} = resolve_reflinks($$row{object2}, $$row{board});
-            push @log,$row;
-        }
+        $$row{rowtype} = @log % 2 + 1;
+        $$row{object2} = resolve_reflinks($$row{object2}, $$row{board});
+        push @log,$row;
     }
 
-    # make the list of pages
-    my $totalCount = int( ( $entcount + ($$cfg{ENTRIES_PER_LOGPAGE} - 1) ) / $$cfg{ENTRIES_PER_LOGPAGE} );
-    $totalCount = 1 if ($sth and !$sth->rows);
-
-    my @pages = map +{ page => $_ }, ( 1 .. $totalCount );
+    my @pages = map +{ page => $_ }, ( 1 .. $total );
     foreach my $p (@pages) {
         $$p{filename} = 
           get_script_name(). "?task=viewlog&amp;section=".$$cfg{SELFPATH}."&amp;page=" . $$p{page};
         if ( $$p{page} == $page ) { $$p{current} = 1 }   # current page, no link
     }
 
-    if( $page <= 0 or $page > $totalCount ) {
+    if( $page !~ /^\d+$/ or $page <= 0 or $page > $total ) {
         make_error($$locale{S_INVALID_PAGE});
     }
 
     my ($prevpage,$nextpage);
     $prevpage = $pages[$page-2]{filename} if( $page != 1);
-    $nextpage = $pages[$page  ]{filename} if( $page != $totalCount);
+    $nextpage = $pages[$page  ]{filename} if( $page != $total);
 
     $sth->finish;
 
@@ -4108,7 +4143,7 @@ sub expand_filename {
 sub expand_image_filename {
     my $filename = shift;
 
-    if ( $filename =~ m%^//${pomf_domain}% ) { return $filename; } # is file on an external server?
+    if ( $filename =~ m%^//$pomf_domain% ) { return $filename; } # is file on an external server?
     else { return expand_filename( clean_path($filename) ); }
 }
 
@@ -4657,7 +4692,7 @@ sub count_posts {
     $sth->execute() or '';
     while ( $row = $sth->fetchrow_arrayref() )
     {
-        unless ( $$row[1] =~ m%^//${pomf_domain}% ) # file is on an external server
+        unless ( $$row[1] =~ m%^//$pomf_domain% ) # file is on an external server
         {
             $size += $$row[0];
         }

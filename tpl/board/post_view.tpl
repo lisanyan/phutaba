@@ -56,7 +56,7 @@
 		<if $email><span class="sage"><var $$locale{S_SAGE}></span></if>
 	</if>
 
-	<if !$parent && !%thread>	
+	<if !$parent && !%thread>
 		<span class="replylink">[<a href="<var Wakaba::get_reply_link($num,0)>"><var $$locale{S_REPLY}></a>]</span>
 	</if>
 	<if !$parent && %thread>[<a href="#bottom"><var $$locale{S_BOTTOM}></a>]</if>
@@ -123,7 +123,7 @@
 		<hr />
 		<var Wakaba::get_pretty_html($info_all, "\n\t\t")>
 	</div>
-	<div class="filename"><var $$locale{S_PICNAME}><a target="_blank" title="<var Wakaba::clean_string($uploadname)>" href="<var Wakaba::expand_image_filename($image)><if $image!~/^\/\/a\.pomf/>/<var Wakaba::get_urlstring(Wakaba::clean_string($uploadname))></if>"><var Wakaba::clean_string($displayname)></a></div>
+	<div class="filename"><var $$locale{S_PICNAME}><a target="_blank" title="<var Wakaba::clean_string($uploadname)>" href="<var Wakaba::expand_image_filename($image)><if $image!~/^\/\/$pomf_domain/>/<var Wakaba::get_urlstring(Wakaba::clean_string($uploadname))></if>"><var Wakaba::clean_string($displayname)></a></div>
 	<div class="filesize"><var Wakaba::get_displaysize($size, $$cfg{DECIMAL_MARK})><if $width && $height>, <var $width>&nbsp;&times;&nbsp;<var $height></if><if $info>, <var $info></if></div>
 	<if $thumbnail>
 		<div class="filelink" id="exlink-<var Wakaba::md5_hex($image)>">
