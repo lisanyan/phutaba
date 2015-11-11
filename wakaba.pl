@@ -2719,7 +2719,7 @@ sub make_rss { # hater ktory droczit na perenosy skobok sosi xD
 # Present backup posts to admin
 sub make_backup_posts_panel {
     my ($admin, $page)=@_;
-    my ($sth,$row,@threads);
+    my ($sth, $row, @threads);
 
     my @session = check_password($admin, '');
     make_error($$cfg{S_NOPRIVILEGES}) if ($session[1] ne 'admin');
@@ -2785,9 +2785,11 @@ sub make_backup_posts_panel {
         $sth->execute($$cfg{SELFPATH}) or make_error($$locale{S_SQLFAIL});
 
         my $threadcount = ($sth->fetchrow_array)[0];
-        
+
         # Handle page variable
-        my $total = get_page_count($threadcount) or 1;
+        my $total = get_page_count($threadcount);
+        $total = 1 unless $total;
+
         $page = $total if ( $page > $total );
         $page = 1 if ( $page !~ /^\d+$/ or $page <= 0 or !$page );
         my $thread_offset = ceil($page*$$cfg{IMAGES_PER_PAGE}-$$cfg{IMAGES_PER_PAGE});
@@ -4050,8 +4052,9 @@ sub make_view_log_panel {
           "SELECT count(`num`) FROM " . $$cfg{SQL_LOG_TABLE} . ";"
         ) or make_error($$locale{S_SQLFAIL});
     $sth->execute() or make_error($$locale{S_SQLFAIL});
-    my $entcount = ($sth->fetchrow_array())[0]; 
-    my $total = int( ( $entcount + ($$cfg{ENTRIES_PER_LOGPAGE}) - 1 ) / $$cfg{ENTRIES_PER_LOGPAGE} ) or 1;
+    my $entcount = ($sth->fetchrow_array())[0];
+    my $total = int( ( $entcount + ($$cfg{ENTRIES_PER_LOGPAGE}) - 1 ) / $$cfg{ENTRIES_PER_LOGPAGE} );
+    $total = 1 unless $total;
 
     $sth = $dbh->prepare(
           "SELECT * FROM "
