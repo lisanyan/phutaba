@@ -3017,9 +3017,9 @@ sub backup_post # Delete single post.
     $sth = $dbh->prepare(
           "SELECT * FROM "
           . $$cfg{SQL_TABLE_IMG}
-          . " WHERE post=? or thread=? ORDER BY num ASC;"
+          . " WHERE post=? ORDER BY num ASC;"
         ) or return $$locale{S_SQLFAIL};
-    $sth->execute($$row{num}, $$row{num});
+    $sth->execute($$row{num});
 
     my $sth2 = $dbh->prepare(
         "INSERT INTO "
