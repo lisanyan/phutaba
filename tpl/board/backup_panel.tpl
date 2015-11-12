@@ -61,6 +61,7 @@
 <div class="delete">
 	<input type="hidden" name="task" value="restorebackups" />
 	<input type="hidden" name="section" value="<var $$cfg{SELFPATH}>" />
+	<input type="hidden" name="board" value="<var $$cfg{SELFPATH}>" />
 	<input type="submit" name="handle" value="<var $$locale{S_MPRESTORE}>" />
 	<input type="submit" name="handle" value="<var $$locale{S_MPDELETE}>" />
 	<input type="reset" value="<var $$locale{S_MPRESET}>" />

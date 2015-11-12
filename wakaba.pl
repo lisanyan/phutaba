@@ -456,7 +456,7 @@ while($query=CGI::Fast->new)
     {
         my $admin = $query->cookie("wakaadmin");
         my @num = $query->param("num");
-        my $board_name = $query->param("board") or $$cfg{SELFPATH};
+        my $board_name = $query->param("board") || $$cfg{SELFPATH};
         my $handle = lc $query->param("handle");
 
         if ($handle eq "restore"
@@ -515,7 +515,7 @@ sub output_json_threads {
     $sth = $dbh->prepare(
             "SELECT * FROM "
           . $$cfg{SQL_TABLE}
-          . " WHERE parent IS NULL or parent=0 ORDER BY sticky DESC,lasthit DESC LIMIT ?,?"
+          . " WHERE parent=0 ORDER BY sticky DESC,lasthit DESC LIMIT ?,?"
     );
     $sth->execute($offset,$$cfg{IMAGES_PER_PAGE});
 
@@ -1341,10 +1341,24 @@ sub post_stuff {
         }
     }
 
+    my $stickycheck = {};
+    if($parent) {
+        my $sticky_check = $dbh->prepare(
+              "SELECT sticky, locked, autosage FROM "
+              . $$cfg{SQL_TABLE} 
+              . " WHERE num=? and parent=0 LIMIT 1;"
+            ) or make_error($$locale{S_SQLFAIL});
+        $sticky_check->execute($parent)
+              or make_error($$locale{S_SQLFAIL});
+        $stickycheck = $sticky_check->fetchrow_hashref;
+        $sticky_check->finish();
+    }
+
     if($sticky) {
         $sticky=get_max_sticky();
         if($parent) {
-            my $stickyupdate=$dbh->prepare(
+            $sticky = $$stickycheck{sticky} ? 0 : $sticky;
+            my $stickyupdate = $dbh->prepare(
                   "UPDATE "
                   . $$cfg{SQL_TABLE} 
                   . " SET sticky=? WHERE num=? OR parent=?;"
@@ -1356,8 +1370,8 @@ sub post_stuff {
     
     if ($locked) {
         $locked=1;
-        if ($parent) {
-            my $lockupdate=$dbh->prepare(
+        if ($parent && !$$stickycheck{locked}) {
+            my $lockupdate = $dbh->prepare(
                   "UPDATE ".$$cfg{SQL_TABLE}
                   . " SET locked=? WHERE num=? OR parent=?;"
                 ) or make_error($$locale{S_SQLFAIL});
@@ -1368,19 +1382,20 @@ sub post_stuff {
 
     if ($autosage) {
         $autosage=1;
-        if ($parent) {
-            my $lockupdate=$dbh->prepare(
+        if ($parent && !$$stickycheck{autosage}) {
+            my $asupdate = $dbh->prepare(
                   "UPDATE "
                   . $$cfg{SQL_TABLE}
                   . " SET autosage=? WHERE num=? OR parent=?;"
                 ) or make_error($$locale{S_SQLFAIL});
-            $lockupdate->execute($autosage, $parent, $parent)
+            $asupdate->execute($autosage, $parent, $parent)
                 or make_error($$locale{S_SQLFAIL});
-            $lockupdate->finish;
+            $asupdate->finish;
         }
     }
 
     # don't allow mods to post html
+    # they can put something like script that will steal your cookies
     make_error($$locale{S_NOPRIVILEGES}) if( $no_format and $session[1] ne 'admin' );
 
     # check for weird characters
@@ -2423,12 +2438,12 @@ sub thread_control {
               or make_error($$locale{S_SQLFAIL});
         }
         elsif($action eq "locked") {
-            $check = $$row{locked} eq 1 ? 0 : 1;
+            $check = $$row{locked} eq 1 ? undef : 1;
             $sth = $dbh->prepare( "UPDATE " . $$cfg{SQL_TABLE} . " SET locked=? WHERE num=? OR parent=?;" )
               or make_error($$locale{S_SQLFAIL});
         }
         elsif($action eq "autosage") {
-            $check = $$row{autosage} eq 1 ? 0 : 1;
+            $check = $$row{autosage} eq 1 ? undef : 1;
             $sth = $dbh->prepare( "UPDATE " . $$cfg{SQL_TABLE} . " SET autosage=? WHERE num=? OR parent=?;" )
               or make_error($$locale{S_SQLFAIL});
         }
@@ -2557,7 +2572,6 @@ sub delete_post {
 
     if ( $row = $sth->fetchrow_hashref() ) {
         my $parent_post = get_post($$row{parent});
-        my @geoinfo = get_geo_array($$cfg{SELFPATH}, $$row{location}, 1);
 
         return $$locale{S_BADDELPASS} 
           if ( $password and $$row{password} ne $password );
@@ -2567,9 +2581,6 @@ sub delete_post {
           if ( $$row{timestamp} + $$cfg{RENZOKU4} >= time() and !$admin_del );
         return $$locale{S_LOCKED}
           if ( $parent_post && $$parent_post{locked} and !$admin_del );
-        # remove this if you wanna use this wakaba in production... lol
-        return decode_string("Заебал удалять посты.", CHARSET)
-          if (!$admin_del and $geoinfo[4] && $geoinfo[4] == 42610);
         return "This was posted by a moderator or admin and cannot be deleted this way."
           if (!$admin_del and $$row{admin_post} eq 1);
 
@@ -3071,12 +3082,11 @@ sub restore_stuff {
 sub restore_post_or_thread {
     my ($num,$board_name,$recursive_instance) = @_;
 
-    my ($sth, $res);                    # Database handler.
-    my $updated_lasthit = 0;    # Update for the lasthit field when recovering replies to an OP.
-    my $stickied_thread = 0;    # Update for stickied field based on whether thread is stickied.
-    my $this_board;             # Object for affected board.
-    my $locked_thread = 0;      # Update for locked field based on whether thread is locked.
-    my $autosage_on = 0;        # ?
+    my ($sth, $res); # Database handler.
+    my $updated_lasthit = 0; # Update for the lasthit field when recovering replies to an OP.
+    my ($stickied_thread, $locked_thread, $autosage_on) = (0, undef, undef);
+          # Update for stickied/locked field based on whether thread is stickied.
+    my $this_board; # Object for affected board.
 
     # Resolve board name and set to current board
     if ($board_name ne $$cfg{SELFPATH})
@@ -3127,11 +3137,11 @@ sub restore_post_or_thread {
           . " VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);"
         ) or return $$locale{S_SQLFAIL};
     $sth->execute(
-            $$row{postnum},  $$row{parent},    $$row{timestamp},  $updated_lasthit || time(),
-            $$row{ip},       $$row{name},      $$row{trip},       $$row{email},
-            $$row{subject},  $$row{password},  $$row{comment},    $$row{banned},
-            $$row{autosage}, $$row{adminpost}, $$row{admin_post}, $$row{locked},
-            $$row{sticky},   $$row{location},  $$row{secure}
+            $$row{postnum},   $$row{parent},    $$row{timestamp},  $updated_lasthit || time(),
+            $$row{ip},        $$row{name},      $$row{trip},       $$row{email},
+            $$row{subject},   $$row{password},  $$row{comment},    $$row{banned},
+            $autosage_on,     $$row{adminpost}, $$row{admin_post}, $locked_thread,
+            $stickied_thread, $$row{location},  $$row{secure}
         ) or return $$locale{S_SQLFAIL};
 
     # Restore images.
@@ -3181,7 +3191,7 @@ sub restore_post_or_thread {
     $sth=$dbh->prepare("DELETE FROM ".$$cfg{SQL_BACKUP_TABLE}." WHERE postnum=? AND board_name=?");
     $sth->execute($$row{postnum},$board_name);
 
-    # Delete images
+    # Delete images.
     $sth=$dbh->prepare("DELETE FROM ".$$cfg{SQL_BACKUP_IMG_TABLE}." WHERE post=? AND board_name=?");
     $sth->execute($$row{postnum}, $board_name);
 

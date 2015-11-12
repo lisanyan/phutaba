@@ -2050,7 +2050,7 @@ sub get_geo_array {
     @items = qw/UNKNOWN/ if $hide;
     my $flag = '<img style="vertical-align:initial" alt="" src="/img/flags/' . $items[0] . '.PNG"> ';
 
-    if (scalar @items > 1) { # for legacy entries
+    if (scalar @items > 1) {
         @loc = grep {$_} ($items[1], $items[2], $items[3]);
         if ($as and $board) {
             $items[4] =~ /^AS(\d+) / ;

@@ -69,37 +69,59 @@
 		</if>
 		<if !$parent>	
 			<if !$sticky>
-				<span onmouseover="Tip('<var $$locale{S_MPSTICKY}>')" onmouseout="UnTip()"><a onclick="return areYouSure(this)" href="<var %self>?task=sticky&amp;thread=<var $num>&amp;section=<var $$cfg{SELFPATH}>"><img src="/img/icons/sticky.png"></a></span>
+				<span onmouseover="Tip('<var $$locale{S_MPSTICKY}>')" onmouseout="UnTip()">
+					<a onclick="return areYouSure(this)" href="<var %self>?task=sticky&amp;thread=<var $num>&amp;section=<var $$cfg{SELFPATH}>"><img src="/img/icons/sticky.png"></a>
+				</span>
 			</if>
 
 			<if $sticky>
-				<span onmouseover="Tip('<var $$locale{S_MPUNSTICKY}>')" onmouseout="UnTip()"><a onclick="return areYouSure(this)" href="<var %self>?task=sticky&amp;thread=<var $num>&amp;section=<var $$cfg{SELFPATH}>"><img src="/img/icons/unsticky.png"></a></span>
+				<span onmouseover="Tip('<var $$locale{S_MPUNSTICKY}>')" onmouseout="UnTip()">
+					<a onclick="return areYouSure(this)" href="<var %self>?task=sticky&amp;thread=<var $num>&amp;section=<var $$cfg{SELFPATH}>"><img src="/img/icons/unsticky.png"></a>
+				</span>
 			</if>
 			
 			<if !$locked>
-				<span onmouseover="Tip('<var $$locale{S_MPLOCK}>')" onmouseout="UnTip()"><a onclick="return areYouSure(this)" href="<var %self>?task=lock&amp;thread=<var $num>&amp;section=<var $$cfg{SELFPATH}>"><img src="/img/icons/lock.png"></a></span>
+				<span onmouseover="Tip('<var $$locale{S_MPLOCK}>')" onmouseout="UnTip()">
+					<a onclick="return areYouSure(this)" href="<var %self>?task=lock&amp;thread=<var $num>&amp;section=<var $$cfg{SELFPATH}>"><img src="/img/icons/lock.png"></a>
+				</span>
 			</if>
 
 			<if $locked>
-				<span onmouseover="Tip('<var $$locale{S_MPUNLOCK}>')" onmouseout="UnTip()"><a onclick="return areYouSure(this)" href="<var %self>?task=lock&amp;thread=<var $num>&amp;section=<var $$cfg{SELFPATH}>"><img src="/img/icons/unlock.png"></a></span>
+				<span onmouseover="Tip('<var $$locale{S_MPUNLOCK}>')" onmouseout="UnTip()">
+					<a onclick="return areYouSure(this)" href="<var %self>?task=lock&amp;thread=<var $num>&amp;section=<var $$cfg{SELFPATH}>"><img src="/img/icons/unlock.png"></a>
+				</span>
 			</if>
 		
 			<if !$autosage>
-				<span onmouseover="Tip('<var $$locale{S_MPSETSAGE}>')" onmouseout="UnTip()"><a onclick="return areYouSure(this)" href="<var %self>?task=kontra&amp;thread=<var $num>&amp;section=<var $$cfg{SELFPATH}>"><img src="/img/icons/sage.png"></a></span>
+				<span onmouseover="Tip('<var $$locale{S_MPSETSAGE}>')" onmouseout="UnTip()">
+					<a onclick="return areYouSure(this)" href="<var %self>?task=kontra&amp;thread=<var $num>&amp;section=<var $$cfg{SELFPATH}>"><img src="/img/icons/sage.png"></a>
+				</span>
 			</if>
 
 			<if $autosage>
-				<span onmouseover="Tip('<var $$locale{S_MPUNSETSAGE}>')" onmouseout="UnTip()"><a onclick="return areYouSure(this)" href="<var %self>?task=kontra&amp;thread=<var $num>&amp;section=<var $$cfg{SELFPATH}>"><img src="/img/icons/unsage.png"></a></span>
+				<span onmouseover="Tip('<var $$locale{S_MPUNSETSAGE}>')" onmouseout="UnTip()">
+					<a onclick="return areYouSure(this)" href="<var %self>?task=kontra&amp;thread=<var $num>&amp;section=<var $$cfg{SELFPATH}>"><img src="/img/icons/unsage.png"></a>
+				</span>
 			</if>
 			
 		</if>
 		<if !$adminpost>
-			<span onmouseover="Tip('<var $$locale{S_MPBAN}>')" onmouseout="UnTip()"><a onclick="do_ban('<var Wakaba::dec_to_dot($ip)>', <var $num>, '<var $$cfg{SELFPATH}>')"><img src="/img/icons/ban.png"></a></span>
-			<span onmouseover="Tip('<var $$locale{S_MPDELETEALL}>')" onmouseout="UnTip()"><a onclick="return areYouSure(this)" href="<var %self>?task=deleteall&amp;ip=<var $ip>&amp;section=<var $$cfg{SELFPATH}>"><img src="/img/icons/delete_all.png"></a></span>
+			<span onmouseover="Tip('<var $$locale{S_MPBAN}>')" onmouseout="UnTip()">
+				<a onclick="do_ban('<var Wakaba::dec_to_dot($ip)>', <var $num>, '<var $$cfg{SELFPATH}>')"><img src="/img/icons/ban.png"></a>
+			</span>
+			<span onmouseover="Tip('<var $$locale{S_MPDELETEALL}>')" onmouseout="UnTip()">
+				<a onclick="return areYouSure(this)" href="<var %self>?task=deleteall&amp;ip=<var $ip>&amp;section=<var $$cfg{SELFPATH}>"><img src="/img/icons/delete_all.png"></a>
+			</span>
 		</if>
-		<span onmouseover="Tip('<var $$locale{S_MPDELFILE}>')"   onmouseout="UnTip()"><a onclick="return areYouSure(this)" href="<var %self>?task=delete&amp;admindel=yes&amp;delete=<var $num>&amp;fileonly=on<if %thread>&amp;parent=<var %thread></if>&amp;section=<var $$cfg{SELFPATH}>"><img src="/img/icons/delete_file.png"></a></span>
-		<span onmouseover="Tip('<var $$locale{S_MPDELETE}>')" onmouseout="UnTip()"><a onclick="return areYouSure(this)" href="<var %self>?task=delete&amp;admindel=yes&amp;delete=<var $num><if %thread>&amp;parent=<var %thread></if>&amp;section=<var $$cfg{SELFPATH}>"><img src="/img/icons/delete.png"></a></span>
-		<span onmouseover="Tip('<var $$locale{S_EDITPOST}>')" onmouseout="UnTip()"><a href="<var %self>?task=edit&amp;num=<var $num>&amp;section=<var $$cfg{SELFPATH}>"><img src="/img/icons/edit.png"></a></span>
+		<span onmouseover="Tip('<var $$locale{S_MPDELFILE}>')"   onmouseout="UnTip()">
+			<a onclick="return areYouSure(this)" href="<var %self>?task=delete&amp;admindel=yes&amp;delete=<var $num>&amp;fileonly=on<if %thread and $parent>&amp;parent=<var %thread></if>&amp;section=<var $$cfg{SELFPATH}>"><img src="/img/icons/delete_file.png"></a>
+		</span>
+		<span onmouseover="Tip('<var $$locale{S_MPDELETE}>')" onmouseout="UnTip()">
+			<a onclick="return areYouSure(this)" href="<var %self>?task=delete&amp;admindel=yes&amp;delete=<var $num><if %thread and $parent>&amp;parent=<var %thread></if>&amp;section=<var $$cfg{SELFPATH}>"><img src="/img/icons/delete.png"></a>
+		</span>
+		<span onmouseover="Tip('<var $$locale{S_EDITPOST}>')" onmouseout="UnTip()">
+			<a href="<var %self>?task=edit&amp;num=<var $num>&amp;section=<var $$cfg{SELFPATH}>"><img src="/img/icons/edit.png"></a>
+		</span>
 	</if>
 
 <if $parent>

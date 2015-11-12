@@ -68,6 +68,22 @@
 				<td><pre>Код</pre></td>
 			</tr>
 		</table>
+
+		<br /><p>Ссылки:</p>
+		<table>
+			<tr>
+				<th>Было</th>
+				<th>Стало</th>
+			</tr>
+			<tr>
+				<td>&gt;&gt;NUM</td>
+				<td>Ссылка на пост NUM на текущей доске</td>
+			</tr>
+			<tr>
+				<td>&gt;&gt;&gt;/BOARD/NUM</td>
+				<td>Ссылка на пост NUM на доске BOARD</td>
+			</tr>
+		</table>
 	</section>
 
 	<header class="title">JSON API</header>
