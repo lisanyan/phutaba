@@ -97,7 +97,7 @@ $has_encode = 1 unless $@;
 my $protocol_re = qr/(?:http|https|ftp|mailto|nntp|irc|xmpp|skype)/;
 my $pomf_domain = "a.pomf.cat";
 
-my ($dbh, $query, $boardSection, $moders);
+my ($dbh, $query, $boardSection, $moders, $ajax_errors);
 
 my $cfg = my $locale = {};
 my $fcgi_counter = 0;
@@ -121,6 +121,7 @@ while($query=CGI::Fast->new)
         $moders         = get_settings('mods');
         $locale         = get_settings($$cfg{BOARD_LOCALE})
                             unless ($$cfg{NOTFOUND});
+        $ajax_errors = 0; #reset
 
         if( $$cfg{NOTFOUND} ) {
             print ("Content-type: text/plain\n\nBoard not found.");
@@ -271,13 +272,14 @@ while($query=CGI::Fast->new)
         my $sticky     = $query->param("sticky");
         my $locked     = $query->param("lock");
         my $autosage   = $query->param("autosage");
+        my $ajax       = $query->param("ajax");
         my @files      = $query->param("file"); # multiple uploads
 
         post_stuff(
             $parent,  $spam1,     $spam2,     $name,     $email,  $gb2,
             $subject, $comment,   $password,  $nofile,   $captcha,
             $admin,   $no_format, $postfix,   $as_staff, $no_pomf,
-            $sticky,  $locked,    $autosage,
+            $sticky,  $locked,    $autosage,  $ajax,
             @files
         );
     }
@@ -1181,6 +1183,9 @@ sub get_omit_message {
     $omitfiles = $$locale{S_ABBRIMG1} if ($files == 1);
     $omitfiles = sprintf($$locale{S_ABBRIMG2}, $files) if ($files > 1);
 
+    $$locale{S_ABBR_END} = $$locale{S_ABBR_END1}
+      if ($files == 1 && $$cfg{BOARD_LOCALE} eq 'ru');
+
     return $omitposts . $omitfiles . $$locale{S_ABBR_END};
 }
 
@@ -1295,7 +1300,8 @@ sub post_stuff {
         $parent,  $spam1,   $spam2,     $name,      $email,
         $gb2,     $subject, $comment,   $password,  $nofile,
         $captcha, $admin,   $no_format, $postfix,   $as_staff,
-        $no_pomf, $sticky,  $locked,    $autosage,  @files
+        $no_pomf, $sticky,  $locked,    $autosage,  $ajax,
+        @files
     ) = @_;
 
     my $file = $files[0]; # file count
@@ -1308,6 +1314,9 @@ sub post_stuff {
 
     # sticky should never be NULL
     $sticky = 0 unless $sticky;
+
+    # set ajax errors
+    $ajax_errors = 1 if $ajax;
 
     # check that the request came in as a POST, or from the command line
     make_error($$locale{S_UNJUST})
@@ -1464,15 +1473,12 @@ sub post_stuff {
 
         eval {
             $dbh->begin_work();
-
             my $banan = $dbh->prepare(
                 "INSERT INTO " . $$cfg{SQL_ADMIN_TABLE} . " VALUES(null,?,?,?,?,?,?,?);")
               or make_error($$locale{S_SQLFAIL});
             $banan->execute('ipban', 'Spambot [Auto Ban]', $banip, $banmask, '', $time, $time + 259200)
               or make_error($$locale{S_SQLFAIL});
-
             $banan->finish;
-
             $dbh->commit();
         };
         if ($@) {
@@ -1661,13 +1667,23 @@ sub post_stuff {
     );  # yum!
     $sth->finish;
 
-    if ($c_gb2 =~ /thread/i) { # forward back to the page
-        if ($parent) { make_http_forward( get_board_path() . "thread/" . $parent . ( $new_post_id ? "#${new_post_id}" : "" ) ); }
-        elsif($new_post_id) { make_http_forward( get_board_path() . "thread/" . $new_post_id ); }
-        else { make_http_forward( get_board_path() ); } # shouldn't happen
+    if(!$ajax) {
+        if ($c_gb2 =~ /thread/i) { # forward back to the page
+            if ($parent) { make_http_forward( get_board_path() . "thread/" . $parent . ( $new_post_id ? "#${new_post_id}" : "" ) ); }
+            elsif($new_post_id) { make_http_forward( get_board_path() . "thread/" . $new_post_id ); }
+            else { make_http_forward( get_board_path() ); } # shouldn't happen
+        }
+        else {
+            make_http_forward( get_board_path() );
+        }
     }
     else {
-        make_http_forward( get_board_path() );
+        my %result = (
+              parent => $parent,
+              num => $new_post_id
+            );
+        make_json_header();
+        print $JSON->encode(\%result);
     }
 }
 
@@ -1822,12 +1838,14 @@ sub ban_check {
       or make_error($$locale{S_SQLFAIL});
     $sth->execute() or make_error($$locale{S_SQLFAIL});
 
+    my $error;
     while ( $row = get_decoded_arrayref($sth) ) { # TODO: use get_decoded_hashref()
         my $regexp = quotemeta $$row[0];
-        make_error($$locale{S_STRREF}) if ( $comment =~ /$regexp/ );
-        make_error($$locale{S_STRREF}) if ( $name    =~ /$regexp/ );
-        make_error($$locale{S_STRREF}) if ( $subject =~ /$regexp/ );
+        $error = $$locale{S_STRREF} if ( $comment =~ /$regexp/ );
+        $error = $$locale{S_STRREF} if ( $name    =~ /$regexp/ );
+        $error = $$locale{S_STRREF} if ( $subject =~ /$regexp/ );
     }
+    make_error($error) if $error;
 
     # etc etc etc
     $sth->finish;
@@ -2572,6 +2590,8 @@ sub delete_post {
 
     if ( $row = $sth->fetchrow_hashref() ) {
         my $parent_post = get_post($$row{parent});
+        my ($geo) = get_geo_array($$cfg{SELFPATH}, $$row{location}, 1);
+        $$geo[4] =~ /AS(\d+) /;
 
         return $$locale{S_BADDELPASS} 
           if ( $password and $$row{password} ne $password );
@@ -2581,6 +2601,9 @@ sub delete_post {
           if ( $$row{timestamp} + $$cfg{RENZOKU4} >= time() and !$admin_del );
         return $$locale{S_LOCKED}
           if ( $parent_post && $$parent_post{locked} and !$admin_del );
+        # remove this if you wanna use this wakaba in production... lol
+        return decode_string("Не надо переписывать историю.", CHARSET)
+          if (!$admin_del && $$row{timestamp} <= 1447422385 and grep { $_ eq $1 } @{$$cfg{DELETION_PROHIBITED_AS}});
         return "This was posted by a moderator or admin and cannot be deleted this way."
           if (!$admin_del and $$row{admin_post} eq 1);
 
@@ -2696,7 +2719,7 @@ sub delete_post {
 # RSS Management
 #
 
-sub make_rss { # hater ktory droczit na perenosy skobok sosi xD
+sub make_rss {
     my ($sth, $row);
     my (@items);
 
@@ -4181,7 +4204,21 @@ sub make_json_header {
 sub make_error {
     my ($error, $not_found) = @_;
 
-    make_http_header(defined $not_found ? $not_found : undef);
+    if ( $ajax_errors ) {
+        make_json_header();
+        print $JSON->encode({
+            error => $error,
+            code => ($not_found ? 400 : 500)
+        });
+        # delete temp files
+        eval { next; };
+        if ($@) {
+            exit(0);
+        }
+        return;
+    }
+
+    make_http_header($not_found ? $not_found : undef);
 
     print $tpl->error({
         error          => $error,

@@ -38,6 +38,7 @@ $translation{S_ABBR2} = '%d сообщений ';
 $translation{S_ABBRIMG1} = 'и 1 файл ';   # Prints text to be shown when replies and files are hidden
 $translation{S_ABBRIMG2} = 'и %d файлов ';
 $translation{S_ABBR_END} = 'скрыто.'; 
+$translation{S_ABBR_END1} = 'скрыт.'; 
 
 $translation{S_ABBRTEXT1} = 'Раскрыть пост полностью (+1 строка)';
 $translation{S_ABBRTEXT2} = 'Раскрыть пост полностью (+%d строк)';
@@ -76,14 +77,15 @@ $translation{S_STICKYTITLE} = 'Тред прикреплен';    # Defines the 
 $translation{S_LOCKEDTITLE} = 'Тред закрыт';    # Defines the title of the tiny locked image on a thread if it is locked
 
 # javascript message strings (do not use HTML entities; mask single quotes with \\\')
-$translation{S_JS_EXPAND} = 'Expand textfield';
-$translation{S_JS_SHRINK} = 'Shrink textfield';
-$translation{S_JS_REMOVEFILE} = 'Remove file';
-$translation{S_JS_STYLES} = 'Стили';
-$translation{S_JS_DONE} = 'Готово';
-$translation{S_JS_CONTEXT} = 'Свистоперделки';
-$translation{S_JS_UPDATE} = 'Обновить тред';
 $translation{S_JS_BOTTOMFORM} = 'Форма внизу';
+$translation{S_JS_DONE} = 'Готово';
+$translation{S_JS_EXPAND} = 'Expand textfield';
+$translation{S_JS_OPENFORM} = 'Открыть форму';
+$translation{S_JS_REMOVEFILE} = 'Remove file';
+$translation{S_JS_SHRINK} = 'Shrink textfield';
+$translation{S_JS_STYLES} = 'Стили';
+$translation{S_JS_SETTINGS} = 'Настройки';
+$translation{S_JS_UPDATE} = 'Обновить тред';
 # javascript strings END
 
 $translation{S_MANARET} = 'Назад';    # Returns to HTML file instead of PHP--thus no log/SQLDB update occurs
@@ -182,7 +184,7 @@ $translation{S_MANASHOW} = 'Show';
 $translation{S_LOCKED} = 'Тред закрыт';
 $translation{S_BADIP} = 'Неправильный IP адрес';
 $translation{S_BADDELIP} = 'Неправильный IP.'; # Returns error for wrong ip (when user tries to delete file)
-$translation{S_INVALID_PAGE} = "страницы не существует.";
+$translation{S_INVALID_PAGE} = "Страницы не существует.";
 $translation{S_STOP_FOOLING} = "Lass das sein, Kevin!";
 
 $translation{S_TOOBIG} = 'Слишком большой размер файла.';

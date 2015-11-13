@@ -18,24 +18,6 @@ function $attr(b,c){for(var a in c)"text"==a?b.textContent=c[a]:"value"==a?b.val
 
 // ============================================================================================
 // Wakaba legacy
-function get_cookie(name) {
-	with (document.cookie) {
-		var regexp = new RegExp("(^|;\\s+)" + name + "=(.*?)(;|$)"),
-		hit = regexp.exec(document.cookie);
-		if (hit && hit.length > 2) return unescape(hit[2]);
-		else
-		return '';
-	}
-}
-
-function set_cookie(name, value, days) {
-	if (days) {
-		var date = new Date();
-		date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
-		var expires = "; expires=" + date.toGMTString();
-	} else expires = "";
-	document.cookie = name + "=" + value + expires + "; path=/";
-}
 
 function get_password(name) {
 	var pass = get_cookie(name);
@@ -122,6 +104,7 @@ function file_input_change(max) {
 
 		input.type = "file";
 		input.name = "file";
+		input.className = "externalInput";
 		input.onchange = function() {
 			file_input_change(max)
 		}
@@ -399,42 +382,6 @@ function get_frame_by_name(name)
 		if(name == frames[i].name) { return(frames[i]); }
 	}
 }
-
-// ============================================================================================
-// Localstorage Settings
-var Settings = function() {
-    if (!window.localStorage) {
-        return {
-            set: function(key, value) {
-                return set_cookie(key, value, 365 * 24 * 60 * 60 * 1000);
-            },
-            get: function(key) {
-                return get_cookie(key);
-            },
-            del: function(key) {
-                return set_cookie(key, "", 1);
-            }
-        };
-    } else
-        return {
-            set: function(key, value) {
-                return window.localStorage.setItem(key, value);
-            },
-            get: function(key) {
-                // legacy
-                var cookie = get_cookie(key);
-                var local = window.localStorage.getItem(key);
-                if (cookie && !local) {
-                    window.localStorage.setItem(key, cookie);
-                }
-                // end legacy
-                return window.localStorage.getItem(key);
-            },
-            del: function(key) {
-                return window.localStorage.removeItem(key);
-            }
-        };
-}();
 
 if(style_cookie)
 {

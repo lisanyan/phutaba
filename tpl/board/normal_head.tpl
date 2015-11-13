@@ -78,29 +78,29 @@
 </if>
 
 <div id="overlay">
- <div id="settings" class="settings">
-  <div class="settingsTitle">
-    <span><var $$locale{S_JS_STYLES}></span>
+  <div id="settings" class="settings">
+	<div class="settingsTitle">
+	  <span><var $$locale{S_JS_SETTINGS}></span>
+	</div>
+	<hr />
+	<div class="title">
+	  <span><var $$locale{S_JS_STYLES}></span>
+	</div>
+	<div class="info">
+	  <loop $stylesheets>[<a href="javascript:set_stylesheet_frame('<var $title>','list')"><var $title></a>] </loop>
+	  [<a href="javascript:set_stylesheet_frame(null,'list')">Default</a>]
+	</div>
+	<hr />
+	<div id="settingsConfig"></div>
+	<hr />
+	<div class="settingsDone">
+	  [<a href="javascript:void(0)" id="navmenu1"><var $$locale{S_JS_DONE}></a>]
+	</div>
   </div>
-  <hr />
-
-  <div class="settingsStyles">
-	<loop $stylesheets>[<a href="javascript:set_stylesheet_frame('<var $title>','list')"><var $title></a>] </loop>
-	[<a href="javascript:set_stylesheet_frame(null,'list')">Default</a>]
-  </div>
-  <hr />
-	[<a id="tglmommy" href="#" title="Alt+N/Shift+Alt+N(OPERA)">NSFW</a>]
-	[<label><input type="checkbox" value="" id="tglcontext"><var $$locale{S_JS_CONTEXT}></label>]
-	[<label><input type="checkbox" value="" id="tglform"><var $$locale{S_JS_BOTTOMFORM}></label>]
-  <hr />
-
-  <div class="settingsDone">
-  	[<a href="javascript:void(0)" id="navmenu1"><var $$locale{S_JS_DONE}></a>]
-  </div>
- </div>
 </div>
 
 <div class="content">
+<script type="text/javascript" src="/static/vendor/wz_tooltip.js"></script>
 
 <nav>
 	<ul class="menu">

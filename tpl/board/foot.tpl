@@ -12,11 +12,11 @@
 <if !$admin><const Wakaba::TRACKING_CODE></if>
 
 <script type="text/javascript">var style_cookie="<var $$cfg{STYLE_COOKIE}>";</script>
+<script type="text/javascript" src="/static/js/localstorage.js"></script>
 <script type="text/javascript" src="/static/js/wakaba3.js"></script>
-<script type="text/javascript" src="/static/vendor/wz_tooltip.js"></script>
 <script type="text/javascript" src="/static/vendor/jquery-1.11.3.min.js"></script>
 <script type="text/javascript" src="/static/vendor/jquery.blockUI.js"></script>
-<!-- <script type="text/javascript" src="/static/vendor/jquery.form.min.js"></script> -->
+<script type="text/javascript" src="/static/vendor/jquery.form.min.js"></script>
 
 <if %admin>
 <link rel="stylesheet" type="text/css" href="/static/vendor/jquery-ui.min.css" />
@@ -26,7 +26,6 @@
 
 <if $$cfg{ENABLE_HIDE_THREADS} && !$thread>
 <script type="text/javascript" src="/static/js/hidethreads.js"></script>
-<script type="text/javascript" src="/static/vendor/jquery.cookie.js"></script>
 </if>
 
 <if $postform>
@@ -49,6 +48,7 @@
 	var match;
 	if ((match = /#i([0-9]+)/.exec(document.location.toString())) && !document.forms.postform.nya4.value) insert(">>" + match[1] + "\n");
 	if ((match = /#([0-9]+)/.exec(document.location.toString()))) highlight(match[1]);
+
 	$j("#postform_submit").click(function() {
 		$j(".postarea").block({
 			message: "Please wait&hellip;",
@@ -56,6 +56,7 @@
 		});
 		setTimeout($j.unblockUI, 5000);
     });
+
 	<if $thread>
 		$j("#delform").delegate("span.reflink a", "click", function (ev) {
 			var a = ev.target,
@@ -65,6 +66,7 @@
 		});
 	</if>
    </if>
+
 	<if $$cfg{ENABLE_HIDE_THREADS} && !$thread>hideThreads("<var $$cfg{SELFPATH}>", $j);</if>
   });
 /* ]]> */

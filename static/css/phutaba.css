@@ -41,6 +41,10 @@ ul.menu li a, ul.menu_bottom li a {
 ul.menu, ul.menu_bottom { padding: 0.2em }
 ul.pagelist { margin: 0px 1em 3px 0px !important }
 
+#overlay, .overlay {
+	overflow-y: scroll;
+}
+
 }
 
 /* default styles */
@@ -559,6 +563,7 @@ footer img {
 }
 
 /* stuff for context.js */
+/* overlay menu */
 #message {
 	border-color: #666;
 	border-radius: 5px 5px 5px 5px;
@@ -568,7 +573,7 @@ footer img {
 	text-align: center;
 	top: 50px;
 	width: 40%;
-	z-index: 400;
+	z-index: 2000;
 	-webkit-box-shadow: #666 0px 0px 10px;
 	box-shadow: #666 0px 0px 10px;
 }
@@ -589,6 +594,23 @@ footer img {
 	height: 100%;
 	vertical-align: middle;
 }
+#settings {
+	background: #D7CFC0;
+	display: inline-block;
+	box-sizing: border-box;
+	padding-bottom: 5px;
+	position: relative;
+	text-align: left;
+	vertical-align: middle;
+	width: 320px;
+	height: auto;
+	border: 1px solid rgba(0, 0, 0, .25); border-left: none; border-top: none; padding: 5px;
+	border-color: #BFB5A1;
+}
+#settings .title { padding:3px }
+#settings .info { padding:5px }
+.settingsTitle { font-weight: bold; }
+/* refmap and post previews */
 .pidarok_refmap {
 	font-style:italic;
 	font-size:11px;
@@ -606,24 +628,16 @@ footer img {
 .post_preview .doubledash {
 	display: none;
 }
+/* autoupdate, etc */
+#open_form {
+	text-align: center;
+	font-size: 18px;
+	font-weight: bold;
+	cursor: pointer;
+	margin-top: 16px;
+}
 #postform2 {
 	clear:both;
-}
-#settings {
-	background: #D7CFC0;
-	display: inline-block;
-	box-sizing: border-box;
-	padding-bottom: 5px;
-	position: relative;
-	text-align: left;
-	vertical-align: middle;
-	width: 320px;
-	height: auto;
-	border: 1px solid rgba(0, 0, 0, .25); border-left: none; border-top: none; padding: 5px;
-	border-color: #BFB5A1;
-}
-.settingsTitle {
-	font-weight: bold;
 }
 #updater {
 	display: none;

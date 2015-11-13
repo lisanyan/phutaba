@@ -79,12 +79,14 @@ $translation{S_LOCKEDTITLE} = 'Thread ist geschlossen';    # Defines the title o
 
 # javascript message strings (do not use HTML entities; mask single quotes with \\\')
 $translation{S_JS_EXPAND} = 'Textfeld vergrößern';
+$translation{S_JS_OPENFORM} = 'Open Form';
 $translation{S_JS_SHRINK} = 'Textfeld verkleinern';
 $translation{S_JS_REMOVEFILE} = 'Datei entfernen';
 $translation{S_JS_STYLES} = 'Styles';
 $translation{S_JS_DONE} = 'Ok';
 $translation{S_JS_CONTEXT} = 'Context';
 $translation{S_JS_UPDATE} = 'Update thread';
+$translation{S_JS_SETTINGS} = 'Settings';
 # javascript strings END
 
 $translation{S_MANARET} = 'Zur&uuml;ck';    # Returns to HTML file instead of PHP--thus no log/SQLDB update occurs
