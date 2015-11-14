@@ -24,7 +24,7 @@ use constant MAX_UNICODE => 1114111;
 # HTML utilities
 #
 
-my $protocol_re = qr{(?:http://|https://|ftp://|mailto:|news:|irc:|xmpp:|skype:)};
+my $protocol_re = qr{(?:http://|https://|ftp://|magnet:|mailto:|news:|irc:|xmpp:|skype:)};
 my $url_re =
 qr{(${protocol_re}[^\s<>()"]*?(?:\([^\s<>()"]*?\)[^\s<>()"]*?)*)((?:\s|<|>|"|\.||\]|!|\?|,|&#44;|&quot;)*(?:[\s<>()"]|$))};
 

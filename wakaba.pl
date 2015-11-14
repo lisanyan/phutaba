@@ -94,7 +94,7 @@ $has_encode = 1 unless $@;
 #
 # Global init
 #
-my $protocol_re = qr/(?:http|https|ftp|mailto|nntp|irc|xmpp|skype)/;
+my $protocol_re = qr{(?:http://|https://|ftp://|magnet:|mailto:|news:|irc:|xmpp:|skype:)};
 my $pomf_domain = "a.pomf.cat";
 
 my ($dbh, $query, $boardSection, $moders, $ajax_errors);
