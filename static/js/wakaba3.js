@@ -318,13 +318,6 @@ function abortWebmDownload(el) {
 
 // ============================================================================================
 // Stylesheets
-function set_stylesheet_frame(styletitle,framename)
-{
-	set_stylesheet(styletitle);
-	var list = get_frame_by_name(framename);
-	if(list) set_stylesheet(styletitle,list);
-}
-
 function set_stylesheet(styletitle,target)
 {
 	set_cookie("wakastyle",styletitle,365);
@@ -340,7 +333,6 @@ function set_stylesheet(styletitle,target)
 		{
 			links[i].disabled=true; // IE needs this to work. IE needs to die.
 			if(styletitle==title) { links[i].disabled=false; found=true; }
-			// ugly hack
 			if(styletitle===null) { links[i].disabled=true; found=true}
 		}
 	}
@@ -351,6 +343,13 @@ function set_stylesheet(styletitle,target)
 	}
 }
 
+function set_stylesheet_frame(styletitle,framename)
+{
+	set_stylesheet(styletitle);
+	var list = get_frame_by_name(framename);
+	if(list) set_stylesheet(styletitle,list);
+}
+
 function set_preferred_stylesheet(target)
 {
 	var links = target ? target.document.getElementsByTagName("link") : document.getElementsByTagName("link");
@@ -359,6 +358,15 @@ function set_preferred_stylesheet(target)
 		var rel=links[i].getAttribute("rel");
 		var title=links[i].getAttribute("title");
 		if(rel.indexOf("style")>=0&&title) links[i].disabled=(rel.indexOf("alt")>=0);
+	}
+}
+
+function get_frame_by_name(name)
+{
+	var frames = window.parent.frames;
+	for(i = 0; i < frames.length; i++)
+	{
+		if(name == frames[i].name) { return(frames[i]); }
 	}
 }
 
@@ -374,29 +382,31 @@ function get_active_stylesheet()
 	return null;
 }
 
-function get_frame_by_name(name)
+function get_preferred_stylesheet()
 {
-	var frames = window.parent.frames;
-	for(i = 0; i < frames.length; i++)
+	var links=document.getElementsByTagName("link");
+	for(var i=0;i<links.length;i++)
 	{
-		if(name == frames[i].name) { return(frames[i]); }
+		var rel=links[i].getAttribute("rel");
+		var title=links[i].getAttribute("title");
+		if(rel.indexOf("style")>=0&&rel.indexOf("alt")==-1&&title) return title;
 	}
-}
-
-if(style_cookie)
-{
-	var cookie=get_cookie(style_cookie);
-	var title=cookie?cookie:set_preferred_stylesheet();
-	set_stylesheet(title);
+	return null;
 }
 
 window.onunload = function() {
 	if (style_cookie) {
 		var title = get_active_stylesheet();
-		title = title ? title : get_cookie(style_cookie);
 		set_cookie(style_cookie, title, 365);
 	}
 };
+
+if(style_cookie)
+{
+	var cookie=get_cookie(style_cookie);
+	var title=cookie?cookie:get_preferred_stylesheet();
+	set_stylesheet(title);
+}
 
 // ============================================================================================
 // TEH END

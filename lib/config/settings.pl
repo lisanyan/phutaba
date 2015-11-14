@@ -39,6 +39,7 @@ $settings{ENTRIES_PER_LOGPAGE} = 50;
 $settings{S_ANONAME} = 'Аноним';			# Defines what to print if there is no text entered in the name field
 $settings{S_ANOTEXT} = '';					# Defines what to print if there is no text entered in the comment field
 $settings{S_ANOTITLE} = '';					# Defines what to print if there is no text entered into subject field
+$settings{S_PREWRAP} = "<span class=\"prewrap\">%s</span>";
 $settings{SILLY_ANONYMOUS} = '';			# Make up silly names for anonymous people (0 or '': don't display, any combination of 'day' or 'board': make names change for each day or board, 'static': static names)
 $settings{PREVENT_GHOST_BUMPING} = 1;
 $settings{ADMIN_EMAIL} = 'admin@host.local';

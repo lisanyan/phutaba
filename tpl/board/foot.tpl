@@ -50,7 +50,7 @@
 	if ((match = /#([0-9]+)/.exec(document.location.toString()))) highlight(match[1]);
 
 	$j("#postform_submit").click(function() {
-		$j(".postarea").block({
+		$j(".postarea").has('#postform').block({
 			message: "Please wait&hellip;",
 			css: { fontSize: "2em", color: "#000000", background: "#D7CFC0", border: "1px solid #BFB5A1" },
 		});

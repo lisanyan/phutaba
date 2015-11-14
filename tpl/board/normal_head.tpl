@@ -127,4 +127,4 @@
 	</div>
 </header>
 
-<if $postform or $admin or $locked><hr /></if>
+<if $postform or $admin or $locked><hr id="postform_hr"/></if>

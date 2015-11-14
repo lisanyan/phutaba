@@ -45,6 +45,10 @@ ul.pagelist { margin: 0px 1em 3px 0px !important }
 	overflow-y: scroll;
 }
 
+.postarea.thread_reply {
+	margin-left: 0px !important;
+}
+
 }
 
 /* default styles */
@@ -563,6 +567,7 @@ footer img {
 }
 
 /* stuff for context.js */
+
 /* overlay menu */
 #message {
 	border-color: #666;
@@ -610,6 +615,7 @@ footer img {
 #settings .title { padding:3px }
 #settings .info { padding:5px }
 .settingsTitle { font-weight: bold; }
+
 /* refmap and post previews */
 .pidarok_refmap {
 	font-style:italic;
@@ -628,6 +634,7 @@ footer img {
 .post_preview .doubledash {
 	display: none;
 }
+
 /* autoupdate, etc */
 #open_form {
 	text-align: center;
@@ -641,6 +648,9 @@ footer img {
 }
 #updater {
 	display: none;
+}
+.postarea.thread_reply {
+	margin-left: 2em;
 }
 
 /* TODO integrate colours into specific stylesheets */

@@ -109,6 +109,7 @@ return 1 if (caller); # stop here if we're being called externally
 pm_manage(n_processes => 4, die_timeout => 10, pm_title => 'perl-fcgi-pm-02ch');
 
 # FCGI init
+FASTCGI:
 while($query=CGI::Fast->new)
 {
     pm_pre_dispatch();
@@ -125,11 +126,11 @@ while($query=CGI::Fast->new)
 
         if( $$cfg{NOTFOUND} ) {
             print ("Content-type: text/plain\n\nBoard not found.");
-            next;
+            next FASTCGI;
         }
         elsif( !($$cfg{BOARD_ENABLED}) ) {
             print ("Content-type: text/plain\n\nThis board has been disabled by administrator.");
-            next;
+            next FASTCGI;
         }
     }
 
@@ -160,15 +161,14 @@ while($query=CGI::Fast->new)
 
     if ( $json eq "post" ) {
         my $id = $query->param("id");
-        if ( defined $id and $id =~ /^[+-]?\d+$/ ) {
+        if ( defined($id) and $id =~ /^[+-]?\d+$/ ) {
             output_json_post($id);
         }
     }
     if ( $json eq "newposts" ) {
         my $id = $query->param("id");
         my $after = $query->param("after");
-        if ( defined $id && defined $after and
-             $after =~ /^[+-]?\d+$/ && $id =~ /^[+-]?\d+$/ ) {
+        if ( defined($after) and $after =~ /^[+-]?\d+$/ && $id =~ /^[+-]?\d+$/ ) {
             output_json_newposts($after, $id);
         }
     }
@@ -179,13 +179,13 @@ while($query=CGI::Fast->new)
     }
     elsif ($json eq "thread") {
         my $id = $query->param("id");
-        if (defined $id and $id =~ /^[+-]?\d+$/) {
+        if (defined($id) and $id =~ /^[+-]?\d+$/) {
             output_json_thread($id);
         }
     }
     elsif ( $json eq "stats" ) {
         my $date_format = $query->param("date_format");
-        if ( defined $date_format ) {
+        if ( defined($date_format) ) {
             output_json_stats($date_format);
         }
     }
@@ -552,7 +552,7 @@ sub output_json_threads {
         while( my $post=get_decoded_hashref( $posts ) ) {
             hide_row_els( $post );
             add_images_to_row( $post );
-            push( @replies, $post ) if(defined $post);
+            push( @replies, $post ) if( defined($post) );
         }
         push @thread, rev(@replies);
         push @threads, { posts => [@thread] };
@@ -687,7 +687,7 @@ sub output_json_post {
     $sth->execute($id);
     $error = $sth->errstr;
     $row = get_decoded_hashref($sth);
-    if(defined $row) {
+    if( defined($row) ) {
         $code = 200;
         add_images_to_row($row);
         hide_row_els($row);
@@ -761,7 +761,7 @@ sub output_json_stats {
     $sth->execute(clean_string(decode_string($date_format, CHARSET)));
     $error = $sth->errstr;
     @data = $sth->fetchall_arrayref;
-    if(defined \@data) {
+    if(@data) {
         $code = 200;
         $data{'stats'} = \@data;
     } elsif($sth->rows == 0) {
@@ -1183,8 +1183,9 @@ sub get_omit_message {
     $omitfiles = $$locale{S_ABBRIMG1} if ($files == 1);
     $omitfiles = sprintf($$locale{S_ABBRIMG2}, $files) if ($files > 1);
 
+    # temp, remove later
     $$locale{S_ABBR_END} = $$locale{S_ABBR_END1}
-      if ($files == 1 && $$cfg{BOARD_LOCALE} eq 'ru');
+      if ($files == 1 and $$cfg{BOARD_LOCALE} eq 'locale_ru');
 
     return $omitposts . $omitfiles . $$locale{S_ABBR_END};
 }
@@ -1431,9 +1432,10 @@ sub post_stuff {
     for (my $i = 0; $i < $$cfg{MAX_FILES}; $i++) {
         ($size[$i], @file_errors[$i]) = get_file_size($files[$i], $no_pomf) if ($files[$i]);
     }
+
     if( grep { defined($_) } @file_errors ) {
-        my $errstr = "<span class=\"prewrap\">" . join "\n" . "</span>", @file_errors;
-        make_error($errstr);
+        my $errstring = sprintf $$cfg{S_PREWRAP}, join("\n", @file_errors);
+        make_error($errstring);
     }
 
     # find IP
@@ -1621,7 +1623,7 @@ sub post_stuff {
                 ($sth->execute(
                     $thread_id, $new_post_id, $filename[$i], $size[$i], $md5[$i], $width[$i], $height[$i],
                     $thumbnail[$i], $tn_width[$i], $tn_height[$i], $uploadname[$i], $info[$i], $info_all[$i]
-                ) or make_error($$cfg{S_SQLFAIL})) if ($files[$i]);
+                ) or make_error($$cfg{S_SQLFAIL}) ) if ($files[$i]);
             }
         };
         if ($@) {
@@ -2145,8 +2147,8 @@ sub get_cb_post {
 
     $sth = $dbh->prepare(
         "SELECT * FROM " . $$cfg{SQL_TABLE} . " WHERE num=? LIMIT 1;"
-    ) or '';
-    $sth->execute($thread) or '';
+    ) or make_error($$locale{S_SQLFAIL});
+    $sth->execute($thread) or make_error($$locale{S_SQLFAIL});
     $ret = $sth->fetchrow_hashref();
     $sth->finish;
 
@@ -2159,8 +2161,8 @@ sub get_post {
 
     $sth = $dbh->prepare(
         "SELECT * FROM " . $$cfg{SQL_TABLE} . " WHERE num=? LIMIT 1;"
-    ) or '';
-    $sth->execute($thread) or '';
+    ) or make_error($$locale{S_SQLFAIL});
+    $sth->execute($thread) or make_error($$locale{S_SQLFAIL});
     $ret = $sth->fetchrow_hashref();
     $sth->finish;
 
@@ -2173,8 +2175,8 @@ sub get_parent_post {
 
     $sth = $dbh->prepare(
         "SELECT * FROM " . $$cfg{SQL_TABLE} . " WHERE num=? and parent=0 LIMIT 1;"
-    ) or '';
-    $sth->execute($thread) or '';
+    ) or make_error($$locale{S_SQLFAIL});
+    $sth->execute($thread) or make_error($$locale{S_SQLFAIL});
     $ret = $sth->fetchrow_hashref();
     $sth->finish;
 
@@ -2216,7 +2218,7 @@ sub get_file_size {
     $errfsize = sprintf("%.2f", $size / 1024) . " kB &gt; " . $max_size . " kB";
 
     $err = $$locale{S_TOOBIG} . " ($errfname: $errfsize)" 
-      if ( $nopomf eq 'on' && !grep {$_ eq $ext} @{$$cfg{POMF_EXTENSIONS}} and $size > $max_size * 1024 );
+      if ( $nopomf ne 'on' && !grep {$_ eq $ext} @{$$cfg{POMF_EXTENSIONS}} and $size > $max_size * 1024 );
     $err = $$locale{S_TOOBIGORNONE} . " ($errfname)" if ($size == 0);  # check for small files, too?
 
     return ($size, $err);
@@ -2549,7 +2551,6 @@ sub delete_stuff {
     my @errors;
     foreach $post (@posts) {
         $ip = delete_post( $post, $password, $fileonly, $deletebyip, $admin_del, $admin );
-        # (:){2,}
         if ($ip !~ /:/ and $ip !~ /\d+\.\d+\.\d+\.\d+/) # Function returned with error string
         {
             push (@errors,"Post $post: ".$ip);
@@ -2566,7 +2567,7 @@ sub delete_stuff {
         }
     }
     else {
-        my $errstring = "<span class=\"prewrap\">" . join("\n", @errors) . "</span>";
+        my $errstring = sprintf $$cfg{S_PREWRAP}, join("\n", @errors);
         make_error($errstring);
     }
 }
@@ -2964,13 +2965,11 @@ sub backup_stuff # Delete post or thread.
             or make_error($$locale{S_SQLFAIL});
         $sth->execute($$row{num}) or make_error($$locale{S_SQLFAIL});
 
-        my $res;
-        my $error;
+        my ($res);
         while ($res=$sth->fetchrow_hashref())
         {
-            $error = backup_post($res,$$this_board{SELFPATH},$timestamp);
+            backup_post($res,$$this_board{SELFPATH},$timestamp);
         }
-        make_error($error) if $error;
     }
 }
 
@@ -2986,7 +2985,7 @@ sub backup_post # Delete single post.
     if ($affected_board ne $$cfg{SELFPATH})
     {
         $this_board = fetch_config($affected_board)
-            or return "Post was not backed up, board resolution failed.";
+            or make_error("Post was not backed up, board resolution failed.");
     }
     else
     {
@@ -2994,16 +2993,16 @@ sub backup_post # Delete single post.
     }
 
     # If post has already been backed up, delete any extraneous copies.
-    $sth=$dbh->prepare("DELETE FROM ".$$cfg{SQL_BACKUP_TABLE}." WHERE board_name=? AND postnum=?;") or return $$locale{S_SQLFAIL};
-    $sth->execute($affected_board,$$row{num}) or return $$locale{S_SQLFAIL};
+    $sth=$dbh->prepare("DELETE FROM ".$$cfg{SQL_BACKUP_TABLE}." WHERE board_name=? AND postnum=?;") or make_error($$locale{S_SQLFAIL});
+    $sth->execute($affected_board,$$row{num}) or make_error($$locale{S_SQLFAIL});
 
-    $sth=$dbh->prepare("SELECT * FROM ".$$cfg{SQL_BACKUP_IMG_TABLE}." WHERE board_name=? AND post=?;") or return $$locale{S_SQLFAIL};
-    $sth->execute($affected_board,$$row{num}) or return $$locale{S_SQLFAIL};
+    $sth=$dbh->prepare("SELECT * FROM ".$$cfg{SQL_BACKUP_IMG_TABLE}." WHERE board_name=? AND post=?;") or make_error($$locale{S_SQLFAIL});
+    $sth->execute($affected_board,$$row{num}) or make_error($$locale{S_SQLFAIL});
 
     # If images have already been backed up, delete any extraneous copies.
     my $delete = $dbh->prepare(
         "DELETE FROM " . $$cfg{SQL_BACKUP_IMG_TABLE} . " WHERE post=?;" )
-      or return $$locale{S_SQLFAIL};
+      or make_error($$locale{S_SQLFAIL});
 
     my $img_dir = $$this_board{IMG_DIR};
     my $thumb_dir = $$this_board{THUMB_DIR};
@@ -3020,14 +3019,14 @@ sub backup_post # Delete single post.
     }
 
     # Delete entries from table
-    $delete->execute( $$row{num} ) or return $$locale{S_SQLFAIL};
+    $delete->execute( $$row{num} ) or make_error($$locale{S_SQLFAIL});
 
     # Backup post.
     $sth=$dbh->prepare(
           "INSERT INTO "
           . $$cfg{SQL_BACKUP_TABLE}
           . " VALUES(null,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);"
-        ) or return $$locale{S_SQLFAIL};
+        ) or make_error($$locale{S_SQLFAIL});
     $sth->execute(
             $$row{num},
             $affected_board,  $$row{parent},    $$row{timestamp},  $$row{lasthit},
@@ -3035,20 +3034,20 @@ sub backup_post # Delete single post.
             $$row{subject},   $$row{password},  $$row{comment},    $$row{banned},
             $$row{autosage},  $$row{adminpost}, $$row{admin_post}, $$row{locked},
             $$row{sticky},    $$row{location},  $$row{secure},     $timestamp
-        ) or return $$locale{S_SQLFAIL};
+        ) or make_error($$locale{S_SQLFAIL});
 
     $sth = $dbh->prepare(
           "SELECT * FROM "
           . $$cfg{SQL_TABLE_IMG}
           . " WHERE post=? ORDER BY num ASC;"
-        ) or return $$locale{S_SQLFAIL};
+        ) or make_error($$locale{S_SQLFAIL});
     $sth->execute($$row{num});
 
     my $sth2 = $dbh->prepare(
         "INSERT INTO "
           . $$cfg{SQL_BACKUP_IMG_TABLE}
           . " VALUES(null,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);"
-        ) or return $$locale{S_SQLFAIL};
+        ) or make_error($$locale{S_SQLFAIL});
 
     while (my $res = get_decoded_hashref($sth))
     {
@@ -3056,7 +3055,7 @@ sub backup_post # Delete single post.
             $$res{num},       $affected_board,
             $$res{thread},    $$res{post},      $$res{image},      $$res{size},       $$res{md5},  $$res{width},    $$res{height},
             $$res{thumbnail}, $$res{tn_width},  $$res{tn_height},  $$res{uploadname}, $$res{info}, $$res{info_all}, $timestamp
-        ) or return $$locale{S_SQLFAIL};
+        ) or make_error($$locale{S_SQLFAIL});
 
         my $base_filename = $$res{image};
         my $base_thumbnail = $$res{thumbnail};
@@ -3091,13 +3090,11 @@ sub restore_stuff {
     my @session = check_password($admin,'');
     make_error($$locale{S_NOPRIVILEGES}) if($session[1] ne 'admin');
 
-    my $error;
     foreach my $id (@num)
     {
-        $error = restore_post_or_thread($id, $board_name);
+        restore_post_or_thread($id, $board_name);
         log_action( 'backup_restore', $id, '', $admin );
     }
-    make_error($error) if $error;
 
     make_http_forward($ENV{HTTP_REFERER});
 }
@@ -3114,7 +3111,7 @@ sub restore_post_or_thread {
     # Resolve board name and set to current board
     if ($board_name ne $$cfg{SELFPATH})
     {
-        $this_board=fetch_config($board_name) or return "Failed to resolve board $board_name.";
+        $this_board=fetch_config($board_name) or make_error("Failed to resolve board $board_name.");
     }
     else
     {
@@ -3122,19 +3119,19 @@ sub restore_post_or_thread {
     }
     
     # Grab post contents
-    $sth=$dbh->prepare("SELECT * FROM ".$$cfg{SQL_BACKUP_TABLE}." WHERE board_name=? AND postnum=?;") or return $$locale{S_SQLFAIL};
-    $sth->execute($board_name,$num) or return $$locale{S_SQLFAIL};
+    $sth=$dbh->prepare("SELECT * FROM ".$$cfg{SQL_BACKUP_TABLE}." WHERE board_name=? AND postnum=?;") or make_error($$locale{S_SQLFAIL});
+    $sth->execute($board_name,$num) or make_error($$locale{S_SQLFAIL});
     my $row = $sth->fetchrow_hashref();
 
     return "Post restoration failed: Backup of post in $board_name with original ID $num not found." if (!$row);
 
     # Delete original post, if applicable.
-    $sth=$dbh->prepare("DELETE FROM ".$$this_board{SQL_TABLE}." WHERE num=?;") or return $$locale{S_SQLFAIL};
-    $sth->execute($$row{postnum}) or return $$locale{S_SQLFAIL};
+    $sth=$dbh->prepare("DELETE FROM ".$$this_board{SQL_TABLE}." WHERE num=?;") or make_error($$locale{S_SQLFAIL});
+    $sth->execute($$row{postnum}) or make_error($$locale{S_SQLFAIL});
 
     # Delete op images, if applicable.
-    $sth=$dbh->prepare("DELETE FROM ".$$this_board{SQL_TABLE_IMG}." WHERE post=?;") or return $$locale{S_SQLFAIL};
-    $sth->execute($$row{postnum}) or return $$locale{S_SQLFAIL};
+    $sth=$dbh->prepare("DELETE FROM ".$$this_board{SQL_TABLE_IMG}." WHERE post=?;") or make_error($$locale{S_SQLFAIL});
+    $sth->execute($$row{postnum}) or make_error($$locale{S_SQLFAIL});
 
     # Check if post belongs to thread and thread is deleted. We cannot bring back a single post from a neutered thread.
     if ($$row{parent})
@@ -3158,27 +3155,27 @@ sub restore_post_or_thread {
           "INSERT INTO "
           . $$this_board{SQL_TABLE}
           . " VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);"
-        ) or return $$locale{S_SQLFAIL};
+        ) or make_error($$locale{S_SQLFAIL});
     $sth->execute(
             $$row{postnum},   $$row{parent},    $$row{timestamp},  $updated_lasthit || time(),
             $$row{ip},        $$row{name},      $$row{trip},       $$row{email},
             $$row{subject},   $$row{password},  $$row{comment},    $$row{banned},
             $autosage_on,     $$row{adminpost}, $$row{admin_post}, $locked_thread,
             $stickied_thread, $$row{location},  $$row{secure}
-        ) or return $$locale{S_SQLFAIL};
+        ) or make_error($$locale{S_SQLFAIL});
 
     # Restore images.
     $sth = $dbh->prepare(
           "SELECT * FROM "
           . $$cfg{SQL_BACKUP_IMG_TABLE}
           . " WHERE post=? AND board_name=?;"
-        ) or return $$locale{S_SQLFAIL};
-    $sth->execute($$row{postnum}, $board_name) or return $$locale{S_SQLFAIL};
+        ) or make_error($$locale{S_SQLFAIL});
+    $sth->execute($$row{postnum}, $board_name) or make_error($$locale{S_SQLFAIL});
 
     # Restore images.
     my $sth2 = $dbh->prepare(
         "INSERT INTO " . $$cfg{SQL_TABLE_IMG} . " VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?);"
-        ) or return $$locale{S_SQLFAIL};
+        ) or make_error($$locale{S_SQLFAIL});
 
     my $thumb_dir = $$this_board{THUMB_DIR};
     my $img_dir = $$this_board{IMG_DIR};
@@ -3188,7 +3185,7 @@ sub restore_post_or_thread {
             $$res{imgnum},    $$res{thread},    $$res{post},       $$res{image},      $$res{size},      $$res{md5},
             $$res{width},     $$res{height},    $$res{thumbnail},  $$res{tn_width},   $$res{tn_height}, $$res{uploadname},
             $$res{info},      $$res{info_all}
-        ) or return $$locale{S_SQLFAIL};
+        ) or make_error($$locale{S_SQLFAIL});
 
         my $base_filename = $$res{image};
         my $base_thumbnail = $$res{thumbnail};
@@ -3281,7 +3278,7 @@ sub remove_backup {
 
     my $delete = $dbh->prepare(
         "DELETE FROM " . $$cfg{SQL_BACKUP_IMG_TABLE} . " WHERE post=?;" )
-      or return $$locale{S_SQLFAIL};
+      or make_error($$locale{S_SQLFAIL});
 
     if ( my $this_board = fetch_config($board_name) ) {
         my $thumb = $$this_board{THUMB_DIR};
@@ -3298,7 +3295,7 @@ sub remove_backup {
 
         }
         # Delete entries from table
-        $delete->execute( $id ) or return $$locale{S_SQLFAIL};
+        $delete->execute( $id ) or make_error($$locale{S_SQLFAIL});
     }
 
     # Delete post data.
@@ -3306,8 +3303,8 @@ sub remove_backup {
           "DELETE FROM "
           . $$cfg{SQL_BACKUP_TABLE}
           . " WHERE postnum=? AND board_name=?;"
-        ) or return $$locale{S_SQLFAIL};
-    $sth->execute($id, $board_name) or return $$locale{S_SQLFAIL};
+        ) or make_error($$locale{S_SQLFAIL});
+    $sth->execute($id, $board_name) or make_error($$locale{S_SQLFAIL});
 
     # Close handles.
     $sth->finish();
@@ -3763,7 +3760,7 @@ sub make_expiration_date {
 
     my ($date) = grep { $$_{label} eq $expires } @{$$cfg{BAN_DATES}};
 
-    if(defined $date->{time}) {
+    if( defined($date->{time}) ) {
         if( $date->{time}!=0 ) { $expires = $time+$date->{time}; } # Use a predefined expiration time
         else { $expires=0 } # Never expire
     }
@@ -3804,10 +3801,10 @@ sub check_moder {
     my $nick = get_moder_nick($pass);
     my @info = ( $nick, $$moders{$nick}{class}, $$moders{$nick}{boards} );
 
-    return 0     unless( defined $nick );
+    return 0     unless( defined($nick) );
     return @info unless( @{$info[2]} ); # No board restriction
 
-    unless ( defined (first { $_ eq $$cfg{SELFPATH} } @{$info[2]} ) )
+    unless ( defined( first { $_ eq $$cfg{SELFPATH} } @{$info[2]} ) )
     {
         make_error(
             sprintf( $$locale{S_NOBOARDACC}, join( ', ', @{$info[2]} ), get_script_name() )
@@ -3936,9 +3933,10 @@ sub edit_post {
     for (my $i = 0; $i < $$cfg{MAX_FILES}; $i++) {
         ($size[$i], @file_errors[$i]) = get_file_size($files[$i], $no_pomf) if ($files[$i]);
     }
+
     if( grep { defined($_) } @file_errors ) {
-        my $errstr = "<span class=\"prewrap\">" . join "\n" . "</span>", @file_errors;
-        make_error($errstr);
+        my $errstring = sprintf $$cfg{S_PREWRAP}, join("\n", @file_errors);
+        make_error($errstring);
     }
 
     # clean inputs
@@ -3991,9 +3989,9 @@ sub edit_post {
 
             # remove files from comment and possible replies
             $sth = $dbh->prepare(
-                    "SELECT image,thumbnail FROM " . $$cfg{SQL_TABLE_IMG} . " WHERE post=?" )
-              or return $$locale{S_SQLFAIL};
-            $sth->execute( $num ) or return $$locale{S_SQLFAIL};
+                    "SELECT image,thumbnail FROM " . $$cfg{SQL_TABLE_IMG} . " WHERE post=?;" )
+              or make_error($$locale{S_SQLFAIL});
+            $sth->execute( $num ) or make_error($$locale{S_SQLFAIL});
 
             my $thumb = $$cfg{THUMB_DIR};
             while ( my $res = $sth->fetchrow_hashref() ) {
@@ -4010,12 +4008,12 @@ sub edit_post {
 
             $sth = $dbh->prepare("INSERT INTO " . $$cfg{SQL_TABLE_IMG} . " VALUES(null,?,?,?,?,?,?,?,?,?,?,?,?,?);" )
                 or make_error($$cfg{S_SQLFAIL});
-    
+
             foreach (my $i = 0; $i < $$cfg{MAX_FILES}; $i++) {
                 ($sth->execute(
                     $$post{parent}, $num, $filename[$i], $size[$i], $md5[$i], $width[$i], $height[$i],
                     $thumbnail[$i], $tn_width[$i], $tn_height[$i], $uploadname[$i], $info[$i], $info_all[$i]
-                ) or make_error($$cfg{S_SQLFAIL})) if ($files[$i]);
+                ) or make_error($$locale{S_SQLFAIL}) ) if ($files[$i]);
             }
         };
         if ($@) {
@@ -4060,8 +4058,11 @@ sub log_action {
     eval {
         $dbh->begin_work();
 
-        $sth=$dbh->prepare("INSERT INTO ".$$cfg{SQL_LOG_TABLE}." VALUES(null,?,?,?,?,?,?,?);") or return $dbh->errstr;
-        $sth->execute($session[0],$action,$object,$object2,($$cfg{SELFPATH}),$time,dot_to_dec(get_remote_addr())) or return $dbh->errstr;
+        $sth=$dbh->prepare("INSERT INTO ".$$cfg{SQL_LOG_TABLE}." VALUES(null,?,?,?,?,?,?,?);");
+        $sth->execute(
+              $session[0],     $action, $object, $object2,
+              $$cfg{SELFPATH}, $time,   dot_to_dec(get_remote_addr())
+            );
         $sth->finish;
 
         $dbh->commit();
@@ -4147,7 +4148,7 @@ sub clear_log {
     else {
         $sth=$dbh->prepare("DELETE FROM ".$$cfg{SQL_LOG_TABLE}.";") or make_error($$locale{S_SQLFAIL});
     }
-    $sth->execute() or '';
+    $sth->execute() or make_error($$locale{S_SQLFAIL});
     $sth->finish;
     
     make_http_forward( get_script_name(). "?task=viewlog&amp;section=".$$cfg{SELFPATH} );
@@ -4210,24 +4211,20 @@ sub make_error {
             error => $error,
             code => ($not_found ? 400 : 500)
         });
-        # delete temp files
-        eval { next; };
-        if ($@) {
-            exit(0);
-        }
-        return;
+    }
+    else {
+        make_http_header($not_found ? $not_found : undef);
+
+        print $tpl->error({
+            error          => $error,
+            error_page     => 'Error occurred',
+            error_title    => 'Error occurred',
+            stylesheets    => get_stylesheets(),
+            cfg            => $cfg,
+            locale         => $locale
+        });
     }
 
-    make_http_header($not_found ? $not_found : undef);
-
-    print $tpl->error({
-        error          => $error,
-        error_page     => 'Error occurred',
-        error_title    => 'Error occurred',
-        stylesheets    => get_stylesheets(),
-        cfg            => $cfg,
-        locale         => $locale
-    });
 
     if (ERRORLOG)    # could print even more data, really.
     {
@@ -4239,10 +4236,7 @@ sub make_error {
     }
 
     # delete temp files
-    eval { next; };
-    if ($@) {
-        exit(0);
-    }
+    stop_script();
 }
 
 sub make_ban {
@@ -4259,7 +4253,11 @@ sub make_ban {
             locale         => $locale
     });
 
-    eval { next; };
+    stop_script();
+}
+
+sub stop_script() {
+    eval { next FASTCGI; };
     if ($@) {
         exit(0);
     }
@@ -4723,7 +4721,7 @@ sub count_posts {
               . $$cfg{SQL_TABLE} . ";"
             ) or make_error($$locale{S_SQLFAIL});
     }
-    $sth->execute() or '';
+    $sth->execute() or make_error($$locale{S_SQLFAIL});
     $count = ($sth->fetchrow_array())[0];
 
     if ($parent) {
@@ -4739,7 +4737,7 @@ sub count_posts {
               . $$cfg{SQL_TABLE_IMG} . ";"
             ) or make_error($$locale{S_SQLFAIL});        
     }
-    $sth->execute() or '';
+    $sth->execute() or make_error($$locale{S_SQLFAIL});
     while ( $row = $sth->fetchrow_arrayref() )
     {
         unless ( $$row[1] =~ m%^//$pomf_domain% ) # file is on an external server
