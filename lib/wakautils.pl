@@ -40,7 +40,10 @@ sub get_meta {
 			my $len = length($$val);
 			$val = "(Binary data; $len bytes)";
 		}
-		$data{$_} = clean_string(decode_string($val, $charset)) if ($val);
+		if ($val) {
+			$val = substr($val, 0, 190) . "[...]" if (length($val) > 200);
+			$data{$_} = clean_string(decode_string($val, $charset));
+		}
 	}
 
 	return \%data;
