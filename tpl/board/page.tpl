@@ -1,6 +1,7 @@
 <include %TMPLDIR%head.tpl>
 <perleval %admin=$admin; %thread=$thread />
 <if $postform>
+	<div id="open_form" style="display:none"><var $$locale{S_JS_OPENFORM}></div>
 	<div class="postarea">
 	<form id="postform" action="<var %self>" method="post" enctype="multipart/form-data">
 
@@ -140,7 +141,7 @@
 	<nav>
 		<ul class="pagelist">
 			<li>[<a href="#top" id="bottom"><var $$locale{S_TOP}></a>]</li>
-			<li id="updater">[<a href="javascript:void(0)" id="updater_href"><var $$locale{S_JS_UPDATE}></a>]</li>
+			<li id="updater">[<a href="#" id="updater_href"><var $$locale{S_JS_UPDATE}></a>]</li>
 		</ul>
 	</nav>
 </if>
@@ -156,6 +157,6 @@
 
 </form>
 
-<if $postform><div class="postarea" id="postform2"></div></if>
+<if $postform><div class="postarea" id="postarea2"></div></if>
 
 <include %TMPLDIR%foot.tpl>

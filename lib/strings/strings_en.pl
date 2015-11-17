@@ -76,12 +76,14 @@ $translation{S_LOCKEDTITLE} = 'Locked thread';    # Defines the title of the tin
 
 # javascript message strings (do not use HTML entities; mask single quotes with \\\')
 $translation{S_JS_EXPAND} = 'Expand textfield';
+$translation{S_JS_OPENFORM} = 'Open Form';
 $translation{S_JS_SHRINK} = 'Shrink textfield';
 $translation{S_JS_REMOVEFILE} = 'Remove file';
 $translation{S_JS_STYLES} = 'Styles';
 $translation{S_JS_DONE} = 'Done';
 $translation{S_JS_CONTEXT} = 'Toggle Context';
 $translation{S_JS_UPDATE} = 'Update thread';
+$translation{S_JS_SETTINGS} = 'Settings';
 # javascript strings END
 
 $translation{S_MANARET} = 'Return';    # Returns to HTML file instead of PHP--thus no log/SQLDB update occurs

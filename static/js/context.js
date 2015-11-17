@@ -5,11 +5,15 @@ function highlight() {
 
 // WARNING!! Shitty code!
 (function(){
-var error = false, isWindowFocused = true, newPosts = 0, UpdaterTimer, old_t;
-var origBtn, updBtn = $j('#updater');
-var perdelki = Settings.get('context');
 
-var _selector = '.thread_OP, .thread_reply'; //post
+/* --- DEFAULTS --- */
+var origBtn, updBtn = $j('#updater');
+var error = false,
+	isWindowFocused = true,
+	newPosts = 0,
+	UpdaterTimer, old_title, origFileInput;
+
+var _selector = '.thread_OP, div[class="thread_reply"]'; //post
 var refMap = [], postByNum = [];
 
 var lang = 'ru';
@@ -21,9 +25,10 @@ var consts = {
 	updthr: "Update thread",
 	load: "Loading...",
 	replies: "Replies: ",
-	reply: "Replying to thread №",
 	done: "Success",
-	err: "Error updating thread, try again."
+	err: "Error updating thread, try again.",
+	replyTo: "Reply to ",
+	dollchanNotify: "If you have dollscript installed:<br> To make it work correctly please check \"Отключить все\" in options"
   },
   ru: {
 	newPostsNotFound: "Нет новых постов.",
@@ -33,14 +38,29 @@ var consts = {
 	load: "\u0417агрузка...",
 	replies: "Ответы: ",
 	reply: "Ответ в тред №",
-	done: "Изгнание ебсов успешно завершено.",
-	err: "Ошибка обновления, попробуйте еще раз."
+	done: "Готово!",
+	err: "Ошибка обновления, попробуйте еще раз.",
+	replyTo: "Ответ на ",
+	dollchanNotify: "Если у вас установлен куклоскрипт:<br>Для корректной работы зайдите в опции и поставьте чек на \"Отключить все\""
   }
 }
 
-/*------------------------------------------------------------------- >>REFLINKS MAP IN POSTS -------------------------------------------------------------*/
+/* -- DEFAULT CONFIG -- */
+var defCfg = {
+	turnOffAll:     {name: 'Отключить все', value: 0, section: 'global'},
+	addAjaxPost:    {name: 'Постинг без перезагрузки', value: 1, section: 'form'},
+	getNewPosts:    {name: 'Подгрузка постов', value: 1, section: 'form'},
+	moveForm:       {name: 'Форма внизу', value: 1, section: 'form'},
+	quickReply:     {name: 'Быстрый ответ', value: 1, section: 'form'},
+	openSpoiler:    {name: 'Раскрывать спойлеры', value: 0, section: 'css'},
+	mamkaInTheRoom: {name: 'Мамка в комнате', value: 0, section: 'css'},
+	hideName:       {name: 'Скрывать имена', value: 0, section: 'css'},
+	hideBoardInfo:  {name: 'Скрывать правила', value: 0, section: 'css'},
+	addRefLinkMap:  {name: 'Карта ответов', value: 1, section: 'post'},
+	addPreview:     {name: 'Превью постов', value: 1, section: 'post'}
+}
 
-//reflink map
+/* -- >>REFLINKS MAP IN POSTS -- */
 function addRefLinkMap(node) {
 	var sparde = node || _selector;
 	$j(sparde).each(function(){
@@ -52,14 +72,12 @@ function addRefLinkMap(node) {
 	$j('.text', sparde).each(function(){
 		var $ref = $j(this);
 		if($ref.find('.backreflink a').text().indexOf('>>') == 0) {
-
-		$ref.find('.backreflink a').each(function() {
-			var r_num = $j(this).text().match(/\d+/);
-
-			if(postByNum[r_num]) {
-			  getRefMap($ref.parent().parent().parent().find('.reflink a').text().match(/\d+/), r_num);
-			}
-		});
+			$ref.find('.backreflink a').each(function() {
+				var r_num = $j(this).text().match(/\d+/);
+				if(postByNum[r_num]) {
+				  getRefMap($ref.parent().parent().parent().find('.reflink a').text().match(/\d+/), r_num);
+				}
+			});
 		}
 	});
 
@@ -90,7 +108,24 @@ function showRefMap(post, p_num, isUpd) {
 	}
 }
 
-/*------------------------------------------------------------------- >>REFLINKS PREVIEW -------------------------------------------------------------*/
+/* -- >>REFLINKS PREVIEW -- */
+function addPreview(a) {
+	var sparde = a || ".thread .text";
+	$j(sparde).find(".backreflink a").each(function(){
+		$event(this, { mouseover:showPostPreview, mouseout:delPreview })
+	})
+};
+
+function delPreview(e) {
+	var pView, el = $j(e.relatedTarget).closest('div[id^="pstprev"]');
+	if(el.length) pView = el[0];
+	if(!pView)
+		$j('div[id^="pstprev"]').remove();
+	else {
+		while(pView.nextSibling) $del(pView.nextSibling)
+		$j(pView).closest('a').unbind('mouseout');
+	}
+}
 
 function showPostPreview(e)
 {
@@ -143,29 +178,65 @@ function showPostPreview(e)
 	$j('#appendix').append(cln);
 }
 
-function delPreview(e) {
-	var pView, el = $j(e.relatedTarget).closest('div[id^="pstprev"]');
-	if(el.length) pView = el[0];
-	if(!pView)
-		$j('div[id^="pstprev"]').remove();
-	else {
-		while(pView.nextSibling) $del(pView.nextSibling)
-		$j(pView).closest('a').unbind('mouseout');
-	}
+/* -- AJAX POSTFORM -- */
+function addAjaxPost() {
+	if(!window.thread_id) return;
+	//form fix
+	var postform = $j('#postform');
+	$j('#postform').append('<input type="hidden" name="ajax" id="ajax" value="1">'); //TODO: добавить в форму
+	//send
+	$j('#trgetback', postform).css('display', 'none');
+	$j('#postform_submit').click(function() {
+		var options = {
+			async: true,
+			url: '/wakaba.pl',
+			success: function(data) {
+				if(!data.error && data.num) {
+					showMessage(consts[lang].done, 'click', 0);
+
+					var inputs = $j('input[type="text"],input[type="password"],textarea',postform);
+					$j('#fileInput').html(origFileInput);
+					inputs.clearFields();
+					set_inputs('postform');
+
+					if(ExtSettings.get('getNewPosts') > 0) {
+						//get new post
+						loadNewPosts();
+					}
+				}
+				else {
+					//show errors
+					showError('Ошибка: '+data.error);
+				}
+				$j('.postarea').unblock();
+			},
+			error: function() {
+				//bad request
+				$j('.postarea').unblock();
+				showError();
+			}
+		};
+		//reset error
+		error = false;
+		//run
+		postform.ajaxSubmit(options);
+
+		return false;
+	});
 }
-function addPreview(a) {
-	var sparde = a || ".thread .text";
-	$j(sparde).find(".backreflink a").each(function(){
-		$event(this, { mouseover:showPostPreview, mouseout:delPreview })
-	})};
 
-/*------------------------------------------------------------------- AJAX -------------------------------------------------------------*/
+/*-- THREAD UPDATER --*/
+function defTitle() {
+	$j('title').text(old_title);
+	setTimeout(function(){
+		$j('.post_new').removeClass('post_new');
+	}, 1500);
+}
 
-//load new posts
 function getNewPosts() {
 	if(window.thread_id !== null) {
 		origBtn = updBtn.html();
-		$j(updBtn).css('display','inline').find('a').click(loadNewPosts);
+		$j(updBtn).css('display','inline').find('a').unbind('click').click(loadNewPosts);
 		UpdaterTimer = setInterval(loadNewPosts, 45000);
 	}
 }
@@ -176,8 +247,10 @@ function loadNewPosts() {
 	var restoreButton = function () {
 		$j(updBtn).html(origBtn).find('a').unbind('click').click(loadNewPosts);
 	}
-	$j(updBtn).html('['+consts[lang].load+']');
 	clearInterval(UpdaterTimer);
+	$j(updBtn).html('['+consts[lang].load+']');
+	// reset error
+	error = false;
 
 	$j.ajax('/wakaba.pl?section='+window.board+'&task=show&thread='+window.thread_id+'&after='+aft,
 	  {async:true} )
@@ -189,13 +262,17 @@ function loadNewPosts() {
 					addRefLinkMap([this]);
 					addPreview([this]);
 					addPreview($j('.pidarok_refmap'));
-					$j('.thread').append($j(this).hide().fadeIn("normal"));
+					if(ExtSettings.get('quickReply') > 0)
+						quickReply([this]);
+					$j('.thread').append(
+						$j(this).hide().fadeIn("normal")
+					);
 				});
 				if (newPosts > 0 ) {
 					if ( !isWindowFocused )
-						$j('title').text('['+newPosts+'] ' + old_t);
+						$j('title').text('['+newPosts+'] ' + old_title);
 					if ( isWindowFocused ) {
-						showMessage(consts[lang].newPostsFound+newPosts, 1800);
+						showMessage(consts[lang].newPostsFound+newPosts);
 						newPosts = 0;
 						defTitle();
 					}
@@ -204,22 +281,27 @@ function loadNewPosts() {
 			else {
 				if(isWindowFocused && data.error_code==400) {
 					showMessage(consts[lang].newPostsNotFound);
-					defTitle();
 				}
 			}
+			restoreButton();
 			UpdaterTimer = setInterval(loadNewPosts, 45000);
-			restoreButton();
-			error = false;
 		})
-		.fail(function() {
-			if ( isWindowFocused ) {
-				showMessage(consts[lang].err, 2500);
-			}
-			$j('title').text('[Error] '+old_t);
-			// console.log('Error.');
+		.fail(function(){
 			restoreButton();
-			error = true;
+			showError();
 		});
+
+		return false;
+}
+
+function showError(message) {
+	error = message || consts[lang].err;
+	showMessage(error, !isWindowFocused);
+	$j('title').text('[Error] '+old_title);
+	if(isWindowFocused) {
+		defTitle();
+		error = false;
+	}
 }
 
 function titleNewPosts() {
@@ -228,21 +310,19 @@ function titleNewPosts() {
 	if (prevType != e.type) {   //  reduce double fire issues
 		switch (e.type) {
 			case "blur":
-				// do work
 				isWindowFocused = false;
 				break;
 			case "focus":
-				// do work
 				isWindowFocused = true;
-				if(error) {
-					showMessage(consts[lang].err, 2500);
-					// error = false;
-				}
-				if(newPosts>0){
-					showMessage(consts[lang].newPostsFound+newPosts, 1800);
+				if(newPosts>0 && !error){
+					showMessage(consts[lang].newPostsFound+newPosts);
 					newPosts = 0;
-					defTitle();
 				}
+				if(error) {
+ 					showMessage(error, 'click');
+					error = false; // reset error
+				}
+				defTitle();
 				break;
 		}
 	}
@@ -250,57 +330,161 @@ function titleNewPosts() {
   })
 }
 
-function defTitle() {
-	$j('title').text(old_t);
-	setTimeout(function(){
-		$j('.post_new').removeClass('post_new');
-	}, 1500);
+/* -- POST FORM -- */
+function openForm(thread_id, form, origSubmit) {
+	var parent = $j('input[name="parent"]');
+	//open form btn
+	$j('#open_form').slideDown(400);
+	//open form click
+	$j('#open_form').click(function(){
+		$j('#open_form').slideUp(400).after(form.removeClass('thread_reply'));
+		if (window.thread_id !== null) {
+			parent.val(thread_id);
+		}
+		else {
+			parent.val(0);
+			$j('#postform_submit').val(origSubmit);
+		}
+	});
 }
 
-/*------------------------------------------------------------------- ANALNY KOSTYLI -------------------------------------------------------------*/
-// "MOMMY IN ROOM" IMAGE HIDER
-function toggleMommy() {
-	Settings.set('mommy', (Settings.get('mommy') || 0) == 0 ? 1 : 0);
-	scriptCSS();
-	return false;
-}
+function quickReply(post) {
+	post = post || document;
+    $j('.reflink', post).click(function(e) {
+        var form = $j('#postform').parent();
+        if (!form.length) return;
+		var parent = $j('input[name="parent"]');
+		var origSubmit = $j('#postform_submit', form).val();
 
-function hotkeyMommy(e) {
-	if(!e) e = window.event;
-	if(e.altKey && e.keyCode == 78) toggleMommy();
-}
+        var ref = $j(this);
+        //ugly, use parents
+        ref.parent().parent().parent().after(
+            form.addClass('thread_reply')
+        );
 
-// SCRIPT CSS
+        var thread_id = ref.closest('.thread').children(":first").attr('id');
+        var post_id = ref.children(":first").text().match(/\d+/);
+		$j('#postform_submit').val(consts[lang].replyTo+'/'+window.board+'/'+thread_id);
+
+        insert('>>'+post_id+'\n');
+
+        if(parent.length < 1) {
+			$j('#postform').prepend('<input type="hidden" name="parent" id="parent" value="">');
+        }
+        form.find('input[name="parent"]').val(thread_id);
+
+        if ($j('#open_form').is(":hidden")) {
+            openForm(thread_id, form, origSubmit);
+        }
+        return false;
+    });
+};
+
+/* -- SCRIPT CSS -- */
 function scriptCSS() {
 	var x = [];
-	if(Settings.get('mommy') == 1)
-		x.push('img[src*="thumb"] {opacity:0.04 !important} img[src*="thumb"]:hover {opacity:1 !important}');
+
+    if(ExtSettings.get('mamkaInTheRoom') > 0) {
+        x.push('.filelink img{opacity: 0.02;} .filelink img:hover{opacity: 1;}');
+    }
+    if(ExtSettings.get('hideName') > 0) {
+        x.push('.post label .postername{display:none !important;}');
+    }
+    if(ExtSettings.get('hideBoardInfo') > 0) {
+        x.push('div.rules{display:none !important;}');
+    }
+    if(ExtSettings.get('openSpoiler') > 0) {
+        x.push('.spoiler{color:inherit !important;}');
+    }
+
 	if(!$id('pidarok_css'))
 		$t('head')[0].appendChild($new('style', {
 			'id': 'pidarok_css',
 			'type': 'text/css',
 			'text': x.join(' ')
 		}));
-	else $id('pidarok_css').textContent = x.join(' ');
+	else $id('pidarok_css').textContent = x.join('\n');
 }
 
-// "Notifications"
-function showMessage(text, delay) {
+/* -- "NOTIFICATIONS" -- */
+function showMessage(text, opt, delay) {
 	var message = $j('#message');
-	if (delay == null) delay = 1000;
+	if (delay == null) delay = 1200;
 	if (message.get() == '') {
 		$j('body').children().last().after('<div id="message" class="post"></div>');
-		message = $j('#message'); // ugly hack
-		message.hide();
+		message = $j('#message');
+		var left = ($j(window).width() - message.outerWidth()) / 2;
+		message.css({left: (left > 0 ? left : 0)+'px'}).hide();
 	}
-	// var top = ($j(window).height() - message.outerHeight()) / 2;
-	var left = ($j(window).width() - message.outerWidth()) / 2;
-	message.css({left: (left > 0 ? left : 0)+'px'});
+	if(opt) text = "[<a href=\"#\">X</a>] "+text;
 	message.html("<span class=\"postername\">" + text + "</span>");
-	message.fadeIn(150).delay(delay).fadeOut(300);
+	message.unbind('click');
+	if(!opt) {
+		message.fadeIn(150).delay(delay).fadeOut(300);
+	}
+	else {
+		$j('a', message).click(function(){ message.fadeOut(300); return false });
+		message.fadeIn(150);
+	}
 }
 
-// Js settings
+/* -- "MOMMY IN ROOM" IMAGE HIDER -- */
+function toggleMommy() {
+	mommy = ExtSettings.get('mommy');
+	ExtSettings.set('mommy', (mommy || 0) == 0 ? 1 : 0);
+	scriptCSS();
+	return false;
+}
+
+/* -- JS SETTINGS -- */
+function configItemTmp() {
+	var post = '', css = '', form = '', global = '';
+	for(var i in defCfg) {
+		var item  = defCfg[i];
+		var lb = '<label><input name="'+i+'" type="checkbox">  '+item.name+'</label><br />';
+
+		if(item.section == 'post') post += lb;
+		if(item.section == 'form') form += lb;
+		if(item.section == 'css') css += lb;
+		if(item.section == 'global') global += lb;
+	}
+
+	return tmp =
+		'<div class="overlay-ext-sect"><div class="title">Глобальные</div><div class="info">'+global+'</div></div>' +
+		'<div class="overlay-ext-sect"><div class="title">Посты</div><div class="info">'+post+'</div></div>' +
+		'<div class="overlay-ext-sect"><div class="title">Форма</div><div class="info">'+form+'</div></div>' +
+		'<div class="overlay-ext-sect"><div class="title">CSS</div><div class="info">'+css+'</div></div>';
+}
+
+function moveForm() {
+	var spadre = $j('#postform');
+	if (spadre.length && window.thread_id) {
+		pa2 = '#postarea2';
+		spadre.detach().appendTo(pa2);
+		$j('<p>').css({'clear':'both'}).insertBefore(pa2);
+		$j('#postform_hr').detach().insertBefore(pa2);
+		$j('#open_form').detach().insertBefore(pa2);
+	}
+}
+
+function setOptions(i) {
+	if(ExtSettings.get(i) > 0) {
+		//set checkbox
+		$j("input[name="+i+"]").attr("checked",true);
+	}
+	$j("input[name="+i+"]").change(function() {
+		if(ExtSettings.get(i) == 1) {
+			ExtSettings.set(i, 0);
+			$j(this).attr('checked', false);
+
+		} else {
+			ExtSettings.set(i, 1);
+			$j(this).attr("checked","checked");
+		}
+		showMessage(consts[lang].done, null, 200);
+	});
+}
+
 function toggleNavMenu(node) {
 	if ($id("overlay").style.display == 'block') {
 		$id("overlay").style.display = "none";
@@ -309,55 +493,51 @@ function toggleNavMenu(node) {
 	}
 }
 
-function moveForm(spadre) {
-	if (spadre.length && window.thread_id) {
-		spadre.detach().appendTo('#postform2');
-		$j('.postarea').prev('hr').detach().prependTo(spadre.parent());
-		$j('<p>').css('padding', '1px').prependTo(spadre.parent());
+function turnOffAll() {
+	for(var i in defCfg) {
+		if(i != 'turnOffAll') {
+			if(ExtSettings.get(i) > 0)
+				ExtSettings.set(i, 0);
+			$j("input[name="+i+"]").attr("checked",false);
+			$j("input[name="+i+"]").attr("disabled",true);
+		}
 	}
-}
-
-function eventLoader() {
-	$j('#navmenu0, #navmenu1').click(toggleNavMenu);
-	$j('#tglmommy').click(toggleMommy);
-
-	$j('#tglcontext').click(function(){
-		Settings.set('context', +this.checked);
-		showMessage(consts[lang].done);
-	});
-
-	$j('#tglform').click(function(){
-		Settings.set('bottomform', +this.checked);
-		showMessage(consts[lang].done);
-	});
-
-	$id('tglcontext').checked = Settings.get('context') == 1 ? "checked" : "";
-	$id('tglform').checked = Settings.get('bottomform') == 1 ? "checked" : "";
 }
 
 // Main load function.
 var slowload = function() {
-	eventLoader();
-	if (Settings.get('context')==1)
-	{
-		old_t = document.title;
-		$j('.content').append($j('<div>', {id:'appendix'}));
-		$j(document).keydown(hotkeyMommy);
-		scriptCSS();
-		if (!$j('input[value="restorebackups"]').length)
-		{
-			addRefLinkMap();
-			addPreview();
-			titleNewPosts();
-			getNewPosts();
+	var postbackups = $j('input[value="restorebackups"]');
+	$j('.content').append($j('<div>', {id:'appendix'}));
+	$j('#settingsConfig').append(configItemTmp());
+	$j('#navmenu0, #navmenu1').click(toggleNavMenu);
+
+	if(Settings.get('deNotified') < 1) {
+		showMessage(consts[lang].dollchanNotify, 'click');
+		Settings.set('deNotified', 1);
+	}
+
+	//gen menu and run func
+	for(var i in defCfg) {
+		//set default value
+		if(ExtSettings.get(i) == undefined) {
+			ExtSettings.set(i, defCfg[i].value);
 		}
-		else
-		{
-			addPreview();
+		//change option
+		setOptions(i);
+		//run func
+		if(ExtSettings.get(i) > 0 && postbackups.length < 1) {
+			if(defCfg[i].section != 'css') {
+				eval(i)();
+			}
 		}
 	}
-	if (Settings.get('bottomform') == 1)
-		moveForm($j('#postform'));
+
+	if(ExtSettings.get('turnOffAll') < 1) {
+		old_title = document.title;
+		origFileInput = $j('#fileInput').html();
+		titleNewPosts();
+		scriptCSS();
+	}
 }
 
 $j(document).ready(slowload);

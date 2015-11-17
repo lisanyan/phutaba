@@ -38,6 +38,7 @@ blockquote.unkfunc,,span.math,span.unkfunc,span.quote{color:#789922}
 .title,.info th{background-color:#111;color:#698CC0}
 .info{background-color:#212121;border-color:#111}
 .info td{border:1px solid #111}
+.error{color:#DA8F0E}
 dl#menu{background-color:#212121!important}
 dl.menu dt{background:#111;border:solid 1px #575757;-moz-border-radius:5px;-webkit-border-radius:5px;border-radius:5px;margin-top:1em;padding-left:.5em;cursor:pointer;color:#698CC0;font-weight:400}
 dl.menu dd{margin-left:.5em;padding-left:.5em;border-left:solid 1px #575757;background:#212121}

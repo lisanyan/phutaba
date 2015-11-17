@@ -39,6 +39,7 @@ $settings{ENTRIES_PER_LOGPAGE} = 50;
 $settings{S_ANONAME} = 'Аноним';			# Defines what to print if there is no text entered in the name field
 $settings{S_ANOTEXT} = '';					# Defines what to print if there is no text entered in the comment field
 $settings{S_ANOTITLE} = '';					# Defines what to print if there is no text entered into subject field
+$settings{S_PREWRAP} = "<span class=\"prewrap\">%s</span>";
 $settings{SILLY_ANONYMOUS} = '';			# Make up silly names for anonymous people (0 or '': don't display, any combination of 'day' or 'board': make names change for each day or board, 'static': static names)
 $settings{PREVENT_GHOST_BUMPING} = 1;
 $settings{ADMIN_EMAIL} = 'admin@host.local';
@@ -159,6 +160,8 @@ $settings{DNSBL_INFOS} =
 	[ 'socks.dnsbl.sorbs.net', ['127.0.0.3'] ],
 	# [ 'zen.spamhaus.org', ['127.0.0.2', '127.0.0.3', '127.0.0.4'] ],
 ];
+# remove this..
+$settings{DELETION_PROHIBITED_AS} = [];
 
 # Icons for filetypes - file extensions specified here will not be renamed, and will get icons
 # (except for the built-in image formats). These example icons can be found in the extras/ directory.

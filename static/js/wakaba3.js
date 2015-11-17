@@ -18,24 +18,6 @@ function $attr(b,c){for(var a in c)"text"==a?b.textContent=c[a]:"value"==a?b.val
 
 // ============================================================================================
 // Wakaba legacy
-function get_cookie(name) {
-	with (document.cookie) {
-		var regexp = new RegExp("(^|;\\s+)" + name + "=(.*?)(;|$)"),
-		hit = regexp.exec(document.cookie);
-		if (hit && hit.length > 2) return unescape(hit[2]);
-		else
-		return '';
-	}
-}
-
-function set_cookie(name, value, days) {
-	if (days) {
-		var date = new Date();
-		date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
-		var expires = "; expires=" + date.toGMTString();
-	} else expires = "";
-	document.cookie = name + "=" + value + expires + "; path=/";
-}
 
 function get_password(name) {
 	var pass = get_cookie(name);
@@ -122,6 +104,7 @@ function file_input_change(max) {
 
 		input.type = "file";
 		input.name = "file";
+		input.className = "externalInput";
 		input.onchange = function() {
 			file_input_change(max)
 		}
@@ -335,13 +318,6 @@ function abortWebmDownload(el) {
 
 // ============================================================================================
 // Stylesheets
-function set_stylesheet_frame(styletitle,framename)
-{
-	set_stylesheet(styletitle);
-	var list = get_frame_by_name(framename);
-	if(list) set_stylesheet(styletitle,list);
-}
-
 function set_stylesheet(styletitle,target)
 {
 	set_cookie("wakastyle",styletitle,365);
@@ -357,7 +333,6 @@ function set_stylesheet(styletitle,target)
 		{
 			links[i].disabled=true; // IE needs this to work. IE needs to die.
 			if(styletitle==title) { links[i].disabled=false; found=true; }
-			// ugly hack
 			if(styletitle===null) { links[i].disabled=true; found=true}
 		}
 	}
@@ -368,6 +343,13 @@ function set_stylesheet(styletitle,target)
 	}
 }
 
+function set_stylesheet_frame(styletitle,framename)
+{
+	set_stylesheet(styletitle);
+	var list = get_frame_by_name(framename);
+	if(list) set_stylesheet(styletitle,list);
+}
+
 function set_preferred_stylesheet(target)
 {
 	var links = target ? target.document.getElementsByTagName("link") : document.getElementsByTagName("link");
@@ -376,6 +358,15 @@ function set_preferred_stylesheet(target)
 		var rel=links[i].getAttribute("rel");
 		var title=links[i].getAttribute("title");
 		if(rel.indexOf("style")>=0&&title) links[i].disabled=(rel.indexOf("alt")>=0);
+	}
+}
+
+function get_frame_by_name(name)
+{
+	var frames = window.parent.frames;
+	for(i = 0; i < frames.length; i++)
+	{
+		if(name == frames[i].name) { return(frames[i]); }
 	}
 }
 
@@ -391,65 +382,31 @@ function get_active_stylesheet()
 	return null;
 }
 
-function get_frame_by_name(name)
+function get_preferred_stylesheet()
 {
-	var frames = window.parent.frames;
-	for(i = 0; i < frames.length; i++)
+	var links=document.getElementsByTagName("link");
+	for(var i=0;i<links.length;i++)
 	{
-		if(name == frames[i].name) { return(frames[i]); }
+		var rel=links[i].getAttribute("rel");
+		var title=links[i].getAttribute("title");
+		if(rel.indexOf("style")>=0&&rel.indexOf("alt")==-1&&title) return title;
 	}
-}
-
-// ============================================================================================
-// Localstorage Settings
-var Settings = function() {
-    if (!window.localStorage) {
-        return {
-            set: function(key, value) {
-                return set_cookie(key, value, 365 * 24 * 60 * 60 * 1000);
-            },
-            get: function(key) {
-                return get_cookie(key);
-            },
-            del: function(key) {
-                return set_cookie(key, "", 1);
-            }
-        };
-    } else
-        return {
-            set: function(key, value) {
-                return window.localStorage.setItem(key, value);
-            },
-            get: function(key) {
-                // legacy
-                var cookie = get_cookie(key);
-                var local = window.localStorage.getItem(key);
-                if (cookie && !local) {
-                    window.localStorage.setItem(key, cookie);
-                }
-                // end legacy
-                return window.localStorage.getItem(key);
-            },
-            del: function(key) {
-                return window.localStorage.removeItem(key);
-            }
-        };
-}();
-
-if(style_cookie)
-{
-	var cookie=get_cookie(style_cookie);
-	var title=cookie?cookie:set_preferred_stylesheet();
-	set_stylesheet(title);
+	return null;
 }
 
 window.onunload = function() {
 	if (style_cookie) {
 		var title = get_active_stylesheet();
-		title = title ? title : get_cookie(style_cookie);
 		set_cookie(style_cookie, title, 365);
 	}
 };
+
+if(style_cookie)
+{
+	var cookie=get_cookie(style_cookie);
+	var title=cookie?cookie:get_preferred_stylesheet();
+	set_stylesheet(title);
+}
 
 // ============================================================================================
 // TEH END
