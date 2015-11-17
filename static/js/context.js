@@ -28,7 +28,7 @@ var consts = {
 	done: "Success",
 	err: "Error updating thread, try again.",
 	replyTo: "Reply to ",
-	dollchanNotify: "To make dollchan script work correctly please check \"Отключить все\" in options"
+	dollchanNotify: "If you have dollscript installed:<br> To make it work correctly please check \"Отключить все\" in options"
   },
   ru: {
 	newPostsNotFound: "Нет новых постов.",
@@ -41,7 +41,7 @@ var consts = {
 	done: "Готово!",
 	err: "Ошибка обновления, попробуйте еще раз.",
 	replyTo: "Ответ на ",
-	dollchanNotify: "Для корректной работы куклоскрипта зайдите в опции и поставьте чек на \"Отключить все\""
+	dollchanNotify: "Если у вас установлен куклоскрипт:<br>Для корректной работы зайдите в опции и поставьте чек на \"Отключить все\""
   }
 }
 

@@ -163,8 +163,7 @@
 				<a target="_blank" href="<var Wakaba::expand_image_filename($$cfg{DELETED_IMAGE})>">
 					<img src="<var Wakaba::expand_filename($$cfg{DELETED_THUMBNAIL})>" width="<var $tn_width>" height="<var $tn_height>" alt="" />
 				</a>
-			</if>
-			<if !($$cfg{DELETED_THUMBNAIL})>
+			</else/>
 				<div class="filetype">
 					<a onmouseover="TagToTip('imageinfo_<var Wakaba::md5_hex($image)>', TITLE, '<var $$locale{S_FILEINFO}>', WIDTH, -450)" onmouseout="UnTip()" target="_blank" href="<var Wakaba::expand_image_filename($image)>">
 						<var Wakaba::get_extension($uploadname)>

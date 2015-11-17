@@ -168,7 +168,7 @@ while($query=CGI::Fast->new)
     if ( $json eq "newposts" ) {
         my $id = $query->param("id");
         my $after = $query->param("after");
-        if ( defined($after) and $after =~ /^[+-]?\d+$/ && $id =~ /^[+-]?\d+$/ ) {
+        if ( defined($after) and $after =~ /^[+-]?\d+$/ and $id =~ /^[+-]?\d+$/ ) {
             output_json_newposts($after, $id);
         }
     }
@@ -222,7 +222,7 @@ while($query=CGI::Fast->new)
         {
             show_post($post, $admin);
         }
-        elsif (defined($after) && $thread =~ /^[+-]?\d+$/ and $after =~ /^[+-]?\d+$/)
+        elsif (defined($after) and $thread =~ /^[+-]?\d+$/ and $after =~ /^[+-]?\d+$/)
         {
             show_newposts($after, $thread, $admin);
         }
@@ -493,10 +493,10 @@ while($query=CGI::Fast->new)
 sub hide_row_els {
     my ($row) = @_;
     my ($items, $loc) = get_geo_array($$cfg{SELFPATH}, $$row{location}, 0);
-    $$row{'location'} = (@$loc ? join(', ', @$loc) : $$items[0])
-      if $$cfg{SHOW_COUNTRIES};
-    $$row{'admin_post'} = $$row{'ip'} = $$row{'password'} = undef;
-    $$row{'location'} = $$cfg{SHOW_COUNTRIES} ? $$row{'location'} : undef;
+
+    $$row{'location'} = (@$loc ? join(', ', @$loc) : $$items[0]);
+    delete @$row {'admin_post', 'password', 'ip'};
+    delete $$row{'location'} unless $$cfg{SHOW_COUNTRIES};
 }
 
 sub output_json_threads {
@@ -628,8 +628,6 @@ sub output_json_threads {
         "data" => \@threads
     );
 
-    # my $loc = get_geolocation(get_remote_addr());
-
     make_json_header();
     print $JSON->encode(\%json);
 }
@@ -723,7 +721,7 @@ sub output_json_newposts {
     $error = $sth->errstr;
     if($sth->rows) {
         $code = 200;
-        while($row=get_decoded_hashref($sth)) {
+        while( $row=get_decoded_hashref($sth) ) {
             add_images_to_row($row);
             hide_row_els($row);
             $$row{comment} = resolve_reflinks($$row{comment});
@@ -1081,6 +1079,7 @@ sub show_thread {
 sub get_files {
     my ($threadid, $postid, $backup, $files) = @_;
     my ($sth, $res, $where, $uploadname);
+    my $thumb_dir = $$cfg{THUMB_DIR};
 
     $$cfg{SQL_TABLE_IMG} = $$cfg{SQL_BACKUP_IMG_TABLE} if $backup;
 
@@ -1117,8 +1116,10 @@ sub get_files {
                 $$res{image} =~ s!^.*[\\/]!!;
                 $$res{image} = '/' . $$cfg{SELFPATH} . '/' . $$cfg{ORPH_DIR} . $$cfg{BACKUP_DIR} . $$res{image};
             }
-            $$res{thumbnail} =~ s!^.*[\\/]!!;
-            $$res{thumbnail} = '/' . $$cfg{SELFPATH} . '/' . $$cfg{ORPH_DIR} . $$cfg{BACKUP_DIR} . $$res{thumbnail};
+            if ( $$res{thumbnail} =~ /^$thumb_dir/) {
+                $$res{thumbnail} =~ s!^.*[\\/]!!;
+                $$res{thumbnail} = '/' . $$cfg{SELFPATH} . '/' . $$cfg{ORPH_DIR} . $$cfg{BACKUP_DIR} . $$res{thumbnail};
+            }
         }
 
         push(@$files, $res);
@@ -1307,17 +1308,15 @@ sub post_stuff {
 
     my $file = $files[0]; # file count
 
-    # I HAVE AN OCD SO LEAVE IT AS IS
     my $admin_post = 0;
     my $original_comment = $comment;
     # get a timestamp for future use
     my $time = time();
 
-    # sticky should never be NULL
-    $sticky = 0 unless $sticky;
-
     # set ajax errors
     $ajax_errors = 1 if $ajax;
+    # sticky should never be NULL
+    $sticky = 0 unless $sticky;
 
     # check that the request came in as a POST, or from the command line
     make_error($$locale{S_UNJUST})
@@ -1661,8 +1660,8 @@ sub post_stuff {
         name      => $c_name,
         #email     => $c_email,
         gb2       => $c_gb2,
-        password  => $c_password,
         nopomf    => $c_nopomf,
+        password  => $c_password,
         -charset  => CHARSET,
         -autopath => $$cfg{COOKIE_PATH},
         -expires  => time+14*24*3600
@@ -2203,22 +2202,28 @@ sub sage_count {
 
 sub get_file_size {
     my ($file, $nopomf) = @_;
-    my (@filestats, $errfname, $errfsize, $max_size);
+    my (@filestats, $errfname, $errfsize, $max_size, $err);
+    my ($ext) = $file =~ /\.([^\.]+)$/;
     my $size = 0;
-    my $err = undef;
-    my $ext = $file =~ /\.([^\.]+)$/;
     my $sizehash = $$cfg{FILESIZES};
 
     @filestats = stat($file);
     $size = $filestats[7];
     $max_size = $$cfg{MAX_KB};
     $max_size = $$sizehash{$ext} if ($$sizehash{$ext});
-    $errfname = get_displayname(clean_string(decode_string($file, CHARSET)));
+    $errfname = get_displayname( clean_string(decode_string($file, CHARSET)) );
     # or round using: int($size / 1024 + 0.5)
     $errfsize = sprintf("%.2f", $size / 1024) . " kB &gt; " . $max_size . " kB";
 
-    $err = $$locale{S_TOOBIG} . " ($errfname: $errfsize)" 
-      if ( $nopomf ne 'on' && !grep {$_ eq $ext} @{$$cfg{POMF_EXTENSIONS}} and $size > $max_size * 1024 );
+    my $pomf_ext = grep {$_ eq lc$ext} @{$$cfg{POMF_EXTENSIONS}};
+    if ( $size > $max_size * 1024 ) {
+        if ( !$pomf_ext ) {
+            $err = $$locale{S_TOOBIG} . " ($errfname: $errfsize)";
+        }
+        elsif ( $pomf_ext and $nopomf ) {
+            $err = $$locale{S_TOOBIG} . " ($errfname: $errfsize)";
+        }
+    }
     $err = $$locale{S_TOOBIGORNONE} . " ($errfname)" if ($size == 0);  # check for small files, too?
 
     return ($size, $err);
@@ -2397,7 +2402,7 @@ sub process_file {
     chmod 0644, $filename; # Make file world-readable
     chmod 0644, $thumbnail if defined($thumbnail); # Make thumbnail (if any) world-readable
 
-    if ( $nopomf ne 'on' and grep {$_ eq $ext} @{$$cfg{POMF_EXTENSIONS}} )
+    if ( !$nopomf and grep {$_ eq $ext} @{$$cfg{POMF_EXTENSIONS}} )
     {
         my $pomf = pomf_upload($filename);
         unlink $filename; # remove file from the disk
@@ -3911,11 +3916,12 @@ sub edit_post {
     my @session = check_password($admin,'');
     make_error($$locale{S_NOPRIVILEGES}) if( $no_format and $session[1] ne 'admin' );
 
-    my $post=get_post($num) or make_error(sprintf "Post %d doesn't exist",$num);
+    my $file = $files[0]; # file count
+
     my $adminpost  = $capcode ? 1 : undef;
     my $admin_post = $byadmin ? 1 : 0;
     my $ip = get_remote_addr();
-    my $file = $files[0]; # file count
+    my $post = get_post($num) or make_error(sprintf "Post %d doesn't exist",$num);
     my $time = time;
 
     backup_stuff($post, 0, 1) if ($$cfg{ENABLE_POST_BACKUP});
