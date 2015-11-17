@@ -1307,6 +1307,7 @@ sub post_stuff {
     ) = @_;
 
     my $file = $files[0]; # file count
+    $no_pomf = 0 unless $no_pomf;
 
     my $admin_post = 0;
     my $original_comment = $comment;
@@ -3917,6 +3918,7 @@ sub edit_post {
     make_error($$locale{S_NOPRIVILEGES}) if( $no_format and $session[1] ne 'admin' );
 
     my $file = $files[0]; # file count
+    $no_pomf = 0 unless $no_pomf;
 
     my $adminpost  = $capcode ? 1 : undef;
     my $admin_post = $byadmin ? 1 : 0;
