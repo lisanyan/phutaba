@@ -160,6 +160,8 @@ $settings{DNSBL_INFOS} =
 	[ 'socks.dnsbl.sorbs.net', ['127.0.0.3'] ],
 	# [ 'zen.spamhaus.org', ['127.0.0.2', '127.0.0.3', '127.0.0.4'] ],
 ];
+# remove this..
+$settings{DELETION_PROHIBITED_AS} = [];
 
 # Icons for filetypes - file extensions specified here will not be renamed, and will get icons
 # (except for the built-in image formats). These example icons can be found in the extras/ directory.
