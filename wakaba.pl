@@ -273,7 +273,7 @@ while($query=CGI::Fast->new)
         my $locked     = $query->param("lock");
         my $autosage   = $query->param("autosage");
         my $ajax       = $query->param("ajax");
-        my @files      = $query->param("file"); # multiple uploads
+        my @files      = $query->multi_param("file"); # multiple uploads
 
         post_stuff(
             $parent,  $spam1,     $spam2,     $name,     $email,  $gb2,
@@ -289,7 +289,7 @@ while($query=CGI::Fast->new)
         my $admin    = $query->cookie("wakaadmin");
         my $parent   = $query->param("parent");
         my $admindel = $query->param("admindel");
-        my @posts    = $query->param("delete");
+        my @posts    = $query->multi_param("delete");
 
         delete_stuff( $password, $fileonly, $admin, $admindel, $parent, @posts );
     }
@@ -382,7 +382,7 @@ while($query=CGI::Fast->new)
     }
     elsif ( $task eq "movefiles" ) {
         my $admin = $query->cookie("wakaadmin");
-        my @files = $query->param("file");
+        my @files = $query->multi_param("file");
         move_files($admin, @files);
     }
     # post editing
@@ -404,7 +404,7 @@ while($query=CGI::Fast->new)
         my $killtrip = $query->param("notrip");
         my $by_admin = $query->param("admin_post");
         my $nopomf = $query->param("nopomf");
-        my @files = $query->param("file");
+        my @files = $query->multi_param("file");
         edit_post(
           $admin,     $num,       $name,    $email,
           $subject,   $comment,   $capcode, $killtrip,
@@ -457,7 +457,7 @@ while($query=CGI::Fast->new)
     elsif ($task eq "restorebackups")
     {
         my $admin = $query->cookie("wakaadmin");
-        my @num = $query->param("num");
+        my @num = $query->multi_param("num");
         my $board_name = $query->param("board") || $$cfg{SELFPATH};
         my $handle = lc $query->param("handle");
 
@@ -3920,7 +3920,7 @@ sub edit_post {
     my $file = $files[0]; # file count
     $no_pomf = 0 unless $no_pomf;
 
-    my $adminpost  = $capcode ? 1 : undef;
+    my $adminpost  = $capcode ? 1 : 0;
     my $admin_post = $byadmin ? 1 : 0;
     my $ip = get_remote_addr();
     my $post = get_post($num) or make_error(sprintf "Post %d doesn't exist",$num);
