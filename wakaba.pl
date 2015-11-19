@@ -19,11 +19,6 @@ use IO::Select; # wait for DNSBL answer
 use Data::Dumper;
 
 
-my $sth;
-my $JSON = JSON->new->utf8;
-$JSON = $JSON->pretty(1);
-
-
 
 use constant HANDLER_ERROR_PAGE_HEAD => q{
 <!DOCTYPE html>
@@ -149,6 +144,7 @@ my $dbh =
     { AutoCommit => 1 } )
   or make_error(S_SQLCONF);
 
+my $sth;
 $sth = $dbh->prepare("SET NAMES 'latin1';");
 $sth->execute() or make_error(S_SQLFAIL);
 
@@ -243,7 +239,7 @@ elsif ( $task eq "post" ) {
     my $no_format  = $query->param("no_format");
     my $postfix    = $query->param("postfix");
 	my $as_staff   = $query->param("as_staff");
-	my @files = $query->param("file"); # multiple uploads. add $query->upload()?
+	my @files = $query->multi_param("file"); # multiple uploads, requires CGI.pm v4.08+
 
     post_stuff(
         $parent,  $spam1,   $spam2,      $name,      $email,
@@ -515,6 +511,8 @@ sub output_json_stats {
 		"status" => \%status,
 	);
 
+	my $JSON = JSON->new->utf8;
+	$JSON = $JSON->pretty(1);
 	make_json_header();
 	print $JSON->encode(\%json);
 }
@@ -2451,6 +2449,8 @@ sub make_admin_edit_panel {
 		$$row{comment} = escamp($$row{comment});
 		# add newlines for better readability but remove them on save!
 		$$row{comment} =~ s!(<br />|</p>|</ul>|</li>|</blockquote>)!$1\n!g;
+
+		$sth->finish(); # record set not finished despite only one record exists
 
 		make_http_header();
 		print encode_string(ADMIN_EDIT_TEMPLATE->(
