@@ -41,7 +41,7 @@ sub get_meta {
 			$val = "(Binary data; $len bytes)";
 		}
 		if ($val) {
-			$val = substr($val, 0, 190) . "[...]" if (length($val) > 200);
+			$val = substr($val, 0, 190) . '...' if (length($val) > 200);
 			$data{$_} = clean_string(decode_string($val, $charset));
 		}
 	}
