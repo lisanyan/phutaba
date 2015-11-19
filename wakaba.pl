@@ -310,7 +310,7 @@ elsif ( $task eq "delete" ) {
     my $fileonly = $query->param("fileonly");
     my $admin    = $query->cookie("wakaadmin");
 	my $parent   = $query->param("parent");
-    my @posts    = $query->param("delete");
+    my @posts    = $query->multi_param("delete");
 
     delete_stuff( $password, $fileonly, $admin, $parent, @posts );
 }
@@ -405,7 +405,7 @@ elsif ( $task eq "orphans" ) {
 }
 elsif ( $task eq "movefiles" ) {
     my $admin = $query->cookie("wakaadmin");
-	my @files = $query->param("file");
+	my @files = $query->multi_param("file");
 	move_files($admin, @files);
 }
 elsif ( $task eq "paint" ) {
