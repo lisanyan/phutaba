@@ -1158,8 +1158,8 @@ sub resolve_reflinks {
 
     $comment =~ s|<!--reflink-->&gt;&gt;&gt;(.+?)/([0-9]+)|
         my $res = get_cb_post($2,$1);
-        if ($res) { '<span class="backreflink"><a href="'.get_reply_link($$res{num},$$res{parent},0,$1).'">&gt;&gt;&gt;/'.$1.'/'.$2.'</a></span>' }
-        else { '<span class="backreflink"><del>&gt;&gt;&gt;/'.$1.'/'.$2.'</del></span>'; }
+        if ($res) { '<span class="backreflink"><a href="'.get_reply_link($$res{num},$$res{parent},0,$1).'">&gt;&gt;/'.$1.'/'.$2.'</a></span>' }
+        else { '<span class="backreflink"><del>&gt;&gt;/'.$1.'/'.$2.'</del></span>'; }
     |ge;
 
     $comment =~ s|<!--reflink-->&gt;&gt;([0-9]+)|
@@ -1955,7 +1955,7 @@ sub format_comment {
     my ($comment) = @_;
 
     # hide >>/board/1 references from the quoting code
-    $comment =~ s/&gt;&gt;&gt;(\/?)(.+)\/([0-9\-]+)/&gt&gt&gt;$1$2\/$3/g;
+    $comment =~ s/&gt;&gt;(\/?)(.+)\/([0-9\-]+)/&gt&gt&gt;$1$2\/$3/g;
     # hide >>1 references from the quoting code
     $comment =~ s/&gt;&gt;([0-9\-]+)/&gtgt;$1/g;
 
@@ -2142,7 +2142,7 @@ sub get_cb_post {
     my ($thread, $board) = @_;
     my ($sth,$ret);
 
-    return unless( $board and grep { $_ eq $board } @{$$cfg{BOARDS}} );
+    return unless( -d $board );
     $$cfg{SQL_TABLE} = $board . '_comments';
 
     $sth = $dbh->prepare(
@@ -4290,7 +4290,7 @@ sub get_reply_link {
     my ( $reply, $parent, $force_http, $board ) = @_;
 
     $board =
-      ( $board and grep { $_ eq $board } @{$$cfg{BOARDS}} ) ? "/$board/" : "";
+      ( -d $board ) ? "/$board/" : "";
 
     return expand_filename( $board . "thread/" . $parent, $force_http ) . '#' . $reply if ($parent);
     return expand_filename( $board . "thread/" . $reply, $force_http );

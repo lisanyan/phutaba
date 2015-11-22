@@ -1,4 +1,5 @@
 board/src/
 board/thumb/
-board/orphans/*
+board/orphans/
+test/
 lib/site_config.pl
