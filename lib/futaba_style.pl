@@ -413,50 +413,6 @@ use constant SINGLE_POST_TEMPLATE => compile_template(q{
 </loop>
 });
 
-
-use constant OEKAKI_TEMPLATE => compile_template(q{
-
-<html>
-<head>
-<title><const TITLE> &raquo; <var $title></title>
-<style>
-body {
-    background: #ECE9E2;
-    color: #000000;
-    font: 10pt sans-serif;
-}
-</style>
-<script language="javascript" type="text/javascript" src="/shi-painter/sp.js"></script>
-</head>
-<body>
-<applet code="c.ShiPainter.class" name="paintbbs" archive="/shi-painter/spainter.jar,/shi-painter/res/<var $type>.zip" WIDTH="100%" height="90%" MAYSCRIPT>
-<param name="image_width" value="<var $width>">
-<param name="image_height" value="<var $height>">
-
-<param name="dir_resource" value="/shi-painter/res/">
-<param name="tt.zip" value="/shi-painter/res/tt.zip">
-<param name="res.zip" value="/shi-painter/res/res_<var $type>.zip">
-<param name="tools" value="<var $type>">
-<param name="layer_count" value="3">
-<param name="quality" value="1">
-
-<param name="undo_in_mg" value="15">
-<param name="undo" value="30">
-<param name="MAYSCRIPT" value="true">
-<param name="scriptable" value="true">
-<param name="url_exit" value="<var $self>?task=paint&do=proceed&id=<var $tmpid>" />
-<param name="url_save" value="<var $self>?task=paint&do=save&id=<var $tmpid>" />
-<param name="url_target" value="_self" />
-
-</applet>
-
-
-
-</body>
-</html>
-});
-
-
 use constant ERROR_HEAD_INCLUDE => q{
 
 <!DOCTYPE html>

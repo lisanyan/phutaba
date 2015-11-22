@@ -14,10 +14,6 @@ use JSON;
 use Digest::MD5 qw(md5 md5_hex md5_base64);
 use IO::Socket; # IRC notify
 use IO::Select; # wait for DNSBL answer
-#use IO::Scalar;
-#use HTML::Entities;
-use Data::Dumper;
-
 
 
 use constant HANDLER_ERROR_PAGE_HEAD => q{
@@ -408,77 +404,12 @@ elsif ( $task eq "movefiles" ) {
 	my @files = $query->multi_param("file");
 	move_files($admin, @files);
 }
-elsif ( $task eq "paint" ) {
-    my $do = $query->param("do");
-    $do = $query->url_param("do") unless $do;
-    
-    if ($do eq "new") {
-	my $applet = $query->param("applet");
-   	my $width = $query->param("width");
-    	my $height = $query->param("height");
-	$width = 640 unless $width;
-	$height = 480 unless $height;    
-	do_paint($do, $applet, $width, $height);
-    }
-    elsif ($do eq "save") {
-	my $file = $query->param("POSTDATA");
-	my $tmpid = $query->url_param("id");
-	my $uploadname = "paint$tmpid.png";
-        my $time = time();
-	make_error("Keine Daten empfangen.") unless $file;
-	
-	my ( $filename, $md5, $width, $height, $thumbnail, $tn_width, $tn_height, $ignore1, $ignore2, $ignore3 )
-		= process_file( $file, $uploadname, $time );
-
-      	# board, tmpid, filename, time, width, height, thumbnail, tn_width, tn_height
-	$sth = $dbh->prepare("INSERT INTO `oekaki` VALUES(?,?,?,?,?,?,?,?,?);") or make_error($dbh->errstr);
-	$sth->execute(BOARD_IDENT, $tmpid, $filename, $time, $width, $height, $thumbnail, $tn_width, $tn_height) or make_error($dbh->errstr);
-	
-    }  
-    elsif ($do eq "proceed") {
-        make_http_header();
-        print "<pre>";
-        print Dumper $query;
-        print "</pre>";
-    }  
-}
 else {
 	make_error("Unknown task parameter.") unless ($json);
 }
 
 
 $dbh->disconnect();
-
-sub do_paint {
-    my ($do, $applet, $width, $height) = @_;
-    
-    my ($title, $tmpid, $type);
-    $tmpid = md5_hex(time());
-    if ($applet eq "shipainter") {
-	$title = "Shi-Painter";
-	$type = "normal";
-    }
-    elsif ($applet eq "shipainterpro") {
-	$title = "Shi-Painter Pro";
-	$type = "pro";
-    } else {
-	make_error("Falscher Painter Typ");
-    } 
-    make_http_header();
-    print(
-        encode_string(
-            OEKAKI_TEMPLATE->(
-            	title => $title,
-		height => $height,
-		width => $width,
-		type => $type,
-		tmpid => $tmpid,
-		)
-        )
-    );
-
-}
-
 
 sub output_json_stats {
 	my ($date_format) = @_;
