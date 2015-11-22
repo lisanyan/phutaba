@@ -1,5 +1,3 @@
-var resized;
-
 function get_cookie(name) {
 	with (document.cookie) {
 		var regexp = new RegExp("(^|;\\s+)" + name + "=(.*?)(;|$)"),
@@ -34,25 +32,6 @@ function get_password(name) {
 	}
 
 	return (pass);
-}
-
-function resizeCommentfield(id, srcelement) {
-	var textarea = document.getElementById(id);
-
-	if (resized == 1) {
-		textarea.cols = 48;
-		textarea.rows = 6;
-		srcelement.src = '/img/icons/expand.png';
-		srcelement.title = msg_expand_field;
-		resized = 0;
-	} else {
-		resized = 1;
-		textarea.cols = 90;
-		textarea.rows = 10;
-		srcelement.src = '/img/icons/collapse.png';
-		srcelement.title = msg_shrink_field;
-	}
-
 }
 
 function file_input_change(max) {
