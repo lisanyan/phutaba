@@ -837,6 +837,12 @@ sub add_images_to_row($) {
 sub resolve_reflinks($) {
 	my ($comment) = @_;
 
+    $comment =~ s|<!--reflink-->&gt;&gt;&gt;(.+?)/([0-9]+)|
+        my $res = get_cb_post($2,$1);
+        if ($res) { '<span class="backreflink"><a href="'.get_reply_link($$res{num},$$res{parent},$1).'">&gt;&gt;/'.$1.'/'.$2.'</a></span>' }
+        else { '<span class="backreflink"><del>&gt;&gt;/'.$1.'/'.$2.'</del></span>'; }
+    |ge;
+
 	$comment =~ s|<!--reflink-->&gt;&gt;([0-9]+)|
 		my $res = get_post($1);
 		if ($res) { '<span class="backreflink"><a href="'.get_reply_link($$res{num},$$res{parent}).'">&gt;&gt;'.$1.'</a></span>' }
@@ -1498,6 +1504,8 @@ sub flood_check {
 sub format_comment {
     my ($comment) = @_;
 
+    # hide >>/board/1 references from the quoting code
+    $comment =~ s/&gt;&gt;(\/?)(.+)\/([0-9\-]+)/&gt&gt&gt;$1$2\/$3/g;
     # hide >>1 references from the quoting code
     $comment =~ s/&gt;&gt;([0-9\-]+)/&gtgt;$1/g;
 
@@ -1507,6 +1515,7 @@ sub format_comment {
 
 		# ref-links will be resolved on every page creation to support links to deleted (and also future) posts.
 		# ref-links are marked with a html-comment and checked/generated on every page output.
+        $line =~ s/&gt&gt&gt;\/?(.+)\/([0-9]+)/<!--reflink-->&gt;&gt;&gt;$1\/$2/g;
 		$line =~ s/&gtgt;([0-9]+)/<!--reflink-->&gt;&gt;$1/g;
 
         return $line;
@@ -1527,6 +1536,7 @@ sub format_comment {
 
     # restore >>1 references hidden in code blocks
     $comment =~ s/&gtgt;/&gt;&gt;/g;
+    $comment =~ s/&gt&gt&gt;/&gt;&gt;&gt;/g;
 
     return $comment;
 }
@@ -1655,6 +1665,23 @@ sub make_id_code {
       if ( DISPLAY_ID =~ /mask/i );
 
     return hide_data( $ip . $string, 6, "id", SECRET, 1 );
+}
+
+sub get_cb_post {
+    my ($thread, $board) = @_;
+    my ($sth,$ret);
+
+    return unless( -d $board );
+
+    # perhaps table is called "$board"
+    $sth = $dbh->prepare(
+        "SELECT * FROM " . $board . " WHERE num=? LIMIT 1;"
+    ) or make_error(S_SQLFAIL);
+    $sth->execute($thread) or make_error(S_SQLFAIL);
+    $ret = $sth->fetchrow_hashref();
+    $sth->finish;
+
+    return $ret;
 }
 
 sub get_post {
@@ -2732,10 +2759,12 @@ sub expand_image_filename { # TODO: remove and replace by expand_filename since 
 }
 
 sub get_reply_link {
-    my ($reply, $parent) = @_;
+    my ( $reply, $parent, $board ) = @_;
 
-	return expand_filename( "thread/" . $parent ) . '#' . $reply if ($parent);
-   	return expand_filename( "thread/" . $reply );
+    $board = ( -d $board ) ? "/$board/" : "";
+
+    return expand_filename( $board . "thread/" . $parent ) . '#' . $reply if ($parent);
+    return expand_filename( $board . "thread/" . $reply );
 }
 
 sub get_page_count {
