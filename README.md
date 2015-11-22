@@ -15,7 +15,7 @@ Installation
 * ssl
 * headers
 * rewrite
-* cgi
+* cgid
 
 ##### Perl modules needed (Ubuntu packages)
 * libnet-dns-perl
