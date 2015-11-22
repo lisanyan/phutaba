@@ -205,8 +205,6 @@ use constant NORMAL_FOOT_INCLUDE => q{
 <script type="text/javascript">
         var board = '<const BOARD_IDENT>', thread_id = <if $thread><var $thread></if><if !$thread>null</if>;
         var filetypes = '<var get_filetypes()>';
-        var msg_expand_field = '<const S_JS_EXPAND>';
-        var msg_shrink_field = '<const S_JS_SHRINK>';
         var msg_remove_file = '<const S_JS_REMOVEFILE>';
 </script>
 
