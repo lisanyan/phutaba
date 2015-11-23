@@ -1,11 +1,10 @@
 <include %TMPLDIR%normal_head.tpl>
 <if $admin>
-	<!--[<a href="<var expand_filename(%self)>?section=<var $$cfg{SELFPATH}>"><var $$locale{S_MANARET}></a>]-->
-	[<a href="<var %self>?task=show&amp;section=<var $$cfg{SELFPATH}>"><var $$locale{S_MANAPANEL}></a>]
+	[<a href="<var Wakaba::expand_filename("/".$$cfg{SELFPATH})>"><var $$locale{S_MANAPANEL}></a>]
 	[<a href="<var %self>?task=mpanel&amp;section=<var $$cfg{SELFPATH}>"><var $$locale{S_MANATOOLS}></a>]
 	[<a href="<var %self>?task=bans&amp;section=<var $$cfg{SELFPATH}>"><var $$locale{S_MANABANS}></a>]
-	<if $modclass eq "admin">
 	[<a href="<var %self>?task=orphans&amp;section=<var $$cfg{SELFPATH}>"><var $$locale{S_MANAORPH}></a>]
+	<if $modclass eq "admin">
 	[<a href="<var %self>?task=postbackups&amp;section=<var $$cfg{SELFPATH}>"><var $$locale{S_MANABACKS}></a>]
 	[<a href="<var %self>?task=viewlog&amp;section=<var $$cfg{SELFPATH}>"><var $$locale{S_MANALOG}></a>]
 	</if>

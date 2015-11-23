@@ -176,7 +176,6 @@ $translation{S_BANREASONLABEL} = 'Grund';
 $translation{S_BANASNUMLABEL} = 'AS-Nummer';
 $translation{S_BANASNUM} = 'Netz sperren';
 $translation{S_BANEXPIRESLABEL} = 'Dauer';
-$translation{S_BANEXPIRESDESC} = '5 Days, 10 Hours, 30 Minutes, etc<br />Permaban - leave field empty';
 $translation{S_BANREASONLABEL} = 'Grund';
 
 $translation{S_LOCKED} = 'Thread ist geschlossen';
@@ -230,6 +229,8 @@ $translation{S_SQLFAIL} = 'MySQL-Datenbankfehler'; # SQL Failure
 $translation{S_EDITPOST} = 'Edit post';
 $translation{S_EDITHEAD} = 'Editing No.<a href="%s">%d</a>';
 $translation{S_UPDATE} = 'Update';
+
+$translation{S_PREWRAP} = "<span class=\"prewrap\">%s</span>";
 
 $translation{S_REDIR} =
   'If the redirect didn\'t work, please choose one of the following mirrors:';    # Redir message for html in REDIR_DIR

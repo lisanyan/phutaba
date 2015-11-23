@@ -35,31 +35,19 @@
 
 <if $admin>
 <div id="modpanel" style="display: none">
-<div style="display: none; min-width: 250px;" id="banexpireshelp">
-<var $$locale{S_BANEXPIRESDESC}>
-</div>
 
 <table>
 <tr>
 	<td><b><var $$locale{S_BANIPLABEL}></b></td><td><input id="ip" type="text" name="ip" size="40" /></td>
 </tr>
 <tr><td><b><var $$locale{S_BANMASKLABEL}></b></td><td>
-<select id="netmask" name="netmask">
-  <option value="255.0.0.0">/8 (IPv4 Class A)</option>
-  <option value="255.255.0.0" selected="selected">/16 (IPv4 Class B)</option>
-  <option value="255.255.255.0">/24 (IPv4 Class C)</option>
-  <option value="255.255.255.255">/32 (IPv4 Host)</option>
-  <option value="ffff:ffff:ffff:0000:0000:0000:0000:0000">/48 (IPv6)</option>
-  <option value="ffff:ffff:ffff:ff00:0000:0000:0000:0000">/56 (IPv6)</option>
-  <option value="ffff:ffff:ffff:ffff:0000:0000:0000:0000">/64 (IPv6)</option>
-  <option value="ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff">/128 (IPv6 Host)</option>
-</select>
+<include %TMPLDIR%netmask_select.tpl>
 </td></tr>
 <tr>
 	<td><b><var $$locale{S_BANREASONLABEL}></b></td><td><input id="reason" type="text" name="reason" size="40" /></td>
 </tr>
 <tr>
-	<td><label for="expires"><b<if $parsedate> class="expireshelp" onmouseover="TagToTip('banexpireshelp')" onmouseout="UnTip()"</if>><var $$locale{S_BANEXPIRESLABEL}>&nbsp;</b></label></td>
+	<td><label for="expires"><b><var $$locale{S_BANEXPIRESLABEL}>&nbsp;</b></label></td>
 	<td><include %TMPLDIR%duration_select.tpl></td>
 </tr>
 <tr><td><label for="blame"><b>Ban Sign</b></label></td><td><input id="blame" type="checkbox" name="blame" value="yes" /></td></tr>
@@ -74,6 +62,7 @@
 </div>
 <p id="info" style="display: none"><span style="font-weight: bolder; color: #002233;">Info: <span style="font-weight: bolder" id="infodetails"></span></span></p>
 <p id="error" style="display: none"><span style="font-weight: bolder; color: #FF0000;">Error: <span style="font-weight: bolder" id="errordetails"></span></span></p>
+
 </div>
 </if>
 

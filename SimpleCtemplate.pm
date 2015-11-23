@@ -13,7 +13,7 @@ use POSIX;
 #<loop $hashref> вывод данных используя переменные </loop> - цикл
 #<aloop $arrayref> вывод данных используя переменные </loop> - цикл перебора массива. Текущее значение находится в $_
 #<perleval perl_код  /> - выполнение кода
-#<pagination $var> - листалка страниц
+#<time($var)> - читаемая строка из таймстампа
 #<include %TMPLDIR%/head.tpl> подгрузка кода из другого файла
 
 sub get_captcha_key {
@@ -28,15 +28,11 @@ sub new {
 	my $self = $_[1]? $_[1] : {};
 
 	$self->{globals}={} unless $self->{globals};
-
 	$self->{range} = 5 unless($self->{range});
-	
 	$self->{die_if_compile_error}=1 unless(defined $self->{die_if_compile_error});
-	
+
 	bless $self,'Template_'.$self->{tmpl_dir};
-	
-	
-	
+
 ########################## Методы работы с шаблонами ################################
 		#компилирует шаблон из кода/файла и создает метод обьекта. (код/путь к файлу ; имя метода, необязательно, если загружается из файла )
 		# my ($text, %vars);
@@ -53,8 +49,8 @@ sub new {
 		};
 
 		# (код/путь к файлу)= ссылка на скомпилированный в функцию шаблон
-		*{'Template_'.$self->{tmpl_dir}.'::compile'}=sub  {
-			my ($self,$code)=@_; 
+		*{'Template_'.$self->{tmpl_dir}.'::compile'}=sub {
+			my ($self,$code)=@_;
 			my $filename=' ';
 			
 			if(-e $code){ #можно и из файла грузить
@@ -62,7 +58,7 @@ sub new {
 				open my $tmlf,'<',$code;
 				$code=join '',<$tmlf>;
 				close $tmlf;
-				}
+			}
 		###
 			while($code=~m/(<include .*?>)/){
 				while($code=~m/(<include .*?>)/g){ # подгрузка шаблонов
@@ -81,13 +77,14 @@ sub new {
 				}
 			}
 		##Обработка
-			$code=~s/<!--[^#].*?-->//sg; #комментарий 
-			$code=~s/'/\\'/g;#экранируем кавычки
-			$code=~s/\$j/##jquery/g; # kostyl, dont name any variable as "$j"
+			$code=~s/<!--[^#].*?-->//sg; #комментарий
+			$code=~s/(')/\\$1/g; #кавычки
+
+			$code=~s/\$j/##jquery/g; #костыль
 			$code=~s/([^\\])\$([_A-z0-9]+)/$1\$vars{$2}/g; #имена переменны берем только из защищенного массива
 			$code=~s/([^\[\\])%([_A-z0-9]+)/$1\$global{$2}/g; # или глобального массива # который тоже защищен и существет только внутри метода-шаблона
-			$code=~s/##jquery/\$j/g; # kostyl
-			
+			$code=~s/##jquery/\$j/g; #костыль
+
 			#добавляем переменные
 			$code=~s/<var +(.*?)>/'.$1.'/g;
 			$code=~s/#var +(.*?)#/'.$1.'/g;
@@ -113,11 +110,13 @@ sub new {
 			$code=~s|<else>|';}else{ \$text.='|g; 
 			$code=~s|</if>|';}; \$text.='|g; 
 			
+			$code=~s/#time\(+([^,]*?)(,.*?)?\)#/'.Wakaba::make_date($1$2).'/g;#время
 			$code=~s|#perleval +(.*?)/#|'; $1 ;\$text.='|sg; #выполнение кода
+
+			$code=~s/<time\(+([^,]*?)(,.*?)?\)>/'.Wakaba::make_date($1$2).'/g;#время
 			$code=~s|<perleval +(.*?)/>|'; $1 ;\$text.='|sg; #выполнение кода
 			
 		##Компилируем в анонимную функцию
-		
 		my $sub;
 		use strict;
 			eval q |
@@ -142,7 +141,7 @@ sub new {
 				$sub = sub{my ($self,$vars)=@_; Dumper($vars)};
 				print "$filename - Data::Dumper loaded!\n";
 			};
-		no strict;
+			no strict;
 			return $sub;
 		};
 

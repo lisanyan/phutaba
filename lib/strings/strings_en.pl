@@ -177,7 +177,6 @@ $translation{S_BANCOMMENT} = 'Comment';
 $translation{S_BANTRUST} = 'Kein Captcha';
 $translation{S_BANTRUSTTRIP} = 'Tripcode';
 $translation{S_BANEXPIRESLABEL} = 'Истекает';
-$translation{S_BANEXPIRESDESC} = '5 Days, 10 Hours, 30 Minutes, etc<br />Permaban - leave field empty';
 $translation{S_BANREASONLABEL} = 'Reason';
 $translation{S_BANASNUMLABEL} = 'AS number';
 $translation{S_BANASNUM} = 'Ban ASnet';
@@ -237,6 +236,8 @@ $translation{S_SQLFAIL} = 'MySQL-Database error'; # SQL Failure
 $translation{S_EDITPOST} = 'Edit post';
 $translation{S_EDITHEAD} = 'Editing No.<a href="%s">%d</a>';
 $translation{S_UPDATE} = 'Update';
+
+$translation{S_PREWRAP} = "<span class=\"prewrap\">%s</span>";
 
 $translation{S_REDIR} =
   'If the redirect didn\'t work, please choose one of the following mirrors:'

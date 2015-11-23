@@ -400,15 +400,15 @@ while($query=CGI::Fast->new)
         my $subject = $query->param("field3");
         my $comment = $query->param("field4");
         my $no_format = $query->param("noformat");
-        my $capcode = $query->param("capcode");
+        my $as_staff = $query->param("capcode");
         my $killtrip = $query->param("notrip");
         my $by_admin = $query->param("admin_post");
         my $nopomf = $query->param("nopomf");
         my @files = $query->multi_param("file");
         edit_post(
-          $admin,     $num,       $name,    $email,
-          $subject,   $comment,   $capcode, $killtrip,
-          $by_admin,  $no_format, $nopomf,  @files
+          $admin,     $num,       $name,     $email,
+          $subject,   $comment,   $as_staff, $killtrip,
+          $by_admin,  $no_format, $nopomf,   @files
         );
     }
     # ban editing
@@ -1307,17 +1307,15 @@ sub post_stuff {
     ) = @_;
 
     my $file = $files[0]; # file count
-    $no_pomf = 0 unless $no_pomf;
 
     my $admin_post = 0;
     my $original_comment = $comment;
     # get a timestamp for future use
     my $time = time();
 
-    # set ajax errors
-    $ajax_errors = 1 if $ajax;
-    # sticky should never be NULL
-    $sticky = 0 unless $sticky;
+    $no_pomf = 0 unless $no_pomf; # cookie
+    $ajax_errors = 1 if $ajax;    # shit errors in json format if $ajax is defined
+    $sticky = 0 unless $sticky;   # sticky should never be NULL
 
     # check that the request came in as a POST, or from the command line
     make_error($$locale{S_UNJUST})
@@ -1352,7 +1350,7 @@ sub post_stuff {
     }
 
     my $stickycheck = {};
-    if($parent) {
+    if($parent and $admin) {
         my $sticky_check = $dbh->prepare(
               "SELECT sticky, locked, autosage FROM "
               . $$cfg{SQL_TABLE} 
@@ -1404,9 +1402,12 @@ sub post_stuff {
         }
     }
 
-    # don't allow mods to post html
-    # they can put something like script that will steal your cookies
-    make_error($$locale{S_NOPRIVILEGES}) if( $no_format and $session[1] ne 'admin' );
+    # Mod limitations
+    # will add more later...
+    if ($session[1] ne 'admin')
+    {
+        $no_format = 0;
+    }
 
     # check for weird characters
     make_error($$locale{S_UNUSUAL}) if ( $parent  =~ /[^0-9]/ );
@@ -1434,7 +1435,7 @@ sub post_stuff {
     }
 
     if( grep { defined($_) } @file_errors ) {
-        my $errstring = sprintf $$cfg{S_PREWRAP}, join("\n", @file_errors);
+        my $errstring = sprintf $$locale{S_PREWRAP}, join("\n", @file_errors);
         make_error($errstring);
     }
 
@@ -1571,8 +1572,13 @@ sub post_stuff {
     }
 
     $numip = "0" if ($$cfg{ANONYMIZE_IP_ADDRESSES} and $admin_post);
-    if ($as_staff) { $as_staff = 1; }
-    else           { $as_staff = 0; }
+    if ($as_staff) {
+        if ($session[1] eq 'admin' ) { $as_staff = 1; }
+        else { $as_staff = 2; }
+    }
+    else {
+        $as_staff = 0;
+    }
 
     my $sth;
 
@@ -2573,7 +2579,7 @@ sub delete_stuff {
         }
     }
     else {
-        my $errstring = sprintf $$cfg{S_PREWRAP}, join("\n", @errors);
+        my $errstring = sprintf $$locale{S_PREWRAP}, join("\n", @errors);
         make_error($errstring);
     }
 }
@@ -2609,8 +2615,8 @@ sub delete_post {
         return $$locale{S_LOCKED}
           if ( $parent_post && $$parent_post{locked} and !$admin_del );
         # remove this if you wanna use this wakaba in production... lol
-        return decode_string("Не надо переписывать историю.", CHARSET)
-          if (!$admin_del && $$row{timestamp} <= 1447422385 and grep { $_ eq $1 } @{$$cfg{DELETION_PROHIBITED_AS}});
+        return decode_string("Пост протух.", CHARSET)
+          if (!$admin_del && $$row{timestamp} <= 1447422385);
         return "This was posted by a moderator or admin and cannot be deleted this way."
           if (!$admin_del and $$row{admin_post} eq 1);
 
@@ -3410,7 +3416,7 @@ sub make_admin_ban_edit # generating ban editing window
     }
     $sth->finish;
     make_http_header();
-    print $tpl->edit_window({
+    print $tpl->edit_entry_window({
         admin => $admin,
         modclass => $session[1],
         hash => \@hash,
@@ -3455,7 +3461,7 @@ sub make_admin_ban_panel {
     $sth->finish;
 
     make_http_header();
-    print $tpl->admin_ban_panel({
+    print $tpl->ban_panel({
         admin => $admin,
         modclass => $session[1],
         filter => $filter,
@@ -3471,7 +3477,6 @@ sub make_admin_orphans {
     my ($sth, $row, @results, @dbfiles, @dbthumbs);
 
     my @session = check_password($admin,'');
-    make_error($$locale{S_NOPRIVILEGES}) if($session[1] ne 'admin');
 
     my $img_dir = $$cfg{SELFPATH} . '/' . $$cfg{IMG_DIR};
     my $thumb_dir = $$cfg{SELFPATH} . '/' . $$cfg{THUMB_DIR};
@@ -3525,7 +3530,7 @@ sub make_admin_orphans {
     }
 
     make_http_header();
-    print $tpl->admin_orphans({
+    print $tpl->orphans({
         admin => $admin,
         modclass => $session[1],
         files => \@f_orph,
@@ -3542,7 +3547,6 @@ sub move_files{
     my ($admin, @files) = @_;
 
     my @session = check_password($admin,'');
-    make_error($$locale{S_NOPRIVILEGES}) if($session[1] ne 'admin');
 
     my $orph_dir = $$cfg{SELFPATH} . '/' . $$cfg{ORPH_DIR};
     my @errors;
@@ -3896,7 +3900,7 @@ sub make_edit_post_panel {
     make_error("Something happened") unless @loop;
 
     make_http_header();
-    print $tpl->edit_post_panel({
+    print $tpl->edit_post_window({
         admin    => $admin,
         modclass => $session[1],
         num      => $num,
@@ -3908,23 +3912,37 @@ sub make_edit_post_panel {
 }
 
 sub edit_post {
-    my ( $admin,   $num,       $name,    $email,
-         $subject, $comment,   $capcode, $killtrip,
-         $byadmin, $no_format, $no_pomf, @files
+    my ( $admin,      $num,       $name,     $email,
+         $subject,    $comment,   $as_staff, $killtrip,
+         $admin_post, $no_format, $no_pomf,  @files
     ) = @_;
     my ($sth, $postfix);
 
     my @session = check_password($admin,'');
-    make_error($$locale{S_NOPRIVILEGES}) if( $no_format and $session[1] ne 'admin' );
 
     my $file = $files[0]; # file count
     $no_pomf = 0 unless $no_pomf;
 
-    my $adminpost  = $capcode ? 1 : 0;
-    my $admin_post = $byadmin ? 1 : 0;
+    my $admin_post = $admin_post ? 1 : 0;
     my $ip = get_remote_addr();
     my $post = get_post($num) or make_error(sprintf "Post %d doesn't exist",$num);
     my $time = time;
+
+    if ($as_staff) {
+        if ($session[1] eq 'admin' ) { $as_staff = 1; }
+        else { $as_staff = 2; }
+    }
+    else {
+        $as_staff = 0;
+    }
+
+    # Mod limitations
+    if ($session[1] ne 'admin') {
+        $as_staff = $$post{adminpost} if $as_staff;
+        $no_format = 0 if $no_format;
+        # Admins have immunity to mod editing
+        make_error($$locale{S_NOPRIVILEGES}) if $$post{adminpost} == 1;
+    }
 
     backup_stuff($post, 0, 1) if ($$cfg{ENABLE_POST_BACKUP});
 
@@ -3943,7 +3961,7 @@ sub edit_post {
     }
 
     if( grep { defined($_) } @file_errors ) {
-        my $errstring = sprintf $$cfg{S_PREWRAP}, join("\n", @file_errors);
+        my $errstring = sprintf $$locale{S_PREWRAP}, join("\n", @file_errors);
         make_error($errstring);
     }
 
@@ -3952,21 +3970,18 @@ sub edit_post {
     $subject = clean_string( decode_string( $subject, CHARSET ) );
 
     if ( $email =~/sage/i ) { $email = 'sage'; }
-    else                     { $email = ''; }
+    else                    { $email = ''; }
 
     # process tripcode
     my $trip;
     ( $name, $trip ) = process_leetcode( $name ); # process a l33t tripcode
     ( $name, $trip ) = process_tripcode( $name, $$cfg{TRIPKEY}, SECRET, CHARSET ) unless $trip;
 
-    if (!$killtrip) {
-        $trip = $$post{trip} if !$trip;
-    } else {
-        $trip = '';
-    }
+    if (!$killtrip) { $trip = $$post{trip} if !$trip; }
+    else { $trip = ''; }
 
+    # fix up the email/link/name
     $name = make_anonymous( $ip, time() ) unless $name or $trip;
-    # fix up the email/link
     $email = "mailto:$email" if $email and $email !~ /^$protocol_re:/;
 
     # fix comment
@@ -4039,7 +4054,7 @@ sub edit_post {
     );
 
     $sth->execute(
-        $name,$email,$trip,$subject,$comment,$adminpost,$admin_post,$num
+        $name,$email,$trip,$subject,$comment,$as_staff,$admin_post,$num
     ) or make_error($$locale{S_SQLFAIL});
     $sth->finish;
 
@@ -4144,8 +4159,9 @@ sub make_view_log_panel {
 
 sub clear_log {
     my ($admin,$all)=@_;
-    my @session = check_password($admin, '');
     my $sth;
+
+    my @session = check_password($admin, '');
     make_error($$locale{S_NOPRIVILEGES}) if $session[1] ne 'admin';
 
     my $board_path = $$cfg{SELFPATH};
@@ -4414,6 +4430,7 @@ sub fetch_config
         $$settings{$board}{NOTFOUND} = 1;
     }
 
+    # Global options
     $$settings{$board}{BOARDS} = [ keys %$settings ];
     $$settings{$board}{SELFPATH} = $board;
 

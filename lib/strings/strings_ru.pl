@@ -172,7 +172,6 @@ $translation{S_BANCOMMENT} = 'Комментарий';
 $translation{S_BANTRUST} = 'Без капчи';
 $translation{S_BANTRUSTTRIP} = 'Трипкод';
 $translation{S_BANEXPIRESLABEL} = 'Истекает';
-$translation{S_BANEXPIRESDESC} = 'Example: 5 Days, 10 Hours, 30 Minutes<br />Permaban - leave field empty';
 $translation{S_BANREASONLABEL} = 'Причина';
 $translation{S_BANASNUMLABEL} = 'AS-Nummer';
 $translation{S_BANASNUM} = 'Бан сети';
@@ -227,7 +226,9 @@ $translation{S_SQLFAIL} = 'MySQL-Database query error'; # SQL Failure
 
 $translation{S_EDITPOST} = 'Редактировать';
 $translation{S_EDITHEAD} = 'Editing No.<a href="%s">%d</a>';
-$translation{S_UPDATE} = 'Update';
+$translation{S_UPDATE} = 'Обновить';
+
+$translation{S_PREWRAP} = "<span class=\"prewrap\">%s</span>";
 
 $translation{S_REDIR} =
   'If the redirect didn\'t work, please choose one of the following mirrors:'

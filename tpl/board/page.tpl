@@ -23,7 +23,7 @@
 	<table>
 	<tbody id="postTableBody">
 	<if $admin>
-		<tr><td class="postblock">## Team ##</td>
+		<tr><td class="postblock">## Capcode ##</td>
 		<td><label><input type="checkbox" name="as_staff" value="1" />  <var $$locale{S_POSTASADMIN}></label></td></tr>
 		<tr><td class="postblock">HTML</td>
 		<td><label><input type="checkbox" name="no_format" value="1" /> <var $$locale{S_NOTAGS2}></label></td></tr>

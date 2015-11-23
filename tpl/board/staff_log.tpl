@@ -40,7 +40,7 @@
 			</if>
 		</td>
 		<td>/<var $board>/</td>
-		<td><var Wakaba::make_date($time, "2ch")></td>
+		<td><time($time, "2ch")></td>
 	</tr>
 </loop>
 <tr><td><br/></td></tr>
