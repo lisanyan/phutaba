@@ -3116,7 +3116,8 @@ sub restore_post_or_thread {
 
     my ($sth, $res); # Database handler.
     my $updated_lasthit = 0; # Update for the lasthit field when recovering replies to an OP.
-    my ($stickied_thread, $locked_thread, $autosage_on) = (0, undef, undef);
+    my ($locked_thread, $autosage_on);
+    my $stickied_thread = 0;
           # Update for stickied/locked field based on whether thread is stickied.
     my $this_board; # Object for affected board.
 
@@ -3151,11 +3152,11 @@ sub restore_post_or_thread {
         my $parent_row = get_post($$row{parent});
 
         ($updated_lasthit, $stickied_thread, $locked_thread, $autosage_on) =
-            ($$parent_row{lasthit}, $$parent_row{stickied}, $$parent_row{locked}, $$parent_row{autosage});
+            ($$parent_row{lasthit}, $$parent_row{sticky}, $$parent_row{locked}, $$parent_row{autosage});
 
         if (!$updated_lasthit)
         {
-            return "Post restoration failed: Post $board_name,$num is a member of a deleted thread.";
+            make_error("Post restoration failed: Post $board_name,$num is a member of a deleted thread.");
         }
 
         # ...Otherwise, use the updated lasthit field, as it must be in common with the rest of the thread for proper display.
@@ -4494,12 +4495,12 @@ sub init_database {
         "password TEXT," .      # Deletion password (in plaintext)
         "comment TEXT," .       # Comment text, HTML encoded.
 
-        "banned INTEGER," .     # Timestamp when the post was banned
-        "autosage INTEGER," .   # Flag to indicate that thread is on bump limit
-        "adminpost INTEGER," .  # Post was made by a staff member
-        "admin_post INTEGER," . # Post was made by a staff member...
-        "locked INTEGER," .     # Thread is locked (applied to parent post only)
-        "sticky INTEGER," .     # Thread is sticky (applied to all posts of a thread)
+        "banned TINYINT," .     # Timestamp when the post was banned
+        "autosage TINYINT," .   # Flag to indicate that thread is on bump limit
+        "adminpost TINYINT," .  # Post was made by a staff member
+        "admin_post TINYINT," . # Post was made by a staff member...
+        "locked TINYINT," .     # Thread is locked (applied to parent post only)
+        "sticky TINYINT," .     # Thread is sticky (applied to all posts of a thread)
         "location TEXT," .      # Geo::IP information for the IP address if available
         "secure TEXT," .        # Cipher information if posted using SSL connection
         "INDEX parent(parent)" . # table index
@@ -4589,12 +4590,12 @@ sub init_backup_database {
         "password TEXT," .      # Deletion password (in plaintext)
         "comment TEXT," .       # Comment text, HTML encoded.
 
-        "banned INTEGER," .     # Timestamp when the post was banned
-        "autosage INTEGER," .   # Flag to indicate that thread is on bump limit
-        "adminpost INTEGER," .  # Post was made by a staff member
-        "admin_post INTEGER," . # Post was made by a staff member...
-        "locked INTEGER," .     # Thread is locked (applied to parent post only)
-        "sticky INTEGER," .     # Thread is sticky (applied to all posts of a thread)
+        "banned TINYINT," .     # Timestamp when the post was banned
+        "autosage TINYINT," .   # Flag to indicate that thread is on bump limit
+        "adminpost TINYINT," .  # Post was made by a staff member
+        "admin_post TINYINT," . # Post was made by a staff member...
+        "locked TINYINT," .     # Thread is locked (applied to parent post only)
+        "sticky TINYINT," .     # Thread is sticky (applied to all posts of a thread)
         "location TEXT," .      # Geo::IP information for the IP address if available
         "secure TEXT," .        # Cipher information if posted using SSL connection
         "timestampofarchival INTEGER,". # When was this backed up?
