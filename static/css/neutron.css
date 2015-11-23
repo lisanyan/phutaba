@@ -21,6 +21,7 @@ input[type='text'],input[type='password'],textarea{border:2px solid #545454;bord
 .subject{color:#4877C0}
 .postername{color:#B4B9CD}
 .backreflink del{color:inherit}
+.modpost{color:#5265D0}
 .teampost{color:#FFAB3F}
 .sage{color:#C27F27}
 .ban,.user_banned{color:#C27F27}

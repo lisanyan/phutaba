@@ -1,5 +1,3 @@
-var resized;
-
 // ============================================================================================
 // Misc functions
 function show_el(a){a=document.getElementById(a);a.style.display="block"==a.style.display?"none":"block"};
@@ -56,24 +54,6 @@ function set_delpass(id) {
 
 // ============================================================================================
 // Inputs and crap
-function resizeCommentfield(id, srcelement) {
-	var textarea = $id(id);
-
-	if (resized == 1) {
-		textarea.cols = 48;
-		textarea.rows = 6;
-		srcelement.src = '/img/icons/expand.png';
-		srcelement.title = msg_expand_field;
-		resized = 0;
-	} else {
-		resized = 1;
-		textarea.cols = 90;
-		textarea.rows = 10;
-		srcelement.src = '/img/icons/collapse.png';
-		srcelement.title = msg_shrink_field;
-	}
-
-}
 
 function file_input_change(max) {
 	var total = 0; // total number of file inputs

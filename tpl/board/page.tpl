@@ -23,7 +23,7 @@
 	<table>
 	<tbody id="postTableBody">
 	<if $admin>
-		<tr><td class="postblock">## Team ##</td>
+		<tr><td class="postblock">## Cap ##</td>
 		<td><label><input type="checkbox" name="as_staff" value="1" />  <var $$locale{S_POSTASADMIN}></label></td></tr>
 		<tr><td class="postblock">HTML</td>
 		<td><label><input type="checkbox" name="no_format" value="1" /> <var $$locale{S_NOTAGS2}></label></td></tr>
@@ -41,7 +41,7 @@
 	</if>
 
 	<tr><td class="postblock"><label for="field4"><var $$locale{S_COMMENT}></label></td>
-	<td><textarea id="field4" name="nya4" cols="48" rows="6"></textarea> <img onclick="resizeCommentfield('field4', this)" src="/img/icons/expand.png" alt="<var $$locale{S_IMGEXPAND}>" title="<var $$locale{S_IMGEXPAND}>" />
+	<td><textarea id="field4" name="nya4" cols="48" rows="6"></textarea>
 	</td></tr>
 
 	<if $image_inp>

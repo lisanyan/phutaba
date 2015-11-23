@@ -33,10 +33,9 @@
 <script type="text/javascript">set_delpass("delform")</script></if>
 
 <script type="text/javascript">
-	var board = "<var $$cfg{SELFPATH}>", thread_id = <if $thread><var $thread></if><if !$thread>null</if>;
+	var board = "<var $$cfg{SELFPATH}>", thread_id = <if $thread><var $thread></if><if !$thread>null</if>,
+		board_locale = "<var $$locale{CURRENT}>";
 	var filetypes = "<var Wakaba::get_filetypes()>";
-	var msg_expand_field = "<var $$locale{S_JS_EXPAND}>";
-	var msg_shrink_field = "<var $$locale{S_JS_SHRINK}>";
 	var msg_remove_file = "<var $$locale{S_JS_REMOVEFILE}>";
 </script>
 

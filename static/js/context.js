@@ -11,12 +11,14 @@ var origBtn, updBtn = $j('#updater');
 var error = false,
 	isWindowFocused = true,
 	newPosts = 0,
-	UpdaterTimer, old_title, origFileInput;
+	UpdaterTimer, old_title, origFileInput, lang;
 
 var _selector = '.thread_OP, div[class="thread_reply"]'; //post
 var refMap = [], postByNum = [];
 
-var lang = 'ru';
+if(!window.board_locale) { lang = 'en'; }
+else { lang = window.board_locale }
+
 var consts = {
   en: {
 	newPostsNotFound: "No new messages found.",
@@ -28,7 +30,24 @@ var consts = {
 	done: "Success",
 	err: "Error updating thread, try again.",
 	replyTo: "Reply to ",
-	dollchanNotify: "If you have dollscript installed:<br> To make it work correctly please check \"Отключить все\" in options"
+	dollchanNotify: "If you have dollscript installed:<br> To make it work correctly please check \"Отключить все\" in options",
+	// Options
+	_turnOffAll: 'Turn off all',
+	_addAjaxPost: 'Post without reloading',
+	_getNewPosts: 'Autoload new posts',
+	_moveForm: 'Move post form to the bottom',
+	_quickReply: 'Quick reply',
+	_openSpoiler: 'Expand spoilers',
+	_mamkaInTheRoom: 'Mommy in room',
+	_hideName: 'Hide names',
+	_hideBoardInfo: 'Hide rules',
+	_addRefLinkMap: 'Apply refmap to posts',
+	_addPreview: 'Post previews',
+	// Titles
+	tmp_global: 'Global',
+	tmp_posts: 'Posts',
+	tmp_css: 'CSS',
+	tmp_form: 'Form'
   },
   ru: {
 	newPostsNotFound: "Нет новых постов.",
@@ -41,23 +60,42 @@ var consts = {
 	done: "Готово!",
 	err: "Ошибка обновления, попробуйте еще раз.",
 	replyTo: "Ответ на ",
-	dollchanNotify: "Если у вас установлен куклоскрипт:<br>Для корректной работы зайдите в опции и поставьте чек на \"Отключить все\""
+	dollchanNotify: "Если у вас установлен куклоскрипт:<br>Для корректной работы зайдите в опции и поставьте чек на \"Отключить все\"",
+	// Options
+	_turnOffAll: 'Отключить все',
+	_addAjaxPost: 'Постинг без перезагрузки',
+	_getNewPosts: 'Подгрузка постов',
+	_moveForm: 'Форма внизу',
+	_quickReply: 'Быстрый ответ',
+	_openSpoiler: 'Раскрывать спойлеры',
+	_mamkaInTheRoom: 'Мамка в комнате',
+	_hideName: 'Скрывать имена',
+	_hideBoardInfo: 'Скрывать правила',
+	_addRefLinkMap: 'Карта ответов',
+	_addPreview: 'Превью постов',
+	// Titles
+	tmp_global: 'Глобальные',
+	tmp_posts: 'Посты',
+	tmp_css: 'CSS',
+	tmp_form: 'Форма'
   }
 }
 
+consts['de'] = consts['en']; // will remove when i'll learn deutsch LOL
+
 /* -- DEFAULT CONFIG -- */
 var defCfg = {
-	turnOffAll:     {name: 'Отключить все', value: 0, section: 'global'},
-	addAjaxPost:    {name: 'Постинг без перезагрузки', value: 1, section: 'form'},
-	getNewPosts:    {name: 'Подгрузка постов', value: 1, section: 'form'},
-	moveForm:       {name: 'Форма внизу', value: 1, section: 'form'},
-	quickReply:     {name: 'Быстрый ответ', value: 1, section: 'form'},
-	openSpoiler:    {name: 'Раскрывать спойлеры', value: 0, section: 'css'},
-	mamkaInTheRoom: {name: 'Мамка в комнате', value: 0, section: 'css'},
-	hideName:       {name: 'Скрывать имена', value: 0, section: 'css'},
-	hideBoardInfo:  {name: 'Скрывать правила', value: 0, section: 'css'},
-	addRefLinkMap:  {name: 'Карта ответов', value: 1, section: 'post'},
-	addPreview:     {name: 'Превью постов', value: 1, section: 'post'}
+	turnOffAll:     {name: consts[lang]._turnOffAll, value: 0, section: 'global'},
+	addAjaxPost:    {name: consts[lang]._addAjaxPost, value: 1, section: 'form'},
+	getNewPosts:    {name: consts[lang]._getNewPosts, value: 1, section: 'form'},
+	moveForm:       {name: consts[lang]._moveForm, value: 1, section: 'form'},
+	quickReply:     {name: consts[lang]._quickReply, value: 1, section: 'form'},
+	openSpoiler:    {name: consts[lang]._openSpoiler, value: 0, section: 'css'},
+	mamkaInTheRoom: {name: consts[lang]._mamkaInTheRoom, value: 0, section: 'css'},
+	hideName:       {name: consts[lang]._hideName, value: 0, section: 'css'},
+	hideBoardInfo:  {name: consts[lang]._hideBoardInfo, value: 0, section: 'css'},
+	addRefLinkMap:  {name: consts[lang]._addRefLinkMap, value: 1, section: 'post'},
+	addPreview:     {name: consts[lang]._addPreview, value: 1, section: 'post'}
 }
 
 /* -- >>REFLINKS MAP IN POSTS -- */
@@ -199,10 +237,11 @@ function addAjaxPost() {
 					inputs.clearFields();
 					set_inputs('postform');
 
-					if(ExtSettings.get('getNewPosts') > 0) {
+					if(ExtSettings.get('getNewPosts') > 0)
 						//get new post
 						loadNewPosts();
-					}
+					if($j('#open_form').not(":hidden") && ExtSettings.get('quickReply') > 0)
+						$j('#open_form').trigger('click');
 				}
 				else {
 					//show errors
@@ -235,6 +274,7 @@ function defTitle() {
 
 function getNewPosts() {
 	if(window.thread_id !== null) {
+		$j('<img src="/img/reload.png" alt="" />').insertBefore($j('a', updBtn));
 		origBtn = updBtn.html();
 		$j(updBtn).css('display','inline').find('a').unbind('click').click(loadNewPosts);
 		UpdaterTimer = setInterval(loadNewPosts, 45000);
@@ -248,7 +288,7 @@ function loadNewPosts() {
 		$j(updBtn).html(origBtn).find('a').unbind('click').click(loadNewPosts);
 	}
 	clearInterval(UpdaterTimer);
-	$j(updBtn).html('['+consts[lang].load+']');
+	$j(updBtn).html('[<img src="/img/loading.gif" alt=""> '+consts[lang].load+']');
 	// reset error
 	error = false;
 
@@ -362,19 +402,19 @@ function quickReply(post) {
             form.addClass('thread_reply')
         );
 
-        var thread_id = ref.closest('.thread').children(":first").attr('id');
+        var _thread_id = ref.closest('.thread').children(":first").attr('id');
         var post_id = ref.children(":first").text().match(/\d+/);
-		$j('#postform_submit').val(consts[lang].replyTo+'/'+window.board+'/'+thread_id);
+		$j('#postform_submit').val(consts[lang].replyTo+'/'+window.board+'/'+_thread_id);
 
         insert('>>'+post_id+'\n');
 
         if(parent.length < 1) {
 			$j('#postform').prepend('<input type="hidden" name="parent" id="parent" value="">');
         }
-        form.find('input[name="parent"]').val(thread_id);
+        form.find('input[name="parent"]').val(_thread_id);
 
         if ($j('#open_form').is(":hidden")) {
-            openForm(thread_id, form, origSubmit);
+            openForm(_thread_id, form, origSubmit);
         }
         return false;
     });
@@ -450,10 +490,10 @@ function configItemTmp() {
 	}
 
 	return tmp =
-		'<div class="overlay-ext-sect"><div class="title">Глобальные</div><div class="info">'+global+'</div></div>' +
-		'<div class="overlay-ext-sect"><div class="title">Посты</div><div class="info">'+post+'</div></div>' +
-		'<div class="overlay-ext-sect"><div class="title">Форма</div><div class="info">'+form+'</div></div>' +
-		'<div class="overlay-ext-sect"><div class="title">CSS</div><div class="info">'+css+'</div></div>';
+		'<div class="overlay-ext-sect"><div class="title">'+consts[lang].tmp_global+'</div><div class="info">'+global+'</div></div>' +
+		'<div class="overlay-ext-sect"><div class="title">'+consts[lang].tmp_posts+'</div><div class="info">'+post+'</div></div>' +
+		'<div class="overlay-ext-sect"><div class="title">'+consts[lang].tmp_form+'</div><div class="info">'+form+'</div></div>' +
+		'<div class="overlay-ext-sect"><div class="title">'+consts[lang].tmp_css+'</div><div class="info">'+css+'</div></div>';
 }
 
 function moveForm() {

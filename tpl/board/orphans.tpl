@@ -11,7 +11,7 @@
 		<tr class="row<var $rowtype>">
 		<td><a target="_blank" href="<var Wakaba::expand_filename($name)>"><var $$locale{S_MANASHOW}></a></td>
 		<td><label><input type="checkbox" name="file" value="<var $name>" checked="checked" /><var $name></label></td>
-		<td><var Wakaba::make_date($modified, "2ch")></td>
+		<td><time($modified, "2ch")></td>
 		<td align="right"><var Wakaba::get_displaysize($size, $$cfg{DECIMAL_MARK})></td>
 		</tr>
 	</loop>
@@ -20,7 +20,7 @@
 <loop $thumbs>
 	<div class="file">
 	<label><input type="checkbox" name="file" value="<var $name>" checked="checked" /><var $name></label><br />
-	<var Wakaba::make_date($modified, "2ch")> (<var Wakaba::get_displaysize($size, $$cfg{DECIMAL_MARK})>)<br />
+	<time($modified, "2ch")> (<var Wakaba::get_displaysize($size, $$cfg{DECIMAL_MARK})>)<br />
 	<img src="<var Wakaba::expand_filename($name)>" />
 	</div>
 </loop>

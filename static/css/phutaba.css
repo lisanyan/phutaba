@@ -73,7 +73,7 @@ body {
 	font: normal 0.8em sans-serif;
 }
 
-strong, b, .boardname, .caption, .subject, .postblock, .postername, .teampost, .sage, .ban, .user_banned, .title, .info th, .dellist {
+strong, b, .boardname, .caption, .subject, .postblock, .postername, .teampost, .modpost, .sage, .ban, .user_banned, .title, .info th, .dellist {
 	font-weight: bold;
 }
 
@@ -334,6 +334,10 @@ ul.rules {
 
 .postername .tripcode {
 	font-weight: normal;
+}
+
+.modpost {
+	color: #112BBD;
 }
 
 .teampost {

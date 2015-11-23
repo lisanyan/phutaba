@@ -75,13 +75,10 @@ $translation{S_STICKYTITLE} = 'Sticky thread';    # Defines the title of the tin
 $translation{S_LOCKEDTITLE} = 'Locked thread';    # Defines the title of the tiny locked image on a thread if it is locked
 
 # javascript message strings (do not use HTML entities; mask single quotes with \\\')
-$translation{S_JS_EXPAND} = 'Expand textfield';
 $translation{S_JS_OPENFORM} = 'Open Form';
-$translation{S_JS_SHRINK} = 'Shrink textfield';
 $translation{S_JS_REMOVEFILE} = 'Remove file';
 $translation{S_JS_STYLES} = 'Styles';
 $translation{S_JS_DONE} = 'Done';
-$translation{S_JS_CONTEXT} = 'Toggle Context';
 $translation{S_JS_UPDATE} = 'Update thread';
 $translation{S_JS_SETTINGS} = 'Settings';
 # javascript strings END
@@ -177,7 +174,6 @@ $translation{S_BANCOMMENT} = 'Comment';
 $translation{S_BANTRUST} = 'Kein Captcha';
 $translation{S_BANTRUSTTRIP} = 'Tripcode';
 $translation{S_BANEXPIRESLABEL} = 'Истекает';
-$translation{S_BANEXPIRESDESC} = '5 Days, 10 Hours, 30 Minutes, etc<br />Permaban - leave field empty';
 $translation{S_BANREASONLABEL} = 'Reason';
 $translation{S_BANASNUMLABEL} = 'AS number';
 $translation{S_BANASNUM} = 'Ban ASnet';
@@ -186,7 +182,10 @@ $translation{S_BANSECONDS} = 'Seconds';
 $translation{S_ORPHTABLE} = '<th>Link</th><th>File</th><th>Modify&nbsp;date</th><th>Size</th>';
 $translation{S_MANASHOW} = 'Show';
 
+$translation{S_LANGUAGE} = 'Language';
+
 $translation{S_LOCKED} = 'Thread is locked';
+
 $translation{S_BADIP} = 'Falsche IP-Adresse';
 $translation{S_BADDELIP} = 'Fehler: Falsche IP.'
   ;    # Returns error for wrong ip (when user tries to delete file)
@@ -237,6 +236,8 @@ $translation{S_SQLFAIL} = 'MySQL-Database error'; # SQL Failure
 $translation{S_EDITPOST} = 'Edit post';
 $translation{S_EDITHEAD} = 'Editing No.<a href="%s">%d</a>';
 $translation{S_UPDATE} = 'Update';
+
+$translation{S_PREWRAP} = "<span class=\"prewrap\">%s</span>";
 
 $translation{S_REDIR} =
   'If the redirect didn\'t work, please choose one of the following mirrors:'

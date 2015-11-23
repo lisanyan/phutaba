@@ -79,10 +79,8 @@ $translation{S_LOCKEDTITLE} = 'Тред закрыт';    # Defines the title of
 # javascript message strings (do not use HTML entities; mask single quotes with \\\')
 $translation{S_JS_BOTTOMFORM} = 'Форма внизу';
 $translation{S_JS_DONE} = 'Готово';
-$translation{S_JS_EXPAND} = 'Expand textfield';
 $translation{S_JS_OPENFORM} = 'Открыть форму';
 $translation{S_JS_REMOVEFILE} = 'Remove file';
-$translation{S_JS_SHRINK} = 'Shrink textfield';
 $translation{S_JS_STYLES} = 'Стили';
 $translation{S_JS_SETTINGS} = 'Настройки';
 $translation{S_JS_UPDATE} = 'Обновить тред';
@@ -172,7 +170,6 @@ $translation{S_BANCOMMENT} = 'Комментарий';
 $translation{S_BANTRUST} = 'Без капчи';
 $translation{S_BANTRUSTTRIP} = 'Трипкод';
 $translation{S_BANEXPIRESLABEL} = 'Истекает';
-$translation{S_BANEXPIRESDESC} = 'Example: 5 Days, 10 Hours, 30 Minutes<br />Permaban - leave field empty';
 $translation{S_BANREASONLABEL} = 'Причина';
 $translation{S_BANASNUMLABEL} = 'AS-Nummer';
 $translation{S_BANASNUM} = 'Бан сети';
@@ -181,7 +178,10 @@ $translation{S_BANSECONDS} = 'Секунды';
 $translation{S_ORPHTABLE} = '<th>Ссылка</th><th>Файл</th><th>Дата изменения</th><th>Размер</th>';
 $translation{S_MANASHOW} = 'Show';
 
+$translation{S_LANGUAGE} = 'Язык';
+
 $translation{S_LOCKED} = 'Тред закрыт';
+
 $translation{S_BADIP} = 'Неправильный IP адрес';
 $translation{S_BADDELIP} = 'Неправильный IP.'; # Returns error for wrong ip (when user tries to delete file)
 $translation{S_INVALID_PAGE} = "Страницы не существует.";
@@ -227,7 +227,9 @@ $translation{S_SQLFAIL} = 'MySQL-Database query error'; # SQL Failure
 
 $translation{S_EDITPOST} = 'Редактировать';
 $translation{S_EDITHEAD} = 'Editing No.<a href="%s">%d</a>';
-$translation{S_UPDATE} = 'Update';
+$translation{S_UPDATE} = 'Обновить';
+
+$translation{S_PREWRAP} = "<span class=\"prewrap\">%s</span>";
 
 $translation{S_REDIR} =
   'If the redirect didn\'t work, please choose one of the following mirrors:'
