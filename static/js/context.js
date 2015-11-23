@@ -274,6 +274,7 @@ function defTitle() {
 
 function getNewPosts() {
 	if(window.thread_id !== null) {
+		$j('<img src="/img/reload.png" alt="" />').insertBefore($j('a', updBtn));
 		origBtn = updBtn.html();
 		$j(updBtn).css('display','inline').find('a').unbind('click').click(loadNewPosts);
 		UpdaterTimer = setInterval(loadNewPosts, 45000);
@@ -287,7 +288,7 @@ function loadNewPosts() {
 		$j(updBtn).html(origBtn).find('a').unbind('click').click(loadNewPosts);
 	}
 	clearInterval(UpdaterTimer);
-	$j(updBtn).html('['+consts[lang].load+']');
+	$j(updBtn).html('[<img src="/img/loading.gif" alt=""> '+consts[lang].load+']');
 	// reset error
 	error = false;
 
