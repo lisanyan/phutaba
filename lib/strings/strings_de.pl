@@ -78,9 +78,7 @@ $translation{S_STICKYTITLE} = 'Thread ist angepinnt';    # Defines the title of 
 $translation{S_LOCKEDTITLE} = 'Thread ist geschlossen';    # Defines the title of the tiny locked image on a thread if it is locked
 
 # javascript message strings (do not use HTML entities; mask single quotes with \\\')
-$translation{S_JS_EXPAND} = 'Textfeld vergrößern';
 $translation{S_JS_OPENFORM} = 'Open Form';
-$translation{S_JS_SHRINK} = 'Textfeld verkleinern';
 $translation{S_JS_REMOVEFILE} = 'Datei entfernen';
 $translation{S_JS_STYLES} = 'Stilvorlagen';
 $translation{S_JS_DONE} = 'Ok';

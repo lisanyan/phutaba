@@ -75,9 +75,7 @@ $translation{S_STICKYTITLE} = 'Sticky thread';    # Defines the title of the tin
 $translation{S_LOCKEDTITLE} = 'Locked thread';    # Defines the title of the tiny locked image on a thread if it is locked
 
 # javascript message strings (do not use HTML entities; mask single quotes with \\\')
-$translation{S_JS_EXPAND} = 'Expand textfield';
 $translation{S_JS_OPENFORM} = 'Open Form';
-$translation{S_JS_SHRINK} = 'Shrink textfield';
 $translation{S_JS_REMOVEFILE} = 'Remove file';
 $translation{S_JS_STYLES} = 'Styles';
 $translation{S_JS_DONE} = 'Done';

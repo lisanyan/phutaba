@@ -79,10 +79,8 @@ $translation{S_LOCKEDTITLE} = 'Тред закрыт';    # Defines the title of
 # javascript message strings (do not use HTML entities; mask single quotes with \\\')
 $translation{S_JS_BOTTOMFORM} = 'Форма внизу';
 $translation{S_JS_DONE} = 'Готово';
-$translation{S_JS_EXPAND} = 'Expand textfield';
 $translation{S_JS_OPENFORM} = 'Открыть форму';
 $translation{S_JS_REMOVEFILE} = 'Remove file';
-$translation{S_JS_SHRINK} = 'Shrink textfield';
 $translation{S_JS_STYLES} = 'Стили';
 $translation{S_JS_SETTINGS} = 'Настройки';
 $translation{S_JS_UPDATE} = 'Обновить тред';

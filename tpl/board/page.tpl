@@ -41,7 +41,7 @@
 	</if>
 
 	<tr><td class="postblock"><label for="field4"><var $$locale{S_COMMENT}></label></td>
-	<td><textarea id="field4" name="nya4" cols="48" rows="6"></textarea> <img onclick="resizeCommentfield('field4', this)" src="/img/icons/expand.png" alt="<var $$locale{S_IMGEXPAND}>" title="<var $$locale{S_IMGEXPAND}>" />
+	<td><textarea id="field4" name="nya4" cols="48" rows="6"></textarea>
 	</td></tr>
 
 	<if $image_inp>
