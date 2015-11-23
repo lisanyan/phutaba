@@ -82,11 +82,10 @@ $translation{S_JS_EXPAND} = 'Textfeld vergrößern';
 $translation{S_JS_OPENFORM} = 'Open Form';
 $translation{S_JS_SHRINK} = 'Textfeld verkleinern';
 $translation{S_JS_REMOVEFILE} = 'Datei entfernen';
-$translation{S_JS_STYLES} = 'Styles';
+$translation{S_JS_STYLES} = 'Stilvorlagen';
 $translation{S_JS_DONE} = 'Ok';
-$translation{S_JS_CONTEXT} = 'Context';
-$translation{S_JS_UPDATE} = 'Update thread';
-$translation{S_JS_SETTINGS} = 'Settings';
+$translation{S_JS_UPDATE} = 'Update faden'; # cant translate lol
+$translation{S_JS_SETTINGS} = 'die Settings';
 # javascript strings END
 
 $translation{S_MANARET} = 'Zur&uuml;ck';    # Returns to HTML file instead of PHP--thus no log/SQLDB update occurs
@@ -105,7 +104,7 @@ $translation{S_MANAORPH} = 'Verwaiste Dateien';
 $translation{S_MANALOGOUT} = 'Abmelden';          #
 $translation{S_MANASAVE} = 'Speichern';    # Defines Label for the login cookie checbox
 $translation{S_MANALOG} = 'Log';
-$translation{S_MANABACKS} = 'Post Backups';
+$translation{S_MANABACKS} = 'Sicherungskopien';
 $translation{S_MANASUB} = 'Los';          # Defines name for submit button in Manager Mode
 
 $translation{S_NOTAGS} = '<p>Formatierung nur mit HTML-Tags. Keine Parser-Verarbeitung.</p>';               # Prints message on Management Board
@@ -177,6 +176,8 @@ $translation{S_BANASNUMLABEL} = 'AS-Nummer';
 $translation{S_BANASNUM} = 'Netz sperren';
 $translation{S_BANEXPIRESLABEL} = 'Dauer';
 $translation{S_BANREASONLABEL} = 'Grund';
+
+$translation{S_LANGUAGE} = 'Sprache';
 
 $translation{S_LOCKED} = 'Thread ist geschlossen';
 

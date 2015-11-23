@@ -18,6 +18,9 @@ BEGIN {
 
 return 1 if (caller);
 
+use constant S_SQLCONF => 'MySQL-Database error'; # Database connection failure
+use constant S_SQLFAIL => 'MySQL-Database error'; # SQL Failure
+
 my $font_height = 8;
 my %font        = (
     a => [
@@ -53,7 +56,7 @@ my %font        = (
     ' ' => [3],
 );
 
-my $settings = my $locale = {};
+my $cfg = {};
 
 # sub main {
     my $query    = new CGI;
@@ -63,10 +66,9 @@ my $settings = my $locale = {};
     my $board    = ( $query->param("board") or &DEFAULT_BOARD);
     my $ip       = ( $ENV{HTTP_CF_CONNECTING_IP} || $ENV{HTTP_X_REAL_IP} || $ENV{REMOTE_ADDR} );
 
-    $settings = fetch_config(decode_string($board, CHARSET));
-    $locale = get_settings($$settings{BOARD_LOCALE}); # edit this to change locale
+    $cfg = fetch_config(decode_string($board, CHARSET));
 
-    if( $$settings{NOTFOUND} ) {
+    if( $$cfg{NOTFOUND} ) {
         print ("Content-type: text/plain\n\nBoard not found.");
         exit;
     }
@@ -79,9 +81,9 @@ my $settings = my $locale = {};
     my $dbh =
       DBI->connect_cached( SQL_DBI_SOURCE, SQL_USERNAME, SQL_PASSWORD,
         { AutoCommit => 1, mysql_enable_utf8=>1 } )
-      or die $$locale{S_SQLCONF};
+      or die S_SQLCONF;
     init_captcha_database($dbh)
-      unless ( table_exists_captcha( $dbh, $$settings{SQL_CAPTCHA_TABLE} ) );
+      unless ( table_exists_captcha( $dbh, $$cfg{SQL_CAPTCHA_TABLE} ) );
 
     my ( $word, $timestamp ) = get_captcha_word( $dbh, $ip, $key, $board );
 
@@ -96,7 +98,7 @@ my $settings = my $locale = {};
     print $query->header(
         -type => 'image/gif',
 
-        #	-expires=>'+'.($timestamp+($$settings{CAPTCHA_LIFETIME})-time()),
+        #	-expires=>'+'.($timestamp+($$cfg{CAPTCHA_LIFETIME})-time()),
         #	-expires=>'now',
     );
 
@@ -115,37 +117,22 @@ my $settings = my $locale = {};
 # Config loaders
 #
 
-sub fetch_config
-{
+sub fetch_config {
     my ($board) = @_;
-    my $settings = get_settings('settings');
+    my $settings = get_settings();
 
-    unless ($$settings{$board}) {
+    unless ($$settings{$board})
+    {
         $$settings{$board}{NOTFOUND} = 1;
     }
-
-    $$settings{$board}{SELFPATH} = $board;
 
     return $$settings{$board};
 }
 
 sub get_settings {
-    my ($config) = @_;
     my ($settings, $file);
-    
-    if ( $config eq 'mods' ) {
-        $file = './lib/config/moders.pl';
-    }
-    elsif ( $config eq 'trips' ) {
-        $file = './lib/config/trips.pl';
-    }
-    elsif ( $config =~ /locale_(ru|en|de)/ ) {
-        my $lc = $1 ? $1 : 'en'; # fall back to english if shit happens
-        $file = "./lib/strings/strings_$lc.pl";
-    }
-    else {
-        $file = './lib/config/settings.pl';
-    }
+
+    $file = './lib/config/settings.pl';
 
     # Grab code from config file and evaluate.
     open (MODCONF, $file) or return 0; # Silently fail if we cannot open file.
@@ -157,7 +144,7 @@ sub get_settings {
     # Exception for bad config.
     close MODCONF and return 0 if ($@);
     close MODCONF;
-    
+
     \%$settings;
 }
 
@@ -222,10 +209,11 @@ sub get_captcha_key {
 sub get_captcha_word {
     my ( $dbh, $ip, $key, $board, $settings ) = @_;
     my ( $sth, $row );
+    $cfg = $settings if $settings;
 
     $sth =
       $dbh->prepare( "SELECT word,timestamp FROM "
-          . $$settings{SQL_CAPTCHA_TABLE}
+          . $$cfg{SQL_CAPTCHA_TABLE}
           . " WHERE ip=? AND pagekey=? AND board=?;" )
       or return undef;
     $sth->execute( $ip, $key, $board )
@@ -245,16 +233,16 @@ sub save_captcha_word {
         $dbh->begin_work();
 
         my $sth =
-          $dbh->prepare( "INSERT INTO " . $$settings{SQL_CAPTCHA_TABLE} . " VALUES(?,?,?,?,?);" )
-          or die $$locale{S_SQLFAIL};
-        $sth->execute( $ip, $key, $word, $time, $board ) or die $$locale{S_SQLFAIL};
+          $dbh->prepare( "INSERT INTO " . $$cfg{SQL_CAPTCHA_TABLE} . " VALUES(?,?,?,?,?);" )
+          or die S_SQLFAIL;
+        $sth->execute( $ip, $key, $word, $time, $board ) or die S_SQLFAIL;
         $sth->finish();
 
         $dbh->commit();
     };
     if ($@) {
         eval { $dbh->rollback() };
-        die $$locale{S_SQLFAIL};
+        die S_SQLFAIL;
     }
 
     trim_captcha_database($dbh);  # only cleans up on create - good idea or not?
@@ -274,9 +262,10 @@ sub check_captcha {
 
 sub delete_captcha_word {
     my ( $dbh, $ip, $key, $board, $settings ) = @_;
+    $cfg = $settings if $settings;
 
     my $sth = $dbh->prepare(
-        "DELETE FROM " . $$settings{SQL_CAPTCHA_TABLE} . " WHERE ip=? AND pagekey=? AND board=?;" )
+        "DELETE FROM " . $$cfg{SQL_CAPTCHA_TABLE} . " WHERE ip=? AND pagekey=? AND board=?;" )
       or return;
     $sth->execute( $ip, $key, $board ) or return;
 }
@@ -289,11 +278,11 @@ sub init_captcha_database {
     my ($dbh) = @_;
     my ($sth);
 
-    $sth = $dbh->do( "DROP TABLE " . $$settings{SQL_CAPTCHA_TABLE} . ";" )
-      if ( table_exists_captcha( $dbh, $$settings{SQL_CAPTCHA_TABLE} ) );
+    $sth = $dbh->do( "DROP TABLE " . $$cfg{SQL_CAPTCHA_TABLE} . ";" )
+      if ( table_exists_captcha( $dbh, $$cfg{SQL_CAPTCHA_TABLE} ) );
     $sth = $dbh->prepare(
             "CREATE TABLE "
-          . $$settings{SQL_CAPTCHA_TABLE} . " ("
+          . $$cfg{SQL_CAPTCHA_TABLE} . " ("
           . "ip TEXT,"
           . "pagekey TEXT,"
           . "word TEXT,"
@@ -303,18 +292,18 @@ sub init_captcha_database {
 
           #	",PRIMARY KEY(ip,key)".
           ");"
-    ) or die $$locale{S_SQLFAIL};
-    $sth->execute() or die $$locale{S_SQLFAIL};
+    ) or die S_SQLFAIL;
+    $sth->execute() or die S_SQLFAIL;
 }
 
 sub trim_captcha_database {
     my ($dbh) = @_;
-    my $mintime = time() - ($$settings{CAPTCHA_LIFETIME});
+    my $mintime = time() - ($$cfg{CAPTCHA_LIFETIME});
 
     my $sth = $dbh->prepare(
-        "DELETE FROM " . $$settings{SQL_CAPTCHA_TABLE} . " WHERE timestamp<=$mintime;" )
-      or die $$locale{S_SQLFAIL};
-    $sth->execute() or die $$locale{S_SQLFAIL};
+        "DELETE FROM " . $$cfg{SQL_CAPTCHA_TABLE} . " WHERE timestamp<=$mintime;" )
+      or die S_SQLFAIL;
+    $sth->execute() or die S_SQLFAIL;
 }
 
 sub table_exists_captcha {
@@ -415,7 +404,7 @@ my ( $scale, $rot, $dx, $dy );
 
 sub draw_string {
     my @chars = split //, $_[0];
-    my $x_offs = int( $$settings{CAPTCHA_HEIGHT} / $font_height * 2 );
+    my $x_offs = int( $$cfg{CAPTCHA_HEIGHT} / $font_height * 2 );
 
     foreach my $char (@chars) {
         next unless ( $font{$char} );
@@ -440,7 +429,7 @@ sub draw_string {
                 $prev_y = $y;
             }
         }
-        $x_offs += int( ( $char_w + ($$settings{CAPTCHA_SPACING}) ) * $scale );
+        $x_offs += int( ( $char_w + ($$cfg{CAPTCHA_SPACING}) ) * $scale );
     }
 }
 
@@ -450,10 +439,10 @@ sub setup_transform {
     $dx = $char_w / 2;
     $dy = $font_height / 2;
     $scale =
-      $$settings{CAPTCHA_HEIGHT} /
+      $$cfg{CAPTCHA_HEIGHT} /
       $font_height *
-      ( 1 + ($$settings{CAPTCHA_SCALING}) * ( 1 - rand(2) ) );
-    $rot = ( rand(2) - 1 ) * ($$settings{CAPTCHA_ROTATION});
+      ( 1 + ($$cfg{CAPTCHA_SCALING}) * ( 1 - rand(2) ) );
+    $rot = ( rand(2) - 1 ) * ($$cfg{CAPTCHA_ROTATION});
 }
 
 sub transform_coords {
@@ -465,7 +454,7 @@ sub transform_coords {
                 cos($rot) * ( $x - $dx ) -
                   sin($rot) * ( $y - $dy ) +
                   $dx +
-                  rand($$settings{CAPTCHA_SCRIBBLE})
+                  rand($$cfg{CAPTCHA_SCRIBBLE})
             )
         ),
         int(
@@ -473,7 +462,7 @@ sub transform_coords {
                 sin($rot) * ( $x - $dx ) +
                   cos($rot) * ( $y - $dy ) +
                   $dy +
-                  rand($$settings{CAPTCHA_SCRIBBLE})
+                  rand($$cfg{CAPTCHA_SCRIBBLE})
             )
         )
     );

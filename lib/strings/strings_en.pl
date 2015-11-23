@@ -81,7 +81,6 @@ $translation{S_JS_SHRINK} = 'Shrink textfield';
 $translation{S_JS_REMOVEFILE} = 'Remove file';
 $translation{S_JS_STYLES} = 'Styles';
 $translation{S_JS_DONE} = 'Done';
-$translation{S_JS_CONTEXT} = 'Toggle Context';
 $translation{S_JS_UPDATE} = 'Update thread';
 $translation{S_JS_SETTINGS} = 'Settings';
 # javascript strings END
@@ -185,7 +184,10 @@ $translation{S_BANSECONDS} = 'Seconds';
 $translation{S_ORPHTABLE} = '<th>Link</th><th>File</th><th>Modify&nbsp;date</th><th>Size</th>';
 $translation{S_MANASHOW} = 'Show';
 
+$translation{S_LANGUAGE} = 'Language';
+
 $translation{S_LOCKED} = 'Thread is locked';
+
 $translation{S_BADIP} = 'Falsche IP-Adresse';
 $translation{S_BADDELIP} = 'Fehler: Falsche IP.'
   ;    # Returns error for wrong ip (when user tries to delete file)

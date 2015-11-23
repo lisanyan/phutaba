@@ -1,6 +1,6 @@
 <include %TMPLDIR%normal_head.tpl>
 <if $admin>
-	[<a href="<var Wakaba::expand_filename("/".$$cfg{SELFPATH})>"><var $$locale{S_MANAPANEL}></a>]
+	[<a href="<var Wakaba::expand_filename(Wakaba::get_board_path())>"><var $$locale{S_MANAPANEL}></a>]
 	[<a href="<var %self>?task=mpanel&amp;section=<var $$cfg{SELFPATH}>"><var $$locale{S_MANATOOLS}></a>]
 	[<a href="<var %self>?task=bans&amp;section=<var $$cfg{SELFPATH}>"><var $$locale{S_MANABANS}></a>]
 	[<a href="<var %self>?task=orphans&amp;section=<var $$cfg{SELFPATH}>"><var $$locale{S_MANAORPH}></a>]

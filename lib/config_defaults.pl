@@ -18,6 +18,7 @@ BEGIN {
 
 	eval "use constant TRACKING_CODE => ''" unless ( defined &TRACKING_CODE );
 	eval "use constant DEFAULT_BOARD => 'b'" unless ( defined &DEFAULT_BOARD );
+	eval "use constant BOARD_LOCALES => [qw/ru en de/]" unless ( defined &BOARD_LOCALES );
 
 	eval "use constant CHARSET => 'utf-8'" unless ( defined &CHARSET );
 	eval "use constant CONVERT_CHARSETS => 1" unless ( defined &CONVERT_CHARSETS );

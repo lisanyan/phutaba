@@ -4,7 +4,7 @@ use utf8;
 
 # System config
 $settings{BOARD_ENABLED} = 1;
-$settings{BOARD_LOCALE} = 'locale_en';				 # Locale used for board, currently available translations: (ru, en, de)
+$settings{BOARD_LOCALE} = 'en';				 # Locale used for board, currently available translations: (ru, en, de)
 $settings{SQL_ADMIN_TABLE} = 'admin';				 # Table (NOT DATABASE) used for admin information
 $settings{SQL_TABLE_IMG} = 'board_img';				 # Table used by image board for secondary images
 $settings{SQL_TABLE} = 'board';						 # Table used by image board

@@ -180,7 +180,10 @@ $translation{S_BANSECONDS} = 'Секунды';
 $translation{S_ORPHTABLE} = '<th>Ссылка</th><th>Файл</th><th>Дата изменения</th><th>Размер</th>';
 $translation{S_MANASHOW} = 'Show';
 
+$translation{S_LANGUAGE} = 'Язык';
+
 $translation{S_LOCKED} = 'Тред закрыт';
+
 $translation{S_BADIP} = 'Неправильный IP адрес';
 $translation{S_BADDELIP} = 'Неправильный IP.'; # Returns error for wrong ip (when user tries to delete file)
 $translation{S_INVALID_PAGE} = "Страницы не существует.";

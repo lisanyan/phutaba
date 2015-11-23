@@ -30,7 +30,7 @@
 </if>
 <!-- files -->
 <tr><td class="postblock"><var $$locale{S_OPTIONS}></td><td>
-<label><input type="checkbox" name="capcode" value="on" <if $adminpost>checked="checked"</if> /> ## Capcode ## </label>
+<label><input type="checkbox" name="capcode" value="on" <if $adminpost>checked="checked"</if> /> ## Cap ## </label>
 |<label><input type="checkbox" name="admin_post" value="on" <if $admin_post>checked="checked"</if> /> Admin post </label>
 <if !$noformat>| [ <a href="<var %self>?task=edit&amp;num=<var $num>&amp;section=<var $$cfg{SELFPATH}>&amp;noformat=1">No Format</a> ]</if>
 </td></tr>

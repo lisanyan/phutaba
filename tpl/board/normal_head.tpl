@@ -72,6 +72,7 @@
 	  <span><var $$locale{S_JS_SETTINGS}></span>
 	</div>
 	<hr />
+
 	<div class="title">
 	  <span><var $$locale{S_JS_STYLES}></span>
 	</div>
@@ -79,7 +80,22 @@
 	  <loop $stylesheets>[<a href="javascript:set_stylesheet_frame('<var $title>','list')"><var $title></a>] </loop>
 	  [<a href="javascript:set_stylesheet_frame(null,'list')">Default</a>]
 	</div>
-	<hr />
+
+	<div class="title">
+	  <span><var $$locale{S_LANGUAGE}></span>
+	</div>
+	<div class="info">
+		<form action="<var %self>" method="post">
+		  <input type="hidden" name="task" value="set_locale" />
+		 <select name="locale">
+		  <aloop &Wakaba::BOARD_LOCALES>
+			<option value="<var $_>"><var $_></option>
+		  </loop>
+		 </select>
+		  <input type="submit" value="<var $$locale{S_UPDATE}>" />
+		</form>
+	</div>
+
 	<div id="settingsConfig"></div>
 	<hr />
 	<div class="settingsDone">
