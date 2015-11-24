@@ -626,7 +626,7 @@ footer img {
 .settingsTitle { font-weight: bold; }
 
 /* refmap and post previews */
-.pidarok_refmap {
+.kotek_refmap {
 	font-style:italic;
 	font-size:11px;
 	margin-top:16px;
@@ -657,9 +657,6 @@ footer img {
 }
 #updater {
 	display: none;
-}
-#updater img {
-	padding-right: 2px;
 }
 .postarea.thread_reply {
 	margin-left: 2em;

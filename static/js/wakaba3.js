@@ -1,18 +1,8 @@
 // ============================================================================================
 // Misc functions
-function show_el(a){a=document.getElementById(a);a.style.display="block"==a.style.display?"none":"block"};
-function $id(a){return document.getElementById(a)}
-function $n(a){return document.getElementsByName(a)[0]}
-function $t(a,b){return(b||document).getElementsByTagName(a)}
-function $c(a,b){return(b||document).getElementsByClassName(a)};
-function $del(a){a&&a.parentNode&&a.parentNode.removeChild(a)};
-function $X(a,b){return document.evaluate(a,b||document,null,6,null)}
-function $x(a,b){return document.evaluate(a,b||document,null,8,null).singleNodeValue}
-function $each(a,b){if(a){var c=a.snapshotLength;if(0<c)for(;c--;)b(a.snapshotItem(c),c)}};
 function $offset(a,c){for(var b=0;a;)b+=a[c],a=a.offsetParent;return b}
-function $event(a,c){for(var b in c)a.addEventListener(b,c[b],!1)}
-function $new(a,c,b){a=document.createElement(a);c&&$attr(a,c);b&&$event(a,b);return a};
 function $attr(b,c){for(var a in c)"text"==a?b.textContent=c[a]:"value"==a?b.value=c[a]:"html"==a?b.innerHTML=c[a]:b.setAttribute(a,c[a]);return b};
+function $new(a,c,b){a=document.createElement(a);c&&$attr(a,c);return a};
 
 // ============================================================================================
 // Wakaba legacy
@@ -33,7 +23,7 @@ function get_password(name) {
 }
 
 function set_inputs(id) {
-	with ($id(id)) {
+	with (document.getElementById(id)) {
 		if (typeof nya1 == "object" && !nya1.value) nya1.value = get_cookie("name");
 		/* if (!nya2.value) nya2.value = get_cookie("email"); */
 		if (typeof gb2 == "object")	gb2[1].checked = (get_cookie("gb2") == "thread");
@@ -49,7 +39,7 @@ function set_inputs(id) {
 }
 
 function set_delpass(id) {
-	with ($id(id)) password.value = get_cookie("password");
+	with (document.getElementById(id)) password.value = get_cookie("password");
 }
 
 // ============================================================================================
@@ -59,7 +49,7 @@ function file_input_change(max) {
 	var total = 0; // total number of file inputs
 	var empty = 0; // number of empty file inputs
 
-	var postfiles = $id("fileInput"); // table cell id that contains the file inputs and filename spans
+	var postfiles = document.getElementById("fileInput"); // table cell id that contains the file inputs and filename spans
 	var inputs = postfiles.getElementsByTagName("input"); // the actual file inputs
 
 	for (i = 0; i < inputs.length; i++) {
@@ -218,8 +208,8 @@ function areYouSure(el)
 // Post expanding
 function expand_post(id) {
 	//$j("#posttext_" + id).html($j("#posttext_full_" + id).html());
-	var abbr = $id("posttext_" + id);
-	var full = $id("posttext_full_" + id);
+	var abbr = document.getElementById("posttext_" + id);
+	var full = document.getElementById("posttext_full_" + id);
 	abbr.innerHTML = full.innerHTML;
 	return false;
 }
@@ -293,7 +283,7 @@ function abortWebmDownload(el) {
     video.pause(0);
     video.src = "";
     video.load();
-    $del(el);
+    el.parentNode.removeChild(el);
 }
 
 // ============================================================================================
