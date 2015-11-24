@@ -1216,7 +1216,7 @@ sub get_omit_message {
 
     # temp, remove/rewrite later
     $$locale{S_ABBR_END} = $$locale{S_ABBR_END1}
-      if ($files == 1 and $$cfg{BOARD_LOCALE} eq 'ru');
+      if ($files == 1 and $$locale{CURRENT} eq 'ru');
 
     return $omitposts . $omitfiles . $$locale{S_ABBR_END};
 }

@@ -7,30 +7,26 @@ function highlight() {
 (function(){
 
 /* --- DEFAULTS --- */
-var origBtn, updBtn = $j('#updater');
-var error = false,
-	isWindowFocused = true,
-	newPosts = 0,
-	UpdaterTimer, old_title, origFileInput, lang;
-
-var _selector = '.thread_OP, div[class="thread_reply"]'; //post
+var lang = window.board_locale;
 var refMap = [], postByNum = [];
+var error = false, newPosts = 0, isWindowFocused = true,
+	origFileInput, UpdaterTimer;
+var title = document.title;
 
-if(!window.board_locale) { lang = 'en'; }
-else { lang = window.board_locale }
-
+/* -- TRANSLATIONS -- */
 var consts = {
   en: {
+	dollchanNotify: "If you have dollscript installed:<br> To make it work correctly please check \"Отключить все\" in options",
+	done: "Success",
+	error: "Error: ",
+	loading: "Loading...",
 	newPostsNotFound: "No new messages found.",
 	newPostsFound: "New messages: ",
 	pNotFound: "Post not found",
-	updthr: "Update thread",
-	load: "Loading...",
 	replies: "Replies: ",
-	done: "Success",
-	err: "Error updating thread, try again.",
 	replyTo: "Reply to ",
-	dollchanNotify: "If you have dollscript installed:<br> To make it work correctly please check \"Отключить все\" in options",
+	updthr: "Update thread",
+	update_error: "Error updating thread, try again.",
 	// Options
 	_turnOffAll: 'Turn off all',
 	_addAjaxPost: 'Post without reloading',
@@ -50,17 +46,17 @@ var consts = {
 	tmp_form: 'Form'
   },
   ru: {
-	newPostsNotFound: "Нет новых постов.",
-	newPostsFound: "Новых постов: ",
-	pNotFound: "Пост не найден",
-	updthr: "Обновить тред",
-	load: "\u0417агрузка...",
-	replies: "Ответы: ",
-	reply: "Ответ в тред №",
-	done: "Готово!",
-	err: "Ошибка обновления, попробуйте еще раз.",
-	replyTo: "Ответ на ",
 	dollchanNotify: "Если у вас установлен куклоскрипт:<br>Для корректной работы зайдите в опции и поставьте чек на \"Отключить все\"",
+	done: "Готово!",
+	error: "Ошибка: ",
+	loading: "\u0417агрузка...",
+	newPostsFound: "Новых постов: ",
+	newPostsNotFound: "Нет новых постов.",
+	pNotFound: "Пост не найден",
+	replies: "Ответы: ",
+	replyTo: "Ответ на ",
+	update_error: "Ошибка обновления, попробуйте еще раз.",
+	updthr: "Обновить тред",
 	// Options
 	_turnOffAll: 'Отключить все',
 	_addAjaxPost: 'Постинг без перезагрузки',
@@ -81,7 +77,12 @@ var consts = {
   }
 }
 
-consts['de'] = consts['en']; // will remove when i'll learn deutsch LOL
+if(typeof consts[lang] == 'undefined') { lang = 'en'; }
+else { lang = window.board_locale }
+
+/* -- UPDATER BUTTON -- */
+var updater_html = '[<img src="/img/reload.png" alt="" /> '
+					+ '<a href="#" id="updater_href"><span>'+consts[lang].updthr+'</span></a>]';
 
 /* -- DEFAULT CONFIG -- */
 var defCfg = {
@@ -99,8 +100,8 @@ var defCfg = {
 }
 
 /* -- >>REFLINKS MAP IN POSTS -- */
-function addRefLinkMap(node) {
-	var sparde = node || _selector;
+function addRefLinkMap(post) {
+	var sparde = post || '.thread_OP, div[class="thread_reply"]';
 	$j(sparde).each(function(){
 		//get id
 		var p_num = $j(this).attr('id');
@@ -120,7 +121,7 @@ function addRefLinkMap(node) {
 	});
 
 	for(var rNum in refMap)
-		showRefMap(postByNum[rNum], rNum, Boolean(node));
+		showRefMap(postByNum[rNum], rNum, Boolean(post));
 }
 
 function getRefMap(pNum, rNum)
@@ -135,10 +136,10 @@ function showRefMap(post, p_num, isUpd) {
 	if(typeof refMap[p_num] !== 'object' || !post) return;
 
 	var data = consts[lang].replies + refMap[p_num].toString().replace(/(\d+)/g, ' <span class="backreflink"><a href="#$1">>>$1</a></span>');
-	var map_b = isUpd ? $id("pidarok_refmap_"+p_num) : null;
+	var map_b = isUpd ? document.getElementById('kotek_refmap_' + p_num) : null;
 
 	if(!map_b) {
-		map_b = $j('<div class="pidarok_refmap" id="pidarok_refmap_'+p_num+'">'+data+'</div>');
+		map_b = $j('<div class="kotek_refmap" id="kotek_refmap_'+p_num+'">'+data+'</div>');
 		$j('.post_body .text', $j(post).find('.post')).append(map_b);
 	}
 	else {
@@ -150,7 +151,7 @@ function showRefMap(post, p_num, isUpd) {
 function addPreview(a) {
 	var sparde = a || ".thread .text";
 	$j(sparde).find(".backreflink a").each(function(){
-		$event(this, { mouseover:showPostPreview, mouseout:delPreview })
+		$j(this).mouseover(showPostPreview).mouseout(delPreview);
 	})
 };
 
@@ -160,7 +161,7 @@ function delPreview(e) {
 	if(!pView)
 		$j('div[id^="pstprev"]').remove();
 	else {
-		while(pView.nextSibling) $del(pView.nextSibling)
+		while(pView.nextSibling) pView.nextSibling.parentNode.removeChild(pView.nextSibling)
 		$j(pView).closest('a').unbind('mouseout');
 	}
 }
@@ -183,8 +184,7 @@ function showPostPreview(e)
 			'style':
 			( (x < scrW/2 ? 'left:' + x : 'right:' + parseInt(scrW - x + 2)) + 'px; '
 			+ (e.clientY < scrH*0.75 ? 'top:' + y : 'bottom:' + parseInt(scrH - y - 10)) + 'px')
-		},
-		{/* nothing */}
+		}
 	);
 
 	var mkPreview = function(cln, html) {
@@ -192,10 +192,10 @@ function showPostPreview(e)
 		addPreview(cln);
 	};
 
-	cln.innerHTML = consts[lang].load;
+	cln.innerHTML = consts[lang].loading;
 
 	//если пост найден в дереве.
-	if($j('div[id='+pNum+']').length > 0) {
+	if($j('div[id='+pNum+']').length > 0 && brd == window.board) {
 		var postdata = $j('div[id='+pNum+']').html();
 		mkPreview(cln, postdata);
 	}
@@ -211,7 +211,7 @@ function showPostPreview(e)
 			cln.innerHTML = consts[lang].pNotFound;
 		});
 	}
-	$del($id(cln.id));
+	$j('#'+cln.id).remove();
 	$j(cln).unbind('mouseout').mouseout(delPreview);
 	$j('#appendix').append(cln);
 }
@@ -219,11 +219,12 @@ function showPostPreview(e)
 /* -- AJAX POSTFORM -- */
 function addAjaxPost() {
 	if(!window.thread_id) return;
-	//form fix
+	// fix up form
 	var postform = $j('#postform');
 	$j('#postform').append('<input type="hidden" name="ajax" id="ajax" value="1">'); //TODO: добавить в форму
-	//send
 	$j('#trgetback', postform).css('display', 'none');
+
+	// submit callback
 	$j('#postform_submit').click(function() {
 		var options = {
 			async: true,
@@ -232,33 +233,32 @@ function addAjaxPost() {
 				if(!data.error && data.num) {
 					showMessage(consts[lang].done, 'click', 0);
 
+					// clear inputs
 					var inputs = $j('input[type="text"],input[type="password"],textarea',postform);
 					$j('#fileInput').html(origFileInput);
 					inputs.clearFields();
 					set_inputs('postform');
 
+					// update thread
 					if(ExtSettings.get('getNewPosts') > 0)
-						//get new post
 						loadNewPosts();
-					if($j('#open_form').not(":hidden") && ExtSettings.get('quickReply') > 0)
+					// close quick reply form if open
+					if($j('#open_form').is(":visible") && ExtSettings.get('quickReply') > 0)
 						$j('#open_form').trigger('click');
 				}
 				else {
-					//show errors
-					showError('Ошибка: '+data.error);
+					showError(consts[lang].error+data.error); // show error on fail
 				}
+				// remove "Please wait" message and unlock form
 				$j('.postarea').unblock();
 			},
-			error: function() {
-				//bad request
+			error: function() { // unlock form and show error
 				$j('.postarea').unblock();
 				showError();
 			}
 		};
-		//reset error
-		error = false;
-		//run
-		postform.ajaxSubmit(options);
+		error = false; // reset error
+		postform.ajaxSubmit(options); // send post
 
 		return false;
 	});
@@ -266,7 +266,7 @@ function addAjaxPost() {
 
 /*-- THREAD UPDATER --*/
 function defTitle() {
-	$j('title').text(old_title);
+	$j('title').text(title);
 	setTimeout(function(){
 		$j('.post_new').removeClass('post_new');
 	}, 1500);
@@ -274,21 +274,22 @@ function defTitle() {
 
 function getNewPosts() {
 	if(window.thread_id !== null) {
-		$j('<img src="/img/reload.png" alt="" />').insertBefore($j('a', updBtn));
-		origBtn = updBtn.html();
-		$j(updBtn).css('display','inline').find('a').unbind('click').click(loadNewPosts);
+		$j('#updater').html(updater_html);
+		$j('#updater').css('display','inline').find('a').click(loadNewPosts);
 		UpdaterTimer = setInterval(loadNewPosts, 45000);
 	}
 }
 
 function loadNewPosts() {
-	//last post id
-	var aft = $j(_selector, '#delform').last().attr('id');
+	// get last post id
+	var aft = $j('.thread_OP, div[class="thread_reply"]', '#delform').last().attr('id');
 	var restoreButton = function () {
-		$j(updBtn).html(origBtn).find('a').unbind('click').click(loadNewPosts);
+		$j('#updater').html(updater_html)
+		$j('#updater').find('a').unbind('click').click(loadNewPosts);
 	}
+	$j('#updater').html('[<img src="/img/loading.gif" alt=""> '+consts[lang].loading+']');
+	// stop timer
 	clearInterval(UpdaterTimer);
-	$j(updBtn).html('[<img src="/img/loading.gif" alt=""> '+consts[lang].load+']');
 	// reset error
 	error = false;
 
@@ -299,18 +300,24 @@ function loadNewPosts() {
 				var postdata = $j(data).filter('*');
 				newPosts += postdata.length;
 				postdata.each(function(){
-					addRefLinkMap([this]);
-					addPreview([this]);
-					addPreview($j('.pidarok_refmap'));
+					// add reflink map to post
+					if (ExtSettings.get('addRefLinkMap') > 0)
+						addRefLinkMap([this]);
+					// add previews to backreflinks
+					if (ExtSettings.get('addPreview') > 0) {
+						addPreview([this]);
+						addPreview('.kotek_refmap');
+					}
+					// add quick reply trigger
 					if(ExtSettings.get('quickReply') > 0)
 						quickReply([this]);
-					$j('.thread').append(
-						$j(this).hide().fadeIn("normal")
-					);
+					// finally, apply new post to thread
+					$j('.thread').append($j(this).hide().fadeIn("normal"));
 				});
 				if (newPosts > 0 ) {
+					// show new posts count and reset title
 					if ( !isWindowFocused )
-						$j('title').text('['+newPosts+'] ' + old_title);
+						$j('title').text('['+newPosts+'] ' + title);
 					if ( isWindowFocused ) {
 						showMessage(consts[lang].newPostsFound+newPosts);
 						newPosts = 0;
@@ -320,24 +327,26 @@ function loadNewPosts() {
 			}
 			else {
 				if(isWindowFocused && data.error_code==400) {
+					// show notification if no new posts found
 					showMessage(consts[lang].newPostsNotFound);
 				}
 			}
+			// restart timer and revert back button
 			restoreButton();
 			UpdaterTimer = setInterval(loadNewPosts, 45000);
 		})
 		.fail(function(){
-			restoreButton();
-			showError();
+			restoreButton(); // revert back button
+			showError(); // show error on fail
 		});
 
 		return false;
 }
 
 function showError(message) {
-	error = message || consts[lang].err;
+	error = message || consts[lang].update_error;
 	showMessage(error, !isWindowFocused);
-	$j('title').text('[Error] '+old_title);
+	$j('title').text('[Error] '+title);
 	if(isWindowFocused) {
 		defTitle();
 		error = false;
@@ -390,82 +399,75 @@ function openForm(thread_id, form, origSubmit) {
 
 function quickReply(post) {
 	post = post || document;
-    $j('.reflink', post).click(function(e) {
-        var form = $j('#postform').parent();
-        if (!form.length) return;
+	$j('.reflink', post).click(function(e) {
+		var form = $j('#postform').parent();
+		if (!form.length) return;
 		var parent = $j('input[name="parent"]');
 		var origSubmit = $j('#postform_submit', form).val();
 
-        var ref = $j(this);
-        //ugly, use parents
-        ref.parent().parent().parent().after(
-            form.addClass('thread_reply')
-        );
+		var ref = $j(this);
+		//ugly, use parents
+		ref.parent().parent().parent().after(
+			form.addClass('thread_reply')
+		);
 
-        var _thread_id = ref.closest('.thread').children(":first").attr('id');
-        var post_id = ref.children(":first").text().match(/\d+/);
+		var _thread_id = ref.closest('.thread').children(":first").attr('id');
+		var post_id = ref.children(":first").text().match(/\d+/);
 		$j('#postform_submit').val(consts[lang].replyTo+'/'+window.board+'/'+_thread_id);
 
-        insert('>>'+post_id+'\n');
+		insert('>>'+post_id+'\n');
 
-        if(parent.length < 1) {
+		if(parent.length < 1) {
 			$j('#postform').prepend('<input type="hidden" name="parent" id="parent" value="">');
-        }
-        form.find('input[name="parent"]').val(_thread_id);
+		}
+		form.find('input[name="parent"]').val(_thread_id);
 
-        if ($j('#open_form').is(":hidden")) {
-            openForm(_thread_id, form, origSubmit);
-        }
-        return false;
-    });
+		if ($j('#open_form').is(":hidden")) {
+			openForm(_thread_id, form, origSubmit);
+		}
+		return false;
+	});
 };
 
 /* -- SCRIPT CSS -- */
 function scriptCSS() {
 	var x = [];
 
-    if(ExtSettings.get('mamkaInTheRoom') > 0) {
-        x.push('.filelink img{opacity: 0.02;} .filelink img:hover{opacity: 1;}');
-    }
-    if(ExtSettings.get('hideName') > 0) {
-        x.push('.post label .postername{display:none !important;}');
-    }
-    if(ExtSettings.get('hideBoardInfo') > 0) {
-        x.push('div.rules{display:none !important;}');
-    }
-    if(ExtSettings.get('openSpoiler') > 0) {
-        x.push('.spoiler{color:inherit !important;}');
-    }
+	if(ExtSettings.get('mamkaInTheRoom') > 0) {
+		x.push('.filelink img{opacity: 0.02;} .filelink img:hover{opacity: 1;}');
+	}
+	if(ExtSettings.get('hideName') > 0) {
+		x.push('.post label .postername{display:none !important;}');
+	}
+	if(ExtSettings.get('hideBoardInfo') > 0) {
+		x.push('div.rules{display:none !important;}');
+	}
+	if(ExtSettings.get('openSpoiler') > 0) {
+		x.push('.spoiler{color:inherit !important;}');
+	}
 
-	if(!$id('pidarok_css'))
-		$t('head')[0].appendChild($new('style', {
-			'id': 'pidarok_css',
-			'type': 'text/css',
-			'text': x.join(' ')
-		}));
-	else $id('pidarok_css').textContent = x.join('\n');
+	if(!$j('#kotek_css').length)
+		$j('<style id="kotek_css" type="text/css">'+x.join('\n')+'</style>').appendTo('head');
+	else $j('#kotek_css').text(x.join('\n'));
 }
 
 /* -- "NOTIFICATIONS" -- */
 function showMessage(text, opt, delay) {
 	var message = $j('#message');
+
 	if (delay == null) delay = 1200;
 	if (message.get() == '') {
-		$j('body').children().last().after('<div id="message" class="post"></div>');
+		$j('.content').children().last().after('<div id="message" class="post"></div>');
 		message = $j('#message');
 		var left = ($j(window).width() - message.outerWidth()) / 2;
 		message.css({left: (left > 0 ? left : 0)+'px'}).hide();
 	}
-	if(opt) text = "[<a href=\"#\">X</a>] "+text;
-	message.html("<span class=\"postername\">" + text + "</span>");
-	message.unbind('click');
-	if(!opt) {
-		message.fadeIn(150).delay(delay).fadeOut(300);
-	}
-	else {
-		$j('a', message).click(function(){ message.fadeOut(300); return false });
-		message.fadeIn(150);
-	}
+
+	message.html("<span class=\"postername\">" + (opt ? '[<a href=\"#\">X</a>] ' : '') + text + "</span>");
+	message.fadeIn(150);
+
+	if (opt) { message.find('a').unbind('click').click(function(){message.fadeOut(300); return false}); }
+	else { message.delay(delay).fadeOut(300); }
 }
 
 /* -- "MOMMY IN ROOM" IMAGE HIDER -- */
@@ -502,8 +504,7 @@ function moveForm() {
 		pa2 = '#postarea2';
 		spadre.detach().appendTo(pa2);
 		$j('<p>').css({'clear':'both'}).insertBefore(pa2);
-		$j('#postform_hr').detach().insertBefore(pa2);
-		$j('#open_form').detach().insertBefore(pa2);
+		$j('#postform_hr, #open_form').detach().insertBefore(pa2);
 	}
 }
 
@@ -526,10 +527,10 @@ function setOptions(i) {
 }
 
 function toggleNavMenu(node) {
-	if ($id("overlay").style.display == 'block') {
-		$id("overlay").style.display = "none";
+	if ($j('#overlay').is(':visible')) {
+		$j('#overlay').hide();
 	} else {
-		$id("overlay").style.display = "block";
+		$j('#overlay').css('display', 'block');
 	}
 }
 
@@ -573,7 +574,6 @@ var slowload = function() {
 	}
 
 	if(ExtSettings.get('turnOffAll') < 1) {
-		old_title = document.title;
 		origFileInput = $j('#fileInput').html();
 		titleNewPosts();
 		scriptCSS();

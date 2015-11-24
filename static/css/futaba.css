@@ -3,15 +3,15 @@ a:link,a:visited,a:hover{color:#00e}
 .reflink a,.filename a{color:inherit}
 .filetype a,.togglethread a{color:maroon}
 ul.menu a,ul.menu_bottom a{background-color:#F0E0D6;border-color:#D8C9C0}
-ul.pagelist{background-color:#F0E0D6;border-right:1px solid #D8C9C0;border-bottom:1px solid #D8C9C0}
+ul.pagelist{background-color:#F0E0D6;border-color: #D8C9C0}
 ul.menu_bottom li a,ul.menu li a{border-color:#D8C9C0;background-color:#F0E0D6;color:maroon}
 .boardname,.caption{color:maroon}
 .postblock{background-color:#ea8;color:maroon}
 .boardname a,boardname a:hover{color:maroon;text-decoration:underline}
 dl.menu a{color:maroon}
 input[type='text'],input[type='password'],textarea{border:1px solid #D8C9C0}
-.post{background-color:#F0E0D6;border-right:1px solid #DDCCC5;border-bottom:1px solid #DDCCC5}
-.post_new{border-right:1px solid #944900;border-bottom:1px solid #944900}
+.post{background-color:#F0E0D6;border-color: #DDCCC5}
+.post_new{border-color: #944900}
 .context > div,#preview{background-color:#ffe}
 .highlight .post,:target .post{background-color:#F0DBCD}
 .highlight .post .file,:target .post .file{background-color:#E4CCBE}
@@ -26,7 +26,7 @@ input[type='text'],input[type='password'],textarea{border:1px solid #D8C9C0}
 .spoiler:hover{background:#F0D0B6;color:maroon}
 .spoiler a:hover{color:#00e}
 blockquote.unkfunc,span.unkfunc,span.quote,span.math{color:#789922}
-.notice span{border-right:1px solid #944900;border-bottom:1px solid #944900}
+.notice span{border-color: #944900}
 .passvalid{background-color:#ea8;color:#fff}
 .managehead{background:#AA6;color:#400000;padding:0}
 .row1{background:#EEC;color:maroon}
@@ -36,5 +36,5 @@ blockquote.unkfunc,span.unkfunc,span.quote,span.math{color:#789922}
 .info td{border:1px solid #DDCCC5}
 dl.menu{margin:.5em}
 dl.menu dt{background:#F0E0D6;border:solid 1px #DDCCC5;margin-top:1em;padding-left:.5em;cursor:pointer}
-dl.menu dd{margin-left:.5em;padding-left:.5em;border-left:solid 1px #DDCCC5}
+dl.menu dd{margin-left:.5em;padding-left:.5em;border-color: #DDCCC5}
 #settings { border-color: #DDCCC5; background: #F0E0D6; }

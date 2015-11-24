@@ -286,8 +286,9 @@ ul.rules {
 .post {
 	background-color: #D7CFC0;
 	border-right: 1px solid #BFB5A1;
-	margin-left: 2em;
 	border-bottom: 1px solid #BFB5A1;
+	border-bottom-right-radius: 5px;
+	margin-left: 2em;
 	overflow: hidden;
 }
 
@@ -547,6 +548,10 @@ input[type='password'] {
 	border: 1px solid #706B5E;
 	padding: 5px;
 }
+
+.info ul {
+	padding-left: 1em;
+}
 /* end static templates */
 
 .error {
@@ -621,7 +626,7 @@ footer img {
 .settingsTitle { font-weight: bold; }
 
 /* refmap and post previews */
-.pidarok_refmap {
+.kotek_refmap {
 	font-style:italic;
 	font-size:11px;
 	margin-top:16px;
@@ -652,9 +657,6 @@ footer img {
 }
 #updater {
 	display: none;
-}
-#updater img {
-	padding-right: 2px;
 }
 .postarea.thread_reply {
 	margin-left: 2em;

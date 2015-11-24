@@ -2,13 +2,13 @@ body{background:#212121;color:#698CC0}
 a:link,a:visited,a:hover{color:#C9BE89}
 .reflink a,.filename a,.filetype a,.togglethread a{color:inherit}
 ul.menu a,ul.menu_bottom a{background-color:#2C2C2C;border-color:#575757}
-ul.pagelist{background-color:#2C2C2C;border-right:1px solid #575757;border-bottom:1px solid #575757}
+ul.pagelist{background-color:#2C2C2C;border-color: #575757}
 ul.menu_bottom li a,ul.menu li a{border-color:#575757;background-color:#2C2C2C;color:#698CC0}
 hr{border-width:0;height:3px;background:url(/img/icons/line.png) center no-repeat}
 .boardname,.caption{color:#FFAB3F}
 .postblock{background-color:#2C2C2C;color:#698CC0}
 input[type='text'],input[type='password'],textarea{border:2px solid #545454;border-radius:5px;background:#111;color:#698cc0}
-.post{background-color:#2C2C2C;border-right:1px solid #3c3c3c;border-bottom:1px solid #3c3c3c}
+.post{background-color:#2C2C2C;border-color: #3c3c3c}
 .post_new{border-color:#944900}
 .context > div,#preview{background-color:#212121;border-color:#111}
 #preview .post{border-color:#3c3c3c}
@@ -31,7 +31,7 @@ input[type='text'],input[type='password'],textarea{border:2px solid #545454;bord
 .spoiler:hover{background:#575757;color:inherit}
 .spoiler a:hover{color:#C9BE89}
 blockquote.unkfunc,,span.math,span.unkfunc,span.quote{color:#789922}
-.notice span{border-right:1px solid #944900;border-bottom:1px solid #944900}
+.notice span{border-color: #944900}
 .passvalid{background-color:#2C2C2C;color:#006AB9;font-weight:700}
 .managehead{background-color:#2C2C2C;color:#6393CD}
 .row1{background:#2C2C2C;color:#6393CD}
