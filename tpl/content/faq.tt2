@@ -141,11 +141,11 @@
 				<th>Free</th>
 			</tr>
 			<tr>
-				<td>[% total_gb %]</td>
-				<td>[% used_gb %]</td>
-				<td>[% free_gb %]</td>
+				<td>[% diskinfo.0 %]</td>
+				<td>[% diskinfo.1 %]</td>
+				<td>[% diskinfo.2 %]</td>
 			</tr>
 		</table>
 	</section>
 
-<!-- [Disk space] Total(GB): [% total_gb %] | Used: [% used_gb %] | Free: [% free_gb %] -->
+<!-- [Disk space] Total(GB): [% diskinfo.0 %] | Used: [% diskinfo.1 %] | Free: [% diskinfo.2 %] -->
