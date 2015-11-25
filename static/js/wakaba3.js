@@ -236,8 +236,8 @@ function expand(el, org_width, org_height, thumb_width, thumb_height, thumb, ext
 					+  'loop="1" name="media"><source src="'+org+'" type="video/'+ext.toLowerCase()+'" class="video"></video></div>';
 		if(!huj) {
 			parent.innerHTML = filetag;
-			var vid = $t('video', parent)[0];
-			var clbut = $c('close-webm', parent)[0];
+			var vid = parent.getElementsByTagName('video')[0];
+			var clbut = parent.getElementsByClassName('close-webm')[0];
 			clbut.addEventListener("click",
 				function(e) {
 					e.preventDefault ? e.preventDefault() : e.returnValue = false;
@@ -276,7 +276,7 @@ function expand(el, org_width, org_height, thumb_width, thumb_height, thumb, ext
 }
 
 function abortWebmDownload(el) {
-	el = $t('video', el)[0];
+	el = el.getElementsByTagName('video')[0];
     if(!el) return;
 
     var video = el;

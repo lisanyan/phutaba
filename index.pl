@@ -10,17 +10,11 @@ use DBI;
 use utf8;
 
 BEGIN {
-	require "lib/site_config.pl";
+    require "lib/site_config.pl";
 }
 my $q = CGI->new;
 my $page = decode('utf8', $q->param("p"));
 my $query = decode('utf8', $q->param("q"));
-my $disk_info = df("/home/");
-
-my $is_main;
-if($page eq "main") {
-    $is_main = 1;
-}
 
 binmode(STDOUT, ":utf8");
 
@@ -28,7 +22,7 @@ binmode(STDOUT, ":utf8");
 # but this can be tricky if running behind some proxy
 if ($page eq "") {
 #        exit print $q->redirect("https://02ch.in/".DEFAULT_BOARD."/");
-        exit print $q->redirect("/".DEFAULT_BOARD."/");
+        exit print $q->redirect("/main");
 }
 
 # print $q->header(-charset => 'utf-8');
@@ -44,59 +38,61 @@ my $tt = Template->new({
 my $ttfile = "content/" . $page . ".tt2";
 
 if ($page eq 'err403') {
-	tpl_make_error({
-		'http' => '403 Forbidden',
-		'type' => "HTTP-Error 403: Access Denied",
-		'info' => "Access to this resource is not allowed.",
-		'image' => "/img/403.png"
-	});
+    tpl_make_error({
+        'http' => '403 Forbidden',
+        'type' => "HTTP-Error 403: Access Denied",
+        'info' => "Access to this resource is not allowed.",
+        'image' => "/img/403.png"
+    });
 }
 elsif ($page eq 'err404') {
-	tpl_make_error({
-		'http' => '404 Not found',
-		'type' => "HTTP-Error 404: Not Found",
-		'info' => "The requested file doesn't exist or has been deleted.",
-		'image' => "/img/404.png"
-	});
+    tpl_make_error({
+        'http' => '404 Not found',
+        'type' => "HTTP-Error 404: Not Found",
+        'info' => "The requested file doesn't exist or has been deleted.",
+        'image' => "/img/404.png"
+    });
 }
 elsif (-e 'tpl/' . $ttfile) {
-	my $output;
-	$tt->process($ttfile, {
-		'tracking_code' => TRACKING_CODE,
-        'total_gb' => nya1k_to_gb($$disk_info{blocks}),
-        'free_gb' => nya1k_to_gb($$disk_info{bfree}), 
-        'used_gb' => nya1k_to_gb($$disk_info{used}),
+    my $output;
+    $tt->process($ttfile, {
+        'tracking_code' => TRACKING_CODE,
         'uptime' => uptime(),
-        'ismain' => $is_main,
-		}, \$output)
-	  or tpl_make_error({
-	  	'http' => '500 Boom',
-	  	'type' => "Fehler bei Scriptausf&uuml;hrung",
-	  	'info' => $tt->error
-	  });
-	print $q->header(-charset => 'utf-8');
-	print $output;
+        'ismain' => ($page eq "main"),
+        'diskinfo' => disk_info()
+        }, \$output)
+      or tpl_make_error({
+        'http' => '500 Boom',
+        'type' => "Fehler bei Scriptausf&uuml;hrung",
+        'info' => $tt->error
+      });
+    print $q->header(-charset => 'utf-8');
+    print $output;
 
 }
 else {
-	tpl_make_error({
-		'http' => '404 Not found',
-		'type' => "HTTP-Error 404: Not Found",
-		'info' => "The requested file doesn't exist or has been deleted.",
-		'image' => "/img/404.png"
-	});
+    tpl_make_error({
+        'http' => '404 Not found',
+        'type' => "HTTP-Error 404: Not Found",
+        'info' => "The requested file doesn't exist or has been deleted.",
+        'image' => "/img/404.png"
+    });
 }
 
 #
 # Subroutines
 #
 
-sub uptime {
-  open(FILE, '/proc/uptime') || return 0;
-  my $line = <FILE>;
-  my($uptime, $idle) = split /\s+/, $line;
-  close FILE;
-  return [ sec2human($uptime), sec2human($idle) ];
+sub disk_info {
+    my $disk_info = df("/home/");
+    my @dicks = ($$disk_info{blocks}, $$disk_info{used}, $$disk_info{bfree});
+    $_ = nya1k_to_gb($_) for (@dicks);
+    return \@dicks;
+}
+
+sub nya1k_to_gb {
+    my $blocks = shift;
+    int ( ($blocks * 1024)/2 ** 30 );
 }
 
 sub sec2human {
@@ -108,18 +104,21 @@ sub sec2human {
     else                          { return sprintf '%.1fs', $secs }
 }
 
-sub nya1k_to_gb {
-    my $blocks = shift;
-    int ( ($blocks * 1024)/2 ** 30 );
+sub tpl_make_error($) {
+    my ($error) = @_;
+    print $q->header(-status=>$$error{http}, -charset => 'utf-8');
+    $tt->process("error.tt2", {
+        'tracking_code' => TRACKING_CODE,
+        'error' => $error
+    });
 }
 
-sub tpl_make_error($) {
-	my ($error) = @_;
-	print $q->header(-status=>$$error{http}, -charset => 'utf-8');
-        $tt->process("error.tt2", {
-			'tracking_code' => TRACKING_CODE,
-			'error' => $error
-		});
+sub uptime {
+    open(FILE, '/proc/uptime') || return 0;
+    my $line = <FILE>;
+    my($uptime, $idle) = split /\s+/, $line;
+    close FILE;
+    return [ sec2human($uptime), sec2human($idle) ];
 }
 
 1;
