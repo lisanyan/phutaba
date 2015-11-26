@@ -1878,14 +1878,12 @@ sub ban_check {
       or make_sql_error();
     $sth->execute() or make_sql_error();
 
-    my $error;
     while ( $row = get_decoded_arrayref($sth) ) { # TODO: use get_decoded_hashref()
         my $regexp = quotemeta $$row[0];
-        $error = $$locale{S_STRREF} if ( $comment =~ /$regexp/ );
-        $error = $$locale{S_STRREF} if ( $name    =~ /$regexp/ );
-        $error = $$locale{S_STRREF} if ( $subject =~ /$regexp/ );
+        make_error($$locale{S_STRREF}) if ( $comment =~ /$regexp/ );
+        make_error($$locale{S_STRREF}) if ( $name    =~ /$regexp/ );
+        make_error($$locale{S_STRREF}) if ( $subject =~ /$regexp/ );
     }
-    make_error($error) if $error;
 
     # etc etc etc
     $sth->finish;

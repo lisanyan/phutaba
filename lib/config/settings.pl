@@ -167,8 +167,6 @@ $settings{THUMB_DIR} = 'thumb/';			# Thumbnail directory (needs to be writeable 
 $settings{RES_DIR} = 'res/';				# Reply cache directory (needs to be writeable by the script)
 $settings{BACKUP_DIR} = 'backup/';			# Backup directory, will always be stored in orphans directory
 $settings{ORPH_DIR} = 'orphans/';			# Directory used for storing files that aren't in database, but found in board folder
-$settings{REDIR_DIR} = 'redir/';			# Redir directory, used for redirecting clients when load balancing
-$settings{JS_FILE} = 'wakaba.js';			# Location of the js file
 
 # Paths to tools for creating thumbnails - don't leave this alone.
 $settings{CONVERT_COMMAND} = '/usr/bin/convert';
