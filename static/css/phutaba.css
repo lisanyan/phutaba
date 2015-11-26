@@ -63,6 +63,11 @@ html, body, ul, ol, p, pre, table, td, img {
 	outline: 0;
 }
 
+h1, h2, h3, h4, h5, h6 {
+	margin: 0;
+	padding: 0;
+}
+
 *:focus {
 	outline: 0;
 }
@@ -73,11 +78,11 @@ body {
 	font: normal 0.8em sans-serif;
 }
 
-strong, b, .boardname, .caption, .subject, .postblock, .postername, .teampost, .modpost, .sage, .ban, .user_banned, .title, .info th, .dellist {
+strong, b, .boardname, .caption, .subject, .postblock, .postername, .teampost, .modpost, .sage, .ban, .title, .info th, .dellist {
 	font-weight: bold;
 }
 
-em, i, .omittedposts, .notice {
+em, i, .omittedposts {
 	font-style: italic;
 }
 
@@ -97,13 +102,25 @@ pre {
    	overflow-x: auto;
 }
 
+sup {
+	vertical-align: super;
+	font-size: smaller;
+}
+sub {
+	vertical-align: sub;
+	font-size: smaller;
+}
+
 ul {
 	list-style-type: square;
 }
 
-sup { vertical-align: super; font-size: smaller; }
-sub { vertical-align: sub; font-size: smaller; }
+ul.rules {
+	margin-top: 1em;
+	margin-left: 1.6em;
+}
 
+/* tables */
 td, th {
 	display: table-cell;
 	vertical-align: middle;
@@ -113,6 +130,7 @@ table[align="center"] {
 	margin: 0 auto;
 }
 
+/* links */
 a:link, a:visited, a:hover {
 	color: #702802;
 	text-decoration: underline;
@@ -127,8 +145,7 @@ a:active {
 	top: 1px;
 }
 
-.dellist { text-align: center }
-
+/* "body" */
 .content {
 	margin: 0 1em;
 }
@@ -136,11 +153,6 @@ a:active {
 /* top and bottom navigation menus */
 ul.menu, ul.menu_bottom {
 	margin-left: 0;
-}
-
-ul.right {
-	float: right;
-	margin-right: 0;
 }
 
 ul.menu li, ul.menu_bottom li, ul.pagelist li {
@@ -180,8 +192,14 @@ ul.menu li a:hover, ul.menu_bottom li a:hover {
 ul.menu li a:active, ul.menu_bottom li a:active {
 	top: 0;
 }
+
+ul.right {
+	float: right;
+	margin-right: 0;
+}
 /* navigation menus END */
 
+/* head */
 .boardname, .caption {
 	color: #333333;
 	font-size: 2em;
@@ -202,11 +220,13 @@ ul.menu li a:active, ul.menu_bottom li a:active {
 	text-align: center;
 }
 
-.teampost img, .sticky img, .locked img {
+/* sticky/locked images */
+.sticky img, .locked img {
 	width: 16px; 
 	height: 16px; 
 }
 
+/* post form */
 .postarea {
 	text-align: center;
 }
@@ -250,11 +270,7 @@ input[type='submit']:hover {
 	display: none;
 }
 
-ul.rules {
-	margin-top: 1em;
-	margin-left: 1.6em;
-}
-
+/* post view */
 .doubledash {
 	float: left;
 	margin-top: 0.5em;
@@ -269,20 +285,6 @@ ul.rules {
 	color: #000000;
 }
 
-.thread {
-	overflow: hidden;
-}
-
-.thread_reply {
-	float: left;
-	clear: both;
-	margin: 0.5em 0;
-	margin-left: 0;
-}
-.thread_reply + .thread_reply {
-	margin-top: 0;
-}
-
 .post {
 	background-color: #D7CFC0;
 	border-right: 1px solid #BFB5A1;
@@ -292,23 +294,39 @@ ul.rules {
 	overflow: hidden;
 }
 
-.thread_OP .post {
-	margin-left: 0;
-}
-
 .post_new {
 	border-right: 1px solid #B20000;
 	border-bottom: 1px solid #B20000;
 }
 
-:target .filedeleted {
-	color: #BFB5A1;
+.thread {
+	overflow: hidden;
 }
 
 .thread_head {
 	clear: left;
 	background-color: #BFB5A1;
 	padding: 5px;
+}
+
+.thread_OP .post {
+	margin-left: 0;
+}
+
+.thread_reply {
+	float: left;
+	clear: both;
+	margin: 0.5em 0;
+	margin-left: 0;
+}
+
+.thread_reply + .thread_reply {
+	margin-top: 0;
+}
+
+/* post head */
+.post_head {
+	padding: 0.4em 0.4em 0.1em 0.4em;
 }
 
 .reflink a, .filename a, .filetype a, .togglethread a {
@@ -320,13 +338,12 @@ ul.rules {
 	text-decoration: underline;
 }
 
-.post_head {
-	padding: 0.4em 0.4em 0.1em 0.4em;
+.modpost {
+	color: #112BBD
 }
 
-.subject {
-	color: #B20000;
-	font-size: 1.2em;
+.teampost {
+	color: #A000CC
 }
 
 .postername {
@@ -337,22 +354,16 @@ ul.rules {
 	font-weight: normal;
 }
 
-.modpost {
-	color: #112BBD;
-}
-
-.teampost {
-	color: #A000CC;
-}
-
-.backreflink del {
-	color: #702802;
+.subject {
+	color: #B20000;
+	font-size: 1.2em;
 }
 
 .sage {
-	color: #B20000;
+	color: #B20000
 }
 
+/* post body and files */
 .post_body {
 	padding: 1.2em 0 0 1.2em;
 	/*float: left*/;
@@ -371,10 +382,6 @@ ul.rules {
 	vertical-align: top;
 }
 
-.filesize {
-	font-size: 0.85em;
-}
-
 .filelink {
 	line-height: 0;
 	position: relative;
@@ -382,6 +389,10 @@ ul.rules {
 
 .filelink a:active {
 	top: 0;
+}
+
+.filesize {
+	font-size: 0.85em;
 }
 
 .filetype, .filedeleted {
@@ -400,6 +411,10 @@ ul.rules {
 	color: #D7CFC0;
 }
 
+:target .filedeleted {
+	color: #BFB5A1;
+}
+
 .text {
 	margin: 0 2em 1.2em 1.2em;
 	word-wrap: break-word;
@@ -409,6 +424,36 @@ ul.rules {
 	list-style-position: inside;
 }
 
+.backreflink del {
+	color: #702802
+}
+
+/* media */
+audio, canvas, progress, video {
+	display: inline-block;
+	vertical-align: baseline;
+}
+
+a.close-webm {
+	position:absolute;
+	top:-15px;
+	right:10px;
+}
+
+a.close-webm:active {
+	top:-14px;
+}
+
+.filelink img, .filelink video {
+  max-width: 100%;
+}
+
+.filelink video, .post_preview img[src*="/src/"] {
+  width: 100%;
+  height: auto;
+}
+
+/* markup */
 blockquote.unkfunc, span.unkfunc, span.quote, span.math {
 	color: #B55636;
 	margin: 0;
@@ -431,25 +476,39 @@ blockquote.unkfunc, span.unkfunc, span.quote, span.math {
 .spoiler img { opacity: 0; filter: alpha(opacity=0) }
 .spoiler img:hover { opacity: 1.0; filter: alpha(opacity=100) }
 
-span.strike { text-decoration: line-through; }
-span.underline { text-decoration: underline; }
-
-.red-nya, .redtext { 
+.redtext { 
 	color: #e50000;
 	border-bottom: 1px dashed #000;
-	/*line-height: 1.5;*/
 }
 
-.ban, .tldr, .user_banned {
+span.strike {
+	text-decoration: line-through;
+}
+
+span.underline {
+	text-decoration: underline;
+}
+
+/* UWBFTP */
+.ban, .tldr {
 	margin-top: 1em;
 }
 
-.ban, .user_banned {
+.ban {
 	color: #B20000;
 	text-transform: uppercase;
 }
 
-.omittedposts, .notice {
+/* board page look */
+.delete {
+	float: right;
+}
+
+input[type='password'] {
+	width: 8em;
+}
+
+.omittedposts {
 	color: #707070;
 	margin-left: 2em;
 }
@@ -457,16 +516,6 @@ span.underline { text-decoration: underline; }
 .omittedposts {
 	margin-top: 0.5em;
 	clear: both;
-}
-
-.notice img {
-	vertical-align: middle;
-}
-
-.notice span {
-	padding: 0 0.5em;
-	border-right: 1px solid #B20000;
-	border-bottom: 1px solid #B20000;
 }
 
 .togglethread a:hover, .togglethread img:hover {
@@ -482,12 +531,9 @@ ul.pagelist {
 	float: left;
 }
 
-.delete {
-	float: right;
-}
-
-input[type='password'] {
-	width: 8em;
+/* admin panel stuff */
+.dellist {
+	text-align: center;
 }
 
 .managehead th, .row1 td, .row2 td {
@@ -552,19 +598,15 @@ input[type='password'] {
 .info ul {
 	padding-left: 1em;
 }
-/* end static templates */
 
 .error {
 	color: #B20000;
 	font-size: 2em;
 	text-align: center;
 }
+/* end static templates */
 
-.expireshelp {
-	border-bottom:1px dashed;
-	cursor: help;
-}
-
+/* footer */
 footer {
 	text-align: center;
 	padding: 1em 0 1em 0;
@@ -575,9 +617,10 @@ footer img {
 	vertical-align: middle;
 }
 
+
 /* stuff for context.js */
 
-/* overlay menu */
+/* showMessage */
 #message {
 	border-color: #666;
 	border-radius: 5px 5px 5px 5px;
@@ -591,6 +634,8 @@ footer img {
 	-webkit-box-shadow: #666 0px 0px 10px;
 	box-shadow: #666 0px 0px 10px;
 }
+
+/* overlay menu */
 #overlay, .overlay {
 	display: none;
 	position: fixed;
@@ -602,12 +647,14 @@ footer img {
 	background: rgba(0, 0, 0, .5);
 	z-index: 1; 
 }
+
 #overlay::after {
 	content: "";
 	display: inline-block;
 	height: 100%;
 	vertical-align: middle;
 }
+
 #settings {
 	background: #D7CFC0;
 	display: inline-block;
@@ -621,8 +668,9 @@ footer img {
 	border: 1px solid rgba(0, 0, 0, .25); border-left: none; border-top: none; padding: 5px;
 	border-color: #BFB5A1;
 }
-#settings .title { padding:3px }
+
 #settings .info { padding:5px }
+#settings .title { padding:3px }
 .settingsTitle { font-weight: bold; }
 
 /* refmap and post previews */
@@ -631,15 +679,18 @@ footer img {
 	font-size:11px;
 	margin-top:16px;
 }
+
 .post_preview {
     z-index: 300;
     position: absolute;
     border: dashed 1px #666;
 }
+
 .post_preview .post {
 	margin-left:0;
 	border: none;
 }
+
 .post_preview .doubledash {
 	display: none;
 }
@@ -652,15 +703,9 @@ footer img {
 	cursor: pointer;
 	margin-top: 16px;
 }
-#postform2 {
-	clear:both;
-}
-#updater {
-	display: none;
-}
-.postarea.thread_reply {
-	margin-left: 2em;
-}
+.postarea.thread_reply { margin-left: 2em }
+#postform2 { clear:both }
+#updater { display: none }
 
 /* TODO integrate colours into specific stylesheets */
 .highlight .post, :target .post {
@@ -669,27 +714,6 @@ footer img {
 
 .highlight .post .file, :target .post .file {
 	background-color: #D7CFC0;
-}
-
-/* webm */
-audio, canvas, progress, video {
-	display: inline-block;
-	vertical-align: baseline;
-}
-a.close-webm {
-	position:absolute;
-	top:-15px;
-	right:10px;
-}
-a.close-webm:active {
-	top:-14px;
-}
-.filelink img, .filelink video {
-  max-width: 100%;
-}
-.filelink video, .post_preview img[src*="/src/"] {
-  width: 100%;
-  height: auto;
 }
 
 /* frame */
@@ -712,7 +736,7 @@ dl.menu dd.hidden {
 }
 
 /* Dollchan Extension Tools */
-/* Will remove this later */
+/* Will remove this crap later */
 .de-pview .doubledash { display: none }
 .de-pview .post { margin-left:0; border:none }
 #de-pform img[src^="/img/icons/expand.png"] { display: none }
@@ -721,7 +745,7 @@ dl.menu dd.hidden {
 .de-alert-msg, .de-popup-msg { white-space: nowrap !important }
 .de-alert-msg > div, .de-popup-msg > div { white-space: pre-wrap; word-wrap: break-word }
 
-/* custom */
+/* main page */
 .greeting { text-align: center; font-weight: bold }
 .greeting img { max-height: 500px }
 .tracking img { width: 0px }

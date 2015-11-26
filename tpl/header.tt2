@@ -33,9 +33,13 @@
 
 <header>
 	<div class="header">
-		<div class="banner"><a href="/">[% UNLESS ismain %]
-			<img src="/banner.pl" alt="02ch" />
-		[% END %]</a></div>
+		<div class="banner">
+		[% UNLESS ismain %]
+			<a href="/">
+				<img src="/banner.pl" alt="02ch" />
+			</a>
+		[% END %]
+		</div>
 		<div class="boardname">[% template.title %]</div>
 	</div>
 </header>

@@ -462,12 +462,12 @@ sub do_dices {
         while( $text =~ /\[(\d+?)d(\d+?)(\+\d+)?\]/g )
         {
             $result =  $math->Dice($1, $2, $3);
-            $text   =~ s/\[(\d+?)d(\d+?)(\+\d+)?\]/<span class="math">$1d$2$3 = $result<\/span> /;
+            $text   =~ s/\[(\d+?)d(\d+?)(\+\d+)?\]/<span class="math">[ $1d$2$3 ] = $result<\/span> /;
         }
         while ( $text =~ /\[rand\(([\d-]+?)&#44;([\d-]+?)\)\]/g )
         {
             $result =  $math->RandInt($1,$2);
-            $text   =~ s/\[rand\(([\d-]+?)&#44;([\d-]+?)\)\]/<span class="math">rand\($1&#44;$2\) = $result<\/span> /;
+            $text   =~ s/\[rand\(([\d-]+?)&#44;([\d-]+?)\)\]/<span class="math">[ rand\($1&#44;$2\) ] = $result<\/span> /;
         }
     }
     return $text;
@@ -486,7 +486,6 @@ sub do_bbcode {
         'sup'       => ['<sup>', '</sup>'],
         'sub'       => ['<sub>', '</sub>'],
         'spoiler'   => ['<span class="spoiler">', '</span>'],
-        'buttsex'   => ['<span class="redtext">', '</span>'],
         'quote'     => ['<span class="unkfunc">', '</span>']
     );
 
@@ -733,6 +732,10 @@ sub do_spans {
         # do h1
         $line =~
 s{ (?<![0-9a-zA-Z\*_\x80-\x9f\xe0-\xfc]) (--) (?![<>\s\*_]) ([^<>]+?) (?<![<>\s\*_\x80-\x9f\xe0-\xfc]) \1 (?![0-9a-zA-Z\*_]) }{<h1>$2</h1>}gx;
+
+        # do redtext
+        $line =~
+s{ (?<![0-9a-zA-Z\*_\x80-\x9f\xe0-\xfc]) (\\\\) (?![<>\s\*_]) ([^<>]+?) (?<![<>\s\*_\x80-\x9f\xe0-\xfc]) \1 (?![0-9a-zA-Z\*_]) }{<span class="redtext">$2</span>}gx;
 
         # hide <code> sections
         $line =~
