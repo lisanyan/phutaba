@@ -1352,6 +1352,8 @@ sub post_stuff {
     make_error($$locale{S_UNJUST})
       if ( $ENV{REQUEST_METHOD} and $ENV{REQUEST_METHOD} ne "POST" );
 
+    run_event_handler('preprocess',$$cfg{SQL_TABLE},$$cfg{SQL_TABLE_IMG},$query);
+
     # clean up invalid admin cookie/session or posting would fail
     my @session = check_password( $admin, '', 'silent' );
     $admin = "" unless ($session[0]);
@@ -1585,6 +1587,14 @@ sub post_stuff {
     # flood protection - must happen after inputs have been cleaned up
     flood_check( $numip, $time, $comment, $file, $parent );
 
+    # We run this here to avoid orphaned files
+    run_event_handler
+        (
+          'postprocess', $$cfg{SQL_TABLE}, $$cfg{SQL_TABLE_IMG}, 
+          $parent,  $name,     $trip,     $email,  $subject,
+          $comment, $password, $as_num,   $file,   @files
+        );
+
     # Manager and deletion stuff - duuuuuh?
 
     # copy file, do checksums, make thumbnail, etc
@@ -1705,6 +1715,14 @@ sub post_stuff {
         -expires  => time+14*24*3600
     );  # yum!
     $sth->finish;
+
+    run_event_handler
+        (
+          'finished', $$cfg{SQL_TABLE}, $$cfg{SQL_TABLE_IMG},
+          $new_post_id, $parent,  $name,    $trip,
+          $email,       $subject, $comment, $password,
+          $as_num,      $file,    @files
+        );
 
     if(!$ajax) {
         if ($c_gb2 =~ /thread/i) { # forward back to the page
@@ -2657,7 +2675,7 @@ sub delete_post {
           if ( $parent_post && $$parent_post{locked} and !$admin_del );
         # remove this if you wanna use this wakaba in production... lol
         return decode_string("Пост протух.", CHARSET)
-          if (!$admin_del && $$row{timestamp} <= 1447422385);
+          if (!$admin_del && $$row{timestamp} <= 1448744279);
         return "This was posted by a moderator or admin and cannot be deleted this way."
           if (!$admin_del and $$row{admin_post} eq 1);
 
@@ -4555,6 +4573,18 @@ sub get_settings {
     close MODCONF;
 
     \%$settings;
+}
+
+sub run_event_handler
+{
+    my $handler=shift;
+    my $events=$$cfg{EVENT_HANDLERS};
+
+    if($$events{$handler})
+    {
+        my $error = $$events{$handler}->(@_);
+        make_error($error) if $error;
+    }
 }
 
 #
