@@ -163,13 +163,15 @@ while( $query=CGI::Fast->new )
         if ( defined($id) and $id =~ /^[+-]?\d+$/ ) {
             output_json_post($id);
         }
+        else { make_json_error(''); }
     }
-    if ( $json eq "newposts" ) {
+    elsif ( $json eq "newposts" ) {
         my $id = $query->param("id");
         my $after = $query->param("after");
         if ( defined($after) and $after =~ /^[+-]?\d+$/ and $id =~ /^[+-]?\d+$/ ) {
             output_json_newposts($after, $id);
         }
+        else { make_json_error(''); }
     }
     elsif ( $json eq "threads" ) {
         my $page = $query->param("page");
@@ -181,19 +183,25 @@ while( $query=CGI::Fast->new )
         if (defined($id) and $id =~ /^[+-]?\d+$/) {
             output_json_thread($id);
         }
+        else { make_json_error(''); }
     }
     elsif ( $json eq "stats" ) {
         my $date_format = $query->param("date_format");
         if ( defined($date_format) ) {
             output_json_stats($date_format);
         }
+        else { make_json_error(''); }
     }
-    elsif ($json) {
-        make_json_header();
-        print $JSON->encode({
-            code => 500,
-            error => 'Unknown json parameter.'
-        });
+    elsif ( $json eq "postcount" ) {
+        my $id = $query->param("id");
+        my $noop = $query->param("no_op");
+        if ( defined($id) and $id =~ /^[+-]?\d+$/ ) {
+            output_json_postcount($id, $noop);
+        }
+        else { make_json_error(''); }
+    }
+    elsif ( $json ) {
+        make_json_error();
     }
 
     if ( !table_exists($$cfg{SQL_TABLE}) ) {   # check for comments table
@@ -508,6 +516,8 @@ sub hide_row_els {
     my ($row) = @_;
     my ($items, $loc) = get_geo_array($$cfg{SELFPATH}, $$row{location}, 0);
 
+    $$row{'id'} =
+        ($$cfg{DISPLAY_ID} && !$$row{adminpost}) ? make_id_code(dec_to_dot($$row{ip}), $$row{timestamp}, $$row{email}) : undef;
     $$row{'location'} = (@$loc ? join(', ', @$loc) : $$items[0]);
     delete @$row {'admin_post', 'password', 'ip'};
     delete $$row{'location'} unless $$cfg{SHOW_COUNTRIES};
@@ -703,6 +713,7 @@ sub output_json_post {
     $sth->execute($id);
     $error = $sth->errstr;
     $row = get_decoded_hashref($sth);
+
     if( defined($row) ) {
         $code = 200;
         add_images_to_row($row);
@@ -739,6 +750,7 @@ sub output_json_newposts {
     $sth = $dbh->prepare("SELECT * FROM " . $$cfg{SQL_TABLE} . " WHERE parent=? and num>? ORDER BY num ASC;");
     $sth->execute($id,$after);
     $error = $sth->errstr;
+
     if($sth->rows) {
         $code = 200;
         while( $row=get_decoded_hashref($sth) ) {
@@ -765,6 +777,56 @@ sub output_json_newposts {
         "status" => \%status,
     );
     $sth->finish;
+
+    make_json_header();
+    print $JSON->encode(\%json);
+}
+
+sub output_json_postcount {
+    my ($id, $no_op) = @_;
+    my ($sth, $row, $error, $code, %status, %boardinfo, %json);
+
+    my $exists = thread_exists($id);
+    if($exists) {
+        if($no_op) {
+            $sth = $dbh->prepare("SELECT count(`num`) AS postcount FROM " . $$cfg{SQL_TABLE} . " WHERE parent=? ORDER BY num ASC;");
+            $sth->execute($id);
+        } else {
+            $sth = $dbh->prepare("SELECT count(`num`) AS postcount FROM " . $$cfg{SQL_TABLE} . " WHERE parent=? OR num=? ORDER BY num ASC;");
+            $sth->execute($id, $id);
+        }
+        $error = decode(CHARSET, $sth->errstr);
+        $row = get_decoded_hashref($sth);
+        $sth->finish;
+    }
+
+    if( defined($row) ) {
+        $code = 200;   
+    }
+    elsif(!$exists) {
+        $code = 404;
+        $error = 'Element not found.';
+    }
+    else {
+        $code = 500;
+    }
+
+    %boardinfo = (
+        "board" => $$cfg{SELFPATH},
+        "board_name" => $$cfg{BOARD_NAME},
+        "board_desc" => $$cfg{BOARD_DESC},
+    );
+
+    %status = (
+        "error_code" => $code,
+        "error_msg" => $error,
+    );
+
+    %json = (
+        "boardinfo" => \%boardinfo,
+        "data" => $row,
+        "status" => \%status
+    );
 
     make_json_header();
     print $JSON->encode(\%json);
@@ -1186,11 +1248,11 @@ sub add_images_to_row {
 sub resolve_reflinks {
     my ($comment, $board) = @_;
 
-    $comment =~ s|<!--reflink-->&gt;&gt;&gt;(.+?)/([0-9]+)|
-        my $res = get_cb_post($2,$1);
-        if ($res) { '<span class="backreflink"><a href="'.get_reply_link($$res{num},$$res{parent},0,$1).'">&gt;&gt;/'.$1.'/'.$2.'</a></span>' }
-        else { '<span class="backreflink"><del>&gt;&gt;/'.$1.'/'.$2.'</del></span>'; }
-    |ge;
+    # $comment =~ s|<!--reflink-->&gt;&gt;&gt;(.+?)/([0-9]+)|
+    #     my $res = get_cb_post($2,$1);
+    #     if ($res) { '<span class="backreflink"><a href="'.get_reply_link($$res{num},$$res{parent},0,$1).'">&gt;&gt;/'.$1.'/'.$2.'</a></span>' }
+    #     else { '<span class="backreflink"><del>&gt;&gt;/'.$1.'/'.$2.'</del></span>'; }
+    # |ge;
 
     $comment =~ s|<!--reflink-->&gt;&gt;([0-9]+)|
         my $res;
@@ -4372,6 +4434,16 @@ sub make_sql_error {
     my ($debug, $ret) = @_;
     my $error = $debug ? $dbh->errstr : $$locale{S_SQLFAIL};
     make_error($error);
+}
+
+sub make_json_error {
+    my $hax = shift;
+    make_json_header();
+    print $JSON->encode({
+        code => 500,
+        error => (defined $hax ? 'hax0r' : 'Unknown json parameter.')
+    });
+    stop_script();
 }
 
 sub stop_script() {
