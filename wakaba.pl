@@ -121,7 +121,7 @@ while( $query=CGI::Fast->new )
         $boardSection   = ($query->param("section") or &DEFAULT_BOARD);
         $cfg            = fetch_config(decode_string($boardSection, CHARSET));
         $moders         = get_settings('mods');
-        $locale         = fetch_locale( $query->cookie("locale") || $$cfg{BOARD_LOCALE} )
+        $locale         = fetch_locale( $query->cookie("locale") or $$cfg{BOARD_LOCALE} )
                             unless ($$cfg{NOTFOUND});
         $pomf_domain = $$cfg{POMF_DOMAIN};
 
@@ -160,9 +160,10 @@ while( $query=CGI::Fast->new )
     cleanup_log_database();
 
     if ( $json eq "post" ) {
+        my $auth = $query->cookie("auth");
         my $id = $query->param("id");
         if ( defined($id) and $id =~ /^[+-]?\d+$/ ) {
-            output_json_post($id);
+            output_json_post($id, $auth);
         }
         else { make_json_error(''); }
     }
@@ -180,10 +181,20 @@ while( $query=CGI::Fast->new )
         }
         else { make_json_error(''); }
     }
-    elsif ( $json eq "stats" ) {
-        my $date_format = $query->param("date_format");
-        if ( defined($date_format) ) {
-            output_json_stats($date_format);
+    elsif ( $json eq "search" ) {
+        my $find            = $query->param("find");
+        my $op_only         = $query->param("op");
+        my $in_subject      = $query->param("subject");
+        my $in_comment      = $query->param("comment");
+
+        json_find_posts($find, $op_only, $in_subject, $in_comment);
+    }
+    elsif ( $json eq "newposts" ) {
+        my $id = $query->param("id");
+        my $after = $query->param("after");
+        my $auth = $query->cookie("auth");
+        if ( defined($after) and $after =~ /^[+-]?\d+$/ and $id =~ /^[+-]?\d+$/ ) {
+            output_json_newposts($after, $id, $auth);
         }
         else { make_json_error(''); }
     }
@@ -195,11 +206,10 @@ while( $query=CGI::Fast->new )
         }
         else { make_json_error(''); }
     }
-    elsif ( $json eq "newposts" ) {
-        my $id = $query->param("id");
-        my $after = $query->param("after");
-        if ( defined($after) and $after =~ /^[+-]?\d+$/ and $id =~ /^[+-]?\d+$/ ) {
-            output_json_newposts($after, $id);
+    elsif ( $json eq "stats" ) {
+        my $date_format = $query->param("date_format");
+        if ( defined($date_format) ) {
+            output_json_stats($date_format);
         }
         else { make_json_error(''); }
     }
@@ -237,16 +247,16 @@ while( $query=CGI::Fast->new )
         my $post   = $query->param("post");
         my $after  = $query->param("after");
         my $admin  = $query->cookie("wakaadmin");
-        my $auth = $query->cookie("auth");
+        my $auth   = $query->cookie("auth");
 
         # outputs a single post only
         if (defined($post) and $post =~ /^[+-]?\d+$/)
         {
-            show_post($post, $admin);
+            show_post($post, $admin, $auth);
         }
         elsif (defined($after) and $thread =~ /^[+-]?\d+$/ and $after =~ /^[+-]?\d+$/)
         {
-            show_newposts($after, $thread, $admin);
+            show_newposts($after, $thread, $admin, $auth);
         }
         # show the requested thread
         elsif (defined($thread) and $thread =~ /^[+-]?\d+$/)
@@ -409,7 +419,7 @@ while( $query=CGI::Fast->new )
     }
     elsif ( $task eq "movefiles" ) {
         my $admin = $query->cookie("wakaadmin");
-    # should be multi_param but we're on old deb
+        # should be multi_param but we're on old deb
         my @files = $query->param("file");
         move_files($admin, @files);
     }
@@ -432,7 +442,7 @@ while( $query=CGI::Fast->new )
         my $killtrip = $query->param("notrip");
         my $by_admin = $query->param("admin_post");
         my $nopomf = $query->param("nopomf");
-    # should be multi_param but we're on old deb
+        # should be multi_param but we're on old deb
         my @files = $query->param("file");
         edit_post(
           $admin,     $num,       $name,     $email,
@@ -486,9 +496,9 @@ while( $query=CGI::Fast->new )
     elsif ($task eq "restorebackups")
     {
         my $admin = $query->cookie("wakaadmin");
-    # should be multi_param but we're on old deb
+        # should be multi_param but we're on old deb
         my @num = $query->param("num");
-        my $board_name = $query->param("board") || $$cfg{SELFPATH};
+        my $board_name = $query->param("board") or $$cfg{SELFPATH};
         my $handle = lc $query->param("handle");
 
         if ($handle eq "restore"
@@ -536,94 +546,104 @@ while( $query=CGI::Fast->new )
 #
 
 sub hide_row_els {
-    my ($row) = @_;
+    my ($row, $auth) = @_;
     my ($items, $loc) = get_geo_array($$cfg{SELFPATH}, $$row{location}, 0);
-    # my $full_loc = @$loc ? join(",", @$loc) : $$items[0];
-    my $full_loc = $$loc[0];
 
-    $$row{'id'} =
-        ($$cfg{DISPLAY_ID} && !$$row{adminpost}) ? make_id_code(dec_to_dot($$row{ip}), $$row{timestamp}, $$row{email}) : undef;
-    $$row{'location'} = $$cfg{SHOW_COUNTRIES} ? $$items[0] : undef;
-    $$row{'location_full'} = $$cfg{SHOW_COUNTRIES} ? $full_loc : undef;
+    my $city = $$loc[2] || $$loc[1];
+    my $full_loc = $city ? $$items[0] . ", " . $city : $$loc[0];
+    my $leet = is_leet($auth);
+
+    $$row{'id'} = ($$cfg{DISPLAY_ID} && !$$row{adminpost}) ? make_id_code(dec_to_dot($$row{ip}), $$row{timestamp}, $$row{email}) : undef;
+    $$row{'location'} = ($$cfg{SHOW_COUNTRIES} or $leet) ? $$items[0] : undef;
+    $$row{'location_full'} = ($$cfg{SHOW_COUNTRIES} or $leet) ? $full_loc : undef;
+
     delete @$row {'admin_post', 'password', 'ip'};
 }
 
-sub get_json_boardconfig {
-    my ($auth, $captcha_only, $standalone) = @_;
-    my $loc = get_geolocation(get_remote_addr());
-    my $leet = is_leet($auth);
-    my %result;
+sub json_find_posts {
+    my ($find, $op_only, $in_subject, $in_comment) = @_;
+    my ( $sth, $row, @threads );
+    my ( $code, $error );
 
-    my %boardinfo = (
-        "board" => $$cfg{SELFPATH},
-        "board_name" => $$cfg{BOARD_NAME},
-        "board_desc" => $$cfg{BOARD_DESC},
-        "config" => {
-            "names_allowed" => ( !$$cfg{FORCED_ANON} || $leet ? 1 : 0 ),
-            "posting_allowed" => (!$$cfg{DISABLE_POSTING} || $$cfg{ALLOW_TEXT_REPLIES} or $$cfg{ALLOW_IMAGE_REPLIES}),
-            "image_replies" => $$cfg{ALLOW_IMAGE_REPLIES},
-            "image_op" => $$cfg{ALLOW_IMAGES},
-            "max_files" => $$cfg{MAX_FILES},
-            "max_res" => $$cfg{MAX_RES},
-            "captcha" => need_captcha($$cfg{CAPTCHA_MODE}, $$cfg{CAPTCHA_SKIP}, $loc, $leet),
-            "geoip_enabled" => $$cfg{SHOW_COUNTRIES},
-            "authorized" => $leet,
+    # TODO: add $admin / admin-reflinks?
+    #todo: search in filenames
+    #todo: remove hide thread button, remove checkboxes in front of postername
+
+    $find = clean_string(decode_string($find, CHARSET));
+    $find =~ s/^\s+|\s+$//g; # trim
+    $in_comment = 1 unless $find; # make the box checked for the first call.    
+
+    my ($sth, $row);
+    my ($search, $subject);
+    my $lfind = lc($find); # ignore case
+    my $count = 0;
+    my $threads = 0;
+    my @results;
+
+    if (length($lfind) >= 3) {
+        # grab all posts, in thread order (ugh, ugly kludge)
+        $sth = $dbh->prepare(
+            "SELECT * FROM " . $$cfg{SQL_TABLE} . " ORDER BY sticky DESC,lasthit DESC,CASE parent WHEN 0 THEN num ELSE parent END ASC,num ASC"
+        ) or make_sql_error();
+        $sth->execute() or make_sql_error();
+
+        while ((my $row = get_decoded_hashref($sth)) and ($count < ($$cfg{MAX_SEARCH_RESULTS})) and ($threads <= ($$cfg{MAX_SHOWN_THREADS}) ))
+        {
+            $threads++ if !$$row{parent};
+            $search = $$row{comment};
+            $search =~ s/<.+?>//mg; # must not search inside html-tags. remove them.
+            $search = lc($search);
+            $subject = lc($$row{subject});
+
+            if (($in_comment and (index($search, $lfind) > -1)) or ($in_subject and (index($subject, $lfind) > -1))) {
+
+                # highlight found words - this can break HTML tags
+                # TODO: select or define CSS style
+                #$$row{comment} =~ s/($find)/<span style="background-color: #706B5E; color: #FFFFFF; font-weight: bold;">$1<\/span>/ig;
+
+                hide_row_els($row);
+                add_images_to_row($row);
+                $$row{comment} = resolve_reflinks($$row{comment});
+                if (!$$row{parent}) { # OP post
+                    # $$row{sticky_isnull} = 1; # hack, until this field is removed.
+                    push @results, $row;
+                } else { # reply post
+                    push @results, $row unless ($op_only);
+                }
+                $count = @results;
+            }
         }
-    );
-    return \%boardinfo unless $standalone;
-
-    make_json_header();
-    if(defined $captcha_only) {
-        %result = ( "captcha" => $boardinfo{'config'}->{captcha} );
-    } else {
-        %result = ( %boardinfo );
+        if(@results ne 0) {
+            $code = 200;   
+        }
+        elsif(@results < 1) {
+            $code = 404;
+            $error = 'Element not found.';
+        }
+        else {
+            $code = 500;
+        }
+        $sth->finish; # Clean up the record set
     }
-    print $JSON->encode(\%result);
-}
-
-sub output_json_boardlist {
-    my ($error, $code, @AoB);
-    my $settings = get_settings('settings');
-
-    $code = 200;
-
-    for my $key (keys $settings) {
-        if($$settings{$key}{BOARD_ENABLED}) {
-            my $brd_info = {
-                board_name => $$settings{$key}{BOARD_NAME},
-                board_desc => $$settings{$key}{BOARD_DESC},
-                board_key => $key,
-            };
-            push @AoB, \%$brd_info;
-        }
+    else {
+        $code = 404;
+        $error = 'Request is too short';
     }
 
     my %status = (
-        error_msg => $error,
-        error_code => $code,
+        "error_code" => $code,
+        "error_msg" => $error,
+    );
+
+    my %json = (
+        "boardinfo" => get_json_boardconfig(),
+        "data" => \@results,
+        "found" => $count,
+        "status" => \%status
     );
 
     make_json_header();
-    print $JSON->canonical(1)->encode( {data => \@AoB, status => \%status} );
-}
-
-sub do_json_authentication
-{
-    my ($auth) = @_;
-    my $c_auth; 
-
-    my $leet = is_leet($auth);
-    $c_auth = $auth if $leet;
-
-    make_cookies(
-        auth      => $c_auth,
-        -charset  => CHARSET,
-        -autopath => $$cfg{COOKIE_PATH},
-        -expires  => time+14*24*3600
-    );  # yum!
-
-    make_json_header();
-    print $JSON->encode({ success => $leet });
+    print $JSON->encode(\%json);
 }
 
 sub output_json_threads {
@@ -671,14 +691,14 @@ sub output_json_threads {
         $postcountquery->finish();
 
         add_images_to_row($row);
-        hide_row_els($row);
+        hide_row_els($row, $auth);
         $posts->execute($threadnum, count_maxreplies($row));
 
         @thread=($row);
         my @replies;
         while( my $post=get_decoded_hashref( $posts ) )
         {
-            hide_row_els( $post );
+            hide_row_els( $post, $auth );
             add_images_to_row( $post );
             push( @replies, $post ) if( defined($post) );
         }
@@ -763,7 +783,7 @@ sub output_json_thread {
     $error = decode(CHARSET, $sth->errstr);
 
     while ( $row=get_decoded_hashref($sth) ) {
-        hide_row_els($row);
+        hide_row_els($row, $auth);
         $$row{comment} = resolve_reflinks($$row{comment});
         push(@data, $row);
     }
@@ -797,7 +817,7 @@ sub output_json_thread {
 }
 
 sub output_json_post {
-    my ($id) = @_;
+    my ($id, $auth) = @_;
     my ($sth, $row, $error, $code, %status, %data, %json);
 
     $sth = $dbh->prepare("SELECT * FROM " . $$cfg{SQL_TABLE} . " WHERE num=?;");
@@ -808,7 +828,7 @@ sub output_json_post {
     if( defined($row) ) {
         $code = 200;
         add_images_to_row($row);
-        hide_row_els($row);
+        hide_row_els($row, $auth);
         $$row{comment} = resolve_reflinks($$row{comment});
         $data{'post'} = $row;
     }
@@ -835,7 +855,7 @@ sub output_json_post {
 }
 
 sub output_json_newposts {
-    my ($after, $id) = @_;
+    my ($after, $id, $auth) = @_;
     my ($sth, $row, $error, $code, %status, @data, %json);
 
     $sth = $dbh->prepare("SELECT * FROM " . $$cfg{SQL_TABLE} . " WHERE parent=? and num>? ORDER BY num ASC;");
@@ -846,7 +866,7 @@ sub output_json_newposts {
         $code = 200;
         while( $row=get_decoded_hashref($sth) ) {
             add_images_to_row($row);
-            hide_row_els($row);
+            hide_row_els($row, $auth);
             $$row{comment} = resolve_reflinks($$row{comment});
             push(@data, $row);
         }
@@ -865,6 +885,43 @@ sub output_json_newposts {
     );
     %json = (
         "data" => \@data,
+        "status" => \%status,
+    );
+    $sth->finish;
+
+    make_json_header();
+    print $JSON->encode(\%json);
+}
+
+sub output_json_stats {
+    my ($date_format) = @_;
+    my (@data, $sth, $error, $code, %status, %data, %json);
+
+    $sth = $dbh->prepare(
+        "SELECT DATE_FORMAT(FROM_UNIXTIME(`timestamp`), ?) AS `datum`, COUNT(`num`) AS `posts` FROM "
+        . $$cfg{SQL_TABLE} . " GROUP BY `datum`;");
+
+    $sth->execute(clean_string(decode_string($date_format, CHARSET)));
+    $error = $sth->errstr;
+    @data = $sth->fetchall_arrayref;
+    if(@data) {
+        $code = 200;
+        $data{'stats'} = \@data;
+    }
+    elsif($sth->rows == 0) {
+        $code = 404;
+        $error = 'No data available.';
+    }
+    else {
+        $code = 500;
+    }
+
+    %status = (
+        "error_code" => $code,
+        "error_msg" => $error,
+    );
+    %json = (
+        "data" => \%data,
         "status" => \%status,
     );
     $sth->finish;
@@ -916,41 +973,81 @@ sub output_json_postcount {
     print $JSON->encode(\%json);
 }
 
-sub output_json_stats {
-    my ($date_format) = @_;
-    my (@data, $sth, $error, $code, %status, %data, %json);
+sub get_json_boardconfig {
+    my ($auth, $captcha_only, $standalone) = @_;
+    my $loc = get_geolocation(get_remote_addr());
+    my $leet = is_leet($auth);
+    my %result;
 
-    $sth = $dbh->prepare(
-        "SELECT DATE_FORMAT(FROM_UNIXTIME(`timestamp`), ?) AS `datum`, COUNT(`num`) AS `posts` FROM "
-        . $$cfg{SQL_TABLE} . " GROUP BY `datum`;");
-
-    $sth->execute(clean_string(decode_string($date_format, CHARSET)));
-    $error = $sth->errstr;
-    @data = $sth->fetchall_arrayref;
-    if(@data) {
-        $code = 200;
-        $data{'stats'} = \@data;
-    }
-    elsif($sth->rows == 0) {
-        $code = 404;
-        $error = 'No data available.';
-    }
-    else {
-        $code = 500;
-    }
-
-    %status = (
-        "error_code" => $code,
-        "error_msg" => $error,
+    my %boardinfo = (
+        "board" => $$cfg{SELFPATH},
+        "board_name" => $$cfg{BOARD_NAME},
+        "board_desc" => $$cfg{BOARD_DESC},
+        "config" => {
+            "names_allowed" => ( !$$cfg{FORCED_ANON} or $leet ? 1 : 0 ),
+            "posting_allowed" => (!$$cfg{DISABLE_POSTING} || $$cfg{ALLOW_TEXT_REPLIES} or $$cfg{ALLOW_IMAGE_REPLIES}),
+            "image_replies" => $$cfg{ALLOW_IMAGE_REPLIES},
+            "image_op" => $$cfg{ALLOW_IMAGES},
+            "max_files" => $$cfg{MAX_FILES},
+            "max_res" => $$cfg{MAX_RES},
+            "captcha" => need_captcha($$cfg{CAPTCHA_MODE}, $$cfg{CAPTCHA_SKIP}, $loc, $leet),
+            "geoip_enabled" => ($$cfg{SHOW_COUNTRIES} or $leet),
+            "authorized" => $leet,
+        }
     );
-    %json = (
-        "data" => \%data,
-        "status" => \%status,
-    );
-    $sth->finish;
+    return \%boardinfo unless $standalone;
 
     make_json_header();
-    print $JSON->encode(\%json);
+    if(defined $captcha_only) {
+        %result = ( "captcha" => $boardinfo{'config'}->{captcha} );
+    } else {
+        %result = ( %boardinfo );
+    }
+    print $JSON->encode(\%result);
+}
+
+sub output_json_boardlist {
+    my ($error, $code, @AoB);
+    my $settings = get_settings('settings');
+
+    $code = 200;
+
+    for my $key (keys $settings) {
+        if($$settings{$key}{BOARD_ENABLED}) {
+            my $brd_info = {
+                board_name => $$settings{$key}{BOARD_NAME},
+                board_desc => $$settings{$key}{BOARD_DESC},
+                board_key => $key,
+            };
+            push @AoB, \%$brd_info;
+        }
+    }
+
+    my %status = (
+        error_msg => $error,
+        error_code => $code,
+    );
+
+    make_json_header();
+    print $JSON->canonical(1)->encode( {data => \@AoB, status => \%status} );
+}
+
+sub do_json_authentication {
+    my ($auth) = @_;
+    my $c_auth; 
+
+    my $leet = is_leet($auth);
+    $c_auth = $auth if $leet;
+
+    make_cookies(
+        auth      => $c_auth,
+        -charset  => CHARSET,
+        -autopath => $$cfg{COOKIE_PATH},
+        -expires  => time+14*24*3600
+    );  # yum!
+
+    make_json_header();
+    print $JSON->encode({ success => $leet });
 }
 
 #
@@ -962,9 +1059,11 @@ sub output_json_stats {
 # takes an integer as argument
 # returns nothing
 sub show_post {
-    my ($id, $admin) = @_;
+    my ($id, $admin, $auth) = @_;
     my ($sth, $row, @thread);
     my $isAdmin = 0;
+    my $leet = is_leet($auth);
+
     if(defined($admin))
     {
         if (check_password($admin,'','silent')) { $isAdmin = 1; }
@@ -990,7 +1089,8 @@ sub show_post {
                 locked       => $thread[0]{locked},
                 stylesheets  => get_stylesheets(),
                 cfg          => $cfg,
-                locale       => $locale
+                locale       => $locale,
+                leet         => $leet,
             });
         $output =~ s/^\s+//; # remove whitespace at the beginning
         $output =~ s/^\s+\n//mg; # remove empty lines
@@ -1004,9 +1104,11 @@ sub show_post {
 }
 
 sub show_newposts {
-    my ($after, $thread, $admin) = @_;
+    my ($after, $thread, $admin, $auth) = @_;
     my ($sth, $row, @thread);
     my $isAdmin = 0;
+    my $leet = is_leet($auth);
+
     if(defined($admin))
     {
         if (check_password($admin,'','silent')) { $isAdmin = 1; }
@@ -1034,6 +1136,7 @@ sub show_newposts {
                 locked       => $thread[0]{locked},
                 stylesheets  => get_stylesheets(),
                 cfg          => $cfg,
+                leet         => $leet,
                 locale       => $locale
             });
         $output =~ s/^\s+//; # remove whitespace at the beginning
@@ -1653,6 +1756,8 @@ sub post_stuff {
         $spectrip = is_leet($c_auth);
     }
 
+    # $trip = '!Fate/Grand L0ading' if $trip eq '!Fate/0.gFg';
+
     # get as number and owner
     my ($as_num, $as_info) = get_as_info($ip);
     $as_info = clean_string($as_info);
@@ -1962,13 +2067,15 @@ sub ban_check {
     # check for as num ban
     if ($as_num) {
         $sth =
-          $dbh->prepare( "SELECT count(*) FROM "
+          $dbh->prepare( "SELECT count(*) AS count, expires FROM "
               . $$cfg{SQL_ADMIN_TABLE}
               . " WHERE type='asban' AND sval1 = ?;" )
           or make_sql_error();
         $sth->execute($as_num) or make_sql_error();
+        $row = get_decoded_hashref($sth);
 
-        make_ban($$locale{S_BADHOST}, { ip => $ip, showmask => 0, reason => 'AS-Netz-Sperre' }) if (($sth->fetchrow_array())[0]);
+        make_ban($$locale{S_BADHOST}, { ip => $ip, showmask => 0, reason => 'AS Network is banned', expires => $$row{expires} }) if $$row{count};
+        #(($sth->fetchrow_array())[0]);
     }
 
     # check if the IP (ival1) belongs to a banned IP range (ival2)
@@ -2104,11 +2211,11 @@ sub dnsbl_check {
 
         foreach (@{$dnsbl_answers}) {
             if ( $result eq $_ ) {
-                push @errors, sprintf($$locale{S_DNSBL}, $dnsbl_host);
+                push @errors, sprintf(($ajax_errors ? $$locale{S_DNSBL_JSON} : $$locale{S_DNSBL}), $dnsbl_host);
             }
         }
     }
-    make_ban( $$locale{S_BADHOSTPROXY}, { ip => $ip, showmask => 0, reason => shift(@errors) } ) if @errors;
+    make_ban( $$locale{S_BADHOSTPROXY}, { ip => $ip, showmask => 0, reason => shift(@errors), expires => 0 } ) if @errors;
 }
 
 sub flood_check {
@@ -2839,9 +2946,12 @@ sub delete_post {
         return $$locale{S_BADDELIP}
           if ( $deletebyip and ( $numip and $$row{ip} ne $numip ) );
         return $$locale{S_RENZOKU4}
-          if ( $$row{timestamp} + $$cfg{RENZOKU4} >= time() and !($admin_del || $leet) );
+          if ( $$row{timestamp} + $$cfg{RENZOKU4} >= time() and !($admin_del or $leet) );
         return $$locale{S_LOCKED}
           if ( $parent_post && $$parent_post{locked} and !$admin_del );
+        # remove this if you wanna use this wakaba in production... lol
+        return decode_string("Пост протух.", CHARSET)
+          if (!$admin_del && $$row{timestamp} <= 1448744279);
         return "This was posted by a moderator or admin and cannot be deleted this way."
           if (!$admin_del and $$row{admin_post} eq 1);
 
@@ -3179,8 +3289,7 @@ sub make_backup_posts_panel {
 }
 
 # Backup post to backup table.
-sub backup_stuff # Delete post or thread.
-{
+sub backup_stuff { # Delete post or thread.
     my $row = $_[0]; # First argument is post drug from database.
     my $affected_board = $_[1] || $$cfg{SELFPATH}; # Second (optional) argument is name of board.
     my $edit = $_[2];
@@ -3216,8 +3325,7 @@ sub backup_stuff # Delete post or thread.
     }
 }
 
-sub backup_post # Delete single post.
-{
+sub backup_post { # Delete single post.
     my $row = $_[0]; # First argument is post drug from database.
     my $affected_board = $_[1] || $$cfg{SELFPATH}; # Second (optional) argument is name of board.
     my $timestamp = $_[2] || time(); # Time the post was archived, for interface sorting and thread deletion.
@@ -3502,8 +3610,7 @@ sub restore_post_or_thread {
     }
 }
 
-sub cleanup_backups_database()
-{
+sub cleanup_backups_database {
     my $sth = $dbh->prepare(
           "SELECT postnum, board_name FROM "
           . $$cfg{SQL_BACKUP_TABLE}
@@ -3517,8 +3624,7 @@ sub cleanup_backups_database()
     }
 }
 
-sub remove_post_from_backup($$@)
-{
+sub remove_post_from_backup {
     my ($admin, $board_name, @id) = @_;
     my @session = check_password( $admin, '' );
     make_error($$locale{S_NOPRIVILEGES}) if($session[1] ne 'admin');
@@ -3645,8 +3751,7 @@ sub make_admin_post_panel {
     });
 }
 
-sub make_admin_ban_edit # generating ban editing window
-{
+sub make_admin_ban_edit { # generating ban editing window
     my ($admin, $num) = @_;
     my @session = check_password( $admin, '' );
 
@@ -3952,8 +4057,7 @@ sub check_admin_entry {
     print $utf8_encoded_json_text;
 }
 
-sub edit_admin_entry # subroutine for editing entries in the admin table
-{
+sub edit_admin_entry { # subroutine for editing entries in the admin table
     my ( $admin, $num, $comment, 
          $sec,   $min, $hour, $day, $month, $year,
          $noexpire
@@ -4434,8 +4538,7 @@ sub clear_log {
     make_http_forward( get_script_name(). "?task=viewlog&amp;section=".$$cfg{SELFPATH} );
 }
 
-sub cleanup_log_database()
-{
+sub cleanup_log_database {
     return unless $$cfg{LOG_EXPIRE};
     my $sth = $dbh->prepare("DELETE FROM " . $$cfg{SQL_LOG_TABLE} . " WHERE time < ?;");
     $sth->execute(time - $$cfg{LOG_EXPIRE});
@@ -4488,6 +4591,7 @@ sub make_error {
     if ( $ajax_errors ) {
         make_json_header();
         print $JSON->encode({
+            banned => 0,
             error => $error,
             error_code => ($not_found ? 400 : 200)
         });
@@ -4520,16 +4624,27 @@ sub make_error {
 sub make_ban {
     my ($title, @bans) = @_;
 
-    make_http_header();
-    print $tpl->error({
-            bans           => \@bans,
-            error_page     => $title,
-            error_title    => $title,
-            banned         => 1,
-            stylesheets    => get_stylesheets(),
-            cfg            => $cfg,
-            locale         => $locale
-    });
+    if ( $ajax_errors ) {
+        make_json_header();
+        print $JSON->encode({
+            banned => 1,
+            error => $title,
+            bans => \@bans,
+            error_code => 200
+        });
+    }
+    else {
+        make_http_header();
+        print $tpl->error({
+                bans           => \@bans,
+                error_page     => $title,
+                error_title    => $title,
+                banned         => 1,
+                stylesheets    => get_stylesheets(),
+                cfg            => $cfg,
+                locale         => $locale
+        });
+    }
 
     stop_script();
 }
@@ -4751,8 +4866,7 @@ sub get_settings {
     \%$settings;
 }
 
-sub run_event_handler
-{
+sub run_event_handler {
     my $handler=shift;
     my $events=$$cfg{EVENT_HANDLERS};
 
@@ -5182,10 +5296,6 @@ sub get_decoded_arrayref {
     }
 
     return $row;
-}
-
-sub get_fcgicounter {
-    return $fcgi_counter;
 }
 
 "sprölö bölö";

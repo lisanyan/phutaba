@@ -286,9 +286,8 @@ sub count_lines($) {
     $str =~ s!(<br ?/>)+!<br />!g;
     # do not count newlines at the end of the comment
     $str =~ s!(<br ?/>)+$!!;
-    my $count = () = $str =~ m!<br ?/>|<p>|<blockquote!g;
-    # correct "off by one" error caused by abbreviation code
-    $count-- if ($str =~ m!<br /></blockquote>$!);
+    # the optional regex parts are for matching parsed /fefe/ html
+    my $count = () = $str =~ m!<br ?/>|<p( u="")?>|<li>|<blockquote!g;
     return $count;
 }
 
@@ -328,10 +327,11 @@ sub abbreviate_html {
                   if ( substr $html, pos $html ) =~ m!^(?:\s*</\w+>)*\s*$!s;
 
                 my $abbrev = substr $html, 0, pos $html;
-                while ( my $tag = pop @stack ) { $abbrev .= "</$tag>" }
 
                 # remove newlines from the end of the comment
                 $abbrev =~ s/(<br ?\/>)+$//;
+
+                while ( my $tag = pop @stack ) { $abbrev .= "</$tag>" }
 
                 return $abbrev;
             }
