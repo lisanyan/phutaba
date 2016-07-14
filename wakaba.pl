@@ -95,7 +95,7 @@ $has_encode = 1 unless $@;
 # Global init
 #
 my $protocol_re = qr{(?:http://|https://|ftp://|magnet:|mailto:|news:|irc:|xmpp:|skype:)};
-my $pomf_domain = "a.pomf.cat";
+my $pomf_domain;
 
 my ($dbh, $query, $boardSection, $moders, $ajax_errors);
 
@@ -123,6 +123,7 @@ while( $query=CGI::Fast->new )
         $moders         = get_settings('mods');
         $locale         = fetch_locale( $query->cookie("locale") || $$cfg{BOARD_LOCALE} )
                             unless ($$cfg{NOTFOUND});
+        $pomf_domain = $$cfg{POMF_DOMAIN};
 
         if( $$cfg{NOTFOUND} ) {
             print ("Content-type: text/plain\n\nBoard not found.");
@@ -165,23 +166,17 @@ while( $query=CGI::Fast->new )
         }
         else { make_json_error(''); }
     }
-    elsif ( $json eq "newposts" ) {
-        my $id = $query->param("id");
-        my $after = $query->param("after");
-        if ( defined($after) and $after =~ /^[+-]?\d+$/ and $id =~ /^[+-]?\d+$/ ) {
-            output_json_newposts($after, $id);
-        }
-        else { make_json_error(''); }
-    }
     elsif ( $json eq "threads" ) {
+        my $auth = $query->cookie("auth");
         my $page = $query->param("page");
         $page = 1 unless($page and $page =~ /^[+-]?\d+$/ and $page > 0);
-        output_json_threads($page);
+        output_json_threads($page, $auth);
     }
     elsif ($json eq "thread") {
+        my $auth = $query->cookie("auth");
         my $id = $query->param("id");
         if (defined($id) and $id =~ /^[+-]?\d+$/) {
-            output_json_thread($id);
+            output_json_thread($id, $auth);
         }
         else { make_json_error(''); }
     }
@@ -200,6 +195,26 @@ while( $query=CGI::Fast->new )
         }
         else { make_json_error(''); }
     }
+    elsif ( $json eq "newposts" ) {
+        my $id = $query->param("id");
+        my $after = $query->param("after");
+        if ( defined($after) and $after =~ /^[+-]?\d+$/ and $id =~ /^[+-]?\d+$/ ) {
+            output_json_newposts($after, $id);
+        }
+        else { make_json_error(''); }
+    }
+    elsif ( $json eq "checkconfig" ) {
+        my $auth = $query->cookie("auth");
+        my $captcha_only = $query->param("captcha");
+        get_json_boardconfig($auth, $captcha_only, 1);
+    }
+    elsif ( $json eq "getboards" ) {
+        output_json_boardlist();
+    }
+    elsif ( $json eq "authorize" ) {
+        my $auth = $query->param("auth");
+        do_json_authentication($auth);
+    }
     elsif ( $json ) {
         make_json_error();
     }
@@ -212,9 +227,9 @@ while( $query=CGI::Fast->new )
     }
     elsif ( !$task and !$json ) {
         my $admin  = $query->cookie("wakaadmin");
-        my $c_name = $query->cookie("name");
+        my $auth = $query->cookie("auth");
         # when there is no task, show the first page.
-        show_page(1, $admin, $c_name);
+        show_page(1, $admin, $auth);
     }
     elsif ( $task eq "show" ) {
         my $page   = $query->param("page");
@@ -222,7 +237,7 @@ while( $query=CGI::Fast->new )
         my $post   = $query->param("post");
         my $after  = $query->param("after");
         my $admin  = $query->cookie("wakaadmin");
-        my $c_name = $query->cookie("name");
+        my $auth = $query->cookie("auth");
 
         # outputs a single post only
         if (defined($post) and $post =~ /^[+-]?\d+$/)
@@ -237,7 +252,7 @@ while( $query=CGI::Fast->new )
         elsif (defined($thread) and $thread =~ /^[+-]?\d+$/)
         {
             if($thread ne 0) {
-                show_thread($thread, $admin, $c_name);
+                show_thread($thread, $admin, $auth);
             } else {
                 make_error($$locale{S_STOP_FOOLING});
             }
@@ -247,7 +262,7 @@ while( $query=CGI::Fast->new )
         {
             # fallback to page 1 if parameter was empty or incorrect
             $page = 1 unless (defined($page) and $page =~ /^[+-]?\d+$/ and $page > 0);
-            show_page($page, $admin, $c_name);
+            show_page($page, $admin, $auth);
         }
     }
     elsif ( $task eq "search" ) {
@@ -272,6 +287,7 @@ while( $query=CGI::Fast->new )
         my $nofile     = $query->param("nofile");
         my $captcha    = $query->param("captcha");
         my $admin      = $query->cookie("wakaadmin");
+        my $auth       = $query->cookie("auth");
         my $no_format  = $query->param("no_format");
         my $postfix    = $query->param("postfix");
         my $as_staff   = $query->param("as_staff");
@@ -280,13 +296,14 @@ while( $query=CGI::Fast->new )
         my $locked     = $query->param("lock");
         my $autosage   = $query->param("autosage");
         my $ajax       = $query->param("ajax");
-        my @files      = $query->multi_param("file"); # multiple uploads
+        # should be multi_param but we're on old deb
+        my @files      = $query->param("file"); # multiple uploads
 
         post_stuff(
             $parent,  $spam1,     $spam2,     $name,     $email,  $gb2,
             $subject, $comment,   $password,  $nofile,   $captcha,
             $admin,   $no_format, $postfix,   $as_staff, $no_pomf,
-            $sticky,  $locked,    $autosage,  $ajax,
+            $sticky,  $locked,    $autosage,  $ajax, $auth,
             @files
         );
     }
@@ -296,9 +313,12 @@ while( $query=CGI::Fast->new )
         my $admin    = $query->cookie("wakaadmin");
         my $parent   = $query->param("parent");
         my $admindel = $query->param("admindel");
-        my @posts    = $query->multi_param("delete");
+        my $ajax     = $query->param("ajax");
+        my $auth     = $query->cookie("auth");
+        # should be multi_param but we're on old deb
+        my @posts    = $query->param("delete");
 
-        delete_stuff( $password, $fileonly, $admin, $admindel, $parent, @posts );
+        delete_stuff( $password, $fileonly, $admin, $admindel, $parent, $ajax, $auth, @posts );
     }
     elsif ( $task eq "sticky" ) {
         my $admin    = $query->cookie("wakaadmin");
@@ -389,7 +409,8 @@ while( $query=CGI::Fast->new )
     }
     elsif ( $task eq "movefiles" ) {
         my $admin = $query->cookie("wakaadmin");
-        my @files = $query->multi_param("file");
+    # should be multi_param but we're on old deb
+        my @files = $query->param("file");
         move_files($admin, @files);
     }
     # post editing
@@ -411,7 +432,8 @@ while( $query=CGI::Fast->new )
         my $killtrip = $query->param("notrip");
         my $by_admin = $query->param("admin_post");
         my $nopomf = $query->param("nopomf");
-        my @files = $query->multi_param("file");
+    # should be multi_param but we're on old deb
+        my @files = $query->param("file");
         edit_post(
           $admin,     $num,       $name,     $email,
           $subject,   $comment,   $as_staff, $killtrip,
@@ -464,7 +486,8 @@ while( $query=CGI::Fast->new )
     elsif ($task eq "restorebackups")
     {
         my $admin = $query->cookie("wakaadmin");
-        my @num = $query->multi_param("num");
+    # should be multi_param but we're on old deb
+        my @num = $query->param("num");
         my $board_name = $query->param("board") || $$cfg{SELFPATH};
         my $handle = lc $query->param("handle");
 
@@ -515,16 +538,96 @@ while( $query=CGI::Fast->new )
 sub hide_row_els {
     my ($row) = @_;
     my ($items, $loc) = get_geo_array($$cfg{SELFPATH}, $$row{location}, 0);
+    # my $full_loc = @$loc ? join(",", @$loc) : $$items[0];
+    my $full_loc = $$loc[0];
 
     $$row{'id'} =
         ($$cfg{DISPLAY_ID} && !$$row{adminpost}) ? make_id_code(dec_to_dot($$row{ip}), $$row{timestamp}, $$row{email}) : undef;
-    $$row{'location'} = (@$loc ? join(', ', @$loc) : $$items[0]);
+    $$row{'location'} = $$cfg{SHOW_COUNTRIES} ? $$items[0] : undef;
+    $$row{'location_full'} = $$cfg{SHOW_COUNTRIES} ? $full_loc : undef;
     delete @$row {'admin_post', 'password', 'ip'};
-    delete $$row{'location'} unless $$cfg{SHOW_COUNTRIES};
+}
+
+sub get_json_boardconfig {
+    my ($auth, $captcha_only, $standalone) = @_;
+    my $loc = get_geolocation(get_remote_addr());
+    my $leet = is_leet($auth);
+    my %result;
+
+    my %boardinfo = (
+        "board" => $$cfg{SELFPATH},
+        "board_name" => $$cfg{BOARD_NAME},
+        "board_desc" => $$cfg{BOARD_DESC},
+        "config" => {
+            "names_allowed" => ( !$$cfg{FORCED_ANON} || $leet ? 1 : 0 ),
+            "posting_allowed" => (!$$cfg{DISABLE_POSTING} || $$cfg{ALLOW_TEXT_REPLIES} or $$cfg{ALLOW_IMAGE_REPLIES}),
+            "image_replies" => $$cfg{ALLOW_IMAGE_REPLIES},
+            "image_op" => $$cfg{ALLOW_IMAGES},
+            "max_files" => $$cfg{MAX_FILES},
+            "max_res" => $$cfg{MAX_RES},
+            "captcha" => need_captcha($$cfg{CAPTCHA_MODE}, $$cfg{CAPTCHA_SKIP}, $loc, $leet),
+            "geoip_enabled" => $$cfg{SHOW_COUNTRIES},
+            "authorized" => $leet,
+        }
+    );
+    return \%boardinfo unless $standalone;
+
+    make_json_header();
+    if(defined $captcha_only) {
+        %result = ( "captcha" => $boardinfo{'config'}->{captcha} );
+    } else {
+        %result = ( %boardinfo );
+    }
+    print $JSON->encode(\%result);
+}
+
+sub output_json_boardlist {
+    my ($error, $code, @AoB);
+    my $settings = get_settings('settings');
+
+    $code = 200;
+
+    for my $key (keys $settings) {
+        if($$settings{$key}{BOARD_ENABLED}) {
+            my $brd_info = {
+                board_name => $$settings{$key}{BOARD_NAME},
+                board_desc => $$settings{$key}{BOARD_DESC},
+                board_key => $key,
+            };
+            push @AoB, \%$brd_info;
+        }
+    }
+
+    my %status = (
+        error_msg => $error,
+        error_code => $code,
+    );
+
+    make_json_header();
+    print $JSON->canonical(1)->encode( {data => \@AoB, status => \%status} );
+}
+
+sub do_json_authentication
+{
+    my ($auth) = @_;
+    my $c_auth; 
+
+    my $leet = is_leet($auth);
+    $c_auth = $auth if $leet;
+
+    make_cookies(
+        auth      => $c_auth,
+        -charset  => CHARSET,
+        -autopath => $$cfg{COOKIE_PATH},
+        -expires  => time+14*24*3600
+    );  # yum!
+
+    make_json_header();
+    print $JSON->encode({ success => $leet });
 }
 
 sub output_json_threads {
-    my ($page) = @_;
+    my ($page, $auth) = @_;
     my ( $sth, $row, @threads );
     my ( $code, $error );
     my @session;
@@ -636,19 +739,13 @@ sub output_json_threads {
         if ( $$p{page} == $page ) { $$p{current} = 1 }   # current page, no link
     }
 
-    my %boardinfo = (
-        "board" => $$cfg{SELFPATH},
-        "board_name" => $$cfg{BOARD_NAME},
-        "board_desc" => $$cfg{BOARD_DESC}
-    );
-
     my %status = (
         "error_code" => $code,
         "error_msg" => $error
     );
 
     my %json = (
-        "boardinfo" => \%boardinfo,
+        "boardinfo" => get_json_boardconfig($auth),
         "pages" => \@pages,
         "status" => \%status,
         "data" => \@threads
@@ -659,8 +756,8 @@ sub output_json_threads {
 }
 
 sub output_json_thread {
-    my ($id) = @_;
-    my ($sth, $row, $error, $code, %status, @data, %boardinfo, %json);
+    my ($id, $auth) = @_;
+    my ($sth, $row, $error, $code, %status, @data, %json);
     $sth = $dbh->prepare("SELECT * FROM " . $$cfg{SQL_TABLE} . " WHERE num=? OR parent=? ORDER BY num ASC;");
     $sth->execute($id, $id);
     $error = decode(CHARSET, $sth->errstr);
@@ -684,19 +781,13 @@ sub output_json_thread {
     }
     $sth->finish;
 
-    %boardinfo = (
-        "board" => $$cfg{SELFPATH},
-        "board_name" => $$cfg{BOARD_NAME},
-        "board_desc" => $$cfg{BOARD_DESC},
-    );
-
     %status = (
         "error_code" => $code,
         "error_msg" => $error,
     );
 
     %json = (
-        "boardinfo" => \%boardinfo,
+        "boardinfo" => get_json_boardconfig($auth),
         "data" => \@data,
         "status" => \%status
     );
@@ -784,7 +875,7 @@ sub output_json_newposts {
 
 sub output_json_postcount {
     my ($id, $no_op) = @_;
-    my ($sth, $row, $error, $code, %status, %boardinfo, %json);
+    my ($sth, $row, $error, $code, %status, %json);
 
     my $exists = thread_exists($id);
     if($exists) {
@@ -811,19 +902,12 @@ sub output_json_postcount {
         $code = 500;
     }
 
-    %boardinfo = (
-        "board" => $$cfg{SELFPATH},
-        "board_name" => $$cfg{BOARD_NAME},
-        "board_desc" => $$cfg{BOARD_DESC},
-    );
-
     %status = (
         "error_code" => $code,
         "error_msg" => $error,
     );
 
     %json = (
-        "boardinfo" => \%boardinfo,
         "data" => $row,
         "status" => \%status
     );
@@ -964,7 +1048,7 @@ sub show_newposts {
 }
 
 sub show_page {
-    my ($page, $admin, $name) = @_;
+    my ($page, $admin, $auth) = @_;
     my ( $sth, $row, @threads, @thread, @session );
 
     # if we try to call show_page with admin parameter
@@ -1077,6 +1161,7 @@ sub show_page {
     $nextpage = $pages[ $page     ]{filename} if ( $page != $total );
 
     my $loc = get_geolocation(get_remote_addr());
+    my $leet = is_leet($auth);
 
     if ( $page > ( $total ) ) {
         make_error($$locale{S_INVALID_PAGE});
@@ -1088,7 +1173,7 @@ sub show_page {
                 postform     => ( $$cfg{ALLOW_TEXTONLY} or $$cfg{ALLOW_IMAGES} or $isAdmin ),
                 image_inp    => ( $$cfg{ALLOW_IMAGES} or $isAdmin),
                 textonly_inp => ( $$cfg{ALLOW_IMAGES} and $$cfg{ALLOW_TEXTONLY} ),
-                captcha_inp  => need_captcha($$cfg{CAPTCHA_MODE}, $$cfg{CAPTCHA_SKIP}, $loc),
+                captcha_inp  => need_captcha($$cfg{CAPTCHA_MODE}, $$cfg{CAPTCHA_SKIP}, $loc, $leet),
                 prevpage     => $prevpage,
                 nextpage     => $nextpage,
                 pages        => \@pages,
@@ -1096,7 +1181,7 @@ sub show_page {
                 threads      => \@threads,
                 admin        => $isAdmin,
                 modclass     => $session[1],
-                leet         => is_leet($name),
+                leet         => $leet,
                 stylesheets  => get_stylesheets(),
                 cfg          => $cfg,
                 locale       => $locale
@@ -1107,7 +1192,7 @@ sub show_page {
 }
 
 sub show_thread {
-    my ($thread, $admin, $name) = @_;
+    my ($thread, $admin, $auth) = @_;
     my ( $sth, $row, @thread );
     my ( $filename, $tmpname );
     my @session;
@@ -1140,14 +1225,16 @@ sub show_thread {
 
     make_http_header();
     my $loc = get_geolocation(get_remote_addr());
+    my $leet = is_leet($auth);
     my $locked = $thread[0]{locked};
+
     my $output = 
             $tpl->page({
                 thread       => $thread,
                 title        => $thread[0]{subject},
                 postform     => ( ($$cfg{ALLOW_TEXT_REPLIES} or $$cfg{ALLOW_IMAGE_REPLIES} ) and !$locked or $isAdmin),
                 image_inp    => ( $$cfg{ALLOW_IMAGE_REPLIES} or $isAdmin ),
-                captcha_inp  => need_captcha($$cfg{CAPTCHA_MODE}, $$cfg{CAPTCHA_SKIP}, $loc),
+                captcha_inp  => need_captcha($$cfg{CAPTCHA_MODE}, $$cfg{CAPTCHA_SKIP}, $loc, $leet),
                 textonly_inp => 0,
                 dummy        => $thread[$#thread]{num},
                 loc          => $loc,
@@ -1155,7 +1242,7 @@ sub show_thread {
                 admin        => $isAdmin, 
                 modclass     => $session[1],
                 locked       => $locked,
-                leet         => is_leet($name),
+                leet         => $leet,
                 stylesheets  => get_stylesheets(),
                 cfg          => $cfg,
                 locale       => $locale
@@ -1195,7 +1282,7 @@ sub get_files {
         $uploadname = remove_path($$res{uploadname});
         $$res{uploadname} = clean_string($uploadname);
         $$res{displayname} = clean_string(get_displayname($uploadname));
-        $$res{pomf_domain} = $pomf_domain;
+        $$res{external_upload} = $$res{image} !~ m%^//$pomf_domain% ? 0 : 1;
 
         # static thumbs are not used anymore (for old posts)
         $$res{thumbnail} = undef if ($$res{thumbnail} =~ m|^\.\./img/|);        
@@ -1396,7 +1483,7 @@ sub post_stuff {
         $gb2,     $subject, $comment,   $password,  $nofile,
         $captcha, $admin,   $no_format, $postfix,   $as_staff,
         $no_pomf, $sticky,  $locked,    $autosage,  $ajax,
-        @files
+        $auth, @files
     ) = @_;
 
     my $file = $files[0]; # file count
@@ -1548,15 +1635,23 @@ sub post_stuff {
     my $c_password = $password;
     my $c_gb2      = $gb2;
     my $c_nopomf   = $no_pomf;
+    my $c_auth     = $auth;
 
     # check if IP is whitelisted
     my $whitelisted = is_whitelisted($numip);
     dnsbl_check($ip) if ( !$whitelisted and $$cfg{ENABLE_DNSBL_CHECK} );
 
     # process the tripcode - maybe the string should be decoded later
-    my ($trip, $spectrip);
-    ( $name, $trip, $spectrip ) = process_leetcode( $name ); # process a l33t tripcode
-    ( $name, $trip ) = process_tripcode( $name, $$cfg{TRIPKEY}, SECRET, CHARSET ) unless $trip;
+    my ($trip, $trippart);
+    my $spectrip;
+    ( $name, $trip, $trippart, $spectrip ) = process_leetcode( $name ); # process a l33t tripcode
+    ( $name, $trip, $trippart ) = process_tripcode( $name, $$cfg{TRIPKEY}, SECRET, CHARSET ) unless $trip;
+
+    $c_auth = $$cfg{TRIPKEY} . $trippart if $spectrip;
+
+    if($c_auth && !$spectrip) {
+        $spectrip = is_leet($c_auth);
+    }
 
     # get as number and owner
     my ($as_num, $as_info) = get_as_info($ip);
@@ -1594,7 +1689,7 @@ sub post_stuff {
 
     # check captcha
     check_captcha( $dbh, $captcha, $ip, $parent, $$cfg{SELFPATH}, $locale, $cfg )
-      if ( need_captcha($$cfg{CAPTCHA_MODE}, $$cfg{CAPTCHA_SKIP}, $loc) and !$admin_post and !is_trusted($trip) );
+      if ( need_captcha($$cfg{CAPTCHA_MODE}, $$cfg{CAPTCHA_SKIP}, $loc) and !$admin_post and !is_trusted($trip) and !$spectrip);
 
     $loc = join("<br />", $loc, $country_name, $region_name, $city, $as_info);
 
@@ -1772,6 +1867,7 @@ sub post_stuff {
         gb2       => $c_gb2,
         nopomf    => $c_nopomf,
         password  => $c_password,
+        auth      => $c_auth,
         -charset  => CHARSET,
         -autopath => $$cfg{COOKIE_PATH},
         -expires  => time+14*24*3600
@@ -1797,12 +1893,11 @@ sub post_stuff {
         }
     }
     else {
-        my %result = (
-              parent => $parent,
-              num => $new_post_id
-            );
         make_json_header();
-        print $JSON->encode(\%result);
+        print $JSON->encode({
+            parent => $parent,
+            num => $new_post_id,
+        });
     }
 }
 
@@ -2237,23 +2332,23 @@ sub make_id_code {
 
 sub process_leetcode {
     my ($name, $nonamedecoding) = @_;
-    my ($namepart, $trip);
+    my ($namepart, $trippart, $trip);
 
     my $trips = get_settings('trips');
     my $tripkey = $$cfg{TRIPKEY} or "!";
     if ( $name =~ /(.*?)(?:#|$tripkey|nya:)(.+)$/ ) {
-        ($namepart, $trip) = ($1, $2);
+        ($namepart, $trippart) = ($1, $2);
         $namepart = clean_string($namepart);
     }
 
-    if ($$trips{$trip}) {
-        $trip = $$cfg{TRIPKEY} . $$trips{$trip};
+    if ($$trips{$trippart}) {
+        $trip = $$cfg{TRIPKEY} . $$trips{$trippart};
     } else {
         return ( $name, undef, undef );
     }
 
     return ( $namepart, $trip, 1 ) if $nonamedecoding;
-    return ( decode_string( $namepart, CHARSET ), $trip, 1 );
+    return ( decode_string( $namepart, CHARSET ), $trip, $trippart, 1 );
 }
 
 sub get_cb_post {
@@ -2657,15 +2752,17 @@ sub delete_all {
         $sth->finish;
 
         log_action( 'delall', $ip, '', $admin );
-        delete_stuff('', 0, $admin, 1, 0, @posts);
+        delete_stuff('', 0, $admin, 1, 0, 0, 0, @posts);
     }
 }
 
 sub delete_stuff {
-    my ( $password, $fileonly, $admin, $admin_del, $parent, @posts ) = @_;
-    my ($post, $ip);
+    my ( $password, $fileonly, $admin, $admin_del, $parent, $ajax, $auth, @posts ) = @_;
     my ($adminDel, $deletebyip) = (0, 0);
     my $noko = 1; # try to stay in thread after deletion by default 
+
+    $ajax_errors = 1 if $ajax;
+    my $leet = is_leet($auth);
 
     if ($admin_del) {
         check_password( $admin, '' );
@@ -2683,32 +2780,42 @@ sub delete_stuff {
 
     $password = "" if ($adminDel);
 
-    my @errors;
-    foreach $post (@posts) {
-        $ip = delete_post( $post, $password, $fileonly, $deletebyip, $admin_del, $admin );
+    my (@errors, @ArrayOfErrors);
+    foreach my $post (@posts) {
+        my $ip = delete_post( $post, $password, $fileonly, $deletebyip, $leet, $admin_del, $admin );
         if ($ip !~ /:/ and $ip !~ /\d+\.\d+\.\d+\.\d+/) # Function returned with error string
         {
             push (@errors,"Post $post: ".$ip);
+            push @ArrayOfErrors, { post_id => $post, reason => $ip };
             next;
         }
         $noko = 0 if ( $parent and $post eq $parent ); # the thread is deleted and cannot be redirected to      
     }
 
     unless (@errors) {
+        my $redir;
+
         if ( $noko == 1 and $parent ) {
-            make_http_forward( get_board_path() . "thread/" . $parent );
+            $redir = get_board_path() . "thread/" . $parent;
+            make_http_forward( $redir ) if !$ajax;
         } else {
-            make_http_forward( get_board_path() );
+            $redir = get_board_path();
+            make_http_forward( $redir ) if !$ajax;
+        }
+
+        if($ajax) {
+            make_json_header();
+            print $JSON->encode({redir => $redir});
         }
     }
     else {
         my $errstring = sprintf $$locale{S_PREWRAP}, join("\n", @errors);
-        make_error($errstring);
+        make_error($ajax ? \@ArrayOfErrors : $errstring, !$noko);
     }
 }
 
 sub delete_post {
-    my ( $post, $password, $fileonly, $deletebyip, $admin_del, $admin ) = @_;
+    my ( $post, $password, $fileonly, $deletebyip, $leet, $admin_del, $admin ) = @_;
     my ( $sth, $row, $res, $reply, $postinfo );
 
     if(defined($admin_del))
@@ -2732,12 +2839,9 @@ sub delete_post {
         return $$locale{S_BADDELIP}
           if ( $deletebyip and ( $numip and $$row{ip} ne $numip ) );
         return $$locale{S_RENZOKU4}
-          if ( $$row{timestamp} + $$cfg{RENZOKU4} >= time() and !$admin_del );
+          if ( $$row{timestamp} + $$cfg{RENZOKU4} >= time() and !($admin_del || $leet) );
         return $$locale{S_LOCKED}
           if ( $parent_post && $$parent_post{locked} and !$admin_del );
-        # remove this if you wanna use this wakaba in production... lol
-        return decode_string("Пост протух.", CHARSET)
-          if (!$admin_del && $$row{timestamp} <= 1448744279);
         return "This was posted by a moderator or admin and cannot be deleted this way."
           if (!$admin_del and $$row{admin_post} eq 1);
 
@@ -4126,9 +4230,9 @@ sub edit_post {
     else                    { $email = ''; }
 
     # process tripcode
-    my $trip;
-    ( $name, $trip ) = process_leetcode( $name ); # process a l33t tripcode
-    ( $name, $trip ) = process_tripcode( $name, $$cfg{TRIPKEY}, SECRET, CHARSET ) unless $trip;
+    my ($trip, $trippart);
+    ( $name, $trip, $trippart ) = process_leetcode( $name ); # process a l33t tripcode
+    ( $name, $trip, $trippart ) = process_tripcode( $name, $$cfg{TRIPKEY}, SECRET, CHARSET ) unless $trip;
 
     if (!$killtrip) { $trip = $$post{trip} if !$trip; }
     else { $trip = ''; }
@@ -4373,7 +4477,7 @@ sub make_rss_header {
 sub make_json_header {
     print "Cache-Control: no-cache, no-store, must-revalidate\n";
     print "Expires: Mon, 12 Apr 1997 05:00:00 GMT\n";
-    print "Content-Type: application/json\n";
+    print "Content-Type: application/json; charset=utf-8\n";
     print "Access-Control-Allow-Origin: *\n";
     print "\n";
 }
@@ -4385,7 +4489,7 @@ sub make_error {
         make_json_header();
         print $JSON->encode({
             error => $error,
-            code => ($not_found ? 400 : 500)
+            error_code => ($not_found ? 400 : 200)
         });
     }
     else {
@@ -4440,8 +4544,8 @@ sub make_json_error {
     my $hax = shift;
     make_json_header();
     print $JSON->encode({
-        code => 500,
-        error => (defined $hax ? 'hax0r' : 'Unknown json parameter.')
+        error => (defined $hax ? 'Hax0r' : 'Unknown json parameter.'),
+        error_code => 500
     });
     stop_script();
 }

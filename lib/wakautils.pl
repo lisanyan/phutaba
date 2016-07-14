@@ -248,12 +248,12 @@ sub get_geolocation($) {
     return ($city, $region_name, $country_name, $loc);
 }
 
-sub need_captcha($$$) {
-    my ($mode, $allowed_list, $location) = @_;
+sub need_captcha($$$;$) {
+    my ($mode, $allowed_list, $location, $leet) = @_;
     my @allowed = split(' ', $allowed_list);
 
-    return 1 if ($mode eq 1);
-    return 0 if ($mode eq 0 or grep {$_ eq $location} @allowed);
+    return 1 if ($mode eq 1 and !$leet);
+    return 0 if ($leet || $mode eq 0 or grep {$_ eq $location} @allowed);
     return 1;
 }
 
@@ -1187,7 +1187,7 @@ sub process_tripcode {
         $salt =~ tr/:;<=>?@[\\]^_`/ABCDEFGabcdef/;
         $trip = $tripkey . ( substr crypt( $trippart, $salt ), -10 ) . $trip;
 
-        return ( $namepart, $trip );
+        return ( $namepart, $trip, $trippart );
     }
 
     return clean_string($name) if $nonamedecoding;
@@ -1206,7 +1206,14 @@ sub make_date {
     }
 
     my @ltime = localtime($time);
+    my @currtime = localtime;
     my $tz = strftime("%Z", @ltime);
+
+    if( ($currtime[4] + 1) == 4 && $currtime[3] == 1)
+    {
+        $ltime[3] = 32;
+        --$ltime[4];
+    }
 
     if ( $style eq "2ch" ) {
         return sprintf(
