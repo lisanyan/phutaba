@@ -1,5 +1,5 @@
 <include %TMPLDIR%head.tpl>
-<perleval %admin=$admin; %thread=$thread />
+<perleval %admin=$admin; %thread=$thread; %leet=$leet />
 <if $postform>
 	<div id="open_form" style="display:none"><var $$locale{S_JS_OPENFORM}></div>
 	<div class="postarea">

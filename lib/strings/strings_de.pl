@@ -29,6 +29,7 @@ $translation{S_NOTHUMB} =
   'Datei';    # Printed when there's no thumbnail
 $translation{S_PICNAME} = '';             # Prints text before upload name/link
 $translation{S_REPLY} = 'Antworten';    # Prints text for reply link
+$translation{S_VIEW} = 'View';    # Prints text for reply link
 $translation{S_OLD} = 'Dieses Thema ist kurz vor der Löschung.'; # Prints text to be displayed before post is marked for deletion, see: retention
 
 $translation{S_HIDE} = 'Thread %d ausblenden';

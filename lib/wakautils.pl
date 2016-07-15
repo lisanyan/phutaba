@@ -2053,19 +2053,18 @@ sub get_pretty_html($$) {
 }
 
 sub get_geo_array {
-    my ($board, $data, $as, $hide) = @_;
+    my ($board, $data) = @_;
 
     my @items = split(/<br \/>/, $data);
     my @loc;
     return '(n/a)' unless (@items);
 
     $items[0] = 'UNKNOWN' if ($items[0] eq 'unk' or $items[0] =~ /^A(1|2)$/);
-    @items = qw/UNKNOWN/ if $hide;
     my $flag = '<img style="vertical-align:initial" alt="" src="/img/flags/' . $items[0] . '.PNG"> ';
 
     if (scalar @items > 1) {
         @loc = grep {$_} ($items[1], $items[2], $items[3]);
-        if ($as and $board) {
+        if ($board) {
             $items[4] =~ /^AS(\d+) / ;
             $items[4] .= ' [<a href="' . $ENV{SCRIPT_NAME}
                 . '?section='.$board.'&amp;task=addstring&amp;type=asban&amp;string=' . $1
@@ -2075,36 +2074,37 @@ sub get_geo_array {
     return (\@items, \@loc, $flag);
 }
 
-sub get_post_info {
-    my ($board, $data) = @_;
-    my ($items, $loc, $flag) = get_geo_array($board, $data, 1);
+sub get_postinfo {
+    my ($board, $data, $as) = @_;
+    my ($items, $loc, $flag) = get_geo_array($board, $data, $as);
 
     if (scalar @$items == 1) { # for legacy entries
         return $flag . $$items[0];
     } else {
         my $location = join(', ', @$loc);
-        return $flag . $location . '<br />' . $$items[4];
+        return $flag . $location . ($as ? '<br />' . $$items[4] : "");
     }
 }
 
-sub get_post_info2 {
-    my ($board, $data, $hide) = @_;
-    my ($items, $loc, $flag) = get_geo_array($board, $data, 0, $hide);
-    my $ret;
+sub get_user_postinfo {
+    my ($board, $data, $num) = @_;
+    my ($items, $loc, $flag) = get_geo_array($board, $data);
+    my ($retloc, $return);
 
     if (scalar @$items == 1) { # for legacy entries
-        $ret = $$items[0];
+        $retloc = $$items[0];
     } else {
-        my $location = clean_string( join(', ', @$loc));
-        $ret = $location;
+        $retloc = join(', ', @$loc);
     }
-    return sprintf('<span class="countryflag" onmouseover="Tip(\'%s\', DELAY, 0, WIDTH, -450)" onmouseout="UnTip()">%s</span>', $ret, $flag);
+
+    $return = sprintf('<div class="hidden" id="postinfo_%d">%s</div>', $num, $retloc) . "\n\t\t";
+    $return .= sprintf('<span class="countryflag" onmouseover="TagToTip(\'postinfo_%d\', DELAY, 0, WIDTH, -450)" onmouseout="UnTip()">%s</span>', $num, $flag);
 }
 
 sub rev {
     my @r;
     push @r, pop @_ while @_;
-    @r
+    @r;
 }
 
 1;

@@ -33,8 +33,8 @@
 		<span onmouseover="Tip('<var $secure>')" onmouseout="UnTip()"><img src="<var $$cfg{SSL_ICON}>" alt="SSL" /></span>
 	</if>
 
-	<if $$cfg{SHOW_COUNTRIES} && !%admin && !$adminpost>
-	  <var Wakaba::get_post_info2($$cfg{SELFPATH}, $location, $adminpost)>
+	<if ($$cfg{SHOW_COUNTRIES} || %leet) && !%admin && !$adminpost>
+		<var Wakaba::get_user_postinfo($$cfg{SELFPATH},$location,$num)>
 	</if>
 
 	<span class="reflink">
@@ -64,7 +64,7 @@
 	<if %admin>
 		<if !$adminpost>
 		<div class="hidden" id="postinfo_<var $num>">
-			<var Wakaba::get_post_info($$cfg{SELFPATH},$location)>
+			<var Wakaba::get_postinfo($$cfg{SELFPATH},$location,1)>
 		</div>
 		<span onmouseover="TagToTip('postinfo_<var $num>', TITLE, '<var $$locale{S_POSTINFO}>', DELAY, 0, CLICKSTICKY, true, WIDTH, -450)" onmouseout="UnTip()">[<var Wakaba::dec_to_dot($ip)>]</span>
 		</if>
