@@ -20,6 +20,7 @@ $settings{ENABLE_POST_BACKUP} = 1;
 $settings{TITLE} = 'Phutaba'; 					# Name of this image board
 $settings{BOARD_NAME} = 'Dildo dodo';
 $settings{BOARD_DESC} = '';
+$settings{BOARD_NAGTXT} = '';
 $settings{ENABLE_BANNERS} = 1;
 $settings{FAVICON} = '';					# Favicon.ico file
 $settings{HOME} = '/'; 						# Site home directory (up one level by default)
@@ -232,35 +233,13 @@ $settings{DNSBL_INFOS} =
 	# [ 'zen.spamhaus.org', ['127.0.0.2', '127.0.0.3', '127.0.0.4'] ],
 ];
 
-# Events (advanced users only)
-# These are anonymous subroutines which are executed in various places. If the
-# subroutine returns a true value, the script will raise an error with that
-# value. As such, you _must_ make the routine return 0 unless you're intending
-# to produce an error and stop the current action from executing.
-$settings{EVENT_HANDLERS} = {
-	# Posting
-	preprocess => sub {
-		my ($table, $table_img, $query) = @_;
-		# Use the CGI object ($query) to get post values here.
-		return 0;
-	},
-	postprocess => sub {
-		my (
-		      $table,    $table_img, $parent,  $name,
-			  $trip,     $email,     $subject, $comment,
-			  $password, $as_num,    $file,    @files
-			) = @_;
-		return 0;
-	},
-	finished => sub {
-		my (
-			  $table,   $table_img, $new_post_id, $parent,
-			  $name,    $trip,      $email,       $subject,
-			  $comment, $password,  $as_num,      $file,
-			  @files
-			) = @_;
-		return 0;
-	},
+# Special posters overrides
+$settings{LEET_CONFIG} = {
+	MAX_FILES => 6,
+	SHOW_COUNTRIES => 1,
+	FORCED_ANON => 0,
+	ENABLE_RANDOM_NAMES => 1,
+	CAPTCHA_MODE => 0,
 };
 
 # Board-specific settings
