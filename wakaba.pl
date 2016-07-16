@@ -1459,7 +1459,6 @@ sub resolve_reflinks {
     |ge;
 
     $comment =~ s|<!--reflink-->&gt;&gt;([0-9]+)|
-    use Data::Dumper;
         my $res = get_post_simple($1,$board);
         if ($res) { '<span class="backreflink"><a href="'.get_reply_link($$res{num},$$res{parent},0,$board).'">&gt;&gt;'.$1.'</a></span>'; }
         else { '<span class="backreflink"><del>&gt;&gt;'.$1.'</del></span>'; }
@@ -2463,7 +2462,6 @@ sub get_post {
     return $ret;
 }
 
-# test
 sub get_post_simple {
     my ($thread, $board) = @_;
     my ($sth,$ret,$tbl);
