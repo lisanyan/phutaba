@@ -34,7 +34,7 @@
 	</if>
 
 	<if $$cfg{SHOW_COUNTRIES} && !%admin && !$adminpost>
-	  <var Wakaba::get_post_info2($$cfg{SELFPATH}, $location, $adminpost)>
+		<var Wakaba::get_user_postinfo($$cfg{SELFPATH},$location,$num)>
 	</if>
 
 	<span class="reflink">
@@ -57,13 +57,14 @@
 	</if>
 
 	<if !$parent && !%thread>
-		<span class="replylink">[<a href="<var Wakaba::get_reply_link($num,0)>"><var $$locale{S_REPLY}></a>]</span>
+		<if !$locked><span class="replylink">[<a href="<var Wakaba::get_reply_link($num,0)>"><var $$locale{S_REPLY}></a>]</span>
+		</else/><span class="replylink">[<a href="<var Wakaba::get_reply_link($num,0)>"><var $$locale{S_VIEW}></a>]</span></if>
 	</if>
 	<if !$parent && %thread>[<a href="#bottom"><var $$locale{S_BOTTOM}></a>]</if>
 	<if %admin>
 		<if !$adminpost>
 		<div class="hidden" id="postinfo_<var $num>">
-			<var Wakaba::get_post_info($$cfg{SELFPATH},$location)>
+			<var Wakaba::get_postinfo($$cfg{SELFPATH},$location,1)>
 		</div>
 		<span onmouseover="TagToTip('postinfo_<var $num>', TITLE, '<var $$locale{S_POSTINFO}>', DELAY, 0, CLICKSTICKY, true, WIDTH, -450)" onmouseout="UnTip()">[<var Wakaba::dec_to_dot($ip)>]</span>
 		</if>
@@ -145,7 +146,7 @@
 		<hr />
 		<var Wakaba::get_pretty_html($info_all, "\n\t\t")>
 	</div>
-	<div class="filename"><var $$locale{S_PICNAME}><a target="_blank" title="<var Wakaba::clean_string($uploadname)>" href="<var Wakaba::expand_image_filename($image)><if $image!~/^\/\/$pomf_domain/>/<var Wakaba::get_urlstring(Wakaba::clean_string($uploadname))></if>"><var Wakaba::clean_string($displayname)></a></div>
+	<div class="filename"><var $$locale{S_PICNAME}><a target="_blank" title="<var Wakaba::clean_string($uploadname)>" href="<var Wakaba::expand_image_filename($image)><if !$external_upload>/<var Wakaba::get_urlstring(Wakaba::clean_string($uploadname))></if>"><var Wakaba::clean_string($displayname)></a></div>
 	<div class="filesize"><var Wakaba::get_displaysize($size, $$cfg{DECIMAL_MARK})><if $width && $height>, <var $width>&nbsp;&times;&nbsp;<var $height></if><if $info>, <var $info></if></div>
 	<if $thumbnail>
 		<div class="filelink" id="exlink-<var Wakaba::md5_hex($image)>">

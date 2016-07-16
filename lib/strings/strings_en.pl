@@ -27,6 +27,7 @@ $translation{S_HIDDEN} = '';    # Prints instructions for viewing hidden image r
 $translation{S_NOTHUMB} = 'File'; # Printed when there's no thumbnail
 $translation{S_PICNAME} = '';             # Prints text before upload name/link
 $translation{S_REPLY} = 'Reply';    # Prints text for reply link
+$translation{S_VIEW} = 'View';    # Prints text for reply link
 $translation{S_OLD} = 'Marked for deletion (old).'; 
   # Prints text to be displayed before post is marked for deletion, see: retention
 

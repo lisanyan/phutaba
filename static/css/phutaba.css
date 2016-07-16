@@ -26,9 +26,8 @@
 	word-wrap: break-word;
 }
 
-pre {
-	white-space: pre-wrap;
-	word-wrap: break-word;
+.thread_reply  {
+	float: none!important;
 }
 
 ul.right { float: none !important; }
@@ -61,6 +60,10 @@ html, body, ul, ol, p, pre, table, td, img {
 	padding: 0;
 	border: 0;
 	outline: 0;
+	/* linux cannot render fonts without help */
+	text-rendering: optimizeLegibility;
+	font-variant-ligatures: common-ligatures;
+	font-kerning: normal;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -300,7 +303,7 @@ input[type='submit']:hover {
 }
 
 .thread {
-	overflow: hidden;
+	overflow: auto;
 }
 
 .thread_head {
@@ -318,6 +321,7 @@ input[type='submit']:hover {
 	clear: both;
 	margin: 0.5em 0;
 	margin-left: 0;
+	overflow: auto;
 }
 
 .thread_reply + .thread_reply {

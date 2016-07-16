@@ -1,4 +1,5 @@
 <include %TMPLDIR%head.tpl>
+<perleval %search=$search />
 	<div class="postarea">
 	<form id="searchform" action="<var %self>" method="post" enctype="multipart/form-data">
 	<input type="hidden" name="section" value="<var $$cfg{SELFPATH}>" />
@@ -34,6 +35,7 @@
 	</if>
 
 	<loop $posts>
+		<if !$parent><hr /></if>
 		<include %TMPLDIR%post_view.tpl>
 		<p style="clear: both;"></p>
 	</loop>

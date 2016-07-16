@@ -28,6 +28,7 @@ $translation{S_NOTHUMB} =
   'Нет миниатюры';    # Printed when there's no thumbnail
 $translation{S_PICNAME} = '';             # Prints text before upload name/link
 $translation{S_REPLY} = 'Ответ';    # Prints text for reply link
+$translation{S_VIEW} = 'Просмотр';    # Prints text for reply link
 $translation{S_OLD} = 'Помечено для удаления (old).'; 
   # Prints text to be displayed before post is marked for deletion, see: retention
 

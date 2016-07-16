@@ -1,5 +1,5 @@
 <footer>
-	<p>Powered by <img src="/img/phutaba_icon.png" alt="" /> <strong>Phutaba</strong>.<br /><span id="fcgi_counter">FCGI Loops: <var Wakaba::get_fcgicounter()></span></p>
+	<p>Powered by <img src="/img/phutaba_icon.png" alt="" /> <strong>Phutaba</strong>.<br /></p>
 	<p>Зеркало <a href="https://02ch.info">02ch.info</a></p>
 	<p><em>Report illegal material to <a href="mailto:<var $$cfg{ADMIN_EMAIL}>"><var $$cfg{ADMIN_EMAIL}></a>.</em></p>
 </footer>

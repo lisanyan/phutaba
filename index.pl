@@ -21,8 +21,8 @@ binmode(STDOUT, ":utf8");
 # redirects should have a full URL: http://ernstchan.com/b/
 # but this can be tricky if running behind some proxy
 if ($page eq "") {
-#        exit print $q->redirect("https://02ch.in/".DEFAULT_BOARD."/");
-        exit print $q->redirect("/main");
+       exit print $q->redirect("https://02ch.in/".DEFAULT_BOARD."/");
+        # exit print $q->redirect("/main");
 }
 
 # print $q->header(-charset => 'utf-8');

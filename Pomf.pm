@@ -15,7 +15,7 @@ sub new {
 sub pomf_upload
 {
 	my ($file) = @_;
-	my $post = 'http://pomf.cat/upload.php'; # POST url
+	my $post = 'https://pomf.cat/upload.php'; # POST url
 
 	if (!$file) {
 		return 0;
