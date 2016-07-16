@@ -248,12 +248,12 @@ sub get_geolocation($) {
     return ($city, $region_name, $country_name, $loc);
 }
 
-sub need_captcha($$$;$) {
-    my ($mode, $allowed_list, $location, $leet) = @_;
+sub need_captcha($$$) {
+    my ($mode, $allowed_list, $location) = @_;
     my @allowed = split(' ', $allowed_list);
 
-    return 1 if ($mode eq 1 and !$leet);
-    return 0 if ($leet || $mode eq 0 or grep {$_ eq $location} @allowed);
+    return 1 if ($mode eq 1);
+    return 0 if ($mode eq 0 or grep {$_ eq $location} @allowed);
     return 1;
 }
 

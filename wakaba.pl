@@ -97,7 +97,9 @@ $has_encode = 1 unless $@;
 my $protocol_re = qr{(?:http://|https://|ftp://|magnet:|mailto:|news:|irc:|xmpp:|skype:)};
 my $pomf_domain;
 
-my ($dbh, $query, $boardSection, $moders, $ajax_errors);
+my (  $dbh, $query, $boardSection, $moders,
+      $ajax_errors, $gAuth_Cookie,
+    );
 
 my $cfg = my $locale = {};
 my $fcgi_counter = 0;
@@ -117,13 +119,22 @@ while( $query=CGI::Fast->new )
 
     unless (0)
     {
-        $ajax_errors    = 0; #reset
-        $boardSection   = ($query->param("section") or &DEFAULT_BOARD);
-        $cfg            = fetch_config(decode_string($boardSection, CHARSET));
-        $moders         = get_settings('mods');
-        $locale         = fetch_locale( $query->cookie("locale") or $$cfg{BOARD_LOCALE} )
-                            unless ($$cfg{NOTFOUND});
+        # static vars
         $pomf_domain = $$cfg{POMF_DOMAIN};
+        # dynamic vars
+        $boardSection   = ($query->param("section") or &DEFAULT_BOARD);
+        $gAuth_Cookie   = $query->cookie("auth");
+        $cfg            = fetch_config(decode_string($boardSection, CHARSET));
+        $locale         = fetch_locale( $query->cookie("locale") or $$cfg{BOARD_LOCALE} ) unless ($$cfg{NOTFOUND});
+        $moders         = get_settings('mods');
+
+        $ajax_errors    = 0; #reset
+
+        if( is_leet($gAuth_Cookie) ) {
+            for (keys $$cfg{LEET_CONFIG}) {
+                $$cfg{$_} = $$cfg{LEET_CONFIG}->{$_};
+            }
+        }
 
         if( $$cfg{NOTFOUND} ) {
             print ("Content-type: text/plain\n\nBoard not found.");
@@ -160,24 +171,22 @@ while( $query=CGI::Fast->new )
     cleanup_log_database();
 
     if ( $json eq "post" ) {
-        my $auth = $query->cookie("auth");
+        # my $auth = $query->cookie("auth");
         my $id = $query->param("id");
         if ( defined($id) and $id =~ /^[+-]?\d+$/ ) {
-            output_json_post($id, $auth);
+            output_json_post($id);
         }
         else { make_json_error(''); }
     }
     elsif ( $json eq "threads" ) {
-        my $auth = $query->cookie("auth");
         my $page = $query->param("page");
         $page = 1 unless($page and $page =~ /^[+-]?\d+$/ and $page > 0);
-        output_json_threads($page, $auth);
+        output_json_threads($page);
     }
     elsif ($json eq "thread") {
-        my $auth = $query->cookie("auth");
         my $id = $query->param("id");
         if (defined($id) and $id =~ /^[+-]?\d+$/) {
-            output_json_thread($id, $auth);
+            output_json_thread($id);
         }
         else { make_json_error(''); }
     }
@@ -192,9 +201,8 @@ while( $query=CGI::Fast->new )
     elsif ( $json eq "newposts" ) {
         my $id = $query->param("id");
         my $after = $query->param("after");
-        my $auth = $query->cookie("auth");
         if ( defined($after) and $after =~ /^[+-]?\d+$/ and $id =~ /^[+-]?\d+$/ ) {
-            output_json_newposts($after, $id, $auth);
+            output_json_newposts($after, $id);
         }
         else { make_json_error(''); }
     }
@@ -214,9 +222,8 @@ while( $query=CGI::Fast->new )
         else { make_json_error(''); }
     }
     elsif ( $json eq "checkconfig" ) {
-        my $auth = $query->cookie("auth");
         my $captcha_only = $query->param("captcha");
-        get_json_boardconfig($auth, $captcha_only, 1);
+        get_json_boardconfig($captcha_only, 1);
     }
     elsif ( $json eq "getboards" ) {
         output_json_boardlist();
@@ -237,9 +244,8 @@ while( $query=CGI::Fast->new )
     }
     elsif ( !$task and !$json ) {
         my $admin  = $query->cookie("wakaadmin");
-        my $auth = $query->cookie("auth");
         # when there is no task, show the first page.
-        show_page(1, $admin, $auth);
+        show_page(1, $admin);
     }
     elsif ( $task eq "show" ) {
         my $page   = $query->param("page");
@@ -247,22 +253,21 @@ while( $query=CGI::Fast->new )
         my $post   = $query->param("post");
         my $after  = $query->param("after");
         my $admin  = $query->cookie("wakaadmin");
-        my $auth   = $query->cookie("auth");
 
         # outputs a single post only
         if (defined($post) and $post =~ /^[+-]?\d+$/)
         {
-            show_post($post, $admin, $auth);
+            show_post($post, $admin);
         }
         elsif (defined($after) and $thread =~ /^[+-]?\d+$/ and $after =~ /^[+-]?\d+$/)
         {
-            show_newposts($after, $thread, $admin, $auth);
+            show_newposts($after, $thread, $admin);
         }
         # show the requested thread
         elsif (defined($thread) and $thread =~ /^[+-]?\d+$/)
         {
             if($thread ne 0) {
-                show_thread($thread, $admin, $auth);
+                show_thread($thread, $admin);
             } else {
                 make_error($$locale{S_STOP_FOOLING});
             }
@@ -272,7 +277,7 @@ while( $query=CGI::Fast->new )
         {
             # fallback to page 1 if parameter was empty or incorrect
             $page = 1 unless (defined($page) and $page =~ /^[+-]?\d+$/ and $page > 0);
-            show_page($page, $admin, $auth);
+            show_page($page, $admin);
         }
     }
     elsif ( $task eq "search" ) {
@@ -541,17 +546,15 @@ while( $query=CGI::Fast->new )
 #
 
 sub hide_row_els {
-    my ($row, $auth) = @_;
+    my ($row) = @_;
     my ($items, $loc) = get_geo_array($$cfg{SELFPATH}, $$row{location});
 
     my @bububu = ($$loc[2] || $$loc[1], $$loc[0] || $$items[0]);
     my $full_loc = $bububu[0] ? $$items[0] . ", " . $bububu[0] : $bububu[1];
 
-    my $leet = is_leet($auth);
-
     $$row{'id'} = ($$cfg{DISPLAY_ID} && !$$row{adminpost}) ? make_id_code(dec_to_dot($$row{ip}), $$row{timestamp}, $$row{email}) : undef;
-    $$row{'location'} = ($$cfg{SHOW_COUNTRIES} or $leet) ? $$items[0] : 0;
-    $$row{'location_full'} = ($$cfg{SHOW_COUNTRIES} or $leet) ? $full_loc : 0;
+    $$row{'location'} = $$cfg{SHOW_COUNTRIES} ? $$items[0] : "";
+    $$row{'location_full'} = $$cfg{SHOW_COUNTRIES} ? $full_loc : "";
 
     delete @$row {'admin_post', 'password', 'ip'};
 }
@@ -646,7 +649,7 @@ sub json_find_posts {
 }
 
 sub output_json_threads {
-    my ($page, $auth) = @_;
+    my ($page) = @_;
     my ( $sth, $row, @threads );
     my ( $code, $error );
     my @session;
@@ -694,14 +697,14 @@ sub output_json_threads {
         $postcountquery->finish();
 
         add_images_to_row($row);
-        hide_row_els($row, $auth);
+        hide_row_els($row);
         $posts->execute($threadnum, count_maxreplies($row)) or make_sql_error();
 
         @thread=($row);
         my @replies;
         while( my $post=get_decoded_hashref( $posts ) )
         {
-            hide_row_els( $post, $auth );
+            hide_row_els( $post );
             add_images_to_row( $post );
             push( @replies, $post ) if( defined($post) );
         }
@@ -770,7 +773,7 @@ sub output_json_threads {
     );
 
     my %json = (
-        "boardinfo" => get_json_boardconfig($auth),
+        "boardinfo" => get_json_boardconfig(),
         "pages" => \@pages,
         "status" => \%status,
         "data" => \@threads
@@ -781,7 +784,7 @@ sub output_json_threads {
 }
 
 sub output_json_thread {
-    my ($id, $auth) = @_;
+    my ($id) = @_;
     my ($sth, $row, $error, $code, %status, @data, %json);
     $ajax_errors = 1;
 
@@ -792,7 +795,7 @@ sub output_json_thread {
     $error = decode(CHARSET, $sth->errstr);
 
     while ( $row=get_decoded_hashref($sth) ) {
-        hide_row_els($row, $auth);
+        hide_row_els($row);
         $$row{comment} = resolve_reflinks($$row{comment});
         push(@data, $row);
     }
@@ -816,7 +819,7 @@ sub output_json_thread {
     );
 
     %json = (
-        "boardinfo" => get_json_boardconfig($auth),
+        "boardinfo" => get_json_boardconfig(),
         "data" => \@data,
         "status" => \%status
     );
@@ -826,7 +829,7 @@ sub output_json_thread {
 }
 
 sub output_json_post {
-    my ($id, $auth) = @_;
+    my ($id) = @_;
     my ($sth, $row, $error, $code, %status, %data, %json);
     $ajax_errors = 1;
 
@@ -838,7 +841,7 @@ sub output_json_post {
     if( defined($row) ) {
         $code = 200;
         add_images_to_row($row);
-        hide_row_els($row, $auth);
+        hide_row_els($row);
         $$row{comment} = resolve_reflinks($$row{comment});
         $data{'post'} = $row;
     }
@@ -865,7 +868,7 @@ sub output_json_post {
 }
 
 sub output_json_newposts {
-    my ($after, $id, $auth) = @_;
+    my ($after, $id) = @_;
     my ($sth, $row, $error, $code, %status, @data, %json);
     $ajax_errors = 1;
 
@@ -877,7 +880,7 @@ sub output_json_newposts {
         $code = 200;
         while( $row=get_decoded_hashref($sth) ) {
             add_images_to_row($row);
-            hide_row_els($row, $auth);
+            hide_row_els($row);
             $$row{comment} = resolve_reflinks($$row{comment});
             push(@data, $row);
         }
@@ -991,9 +994,9 @@ sub output_json_postcount {
 }
 
 sub get_json_boardconfig {
-    my ($auth, $captcha_only, $standalone) = @_;
+    my ($captcha_only, $standalone) = @_;
     my $loc = get_geolocation(get_remote_addr());
-    my $leet = is_leet($auth);
+    my $leet = is_leet($gAuth_Cookie);
     my %result;
 
     my %boardinfo = (
@@ -1001,14 +1004,14 @@ sub get_json_boardconfig {
         "board_name" => $$cfg{BOARD_NAME},
         "board_desc" => $$cfg{BOARD_DESC},
         "config" => {
-            "names_allowed" => ( !$$cfg{FORCED_ANON} or $leet ? 1 : 0 ),
+            "names_allowed" => !$$cfg{FORCED_ANON},
             "posting_allowed" => (!$$cfg{DISABLE_POSTING} || $$cfg{ALLOW_TEXT_REPLIES} or $$cfg{ALLOW_IMAGE_REPLIES}),
             "image_replies" => $$cfg{ALLOW_IMAGE_REPLIES},
             "image_op" => $$cfg{ALLOW_IMAGES},
             "max_files" => $$cfg{MAX_FILES},
             "max_res" => $$cfg{MAX_RES},
-            "captcha" => need_captcha($$cfg{CAPTCHA_MODE}, $$cfg{CAPTCHA_SKIP}, $loc, $leet),
-            "geoip_enabled" => ($$cfg{SHOW_COUNTRIES} or $leet),
+            "captcha" => need_captcha($$cfg{CAPTCHA_MODE}, $$cfg{CAPTCHA_SKIP}, $loc),
+            "geoip_enabled" => $$cfg{SHOW_COUNTRIES},
             "authorized" => $leet,
         }
     );
@@ -1076,10 +1079,9 @@ sub do_json_authentication {
 # takes an integer as argument
 # returns nothing
 sub show_post {
-    my ($id, $admin, $auth) = @_;
+    my ($id, $admin) = @_;
     my ($sth, $row, @thread);
     my $isAdmin = 0;
-    my $leet = is_leet($auth);
 
     if(defined($admin))
     {
@@ -1107,7 +1109,6 @@ sub show_post {
                 stylesheets  => get_stylesheets(),
                 cfg          => $cfg,
                 locale       => $locale,
-                leet         => $leet,
             });
         $output =~ s/^\s+//; # remove whitespace at the beginning
         $output =~ s/^\s+\n//mg; # remove empty lines
@@ -1121,10 +1122,9 @@ sub show_post {
 }
 
 sub show_newposts {
-    my ($after, $thread, $admin, $auth) = @_;
+    my ($after, $thread, $admin) = @_;
     my ($sth, $row, @thread);
     my $isAdmin = 0;
-    my $leet = is_leet($auth);
 
     if(defined($admin))
     {
@@ -1153,7 +1153,6 @@ sub show_newposts {
                 locked       => $thread[0]{locked},
                 stylesheets  => get_stylesheets(),
                 cfg          => $cfg,
-                leet         => $leet,
                 locale       => $locale
             });
         $output =~ s/^\s+//; # remove whitespace at the beginning
@@ -1168,7 +1167,7 @@ sub show_newposts {
 }
 
 sub show_page {
-    my ($page, $admin, $auth) = @_;
+    my ($page, $admin) = @_;
     my ( $sth, $row, @threads, @thread, @session );
 
     # if we try to call show_page with admin parameter
@@ -1280,7 +1279,6 @@ sub show_page {
     $nextpage = $pages[ $page     ]{filename} if ( $page != $total );
 
     my $loc = get_geolocation(get_remote_addr());
-    my $leet = is_leet($auth);
 
     if ( $page > ( $total ) ) {
         make_error($$locale{S_INVALID_PAGE});
@@ -1292,7 +1290,7 @@ sub show_page {
                 postform     => ( $$cfg{ALLOW_TEXTONLY} or $$cfg{ALLOW_IMAGES} or $isAdmin ),
                 image_inp    => ( $$cfg{ALLOW_IMAGES} or $isAdmin),
                 textonly_inp => ( $$cfg{ALLOW_IMAGES} and $$cfg{ALLOW_TEXTONLY} ),
-                captcha_inp  => need_captcha($$cfg{CAPTCHA_MODE}, $$cfg{CAPTCHA_SKIP}, $loc, $leet),
+                captcha_inp  => need_captcha($$cfg{CAPTCHA_MODE}, $$cfg{CAPTCHA_SKIP}, $loc),
                 prevpage     => $prevpage,
                 nextpage     => $nextpage,
                 pages        => \@pages,
@@ -1300,7 +1298,6 @@ sub show_page {
                 threads      => \@threads,
                 admin        => $isAdmin,
                 modclass     => $session[1],
-                leet         => $leet,
                 stylesheets  => get_stylesheets(),
                 cfg          => $cfg,
                 locale       => $locale
@@ -1311,7 +1308,7 @@ sub show_page {
 }
 
 sub show_thread {
-    my ($thread, $admin, $auth) = @_;
+    my ($thread, $admin) = @_;
     my ( $sth, $row, @thread );
     my ( $filename, $tmpname );
     my @session;
@@ -1344,7 +1341,6 @@ sub show_thread {
 
     make_http_header();
     my $loc = get_geolocation(get_remote_addr());
-    my $leet = is_leet($auth);
     my $locked = $thread[0]{locked};
 
     my $output = 
@@ -1353,7 +1349,7 @@ sub show_thread {
                 title        => $thread[0]{subject},
                 postform     => ( ($$cfg{ALLOW_TEXT_REPLIES} or $$cfg{ALLOW_IMAGE_REPLIES} ) and !$locked or $isAdmin),
                 image_inp    => ( $$cfg{ALLOW_IMAGE_REPLIES} or $isAdmin ),
-                captcha_inp  => need_captcha($$cfg{CAPTCHA_MODE}, $$cfg{CAPTCHA_SKIP}, $loc, $leet),
+                captcha_inp  => need_captcha($$cfg{CAPTCHA_MODE}, $$cfg{CAPTCHA_SKIP}, $loc),
                 textonly_inp => 0,
                 dummy        => $thread[$#thread]{num},
                 loc          => $loc,
@@ -1361,7 +1357,6 @@ sub show_thread {
                 admin        => $isAdmin, 
                 modclass     => $session[1],
                 locked       => $locked,
-                leet         => $leet,
                 stylesheets  => get_stylesheets(),
                 cfg          => $cfg,
                 locale       => $locale
@@ -1457,17 +1452,16 @@ sub add_images_to_row {
 sub resolve_reflinks {
     my ($comment, $board) = @_;
 
-    # $comment =~ s|<!--reflink-->&gt;&gt;&gt;(.+?)/([0-9]+)|
-    #     my $res = get_cb_post($2,$1);
-    #     if ($res) { '<span class="backreflink"><a href="'.get_reply_link($$res{num},$$res{parent},0,$1).'">&gt;&gt;/'.$1.'/'.$2.'</a></span>' }
-    #     else { '<span class="backreflink"><del>&gt;&gt;/'.$1.'/'.$2.'</del></span>'; }
-    # |ge;
+    $comment =~ s|<!--reflink-->&gt;&gt;&gt;\/?([A-Za-z0-9-]+)/([0-9]+)|
+        my $res = get_post_simple($2,$1);
+        if ($res) { '<span class="backreflink"><a href="'.get_reply_link($$res{num},$$res{parent},0,$1).'">&gt;&gt;/'.$1.'/'.$2.'</a></span>'; }
+        else { '<span class="backreflink"><del>&gt;&gt;/'.$1.'/'.$2.'</del></span>'; }
+    |ge;
 
     $comment =~ s|<!--reflink-->&gt;&gt;([0-9]+)|
-        my $res;
-        if($board) { $res = get_cb_post($1,$board) }
-        else { $res = get_post($1) }
-        if ($res) { '<span class="backreflink"><a href="'.get_reply_link($$res{num},$$res{parent},0,$board).'">&gt;&gt;'.$1.'</a></span>' }
+    use Data::Dumper;
+        my $res = get_post_simple($1,$board);
+        if ($res) { '<span class="backreflink"><a href="'.get_reply_link($$res{num},$$res{parent},0,$board).'">&gt;&gt;'.$1.'</a></span>'; }
         else { '<span class="backreflink"><del>&gt;&gt;'.$1.'</del></span>'; }
     |ge;
 
@@ -1618,8 +1612,9 @@ sub post_stuff {
     my $time = time();
 
     $no_pomf = 0 unless $no_pomf; # cookie
-    $ajax_errors = 1 if $ajax;    # shit errors in json format if $ajax is defined
     $sticky = 0 unless $sticky;   # sticky should never be NULL
+
+    $ajax_errors = 1 if $ajax;    # shit errors in json format if $ajax is defined
 
     # check that the request came in as a POST, or from the command line
     make_error($$locale{S_UNJUST})
@@ -1706,13 +1701,6 @@ sub post_stuff {
                 or make_sql_error();
             $asupdate->finish();
         }
-    }
-
-    # Mod limitations
-    # will add more later...
-    if ($session[1] ne 'admin')
-    {
-        $no_format = 0;
     }
 
     # check for weird characters
@@ -1837,7 +1825,7 @@ sub post_stuff {
 
     # kill the name if anonymous posting is being enforced
     # and we've not entered special tripcode...
-    if ($$cfg{FORCED_ANON} && !$admin_post and !$spectrip) {
+    if ( $$cfg{FORCED_ANON} && !$admin_post and !$spectrip ) {
         $name = '';
         $trip = '';
         if($$cfg{ENABLE_RANDOM_NAMES}) {
@@ -2294,7 +2282,7 @@ sub format_comment {
     my ($comment) = @_;
 
     # hide >>/board/1 references from the quoting code
-    $comment =~ s/&gt;&gt;(\/?)(.+)\/([0-9\-]+)/&gt&gt&gt;$1$2\/$3/g;
+    $comment =~ s/&gt;&gt;(\/?)([A-Za-z0-9-]+)\/([0-9\-]+)/&gtgtgt;$1$2\/$3/g;
     # hide >>1 references from the quoting code
     $comment =~ s/&gt;&gt;([0-9\-]+)/&gtgt;$1/g;
 
@@ -2304,7 +2292,7 @@ sub format_comment {
 
         # ref-links will be resolved on every page creation to support links to deleted (and also future) posts.
         # ref-links are marked with a html-comment and checked/generated on every page output.
-        $line =~ s/&gt&gt&gt;\/?(.+)\/([0-9]+)/<!--reflink-->&gt;&gt;&gt;$1\/$2/g;
+        $line =~ s/&gtgtgt;\/?([A-Za-z0-9-]+)\/([0-9]+)/<!--reflink-->&gt;&gt;&gt;\/$1\/$2/g;
         $line =~ s/&gtgt;([0-9]+)/<!--reflink-->&gt;&gt;$1/g;
 
         return $line;
@@ -2327,7 +2315,7 @@ sub format_comment {
 
     # restore >>1 references hidden in code blocks
     $comment =~ s/&gtgt;/&gt;&gt;/g;
-    $comment =~ s/&gt&gt&gt;/&gt;&gt;&gt;/g;
+    $comment =~ s/&gtgtgt;/&gt;&gt;&gt;/g;
 
     return $comment;
 }
@@ -2479,15 +2467,12 @@ sub process_leetcode {
     return ( decode_string( $namepart, CHARSET ), $trip, $trippart, 1 );
 }
 
-sub get_cb_post {
-    my ($thread, $board) = @_;
+sub get_post {
+    my ($thread) = @_;
     my ($sth,$ret);
 
-    return unless( -d $board );
-    $$cfg{SQL_TABLE} = $board . '_comments';
-
     $sth = $dbh->prepare(
-        "SELECT * FROM " . $$cfg{SQL_TABLE} . " WHERE num=? LIMIT 1;"
+        "SELECT * FROM " . $$cfg{SQL_TABLE} . " WHERE num=?;"
     ) or make_sql_error();
     $sth->execute($thread) or make_sql_error();
     $ret = $sth->fetchrow_hashref();
@@ -2496,12 +2481,15 @@ sub get_cb_post {
     return $ret;
 }
 
-sub get_post {
-    my ($thread) = @_;
-    my ($sth,$ret);
+# test
+sub get_post_simple {
+    my ($thread, $board) = @_;
+    my ($sth,$ret,$tbl);
+
+    $tbl = (-d $board) ? $board . '_comments' : $$cfg{SQL_TABLE};
 
     $sth = $dbh->prepare(
-        "SELECT * FROM " . $$cfg{SQL_TABLE} . " WHERE num=? LIMIT 1;"
+        "SELECT num,parent FROM " . $tbl . " WHERE num=?;"
     ) or make_sql_error();
     $sth->execute($thread) or make_sql_error();
     $ret = $sth->fetchrow_hashref();
@@ -2515,7 +2503,7 @@ sub get_parent_post {
     my ($sth,$ret);
 
     $sth = $dbh->prepare(
-        "SELECT * FROM " . $$cfg{SQL_TABLE} . " WHERE num=? and parent=0 LIMIT 1;"
+        "SELECT * FROM " . $$cfg{SQL_TABLE} . " WHERE num=? and parent=0;"
     ) or make_sql_error();
     $sth->execute($thread) or make_sql_error();
     $ret = $sth->fetchrow_hashref();
@@ -4321,7 +4309,7 @@ sub edit_post {
     # Mod limitations
     if ($session[1] ne 'admin') {
         $as_staff = $$post{adminpost} if $as_staff;
-        $no_format = 0 if $no_format;
+        # $no_format = 0 if $no_format;
         # Admins have immunity to mod editing
         make_error($$locale{S_NOPRIVILEGES}) if $$post{adminpost} == 1;
     }

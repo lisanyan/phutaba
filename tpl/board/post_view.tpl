@@ -33,7 +33,7 @@
 		<span onmouseover="Tip('<var $secure>')" onmouseout="UnTip()"><img src="<var $$cfg{SSL_ICON}>" alt="SSL" /></span>
 	</if>
 
-	<if ($$cfg{SHOW_COUNTRIES} || %leet) && !%admin && !$adminpost>
+	<if $$cfg{SHOW_COUNTRIES} && !%admin && !$adminpost>
 		<var Wakaba::get_user_postinfo($$cfg{SELFPATH},$location,$num)>
 	</if>
 
