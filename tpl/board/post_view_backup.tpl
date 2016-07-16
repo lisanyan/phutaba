@@ -23,7 +23,7 @@
 	<label>
 		<input type="checkbox" name="num" value="<var $postnum>" />
 		<span class="subject"><var $subject></span>
-        <span class="postername"><var $name><if $trip><span class="tripcode"><var $trip></span></if><if $$cfg{DISPLAY_ID} && !$adminpost><span class="posterid">&nbsp;ID: <var  Wakaba::make_id_code(Wakaba::dec_to_dot($ip), $timestamp, $email)></span></if></span>
+		<span class="postername"><var $name><if $trip> <span class="tripcode"><var $trip></span></if><if $$cfg{DISPLAY_ID} && !$adminpost> <span class="posterid">ID: <var Wakaba::make_id_code(Wakaba::dec_to_dot($ip), $timestamp, $email)></span></if></span>
 		<include %TMPLDIR%post_mod_include.tpl>
 		<span class="date desktop"><time($timestamp, "futaba", $$locale{S_DATENAMES})></span>
 		<span class="date mobile"><time($timestamp, "2ch", $$locale{S_DATENAMES})></span>

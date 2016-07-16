@@ -1013,7 +1013,7 @@ sub get_json_boardconfig {
     } else {
         %result = ( %boardinfo );
     }
-    print $JSON->encode(\%result);
+    print $JSON->canonical(1)->encode(\%result);
 }
 
 sub output_json_boardlist {

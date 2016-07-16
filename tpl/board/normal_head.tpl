@@ -86,12 +86,13 @@
 	</div>
 	<div class="info">
 		<form action="<var %self>" method="post">
+		  <input type="hidden" name="section" value="<var $$cfg{SELFPATH}>" />
 		  <input type="hidden" name="task" value="set_locale" />
-		 <select name="locale">
-		  <aloop &Wakaba::BOARD_LOCALES>
-			<option value="<var $_>"><var $_></option>
-		  </loop>
-		 </select>
+		  <select name="locale">
+		   <aloop &Wakaba::BOARD_LOCALES>
+			 <option value="<var $_>"><var $_></option>
+		   </loop>
+		  </select>
 		  <input type="submit" value="<var $$locale{S_UPDATE}>" />
 		</form>
 	</div>
