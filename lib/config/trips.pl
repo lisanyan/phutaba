@@ -2,6 +2,9 @@
 use utf8;
 my %trips;
 
-# $trips{'p4ssw0rd'} = 'EXAMPLE';
+%trips = (
+	#p4ssw0rd => 'Bob',
+	#SuperSecrit => 'Alice'
+);
 
 \%trips;

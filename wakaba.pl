@@ -514,21 +514,11 @@ while( $query=CGI::Fast->new )
     elsif ($task eq "set_locale")
     {
         my $lc = $query->param("locale");
-        $lc = clean_string($lc);
-        if( grep {$_ eq $lc} @{&BOARD_LOCALES} ) {
-            make_cookies(
-                locale    => "$lc",
-                -charset  => CHARSET,
-                -autopath => $$cfg{COOKIE_PATH},
-                -expires  => time+365*24*3600,
-                -httponly => 1
-            );
-        }
-        make_http_forward ( $ENV{HTTP_REFERER} || get_board_path() );
+        do_set_locale($lc);
     }
     # return error on unknown task
     else {
-        make_error("Invalid task") if (!$json);
+        make_error("Invalid task") if !$json;
     }
 
     if ($fcgi_counter > $max_fcgi_loops)
@@ -557,95 +547,6 @@ sub hide_row_els {
     $$row{'location_full'} = $$cfg{SHOW_COUNTRIES} ? $full_loc : "";
 
     delete @$row {'admin_post', 'password', 'ip'};
-}
-
-sub json_find_posts {
-    my ($find, $op_only, $in_subject, $in_comment) = @_;
-    my ( $sth, $row, @threads );
-    my ( $code, $error );
-
-    $ajax_errors = 1;
-
-    # TODO: add $admin / admin-reflinks?
-    #todo: search in filenames
-    #todo: remove hide thread button, remove checkboxes in front of postername
-
-    $find = clean_string(decode_string($find, CHARSET));
-    $find =~ s/^\s+|\s+$//g; # trim
-    $in_comment = 1 unless $find; # make the box checked for the first call.    
-
-    my ($sth, $row);
-    my ($search, $subject);
-    my $lfind = lc($find); # ignore case
-    my $cstring = "\%$lfind\%";
-    my $count = 0;
-    my $threads = 0;
-    my @results;
-
-    if (length($lfind) >= 3) {
-        # grab all posts, in thread order (ugh, ugly kludge)
-        $sth = $dbh->prepare(
-            "SELECT * FROM " . $$cfg{SQL_TABLE} . " WHERE comment LIKE ? OR subject LIKE ? ORDER BY sticky DESC,lasthit DESC,CASE parent WHEN 0 THEN num ELSE parent END ASC,num ASC"
-        ) or make_sql_error();
-        $sth->execute($cstring, $cstring) or make_sql_error();
-
-        while ((my $row = get_decoded_hashref($sth)) and ($count < ($$cfg{MAX_SEARCH_RESULTS})) and ($threads <= ($$cfg{MAX_SHOWN_THREADS}) ))
-        {
-            $threads++ if !$$row{parent};
-            $search = $$row{comment};
-            $search =~ s/<.+?>//mg; # must not search inside html-tags. remove them.
-            $search = lc($search);
-            $subject = lc($$row{subject});
-
-            if (($in_comment and (index($search, $lfind) > -1)) or ($in_subject and (index($subject, $lfind) > -1))) {
-
-                # highlight found words - this can break HTML tags
-                # TODO: select or define CSS style
-                #$$row{comment} =~ s/($find)/<span style="background-color: #706B5E; color: #FFFFFF; font-weight: bold;">$1<\/span>/ig;
-
-                hide_row_els($row);
-                add_images_to_row($row);
-                $$row{comment} = resolve_reflinks($$row{comment});
-                if (!$$row{parent}) { # OP post
-                    # $$row{sticky_isnull} = 1; # hack, until this field is removed.
-                    push @results, $row;
-                } else { # reply post
-                    push @results, $row unless ($op_only);
-                }
-                $count = @results;
-            }
-        }
-        if(@results ne 0) {
-            $code = 200;   
-        }
-        elsif(@results < 1) {
-            $code = 404;
-            $error = 'Element not found.';
-        }
-        else {
-            $code = 500;
-        }
-        $sth->finish(); # Clean up the record set
-    }
-    else {
-        $code = 404;
-        $error = 'Request is too short';
-    }
-
-    my %status = (
-        "error_code" => $code,
-        "error_msg" => $error,
-    );
-
-    my %json = (
-        "boardinfo" => get_json_boardconfig(),
-        "data" => \@results,
-        "found" => $count,
-        "status" => \%status
-    );
-
-    make_json_header();
-    print $JSON->encode(\%json);
 }
 
 sub output_json_threads {
@@ -945,6 +846,95 @@ sub output_json_stats {
     print $JSON->encode(\%json);
 }
 
+sub json_find_posts {
+    my ($find, $op_only, $in_subject, $in_comment) = @_;
+    my ( $sth, $row, @threads );
+    my ( $code, $error );
+
+    $ajax_errors = 1;
+
+    # TODO: add $admin / admin-reflinks?
+    #todo: search in filenames
+    #todo: remove hide thread button, remove checkboxes in front of postername
+
+    $find = clean_string(decode_string($find, CHARSET));
+    $find =~ s/^\s+|\s+$//g; # trim
+    $in_comment = 1 unless $find; # make the box checked for the first call.    
+
+    my ($sth, $row);
+    my ($search, $subject);
+    my $lfind = lc($find); # ignore case
+    my $cstring = "\%$lfind\%";
+    my $count = 0;
+    my $threads = 0;
+    my @results;
+
+    if (length($lfind) >= 3) {
+        # grab all posts, in thread order (ugh, ugly kludge)
+        $sth = $dbh->prepare(
+            "SELECT * FROM " . $$cfg{SQL_TABLE} . " WHERE comment LIKE ? OR subject LIKE ? ORDER BY sticky DESC,lasthit DESC,CASE parent WHEN 0 THEN num ELSE parent END ASC,num ASC"
+        ) or make_sql_error();
+        $sth->execute($cstring, $cstring) or make_sql_error();
+
+        while ((my $row = get_decoded_hashref($sth)) and ($count < ($$cfg{MAX_SEARCH_RESULTS})) and ($threads <= ($$cfg{MAX_SHOWN_THREADS}) ))
+        {
+            $threads++ if !$$row{parent};
+            $search = $$row{comment};
+            $search =~ s/<.+?>//mg; # must not search inside html-tags. remove them.
+            $search = lc($search);
+            $subject = lc($$row{subject});
+
+            if (($in_comment and (index($search, $lfind) > -1)) or ($in_subject and (index($subject, $lfind) > -1))) {
+
+                # highlight found words - this can break HTML tags
+                # TODO: select or define CSS style
+                #$$row{comment} =~ s/($find)/<span style="background-color: #706B5E; color: #FFFFFF; font-weight: bold;">$1<\/span>/ig;
+
+                hide_row_els($row);
+                add_images_to_row($row);
+                $$row{comment} = resolve_reflinks($$row{comment});
+                if (!$$row{parent}) { # OP post
+                    # $$row{sticky_isnull} = 1; # hack, until this field is removed.
+                    push @results, $row;
+                } else { # reply post
+                    push @results, $row unless ($op_only);
+                }
+                $count = @results;
+            }
+        }
+        if(@results ne 0) {
+            $code = 200;   
+        }
+        elsif(@results < 1) {
+            $code = 404;
+            $error = 'Element not found.';
+        }
+        else {
+            $code = 500;
+        }
+        $sth->finish(); # Clean up the record set
+    }
+    else {
+        $code = 404;
+        $error = 'Request is too short';
+    }
+
+    my %status = (
+        "error_code" => $code,
+        "error_msg" => $error,
+    );
+
+    my %json = (
+        "boardinfo" => get_json_boardconfig(),
+        "data" => \@results,
+        "found" => $count,
+        "status" => \%status
+    );
+
+    make_json_header();
+    print $JSON->encode(\%json);
+}
+
 sub output_json_postcount {
     my ($id, $no_op) = @_;
     my ($sth, $row, $error, $code, %status, %json);
@@ -1023,7 +1013,7 @@ sub get_json_boardconfig {
     } else {
         %result = ( %boardinfo );
     }
-    print $JSON->encode(\%result);
+    print $JSON->canonical(1)->encode(\%result);
 }
 
 sub output_json_boardlist {
@@ -1063,7 +1053,8 @@ sub do_json_authentication {
         auth      => $c_auth,
         -charset  => CHARSET,
         -autopath => $$cfg{COOKIE_PATH},
-        -expires  => time+14*24*3600
+        -expires  => time+14*24*3600,
+        -httponly => 1,
     );  # yum!
 
     make_json_header();
@@ -1365,6 +1356,86 @@ sub show_thread {
     print($output);
 }
 
+sub find_posts {
+    my ($find, $op_only, $in_subject, $in_filenames, $in_comment) = @_;
+    # TODO: add $admin / admin-reflinks?
+
+    #todo: search in filenames
+    #todo: remove hide thread button, remove checkboxes in front of postername
+
+    $find = clean_string(decode_string($find, CHARSET));
+    $find =~ s/^\s+|\s+$//g; # trim
+    $in_comment = 1 unless $find; # make the box checked for the first call.    
+
+    my ($sth, $row);
+    my ($search, $subject);
+    my $lfind = lc($find); # ignore case
+    my $cstring = "\%$lfind\%";
+    my $count = 0;
+    my $threads = 0;
+    my @results;
+
+    if (length($lfind) >= 3) {
+        # grab all posts, in thread order (ugh, ugly kludge)
+        $sth = $dbh->prepare(
+            "SELECT * FROM " . $$cfg{SQL_TABLE} . " WHERE comment LIKE ? OR subject LIKE ? ORDER BY sticky DESC,lasthit DESC,CASE parent WHEN 0 THEN num ELSE parent END ASC,num ASC"
+        ) or make_sql_error();
+        $sth->execute($cstring, $cstring) or make_sql_error();
+
+        while ((my $row = get_decoded_hashref($sth)) and ($count < ($$cfg{MAX_SEARCH_RESULTS})) and ($threads <= ($$cfg{MAX_SHOWN_THREADS}) ))
+        {
+            $threads++ if !$$row{parent};
+            $search = $$row{comment};
+            $search =~ s/<.+?>//mg; # must not search inside html-tags. remove them.
+            $search = lc($search);
+            $subject = lc($$row{subject});
+
+            if (($in_comment and (index($search, $lfind) > -1)) or ($in_subject and (index($subject, $lfind) > -1))) {
+
+                # highlight found words - this can break HTML tags
+                # TODO: select or define CSS style
+                $$row{comment} =~ s/($find)/<span style="background-color: #706B5E; color: #FFFFFF; font-weight: bold;">$1<\/span>/ig;
+
+                add_images_to_row($row);
+                $$row{comment} = resolve_reflinks($$row{comment});
+                if (!$$row{parent}) { # OP post
+                    # $$row{sticky_isnull} = 1; # hack, until this field is removed.
+                    push @results, $row;
+                } else { # reply post
+                    push @results, $row unless ($op_only);
+                }
+                $count = @results;
+            }
+        }
+        $sth->finish(); # Clean up the record set
+    }
+
+    make_http_header();
+    my $output =
+            $tpl->search({
+                title       => $$locale{S_SEARCHTITLE},
+                posts       => \@results,
+                find        => $find,
+                oponly      => $op_only,
+                insubject   => $in_subject,
+                filenames   => $in_filenames,
+                comment     => $in_comment,
+                count       => $count,
+                admin       => 0,
+                stylesheets => get_stylesheets(),
+                cfg         => $cfg,
+                locale      => $locale,
+                search      => 1,
+            });
+
+    $output =~ s/^\s+\n//mg;
+    print($output);
+}
+
+#
+# Page creation helpers
+#
+
 sub get_files {
     my ($threadid, $postid, $backup, $files) = @_;
     my ($sth, $res, $where, $uploadname);
@@ -1449,24 +1520,6 @@ sub add_images_to_row {
     $$row{files} = [@files] if (@files); # copy the array to an arrayref in the post
 }
 
-sub resolve_reflinks {
-    my ($comment, $board) = @_;
-
-    $comment =~ s|<!--reflink-->&gt;&gt;&gt;\/?([A-Za-z0-9-]+)/([0-9]+)|
-        my $res = get_post_simple($2,$1);
-        if ($res) { '<span class="backreflink"><a href="'.get_reply_link($$res{num},$$res{parent},0,$1).'">&gt;&gt;/'.$1.'/'.$2.'</a></span>'; }
-        else { '<span class="backreflink"><del>&gt;&gt;/'.$1.'/'.$2.'</del></span>'; }
-    |ge;
-
-    $comment =~ s|<!--reflink-->&gt;&gt;([0-9]+)|
-        my $res = get_post_simple($1,$board);
-        if ($res) { '<span class="backreflink"><a href="'.get_reply_link($$res{num},$$res{parent},0,$board).'">&gt;&gt;'.$1.'</a></span>'; }
-        else { '<span class="backreflink"><del>&gt;&gt;'.$1.'</del></span>'; }
-    |ge;
-
-    return $comment;
-}
-
 sub get_omit_message {
     my ($posts, $files) = @_;
     return "" if !$posts;
@@ -1489,6 +1542,31 @@ sub get_abbrev_message {
     my ($lines) = @_;
     return $$locale{S_ABBRTEXT1} if ($lines == 1);
     return sprintf($$locale{S_ABBRTEXT2}, $lines);
+}
+
+sub resolve_reflinks {
+    my ($comment, $board) = @_;
+
+    $comment =~ s|<!--reflink-->&gt;&gt;&gt;\/?([A-Za-z0-9-]+)/([0-9]+)|
+        my $res = get_post_simple($2,$1);
+        if ($res) { '<span class="backreflink"><a href="'.get_reply_link($$res{num},$$res{parent},0,$1).'">&gt;&gt;/'.$1.'/'.$2.'</a></span>'; }
+        else { '<span class="backreflink"><del>&gt;&gt;/'.$1.'/'.$2.'</del></span>'; }
+    |ge;
+
+    $comment =~ s|<!--reflink-->&gt;&gt;([0-9]+)|
+        my $res = get_post_simple($1,$board);
+        if ($res) { '<span class="backreflink"><a href="'.get_reply_link($$res{num},$$res{parent},0,$board).'">&gt;&gt;'.$1.'</a></span>'; }
+        else { '<span class="backreflink"><del>&gt;&gt;'.$1.'</del></span>'; }
+    |ge;
+
+    return $comment;
+}
+
+sub encode_string {
+    my ($str) = @_;
+
+    # return $str unless ($has_encode);
+    return encode( CHARSET, $str, 0x0400 );
 }
 
 sub print_page {
@@ -1515,85 +1593,10 @@ sub print_page {
     }
 }
 
-sub find_posts {
-    my ($find, $op_only, $in_subject, $in_filenames, $in_comment) = @_;
-    # TODO: add $admin / admin-reflinks?
-
-    #todo: search in filenames
-    #todo: remove hide thread button, remove checkboxes in front of postername
-
-    $find = clean_string(decode_string($find, CHARSET));
-    $find =~ s/^\s+|\s+$//g; # trim
-    $in_comment = 1 unless $find; # make the box checked for the first call.    
-
-    my ($sth, $row);
-    my ($search, $subject);
-    my $lfind = lc($find); # ignore case
-    my $cstring = "\%$lfind\%";
-    my $count = 0;
-    my $threads = 0;
-    my @results;
-
-    if (length($lfind) >= 3) {
-        # grab all posts, in thread order (ugh, ugly kludge)
-        $sth = $dbh->prepare(
-            "SELECT * FROM " . $$cfg{SQL_TABLE} . " WHERE comment LIKE ? OR subject LIKE ? ORDER BY sticky DESC,lasthit DESC,CASE parent WHEN 0 THEN num ELSE parent END ASC,num ASC"
-        ) or make_sql_error();
-        $sth->execute($cstring, $cstring) or make_sql_error();
-
-        while ((my $row = get_decoded_hashref($sth)) and ($count < ($$cfg{MAX_SEARCH_RESULTS})) and ($threads <= ($$cfg{MAX_SHOWN_THREADS}) ))
-        {
-            $threads++ if !$$row{parent};
-            $search = $$row{comment};
-            $search =~ s/<.+?>//mg; # must not search inside html-tags. remove them.
-            $search = lc($search);
-            $subject = lc($$row{subject});
-
-            if (($in_comment and (index($search, $lfind) > -1)) or ($in_subject and (index($subject, $lfind) > -1))) {
-
-                # highlight found words - this can break HTML tags
-                # TODO: select or define CSS style
-                $$row{comment} =~ s/($find)/<span style="background-color: #706B5E; color: #FFFFFF; font-weight: bold;">$1<\/span>/ig;
-
-                add_images_to_row($row);
-                $$row{comment} = resolve_reflinks($$row{comment});
-                if (!$$row{parent}) { # OP post
-                    # $$row{sticky_isnull} = 1; # hack, until this field is removed.
-                    push @results, $row;
-                } else { # reply post
-                    push @results, $row unless ($op_only);
-                }
-                $count = @results;
-            }
-        }
-        $sth->finish(); # Clean up the record set
-    }
-
-    make_http_header();
-    my $output =
-            $tpl->search({
-                title       => $$locale{S_SEARCHTITLE},
-                posts       => \@results,
-                find        => $find,
-                oponly      => $op_only,
-                insubject   => $in_subject,
-                filenames   => $in_filenames,
-                comment     => $in_comment,
-                count       => $count,
-                admin       => 0,
-                stylesheets => get_stylesheets(),
-                cfg         => $cfg,
-                locale      => $locale,
-                search      => 1,
-            });
-
-    $output =~ s/^\s+\n//mg;
-    print($output);
-}
-
 #
 # Posting
 #
+
 sub post_stuff {
     my (
         $parent,  $spam1,   $spam2,     $name,      $email,
@@ -1756,11 +1759,8 @@ sub post_stuff {
     ( $name, $trip, $trippart, $spectrip ) = process_leetcode( $name ); # process a l33t tripcode
     ( $name, $trip, $trippart ) = process_tripcode( $name, $$cfg{TRIPKEY}, SECRET, CHARSET ) unless $trip;
 
-    $c_auth = $$cfg{TRIPKEY} . $trippart if $spectrip;
-
-    if($c_auth && !$spectrip) {
-        $spectrip = is_leet($c_auth);
-    }
+    $c_auth = '#'.$trippart if $spectrip;
+    $spectrip = is_leet($c_auth) if($c_auth && !$spectrip);
 
     # $trip = '!Fate/Grand L0ading' if $trip eq '!Fate/0.gFg';
 
@@ -1970,11 +1970,20 @@ sub post_stuff {
         gb2       => $c_gb2,
         nopomf    => $c_nopomf,
         password  => $c_password,
-        auth      => $c_auth,
         -charset  => CHARSET,
         -autopath => $$cfg{COOKIE_PATH},
         -expires  => time+14*24*3600
     );  # yum!
+
+    # auth needs to be http-only
+    make_cookies(
+        auth      => $c_auth,
+        -charset  => CHARSET,
+        -autopath => $$cfg{COOKIE_PATH},
+        -expires  => time+14*24*3600,
+        -httponly => 1
+    );  # yum!
+
     $sth->finish();
 
     if(!$ajax) {
@@ -2320,13 +2329,6 @@ s{(https?://[^\s<>"]*?)((?:\s|<|>|"|\.|\)|\]|!|\?|,|&#44;|&quot;)*(?:[\s<>"]|$))
     } split /\n/, $comment;
 }
 
-sub encode_string {
-    my ($str) = @_;
-
-    # return $str unless ($has_encode);
-    return encode( CHARSET, $str, 0x0400 );
-}
-
 sub make_anonymous {
     my ( $ip, $time ) = @_;
 
@@ -2433,14 +2435,16 @@ sub process_leetcode {
 
     my $trips = get_settings('trips');
     my $tripkey = $$cfg{TRIPKEY} or "!";
+ 
     if ( $name =~ /(.*?)(?:#|$tripkey|nya:)(.+)$/ ) {
         ($namepart, $trippart) = ($1, $2);
         $namepart = clean_string($namepart);
     }
 
     if ($$trips{$trippart}) {
-        $trip = $$cfg{TRIPKEY} . $$trips{$trippart};
-    } else {
+        $trip = $tripkey . $$trips{$trippart};
+    }
+    else {
         return ( $name, undef, undef );
     }
 
@@ -3599,20 +3603,6 @@ sub restore_post_or_thread {
     }
 }
 
-sub cleanup_backups_database {
-    my $sth = $dbh->prepare(
-          "SELECT postnum, board_name FROM "
-          . $$cfg{SQL_BACKUP_TABLE}
-          . " WHERE timestampofarchival < ?;"
-        );
-    $sth->execute(time - $$cfg{POST_BACKUP_EXPIRE});
-
-    while (my $expired_backup_row = $sth->fetchrow_hashref())
-    {
-        remove_backup( $$expired_backup_row{postnum}, $$expired_backup_row{board_name} );
-    }
-}
-
 sub remove_post_from_backup {
     my ($admin, $board_name, @id) = @_;
     my @session = check_password( $admin, '' );
@@ -3670,6 +3660,20 @@ sub remove_backup {
     # Close handles.
     $sth->finish();
     $delete->finish() if $delete;
+}
+
+sub cleanup_backups_database {
+    my $sth = $dbh->prepare(
+          "SELECT postnum, board_name FROM "
+          . $$cfg{SQL_BACKUP_TABLE}
+          . " WHERE timestampofarchival < ?;"
+        );
+    $sth->execute(time - $$cfg{POST_BACKUP_EXPIRE});
+
+    while (my $expired_backup_row = $sth->fetchrow_hashref())
+    {
+        remove_backup( $$expired_backup_row{postnum}, $$expired_backup_row{board_name} );
+    }
 }
 
 #
@@ -3893,7 +3897,7 @@ sub make_admin_orphans {
     });
 }
 
-sub move_files{
+sub move_files {
     my ($admin, @files) = @_;
 
     my @session = check_password($admin,'');
@@ -4853,6 +4857,23 @@ sub get_settings {
     close MODCONF;
 
     \%$settings;
+}
+
+sub do_set_locale {
+	my ($lc) = @_;
+
+    $lc = clean_string($lc);
+    if( grep {$_ eq $lc} @{&BOARD_LOCALES} ) {
+        make_cookies(
+            locale    => $lc,
+            -charset  => CHARSET,
+            -autopath => $$cfg{COOKIE_PATH},
+            -expires  => time+365*24*3600,
+            -httponly => 1
+        );
+    }
+
+    make_http_forward ( $ENV{HTTP_REFERER} || get_board_path() );
 }
 
 #
