@@ -238,8 +238,10 @@ $settings{LEET_CONFIG} = {
 	MAX_FILES => 6,
 	SHOW_COUNTRIES => 1,
 	FORCED_ANON => 0,
-	ENABLE_RANDOM_NAMES => 1,
 	CAPTCHA_MODE => 0,
+	ALLOW_IMAGE_REPLIES => 1,
+	# ALLOW_IMAGES => 1,
+	#TRIPKEY => chr(0x2665),
 };
 
 # Board-specific settings
