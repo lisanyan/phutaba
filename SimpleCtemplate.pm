@@ -87,32 +87,17 @@ sub new {
 
 			#добавляем переменные
 			$code=~s/<var +(.*?)>/'.$1.'/g;
-			$code=~s/#var +(.*?)#/'.$1.'/g;
-
 			$code=~s/<const +(.*?)>/'.&$1.'/g;
-			$code=~s/#const +(.*?)#/'.&$1.'/g;
-
-			$code=~s|#loop +(.*?)#|'; for(\@{$1}){my \%vars=%{\$_};\$text.='|g;#циклы
-			$code=~s|#aloop +(.*?)#|'; for(\@{$1}){\$vars{_}=\$_;\$text.='|g;
-			$code=~s^#/loop#^'}; \$text.='^g; 
 			
 			$code=~s|<loop +(.*?)>|'; for(\@{$1}){my \%vars=%{\$_};\$text.='|g;#циклы
 			$code=~s|<aloop +(.*?)>|'; for(\@{$1}){\$vars{_}=\$_;\$text.='|g;
 			$code=~s^</loop>^'}; \$text.='^g; 
-			
-			$code=~s|#if +(.*?)#|'; if($1){\$text.='|g; #условия
-			$code=~s|#/else/#|';}else{ \$text.='|g; 
-			$code=~s|#else#|';}else{ \$text.='|g; 
-			$code=~s|#/if#|';}; \$text.='|g; 
 			
 			$code=~s|<if +(.*?)>|'; if($1){\$text.='|g; #условия
 			$code=~s|</else/>|';}else{ \$text.='|g; 
 			$code=~s|<else>|';}else{ \$text.='|g; 
 			$code=~s|</if>|';}; \$text.='|g; 
 			
-			$code=~s/#time\(+([^,]*?)(,.*?)?\)#/'.Wakaba::make_date($1$2).'/g;#время
-			$code=~s|#perleval +(.*?)/#|'; $1 ;\$text.='|sg; #выполнение кода
-
 			$code=~s/<time\(+([^,]*?)(,.*?)?\)>/'.Wakaba::make_date($1$2).'/g;#время
 			$code=~s|<perleval +(.*?)/>|'; $1 ;\$text.='|sg; #выполнение кода
 			

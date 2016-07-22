@@ -1,4 +1,4 @@
-<include %TMPLDIR%head.tpl>
+<include %TMPLDIR%/head.tpl>
 
 <p style="text-align:center">
 [<a onclick="return areYouSure(this)" href="<var %self>?task=clearlog&amp;section=<var $$cfg{SELFPATH}>">Clear Log</a>]
@@ -68,4 +68,4 @@
 		<li>[<a href="#top"><var $$locale{S_TOP}></a>]</li>
 	</ul>
 </nav>
-<include %TMPLDIR%foot.tpl>
+<include %TMPLDIR%/foot.tpl>

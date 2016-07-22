@@ -1,4 +1,4 @@
-<include %TMPLDIR%head.tpl>
+<include %TMPLDIR%/head.tpl>
 <div class="dellist"><var sprintf($$locale{S_EDITHEAD},Wakaba::get_reply_link($num,$parent),$num)></div>
 
 <loop $loop>
@@ -36,4 +36,4 @@
 </td></tr>
 </tbody></table></loop>
 </form></div><hr />
-<include %TMPLDIR%foot.tpl>
+<include %TMPLDIR%/foot.tpl>

@@ -1,4 +1,4 @@
-<include %TMPLDIR%head.tpl>
+<include %TMPLDIR%/head.tpl>
 <div class="dellist"><var $$locale{S_MANATOOLS}></div>
 
 <div class="postarea">
@@ -28,4 +28,4 @@
 </div><br />
 
 <var sprintf($$locale{S_IMGSPACEUSAGE}, Wakaba::get_displaysize($size, $$cfg{DECIMAL_MARK}), $files, $posts, $threads)>
-<include %TMPLDIR%foot.tpl>
+<include %TMPLDIR%/foot.tpl>

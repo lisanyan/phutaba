@@ -1,4 +1,4 @@
-<include %TMPLDIR%head.tpl>
+<include %TMPLDIR%/head.tpl>
 <div class="dellist"><var $$locale{S_MANABANS}></div>
 
 <div class="postarea">
@@ -10,10 +10,10 @@
 <input type="hidden" name="type" value="ipban" />
 <table><tbody>
 <tr><td class="postblock"><var $$locale{S_BANIPLABEL}></td><td><input type="text" name="ip" size="24" /></td></tr>
-<tr><td class="postblock"><var $$locale{S_BANMASKLABEL}></td><td><include %TMPLDIR%netmask_select.tpl></td></tr>
+<tr><td class="postblock"><var $$locale{S_BANMASKLABEL}></td><td><include %TMPLDIR%/netmask_select.tpl></td></tr>
 <tr><td class="postblock"><var $$locale{S_BANCOMMENTLABEL}></td><td><input type="text" name="comment" size="24" /></td></tr>
 <tr><td class="postblock"><span><var $$locale{S_BANEXPIRESLABEL}></span></td><td>
-<include %TMPLDIR%duration_select.tpl>
+<include %TMPLDIR%/duration_select.tpl>
 <input type="submit" value="<var $$locale{S_BANIP}>" /></td></tr>
 </td></tr>
 </tbody></table></form>
@@ -26,10 +26,10 @@
 <input type="hidden" name="type" value="whitelist" />
 <table><tbody>
 <tr><td class="postblock"><var $$locale{S_BANIPLABEL}></td><td><input type="text" name="ip" size="24" /></td></tr>
-<tr><td class="postblock"><var $$locale{S_BANMASKLABEL}></td><td><include %TMPLDIR%netmask_select.tpl></td></tr>
+<tr><td class="postblock"><var $$locale{S_BANMASKLABEL}></td><td><include %TMPLDIR%/netmask_select.tpl></td></tr>
 <tr><td class="postblock"><var $$locale{S_BANCOMMENTLABEL}></td><td><input type="text" name="comment" size="24" /></td></tr>
 <tr><td class="postblock"><span><var $$locale{S_BANEXPIRESLABEL}></span></td><td>
-<include %TMPLDIR%duration_select.tpl>
+<include %TMPLDIR%/duration_select.tpl>
 <input type="submit" value="<var $$locale{S_BANWHITELIST}>" /></td></tr>
 </td></tr>
 </tbody></table></form>
@@ -44,7 +44,7 @@
 <tr><td class="postblock"><var $$locale{S_BANWORDLABEL}></td><td><input type="text" name="string" size="24" /></td></tr>
 <tr><td class="postblock"><var $$locale{S_BANCOMMENTLABEL}></td><td><input type="text" name="comment" size="24" /></td></tr>
 <tr><td class="postblock"><span><var $$locale{S_BANEXPIRESLABEL}></span></td><td>
-<include %TMPLDIR%duration_select.tpl>
+<include %TMPLDIR%/duration_select.tpl>
 <input type="submit" value="<var $$locale{S_BANWORD}>" /></td></tr>
 </td></tr>
 </tbody></table></form>
@@ -59,7 +59,7 @@
 <tr><td class="postblock"><var $$locale{S_BANTRUSTTRIP}></td><td><input type="text" name="string" size="24" /></td></tr>
 <tr><td class="postblock"><var $$locale{S_BANCOMMENTLABEL}></td><td><input type="text" name="comment" size="24" /></td></tr>
 <tr><td class="postblock"><span><var $$locale{S_BANEXPIRESLABEL}></span></td><td>
-<include %TMPLDIR%duration_select.tpl>
+<include %TMPLDIR%/duration_select.tpl>
 <input type="submit" value="<var $$locale{S_BANTRUST}>" /></td></tr>
 </td></tr>
 </tbody></table></form>
@@ -73,7 +73,7 @@
 <tr><td class="postblock"><var $$locale{S_BANASNUMLABEL}></td><td><input type="text" name="string" size="24" /></td></tr>
 <tr><td class="postblock"><var $$locale{S_BANCOMMENTLABEL}></td><td><input type="text" name="comment" size="16" /></td></tr>
 <tr><td class="postblock"><span><var $$locale{S_BANEXPIRESLABEL}></span></td><td>
-<include %TMPLDIR%duration_select.tpl>
+<include %TMPLDIR%/duration_select.tpl>
 <input type="submit" value="<var $$locale{S_BANASNUM}>" /></td></tr>
 </tbody></table></form>
 
@@ -134,4 +134,4 @@
 </loop>
 
 </tbody></table><br />
-<include %TMPLDIR%foot.tpl>
+<include %TMPLDIR%/foot.tpl>

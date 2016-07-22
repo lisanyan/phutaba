@@ -1,7 +1,5 @@
-[% META
-   title   = 'FAQ'
-%]
-
+<perleval %title="FAQ"; />
+<include %TMPLDIR%/head.tpl>
 	<header class="title">Как я могу отформатировать текст?</header>
 	<section class="info">
 		<p>Доступны <a href="http://ru.wikipedia.org/wiki/BBCode">BBCode</a>-Теги:</p>
@@ -118,6 +116,12 @@
 
 	</section>
 
+	<header class="title">Где я могу взять лого?</header>
+	<div class="info">
+		<p style="float:left; margin-right:1em">Нажмите здесь:</p>
+		<p><a href="/img/logo_gross.png"><img src="/img/logo_klein.png" alt="Phutaba-Logo" /></a></p>
+	</div>
+
 	<header class="title">Почему я должен вводить капчу?</header>
 	<section class="info">
 		Вы должны вводить капчу перед каждым постом, если ваш IP не из: FI EE DE NO CH AT LI BE LU DK NL RU UA BY KZ PL.
@@ -132,7 +136,7 @@
 
 	<header class="title">System info</header>
 	<section class="info">
-	<p>Uptime: [% uptime.0 %]<br />CPU Idle: [% uptime.1 %]</p>
+	<p><loop $uptime>Uptime: <var $uptime><br />CPU Idle: <var $idle></loop></p>
 	<p><br />Disk space [GB]:</p>
 		<table>
 			<tr>
@@ -141,11 +145,12 @@
 				<th>Free</th>
 			</tr>
 			<tr>
-				<td>[% diskinfo.0 %]</td>
-				<td>[% diskinfo.1 %]</td>
-				<td>[% diskinfo.2 %]</td>
+				<aloop $diskinfo>
+				<td><var $_></td>
+				</loop>
 			</tr>
 		</table>
 	</section>
 
 <!-- [Disk space] Total(GB): [% diskinfo.0 %] | Used: [% diskinfo.1 %] | Free: [% diskinfo.2 %] -->
+<include %TMPLDIR%/foot.tpl>

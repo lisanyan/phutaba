@@ -20,7 +20,7 @@ $settings{ENABLE_POST_BACKUP} = 1;
 $settings{TITLE} = 'Phutaba'; 					# Name of this image board
 $settings{BOARD_NAME} = 'Dildo dodo';
 $settings{BOARD_DESC} = '';
-$settings{BOARD_NAGTXT} = '';
+$settings{BOARD_CAT} = 'Main';
 $settings{ENABLE_BANNERS} = 1;
 $settings{FAVICON} = '';					# Favicon.ico file
 $settings{HOME} = '/'; 						# Site home directory (up one level by default)
@@ -243,6 +243,9 @@ $settings{LEET_CONFIG} = {
 	# ALLOW_IMAGES => 1,
 	#TRIPKEY => chr(0x2665),
 };
+
+# Board sort order
+$settings{BOARD_CATORDER} = 'Main|Discussions|Animoo';
 
 # Board-specific settings
 $boards{b} = { # sample

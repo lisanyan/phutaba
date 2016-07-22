@@ -4,7 +4,7 @@
 <head>
 	<meta charset="utf-8" />
 	<meta name="viewport" content="width=device-width, initial-scale=1" />
-	<title>02ch [% IF template.title %]&raquo; [% template.title %][% END %]</title>
+	<title>02ch <if %title>&raquo; <var %title></if></title>
 	<link rel="stylesheet" type="text/css" href="/static/css/phutaba.css" />
 	<link rel="shortcut icon" href="/img/favicon.ico" />
 	<link rel="alternate stylesheet" type="text/css" href="/static/css/photon.css" title="Photon" />
@@ -23,24 +23,24 @@
 
 <nav>
 	<ul class="menu">
-[% INCLUDE nav_boards.html %]
+<include tpl/nav_boards.html>
 	</ul>
 
 	<ul class="menu right">
-[% INCLUDE nav_pages.html %]
+<include tpl/nav_pages.html>
 	</ul>
 </nav>
 
 <header>
 	<div class="header">
 		<div class="banner">
-		[% UNLESS ismain %]
+		<if !$ismain>
 			<a href="/">
 				<img src="/banner.pl" alt="02ch" />
 			</a>
-		[% END %]
+		</if>
 		</div>
-		<div class="boardname">[% template.title %]</div>
+		<div class="boardname"><var %title></div>
 	</div>
 </header>
 

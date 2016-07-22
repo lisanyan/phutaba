@@ -232,6 +232,10 @@ $translation{S_UPDATE} = 'Обновить';
 
 $translation{S_PREWRAP} = "<span class=\"prewrap\">%s</span>";
 
+$translation{S_FRIENDS} = "Друзья";
+$translation{S_MAINPAGE} = "Главная";
+$translation{S_FAQ} = "FAQ";
+
 $translation{S_REDIR} =
   'If the redirect didn\'t work, please choose one of the following mirrors:'
   ;    # Redir message for html in REDIR_DIR

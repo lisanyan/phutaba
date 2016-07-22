@@ -1,4 +1,4 @@
-<include %TMPLDIR%head.tpl>
+<include %TMPLDIR%/head.tpl>
 <div class="dellist"><var $$locale{S_MANAORPH}> (<var $file_count> Files, <var $thumb_count> Thumbs)</div>
 
 <div class="postarea">
@@ -33,4 +33,4 @@
 </form>
 
 </div>
-<include %TMPLDIR%foot.tpl>
+<include %TMPLDIR%/foot.tpl>

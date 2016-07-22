@@ -1,4 +1,4 @@
-<include %TMPLDIR%head.tpl>
+<include %TMPLDIR%/head.tpl>
 <perleval %admin=$admin; %thread=$thread; />
 <if $postform>
 	<div id="open_form" style="display:none"><var $$locale{S_JS_OPENFORM}></div>
@@ -79,7 +79,7 @@
 
 	<tr id="passwordField"><td class="postblock"><label for="password"><var $$locale{S_DELPASS}></label></td><td><input type="password" name="password" id="password" /> <var $$locale{S_DELEXPL}></td></tr>
 	<tr><td colspan="2">
-	<div class="rules"><include %TMPLDIR%rules.tpl></div>
+	<div class="rules"><include %TMPLDIR%/rules.tpl></div>
 	</tbody>
 	</table>
 	</form>
@@ -102,7 +102,7 @@
 		<div id="thread_<var %thread>" class="thread">
 	</if>
 
-		<loop $posts><include %TMPLDIR%post_view.tpl></loop>
+		<loop $posts><include %TMPLDIR%/post_view.tpl></loop>
 
 		</div>
 	<!-- <p style="clear: both;"></p> -->
@@ -159,4 +159,4 @@
 
 <if $postform><div class="postarea" id="postarea2"></div></if>
 
-<include %TMPLDIR%foot.tpl>
+<include %TMPLDIR%/foot.tpl>

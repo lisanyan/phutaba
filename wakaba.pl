@@ -52,7 +52,8 @@ use constant HANDLER_ERROR_PAGE_FOOTER => q{
 </p>
 </div> 
 <p style="text-align: center;margin-top: 50px;">
-<span style="font-size: small; font-style: italic;">This is a <strong>fatal error</strong> in the <em>request/response handler</em>. Please contact the administrator of this site via <a href="mailto:admin@02ch.in">email</a> and ask him to fix this error
+<span style="font-size: small; font-style: italic;">This is a <strong>fatal error</strong> in the <em>request/response handler</em>.
+Please contact the administrator of this site via <a href="mailto:admin@02ch.in">email</a> and ask them to fix this error
 </span></p>
 
     <hr />
@@ -95,15 +96,9 @@ $has_encode = 1 unless $@;
 # Global init
 #
 my $protocol_re = qr{(?:http://|https://|ftp://|magnet:|mailto:|news:|irc:|xmpp:|skype:)};
-my $pomf_domain;
 
-my (  $dbh, $query, $boardSection, $moders,
-      $ajax_errors, $gAuth_Cookie,
-    );
-
+my ( $dbh, $query, $boardSection, $moders, $ajax_errors, $gAuth_Cookie );
 my $cfg = my $locale = {};
-my $fcgi_counter = 0;
-my $max_fcgi_loops = 250;
 my $tpl = SimpleCtemplate->new({ tmpl_dir => 'tpl/board/' });
 
 return 1 if (caller); # stop here if we're being called externally
@@ -115,15 +110,11 @@ FASTCGI:
 while( $query=CGI::Fast->new )
 {
     pm_pre_dispatch();
-    $fcgi_counter++;
 
     unless (0)
     {
-        # static vars
-        $pomf_domain = $$cfg{POMF_DOMAIN};
-        # dynamic vars
         $boardSection   = ($query->param("section") or &DEFAULT_BOARD);
-        $gAuth_Cookie   = $query->cookie("auth");
+        $gAuth_Cookie   = $query->cookie("wakaauth");
         $cfg            = fetch_config(decode_string($boardSection, CHARSET));
         $locale         = fetch_locale( $query->cookie("locale") or $$cfg{BOARD_LOCALE} ) unless ($$cfg{NOTFOUND});
         $moders         = get_settings('mods');
@@ -171,7 +162,6 @@ while( $query=CGI::Fast->new )
     cleanup_log_database();
 
     if ( $json eq "post" ) {
-        # my $auth = $query->cookie("auth");
         my $id = $query->param("id");
         if ( defined($id) and $id =~ /^[+-]?\d+$/ ) {
             output_json_post($id);
@@ -223,7 +213,7 @@ while( $query=CGI::Fast->new )
     }
     elsif ( $json eq "checkconfig" ) {
         my $captcha_only = $query->param("captcha");
-        get_json_boardconfig($captcha_only, 1);
+        get_boardconfig($captcha_only, 1);
     }
     elsif ( $json eq "getboards" ) {
         output_json_boardlist();
@@ -302,7 +292,7 @@ while( $query=CGI::Fast->new )
         my $nofile     = $query->param("nofile");
         my $captcha    = $query->param("captcha");
         my $admin      = $query->cookie("wakaadmin");
-        my $auth       = $query->cookie("auth");
+        my $auth       = $query->cookie("wakaauth");
         my $no_format  = $query->param("no_format");
         my $postfix    = $query->param("postfix");
         my $as_staff   = $query->param("as_staff");
@@ -328,7 +318,7 @@ while( $query=CGI::Fast->new )
         my $parent   = $query->param("parent");
         my $admindel = $query->param("admindel");
         my $ajax     = $query->param("ajax");
-        my $auth     = $query->cookie("auth");
+        my $auth     = $query->cookie("wakaauth");
         my @posts    = $query->multi_param("delete"); # CGI >= 4.08 REQUIRED
 
         delete_stuff( $password, $fileonly, $admin, $admindel, $parent, $ajax, $auth, @posts );
@@ -521,12 +511,6 @@ while( $query=CGI::Fast->new )
         make_error("Invalid task") if !$json;
     }
 
-    if ($fcgi_counter > $max_fcgi_loops)
-    {
-        $fcgi_counter = 0;
-        exit(0); # Hoping this will help with memory leaks. fork() may be preferable
-    }
-
     # $dbh->disconnect();
     pm_post_dispatch();
 }
@@ -669,15 +653,15 @@ sub output_json_threads {
     }
 
     my %status = (
-        "error_code" => $code,
-        "error_msg" => $error
+        error_code => $code,
+        error_msg => $error
     );
 
     my %json = (
-        "boardinfo" => get_json_boardconfig(),
-        "pages" => \@pages,
-        "status" => \%status,
-        "data" => \@threads
+        boardinfo => get_boardconfig(),
+        pages => \@pages,
+        status => \%status,
+        data => \@threads
     );
 
     make_json_header();
@@ -715,14 +699,14 @@ sub output_json_thread {
     $sth->finish();
 
     %status = (
-        "error_code" => $code,
-        "error_msg" => $error,
+        error_code => $code,
+        error_msg => $error,
     );
 
     %json = (
-        "boardinfo" => get_json_boardconfig(),
-        "data" => \@data,
-        "status" => \%status
+        boardinfo => get_boardconfig(),
+        data => \@data,
+        status => \%status
     );
 
     make_json_header();
@@ -755,12 +739,12 @@ sub output_json_post {
     }
 
     %status = (
-        "error_code" => $code,
-        "error_msg" => $error,
+        error_code => $code,
+        error_msg => $error,
     );
     %json = (
-        "data" => \%data,
-        "status" => \%status,
+        data => \%data,
+        status => \%status,
     );
     $sth->finish();
 
@@ -795,12 +779,12 @@ sub output_json_newposts {
     }
 
     %status = (
-        "error_code" => $code,
-        "error_msg" => $error,
+        error_code => $code,
+        error_msg => $error,
     );
     %json = (
-        "data" => \@data,
-        "status" => \%status,
+        data => \@data,
+        status => \%status,
     );
     $sth->finish();
 
@@ -833,12 +817,12 @@ sub output_json_stats {
     }
 
     %status = (
-        "error_code" => $code,
-        "error_msg" => $error,
+        error_code => $code,
+        error_msg => $error,
     );
     %json = (
-        "data" => \%data,
-        "status" => \%status,
+        data => \%data,
+        status => \%status,
     );
     $sth->finish();
 
@@ -920,15 +904,15 @@ sub json_find_posts {
     }
 
     my %status = (
-        "error_code" => $code,
-        "error_msg" => $error,
+        error_code => $code,
+        error_msg => $error,
     );
 
     my %json = (
-        "boardinfo" => get_json_boardconfig(),
-        "data" => \@results,
-        "found" => $count,
-        "status" => \%status
+        boardinfo => get_boardconfig(),
+        data => \@results,
+        found => $count,
+        status => \%status
     );
 
     make_json_header();
@@ -970,46 +954,51 @@ sub output_json_postcount {
     }
 
     %status = (
-        "error_code" => $code,
-        "error_msg" => $error,
+        error_code => $code,
+        error_msg => $error,
     );
 
     %json = (
-        "data" => $row,
-        "status" => \%status
+        data => $row,
+        status => \%status
     );
 
     make_json_header();
     print $JSON->encode(\%json);
 }
 
-sub get_json_boardconfig {
+sub get_boardconfig {
     my ($captcha_only, $standalone) = @_;
     my $loc = get_geolocation(get_remote_addr());
     my $leet = is_leet($gAuth_Cookie);
     my %result;
 
     my %boardinfo = (
-        "board" => $$cfg{SELFPATH},
-        "board_name" => $$cfg{BOARD_NAME},
-        "board_desc" => $$cfg{BOARD_DESC},
-        "config" => {
-            "names_allowed" => !$$cfg{FORCED_ANON},
-            "posting_allowed" => (!$$cfg{DISABLE_POSTING} || $$cfg{ALLOW_TEXT_REPLIES} or $$cfg{ALLOW_IMAGE_REPLIES}),
-            "image_replies" => $$cfg{ALLOW_IMAGE_REPLIES},
-            "image_op" => $$cfg{ALLOW_IMAGES},
-            "max_files" => $$cfg{MAX_FILES},
-            "max_res" => $$cfg{MAX_RES},
-            "captcha" => need_captcha($$cfg{CAPTCHA_MODE}, $$cfg{CAPTCHA_SKIP}, $loc),
-            "geoip_enabled" => $$cfg{SHOW_COUNTRIES},
-            "authorized" => $leet,
+        board => $$cfg{SELFPATH},
+        board_name => $$cfg{BOARD_NAME},
+        board_desc => $$cfg{BOARD_DESC},
+        board_cat => $$cfg{BOARD_CAT},
+        board_speed => get_boardspeed(),
+        config => {
+            names_allowed => !$$cfg{FORCED_ANON},
+            posting_allowed => (!$$cfg{DISABLE_POSTING} || $$cfg{ALLOW_TEXT_REPLIES} or $$cfg{ALLOW_IMAGE_REPLIES}),
+            image_replies => $$cfg{ALLOW_IMAGE_REPLIES},
+            image_op => $$cfg{ALLOW_IMAGES},
+            max_files => $$cfg{MAX_FILES},
+            max_res => $$cfg{MAX_RES},
+            max_field_length => $$cfg{MAX_FIELD_LENGTH},
+            max_comment_length => $$cfg{MAX_COMMENT_LENGTH},
+            default_name => $$cfg{S_ANONAME},
+            captcha => need_captcha($$cfg{CAPTCHA_MODE}, $$cfg{CAPTCHA_SKIP}, $loc),
+            geoip_enabled => $$cfg{SHOW_COUNTRIES},
+            authorized => $leet,
         }
     );
     return \%boardinfo unless $standalone;
 
     make_json_header();
     if(defined $captcha_only) {
-        %result = ( "captcha" => $boardinfo{'config'}->{captcha} );
+        %result = ( captcha => $boardinfo{'config'}->{captcha} );
     } else {
         %result = ( %boardinfo );
     }
@@ -1018,20 +1007,28 @@ sub get_json_boardconfig {
 
 sub output_json_boardlist {
     my ($error, $code, @AoB);
-    my $settings = get_settings('settings');
-
     $code = 200;
 
-    for my $key (keys $settings) {
+    my $settings = get_settings('settings');
+    my @boards = sort(keys $settings);
+    my @cats = split(/\|/, $$cfg{BOARD_CATORDER});
+
+    for my $key (@boards) {
         if($$settings{$key}{BOARD_ENABLED}) {
             my $brd_info = {
                 board_name => $$settings{$key}{BOARD_NAME},
                 board_desc => $$settings{$key}{BOARD_DESC},
+                board_cat => $$settings{$key}{BOARD_CAT},
                 board_key => $key,
             };
             push @AoB, \%$brd_info;
         }
     }
+
+    my %config = (
+        # boards => \@boards,
+        categories => [split(/\|/, $$cfg{BOARD_CATORDER})],
+    );
 
     my %status = (
         error_msg => $error,
@@ -1039,7 +1036,7 @@ sub output_json_boardlist {
     );
 
     make_json_header();
-    print $JSON->canonical(1)->encode( {data => \@AoB, status => \%status} );
+    print $JSON->encode( {data => \@AoB, info => \%config, status => \%status} );
 }
 
 sub do_json_authentication {
@@ -1050,7 +1047,7 @@ sub do_json_authentication {
     $c_auth = $auth if $leet;
 
     make_cookies(
-        auth      => $c_auth,
+        wakaauth  => $c_auth,
         -charset  => CHARSET,
         -autopath => $$cfg{COOKIE_PATH},
         -expires  => time+14*24*3600,
@@ -1059,6 +1056,21 @@ sub do_json_authentication {
 
     make_json_header();
     print $JSON->encode({ success => $leet });
+}
+
+sub get_boardspeed {
+    my $ret;
+ 
+    my $sth = $dbh->prepare(
+        "SELECT COUNT(`num`) AS cnt FROM "
+        . $$cfg{SQL_TABLE}
+        . " WHERE timestamp >= UNIX_TIMESTAMP(DATE_SUB(NOW(), INTERVAL 1 HOUR));"
+    ) or make_sql_error();
+    $sth->execute() or make_sql_error();
+    $ret = ($sth->fetchrow_array())[0];
+ 
+    return $ret if $ret;
+    return 0;
 }
 
 #
@@ -1107,7 +1119,7 @@ sub show_post {
     }
     else {
         make_json_header();
-        print encode_json( { "error_code" => 400 } );
+        print encode_json( { error_code => 400 } );
     }
     $sth->finish();
 }
@@ -1152,7 +1164,7 @@ sub show_newposts {
     }
     else {
         make_json_header();
-        print encode_json( { "error_code" => 400 } );
+        print encode_json( { error_code => 400 } );
     }
     $sth->finish();
 }
@@ -1289,9 +1301,10 @@ sub show_page {
                 threads      => \@threads,
                 admin        => $isAdmin,
                 modclass     => $session[1],
-                stylesheets  => get_stylesheets(),
                 cfg          => $cfg,
-                locale       => $locale
+                locale       => $locale,
+                stylesheets  => get_stylesheets(),
+                speed        => get_boardspeed(),
             });
 
     $output =~ s/^\s+\n//mg;
@@ -1348,9 +1361,10 @@ sub show_thread {
                 admin        => $isAdmin, 
                 modclass     => $session[1],
                 locked       => $locked,
-                stylesheets  => get_stylesheets(),
                 cfg          => $cfg,
-                locale       => $locale
+                locale       => $locale,
+                stylesheets  => get_stylesheets(),
+                speed        => get_boardspeed(),
             });
     $output =~ s/^\s+\n//mg;
     print($output);
@@ -1422,9 +1436,9 @@ sub find_posts {
                 comment     => $in_comment,
                 count       => $count,
                 admin       => 0,
-                stylesheets => get_stylesheets(),
                 cfg         => $cfg,
                 locale      => $locale,
+                stylesheets => get_stylesheets(),
                 search      => 1,
             });
 
@@ -1440,6 +1454,7 @@ sub get_files {
     my ($threadid, $postid, $backup, $files) = @_;
     my ($sth, $res, $where, $uploadname);
     my $thumb_dir = $$cfg{THUMB_DIR};
+    my $pomf_domain = $$cfg{POMF_DOMAIN};
 
     $$cfg{SQL_TABLE_IMG} = $$cfg{SQL_BACKUP_IMG_TABLE} if $backup;
 
@@ -1711,10 +1726,7 @@ sub post_stuff {
     make_error($$locale{S_UNUSUAL}) if ( $subject =~ /[\n\r]/ );
 
     # check for excessive amounts of text
-    make_error($$locale{S_TOOLONG}) if ( length($name)    > $$cfg{MAX_FIELD_LENGTH} );
-    make_error($$locale{S_TOOLONG}) if ( length($email)   > $$cfg{MAX_FIELD_LENGTH} );
-    make_error($$locale{S_TOOLONG}) if ( length($subject) > $$cfg{MAX_FIELD_LENGTH} );
-    make_error($$locale{S_TOOLONG}) if ( length($comment) > $$cfg{MAX_COMMENT_LENGTH} );
+    make_error($$locale{S_TOOLONG}) if ( length( decode_string($comment, CHARSET) ) > $$cfg{MAX_COMMENT_LENGTH} );
 
     # check to make sure the user selected a file, or clicked the checkbox
     make_error($$locale{S_NOPIC}) if ( !$parent and !$file and !$nofile and !$admin_post );
@@ -1836,6 +1848,11 @@ sub post_stuff {
     # clean up the inputs
     $email   = clean_string( decode_string( $email,   CHARSET ) );
     $subject = clean_string( decode_string( $subject, CHARSET ) );
+
+    # check for excessive amounts of text
+    make_error($$locale{S_TOOLONG}) if ( length( $name )    > $$cfg{MAX_FIELD_LENGTH} );
+    make_error($$locale{S_TOOLONG}) if ( length( $email )   > $$cfg{MAX_FIELD_LENGTH} );
+    make_error($$locale{S_TOOLONG}) if ( length( $subject ) > $$cfg{MAX_FIELD_LENGTH} );
 
     # fix up the email/link
     $email = "mailto:$email" if $email and $email !~ /^$protocol_re:/;
@@ -1977,7 +1994,7 @@ sub post_stuff {
 
     # auth needs to be http-only
     make_cookies(
-        auth      => $c_auth,
+        wakaauth  => $c_auth,
         -charset  => CHARSET,
         -autopath => $$cfg{COOKIE_PATH},
         -expires  => time+14*24*3600,
@@ -2565,6 +2582,7 @@ sub get_preview {
 sub process_file {
     my ( $file, $uploadname, $time, $nopomf ) = @_;
     my $filetypes = $$cfg{FILETYPES};
+    my $pomf_domain = $$cfg{POMF_DOMAIN};
 
     # make sure to read file in binary mode on platforms that care about such things
     binmode $file;
@@ -3144,9 +3162,9 @@ sub make_backup_posts_panel {
             locked => $thread[0]{locked},
             parent => $page,
             modclass => $session[1],
-            stylesheets => get_stylesheets(),
             cfg => $cfg,
-            locale => $locale
+            locale => $locale,
+            stylesheets => get_stylesheets(),
         });
         $output =~ s/^\s+//; # remove whitespace at the beginning
         $output =~ s/^\s+\n//mg; # remove empty lines
@@ -3270,9 +3288,9 @@ sub make_backup_posts_panel {
             threads => \@threads,
             modclass => $session[1],
             pages => \@pages,
-            stylesheets => get_stylesheets(),
             cfg => $cfg,
-            locale => $locale
+            locale => $locale,
+            stylesheets => get_stylesheets(),
         });
         $output =~ s/^\s+//; # remove whitespace at the beginning
         $output =~ s/^\s+\n//mg; # remove empty lines
@@ -3738,9 +3756,9 @@ sub make_admin_post_panel {
         size          => $size,
         geoip_api     => $api,
         geoip_results => \@results,
-        stylesheets   => get_stylesheets(),
         cfg           => $cfg,
-        locale        => $locale
+        locale        => $locale,
+        stylesheets   => get_stylesheets(),
     });
 }
 
@@ -3774,9 +3792,9 @@ sub make_admin_ban_edit { # generating ban editing window
         admin => $admin,
         modclass => $session[1],
         hash => \@hash,
-        stylesheets => get_stylesheets(),
         cfg => $cfg,
-        locale => $locale
+        locale => $locale,
+        stylesheets => get_stylesheets(),
     });
 }
 
@@ -3819,9 +3837,9 @@ sub make_admin_ban_panel {
         admin => $admin,
         modclass => $session[1],
         filter => $filter,
+        bans => \@bans,
         cfg => $cfg,
         locale => $locale,
-        bans => \@bans,
         stylesheets => get_stylesheets()
     });
 }
@@ -3891,9 +3909,9 @@ sub make_admin_orphans {
         thumbs => \@t_orph,
         file_count => $file_count,
         thumb_count => $thumb_count,
-        stylesheets => get_stylesheets(),
         cfg => $cfg,
-        locale => $locale
+        locale => $locale,
+        stylesheets => get_stylesheets(),
     });
 }
 
@@ -3972,8 +3990,8 @@ sub add_admin_entry {
 
     if (!$authorized) {
         $utf8_encoded_json_text = encode_json({
-            "error_code" => 401,
-            "error_msg" => 'Unauthorized'
+            error_code => 401,
+            error_msg => 'Unauthorized'
         });
     }
     else {
@@ -4003,12 +4021,12 @@ sub add_admin_entry {
 
         $utf8_encoded_json_text = encode_json(
             {
-                "error_code" => 200,
-                "banned_ip" => dec_to_dot($ival1),
-                "banned_mask" => dec_to_dot($ival2),
-                "reason" => $comment,
-                "postid" => $postid,
-                "expires" => make_date($expires, '2ch'),
+                error_code => 200,
+                banned_ip => dec_to_dot($ival1),
+                banned_mask => dec_to_dot($ival2),
+                reason => $comment,
+                postid => $postid,
+                expires => make_date($expires, '2ch'),
             }
         );
         if($type eq 'ipban'){
@@ -4259,9 +4277,9 @@ sub make_edit_post_panel {
         modclass => $session[1],
         num      => $num,
         loop     => \@loop,
-        stylesheets => get_stylesheets(),
         cfg => $cfg,
-        locale => $locale
+        locale => $locale,
+        stylesheets => get_stylesheets(),
     });
 }
 
@@ -4303,10 +4321,8 @@ sub edit_post {
     make_error($$locale{S_UNUSUAL}) if( $name =~/[\n\r]/ );
     make_error($$locale{S_UNUSUAL}) if( $email =~/[\n\r]/ );
     make_error($$locale{S_UNUSUAL}) if( $subject =~/[\n\r]/ );
-    make_error($$locale{S_TOOLONG}) if( length($name) > $$cfg{MAX_FIELD_LENGTH} );
-    make_error($$locale{S_TOOLONG}) if( length($email) > $$cfg{MAX_FIELD_LENGTH} );
-    make_error($$locale{S_TOOLONG}) if( length($subject) > $$cfg{MAX_FIELD_LENGTH} );
-    make_error($$locale{S_TOOLONG}) if( length($comment) > $$cfg{MAX_COMMENT_LENGTH} );
+    # check for excessive amounts of text
+    make_error($$locale{S_TOOLONG}) if( length( decode_string($comment, CHARSET) ) > $$cfg{MAX_COMMENT_LENGTH} );
 
     # get file size, and check for limitations.
     my (@size, @file_errors);
@@ -4333,6 +4349,11 @@ sub edit_post {
 
     if (!$killtrip) { $trip = $$post{trip} if !$trip; }
     else { $trip = ''; }
+
+    # check for excessive amounts of text
+    make_error($$locale{S_TOOLONG}) if( length($name) > $$cfg{MAX_FIELD_LENGTH} );
+    make_error($$locale{S_TOOLONG}) if( length($email) > $$cfg{MAX_FIELD_LENGTH} );
+    make_error($$locale{S_TOOLONG}) if( length($subject) > $$cfg{MAX_FIELD_LENGTH} );
 
     # fix up the email/link/name
     $name = make_anonymous( $ip, time() ) unless $name or $trip;
@@ -4504,9 +4525,9 @@ sub make_view_log_panel {
         pages => \@pages,
         prevpage => $prevpage,
         nextpage => $nextpage,
-        stylesheets => get_stylesheets(),
         cfg => $cfg,
-        locale => $locale
+        locale => $locale,
+        stylesheets => get_stylesheets(),
     });
 }
 
@@ -4555,6 +4576,7 @@ sub expand_filename {
 
 sub expand_image_filename {
     my $filename = shift;
+    my $pomf_domain = $$cfg{POMF_DOMAIN};
 
     if ( $filename =~ m%^//$pomf_domain% ) { return $filename; } # is file on an external server?
     else { return expand_filename( clean_path($filename) ); }
@@ -4595,9 +4617,9 @@ sub make_error {
             error          => $error,
             error_page     => 'Error occurred',
             error_title    => 'Error occurred',
-            stylesheets    => get_stylesheets(),
             cfg            => $cfg,
-            locale         => $locale
+            locale         => $locale,
+            stylesheets    => get_stylesheets(),
         });
     }
 
@@ -4633,9 +4655,9 @@ sub make_ban {
                 error_page     => $title,
                 error_title    => $title,
                 banned         => 1,
-                stylesheets    => get_stylesheets(),
                 cfg            => $cfg,
-                locale         => $locale
+                locale         => $locale,
+                stylesheets    => get_stylesheets(),
         });
     }
 
@@ -4803,10 +4825,7 @@ sub fetch_config {
     my ($board) = @_;
     my $settings = get_settings('settings');
 
-    unless ($$settings{$board})
-    {
-        $$settings{$board}{NOTFOUND} = 1;
-    }
+    $$settings{$board}{NOTFOUND} = 1 unless($$settings{$board});
 
     # Global options
     $$settings{$board}{BOARDS} = [ keys %$settings ];
@@ -5139,6 +5158,7 @@ sub count_threads {
 sub count_posts {
     my ($parent) = @_;
     my ($sth, $count, $size, $files, $row);
+    my $pomf_domain = $$cfg{POMF_DOMAIN};
 
     if ($parent)
     {

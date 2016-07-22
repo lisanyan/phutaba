@@ -1,4 +1,4 @@
-<include %TMPLDIR%error_head.tpl>
+<include %TMPLDIR%/error_head.tpl>
 <if $error><div class="info"><var $error></div></if>
 <if $banned or $dnsbl>
 <div class="info">
@@ -13,4 +13,4 @@
 <span>Due to this fact, you're not allowed to post now. Please contact admin if you want to post again!</span>
 </div>
 </if>
-<include %TMPLDIR%error_foot.tpl>
+<include %TMPLDIR%/error_foot.tpl>

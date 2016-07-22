@@ -1,4 +1,4 @@
-<include %TMPLDIR%head.tpl>
+<include %TMPLDIR%/head.tpl>
 <div class="dellist">Editing Admin Entry</div>
 <div class="postarea">
 <loop $hash>
@@ -216,4 +216,4 @@
 </tbody></table></form>
 </loop>
 </div>
-<include %TMPLDIR%foot.tpl>
+<include %TMPLDIR%/foot.tpl>
