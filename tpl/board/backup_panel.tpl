@@ -1,4 +1,4 @@
-<include %TMPLDIR%head.tpl>
+<include %TMPLDIR%/head.tpl>
 <perleval %admin=$admin; %thread=$thread />
 
 <if $$cfg{ENABLE_POST_BACKUP}>
@@ -12,10 +12,10 @@
 	<hr />
 	<if !%thread>
 		<div id="thread_<var $postnum>" class="thread">
-	</else/>
+	<else>
 		<div id="thread_<var %thread>" class="thread">
 	</if>
-		<loop $posts><include %TMPLDIR%post_view_backup.tpl></loop>
+		<loop $posts><include %TMPLDIR%/post_view_backup.tpl></loop>
 
 		</div>
 </loop>
@@ -71,4 +71,4 @@
 
 <if $postform><div class="postarea" id="postform2"></div></if>
 
-<include %TMPLDIR%foot.tpl>
+<include %TMPLDIR%/foot.tpl>

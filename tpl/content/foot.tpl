@@ -3,6 +3,6 @@
 <footer>Powered by <img src="/img/phutaba_icon.png" alt="" /> <strong>Phutaba</strong>.</footer>
 </div>
 
-[% IF tracking_code %][% tracking_code %][% END %]
+<if $tracking_code><var $tracking_code></if>
 </body>
 </html>

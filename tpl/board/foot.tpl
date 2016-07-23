@@ -1,5 +1,6 @@
 <footer>
 	<p>Powered by <img src="/img/phutaba_icon.png" alt="" /> <strong>Phutaba</strong>.<br /></p>
+	<if defined $speed><p>Постов в час: <var $speed></p></if>
 	<p>Зеркало <a href="https://02ch.info">02ch.info</a></p>
 	<p><em>Report illegal material to <a href="mailto:<var $$cfg{ADMIN_EMAIL}>"><var $$cfg{ADMIN_EMAIL}></a>.</em></p>
 </footer>

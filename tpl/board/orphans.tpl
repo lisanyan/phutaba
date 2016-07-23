@@ -1,4 +1,4 @@
-<include %TMPLDIR%head.tpl>
+<include %TMPLDIR%/head.tpl>
 <div class="dellist"><var $$locale{S_MANAORPH}> (<var $file_count> Files, <var $thumb_count> Thumbs)</div>
 
 <div class="postarea">
@@ -11,7 +11,7 @@
 		<tr class="row<var $rowtype>">
 		<td><a target="_blank" href="<var Wakaba::expand_filename($name)>"><var $$locale{S_MANASHOW}></a></td>
 		<td><label><input type="checkbox" name="file" value="<var $name>" checked="checked" /><var $name></label></td>
-		<td><time($modified, "2ch")></td>
+		<td><time ($modified, "2ch")></td>
 		<td align="right"><var Wakaba::get_displaysize($size, $$cfg{DECIMAL_MARK})></td>
 		</tr>
 	</loop>
@@ -20,7 +20,7 @@
 <loop $thumbs>
 	<div class="file">
 	<label><input type="checkbox" name="file" value="<var $name>" checked="checked" /><var $name></label><br />
-	<time($modified, "2ch")> (<var Wakaba::get_displaysize($size, $$cfg{DECIMAL_MARK})>)<br />
+	<time ($modified, "2ch")> (<var Wakaba::get_displaysize($size, $$cfg{DECIMAL_MARK})>)<br />
 	<img src="<var Wakaba::expand_filename($name)>" />
 	</div>
 </loop>
@@ -33,4 +33,4 @@
 </form>
 
 </div>
-<include %TMPLDIR%foot.tpl>
+<include %TMPLDIR%/foot.tpl>

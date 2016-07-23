@@ -24,9 +24,9 @@
 		<input type="checkbox" name="num" value="<var $postnum>" />
 		<span class="subject"><var $subject></span>
 		<span class="postername"><var $name><if $trip> <span class="tripcode"><var $trip></span></if><if $$cfg{DISPLAY_ID} && !$adminpost> <span class="posterid">ID: <var Wakaba::make_id_code(Wakaba::dec_to_dot($ip), $timestamp, $email)></span></if></span>
-		<include %TMPLDIR%post_mod_include.tpl>
-		<span class="date desktop"><time($timestamp, "futaba", $$locale{S_DATENAMES})></span>
-		<span class="date mobile"><time($timestamp, "2ch", $$locale{S_DATENAMES})></span>
+		<include %TMPLDIR%/post_mod_include.tpl>
+		<span class="date desktop"><time ($timestamp, "futaba", $$locale{S_DATENAMES})></span>
+		<span class="date mobile"><time ($timestamp, "2ch", $$locale{S_DATENAMES})></span>
 	</label>
 
 	<if $$cfg{SSL_ICON} and $secure>
@@ -52,7 +52,7 @@
 		<if $email><span class="sage"><var $$locale{S_SAGE}></span></if>
 	</if>
 
-	<if $standalone><span><em>(Orphaned From Parent: <if $parent_alive or !$parent><a href="<var Wakaba::get_reply_link($parent)>"><var $parent></a></else/><var $parent></if> )</em></span></if>
+	<if $standalone><span><em>(Orphaned From Parent: <if $parent_alive or !$parent><a href="<var Wakaba::get_reply_link($parent)>"><var $parent></a><else><var $parent></if> )</em></span></if>
 	<if !$parent && !%thread>
 		<span class="replylink">[<a href="<var $self>?task=postbackups&amp;section=<var $$cfg{SELFPATH}>&amp;page=t<var $postnum>">View</a>]</span>
 	</if>
@@ -109,7 +109,7 @@
 				<a target="_blank" href="<var Wakaba::expand_image_filename($$cfg{DELETED_IMAGE})>">
 					<img src="<var Wakaba::expand_filename($$cfg{DELETED_THUMBNAIL})>" width="<var $tn_width>" height="<var $tn_height>" alt="" />
 				</a>
-			</else/>
+			<else>
 				<div class="filetype">
 					<a onmouseover="TagToTip('imageinfo_<var Wakaba::md5_hex($image)>', TITLE, '<var $$locale{S_FILEINFO}>', WIDTH, -450)" onmouseout="UnTip()" target="_blank" href="<var Wakaba::expand_image_filename($image)>">
 						<var Wakaba::get_extension($uploadname)>

@@ -1,7 +1,7 @@
 <if $adminpost>
 	<if $adminpost eq 1>
 		<span class="teampost">## Team ##</span>
-	</else/>
+	<else>
 		<span class="modpost">## Mod ##</span>
 	</if>
 </if>

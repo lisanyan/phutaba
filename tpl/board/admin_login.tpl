@@ -1,4 +1,4 @@
-<include %TMPLDIR%head.tpl>
+<include %TMPLDIR%/head.tpl>
 <hr />
 <div align="center"><form action="<var %self>" method="post">
 <input type="hidden" name="section" value="<var $$cfg{SELFPATH}>" />
@@ -13,9 +13,9 @@
 <option value="mpanel"><var $$locale{S_MANATOOLS}></option>
 <option value="bans"><var $$locale{S_MANABANS}></option>
 <option value="orphans"><var $$locale{S_MANAORPH}></option>
-<option value="postbackups"><var $$locale{S_MANABACKS}></option>
-<option value="viewlog"><var $$locale{S_MANALOG}></option>
+<!-- <option value="postbackups"><var $$locale{S_MANABACKS}></option> -->
+<!-- <option value="viewlog"><var $$locale{S_MANALOG}></option> -->
 </select>
 <input type="submit" value="<var $$locale{S_MANASUB}>" />
 </form></div>
-<include %TMPLDIR%foot.tpl>
+<include %TMPLDIR%/foot.tpl>

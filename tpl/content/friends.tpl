@@ -1,6 +1,5 @@
-[% META
-   title   = 'Друзья'
-%]
+<perleval %title = "Друзья"; />
+<include %TMPLDIR%/head.tpl>
 
 	<header class="title">Ссылки</header>
 	<section class="info">
@@ -13,3 +12,5 @@
 <li><a target="_blank" href="http://haibane.ru/">haibane.ru</a></li>
 	</ul>
 	</section>
+
+<include %TMPLDIR%/foot.tpl>

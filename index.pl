@@ -2,8 +2,9 @@
 
 use strict;
 use CGI;
-use Template;
+# use Template;
 use Filesys::Df qw/df/;
+use SimpleCtemplate;
 
 use Encode;
 use DBI;
@@ -11,12 +12,16 @@ use utf8;
 
 BEGIN {
     require "lib/site_config.pl";
+    require "lib/config_defaults.pl";
 }
 my $q = CGI->new;
 my $page = decode('utf8', $q->param("p"));
-my $query = decode('utf8', $q->param("q"));
+# my $query = decode('utf8', $q->param("q"));
 
-binmode(STDOUT, ":utf8");
+my $cfg = fetch_config(&DEFAULT_BOARD);
+my $locale = fetch_locale( $q->cookie("locale") or $$cfg{BOARD_LOCALE} );
+
+# binmode(STDOUT, ":utf8");
 
 # redirects should have a full URL: http://ernstchan.com/b/
 # but this can be tricky if running behind some proxy
@@ -27,15 +32,8 @@ if ($page eq "") {
 
 # print $q->header(-charset => 'utf-8');
 
-my $tt = Template->new({
-        INCLUDE_PATH => 'tpl/',
-        ERROR => 'error.tt2',
-        PRE_PROCESS  => 'header.tt2',
-        POST_PROCESS => 'footer.tt2',
-        ENCODING => 'utf8'
-});
-
-my $ttfile = "content/" . $page . ".tt2";
+my $tt = SimpleCtemplate->new({ tmpl_dir => 'tpl/content/' });
+my $ttfile = "content/" . $page . ".tpl";
 
 if ($page eq 'err403') {
     tpl_make_error({
@@ -54,13 +52,13 @@ elsif ($page eq 'err404') {
     });
 }
 elsif (-e 'tpl/' . $ttfile) {
-    my $output;
-    $tt->process($ttfile, {
-        'tracking_code' => TRACKING_CODE,
-        'uptime' => uptime(),
-        'ismain' => ($page eq "main"),
-        'diskinfo' => disk_info()
-        }, \$output)
+    my $output = $tt->$page({
+        tracking_code => TRACKING_CODE,
+        uptime => uptime(),
+        ismain => ($page eq "main"),
+        diskinfo => disk_info(),
+        locale => $locale,
+        })
       or tpl_make_error({
         'http' => '500 Boom',
         'type' => "Fehler bei Scriptausf&uuml;hrung",
@@ -107,10 +105,12 @@ sub sec2human {
 sub tpl_make_error($) {
     my ($error) = @_;
     print $q->header(-status=>$$error{http}, -charset => 'utf-8');
-    $tt->process("error.tt2", {
-        'tracking_code' => TRACKING_CODE,
-        'error' => $error
+    my $output = $tt->error({
+        tracking_code => TRACKING_CODE,
+        error => $error,
+        locale => $locale,
     });
+    print $output;
 }
 
 sub uptime {
@@ -118,7 +118,74 @@ sub uptime {
     my $line = <FILE>;
     my($uptime, $idle) = split /\s+/, $line;
     close FILE;
-    return [ sec2human($uptime), sec2human($idle) ];
+    my @ret = {
+        uptime => sec2human($uptime),
+        idle => sec2human($idle),
+    };
+    return \@ret;
 }
+
+
+#
+# Config loaders
+#
+
+sub fetch_config {
+    my ($board) = @_;
+    my $settings = get_settings('settings');
+
+    $$settings{$board}{NOTFOUND} = 1 unless($$settings{$board});
+
+    # Global options
+    $$settings{$board}{BOARDS} = [ keys %$settings ];
+    $$settings{$board}{SELFPATH} = $board;
+
+    return $$settings{$board};
+}
+
+sub fetch_locale {
+    my ($lc) = @_;
+    my $locale;
+    if( grep { $lc eq $_ } @{&BOARD_LOCALES} ) {
+        $locale = get_settings('locale_' . $lc);
+    }
+    else {
+        $locale = get_settings('locale_' . $$cfg{BOARD_LOCALE}); # Fall back
+    }
+    $$locale{CURRENT} = $lc;
+    return $locale;
+}
+
+sub get_settings {
+    my ($config) = @_;
+    my ($settings, $file);
+
+    if ( $config eq 'mods' ) {
+        $file = './lib/config/moders.pl';
+    }
+    elsif ( $config eq 'trips' ) {
+        $file = './lib/config/trips.pl';
+    }
+    elsif ( $config =~ /locale_(\w+)/ ) {
+        $file = "./lib/strings/strings_$1.pl";
+    }
+    else {
+        $file = './lib/config/settings.pl';
+    }
+
+    # Grab code from config file and evaluate.
+    open (MODCONF, $file) or return 0; # Silently fail if we cannot open file.
+    binmode MODCONF, ":utf8"; # Needed for files using non-ASCII characters.
+
+    my $board_options_code = do { local $/; <MODCONF> };
+    $settings = eval $board_options_code; # Set up hash.
+
+    # Exception for bad config.
+    close MODCONF and return 0 if ($@);
+    close MODCONF;
+
+    \%$settings;
+}
+
 
 1;

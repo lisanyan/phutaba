@@ -1,4 +1,4 @@
-<include %TMPLDIR%head.tpl>
+<include %TMPLDIR%/head.tpl>
 <perleval %search=$search />
 	<div class="postarea">
 	<form id="searchform" action="<var %self>" method="post" enctype="multipart/form-data">
@@ -36,9 +36,9 @@
 
 	<loop $posts>
 		<if !$parent><hr /></if>
-		<include %TMPLDIR%post_view.tpl>
+		<include %TMPLDIR%/post_view.tpl>
 		<p style="clear: both;"></p>
 	</loop>
 
 	<hr />
-<include %TMPLDIR%foot.tpl>
+<include %TMPLDIR%/foot.tpl>

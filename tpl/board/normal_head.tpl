@@ -41,14 +41,14 @@
 	<td><b><var $$locale{S_BANIPLABEL}></b></td><td><input id="ip" type="text" name="ip" size="40" /></td>
 </tr>
 <tr><td><b><var $$locale{S_BANMASKLABEL}></b></td><td>
-<include %TMPLDIR%netmask_select.tpl>
+<include %TMPLDIR%/netmask_select.tpl>
 </td></tr>
 <tr>
 	<td><b><var $$locale{S_BANREASONLABEL}></b></td><td><input id="reason" type="text" name="reason" size="40" /></td>
 </tr>
 <tr>
 	<td><label for="expires"><b><var $$locale{S_BANEXPIRESLABEL}>&nbsp;</b></label></td>
-	<td><include %TMPLDIR%duration_select.tpl></td>
+	<td><include %TMPLDIR%/duration_select.tpl></td>
 </tr>
 <tr><td><label for="blame"><b>Ban Sign</b></label></td><td><input id="blame" type="checkbox" name="blame" value="yes" /></td></tr>
 </table>
@@ -129,7 +129,6 @@
 			</a>
 		</div>
 		<div class="boardname" <if $$cfg{BOARD_DESC}>style="margin-bottom: 5px;"</if>>/<var $$cfg{SELFPATH}>/ &ndash; <var $$cfg{BOARD_NAME}></div>
-		<if $$cfg{BOARD_NAGTXT}><div class="slogan"><h2><var $$cfg{BOARD_NAGTXT}></h2></div></if>
 		<if $$cfg{BOARD_DESC}><div class="slogan">&bdquo;<var $$cfg{BOARD_DESC}>&ldquo;</div></if>
 	</div>
 </header>

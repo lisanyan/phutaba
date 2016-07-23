@@ -1,9 +1,3 @@
-[% META
-   title   = 'Post stats'
-%]
-
-<script type="text/javascript">
-
   // Load the Visualization API and the piechart package.
   google.load('visualization', '1', {'packages':['corechart']});
 
@@ -12,7 +6,7 @@
 
   function drawChart(b) {
     var jsonData = $.ajax({
-      url: "/"+ b +"/api/stats?date_format=%b%20%d,%20%Y%20%l%20%p",
+      url: "/"+ b +"/api/stats?date_format=%b%20%d %20%Y%20%l%20%p",
       dataType:"json",
       async: false
     }).responseText;
@@ -40,15 +34,3 @@
     var chart = new google.visualization.LineChart(document.getElementById('chart_div'));
     chart.draw(data, { title: 'Zajebisty grafik'} );
   }
-
-</script>
-
-  <header class="title">Some shit here&hellip;</header>
-  <section class="info">
-    <div>
-    Board: <input type="text" id="board" size="10" value="" />
-    <input type="button" onclick="drawChart($('#board').val())" value="Ok!" />
-    </div>
-
-    <br /><div id="chart_div" style="width: 900px; height: 600px;"></div>
-  </section>

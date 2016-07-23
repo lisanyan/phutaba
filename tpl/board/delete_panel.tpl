@@ -1,4 +1,4 @@
-<include %TMPLDIR%head.tpl>
+<include %TMPLDIR%/head.tpl>
 <div class="dellist"><var $$locale{S_MPDELETEIP}></div>
 
 <div class="postarea">
@@ -15,4 +15,4 @@
 <input type="submit" value="<var $$locale{S_MPDELETEIP}>" /></td></tr>
 </tbody></table></form>
 </div>
-<include %TMPLDIR%foot.tpl>
+<include %TMPLDIR%/foot.tpl>

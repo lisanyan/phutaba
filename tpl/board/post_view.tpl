@@ -24,9 +24,9 @@
 		<input type="checkbox" name="delete" value="<var $num>" />
 		<span class="subject"><var $subject></span>
 		<span class="postername"><var $name><if $trip> <span class="tripcode"><var $trip></span></if><if $$cfg{DISPLAY_ID} && !$adminpost> <span class="posterid">ID: <var Wakaba::make_id_code(Wakaba::dec_to_dot($ip), $timestamp, $email)></span></if></span>
-		<include %TMPLDIR%post_mod_include.tpl>
-		<span class="date desktop"><time($timestamp, "futaba", $$locale{S_DATENAMES})></span>
-		<span class="date mobile"><time($timestamp, "2ch", $$locale{S_DATENAMES})></span>
+		<include %TMPLDIR%/post_mod_include.tpl>
+		<span class="date desktop"><time ($timestamp, "futaba", $$locale{S_DATENAMES})></span>
+		<span class="date mobile"><time ($timestamp, "2ch", $$locale{S_DATENAMES})></span>
 	</label>
 
 	<if $$cfg{SSL_ICON} and $secure>
@@ -58,7 +58,7 @@
 
 	<if !$parent && !%thread>
 		<if !$locked><span class="replylink">[<a href="<var Wakaba::get_reply_link($num,0)>"><var $$locale{S_REPLY}></a>]</span>
-		</else/><span class="replylink">[<a href="<var Wakaba::get_reply_link($num,0)>"><var $$locale{S_VIEW}></a>]</span></if>
+		<else><span class="replylink">[<a href="<var Wakaba::get_reply_link($num,0)>"><var $$locale{S_VIEW}></a>]</span></if>
 	</if>
 	<if !$parent && %thread>[<a href="#bottom"><var $$locale{S_BOTTOM}></a>]</if>
 	<if %admin>
@@ -164,7 +164,7 @@
 				<a target="_blank" href="<var Wakaba::expand_image_filename($$cfg{DELETED_IMAGE})>">
 					<img src="<var Wakaba::expand_filename($$cfg{DELETED_THUMBNAIL})>" width="<var $tn_width>" height="<var $tn_height>" alt="" />
 				</a>
-			</else/>
+			<else>
 				<div class="filetype">
 					<a onmouseover="TagToTip('imageinfo_<var Wakaba::md5_hex($image)>', TITLE, '<var $$locale{S_FILEINFO}>', WIDTH, -450)" onmouseout="UnTip()" target="_blank" href="<var Wakaba::expand_image_filename($image)>">
 						<var Wakaba::get_extension($uploadname)>
