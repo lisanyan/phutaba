@@ -11,7 +11,7 @@ use CGI::Fast;
 use DBI;
 use Digest::MD5 qw(md5 md5_hex md5_base64);
 use File::Copy;
-use FCGI::ProcManager qw(pm_manage pm_pre_dispatch 
+use FCGI::ProcManager qw(pm_manage pm_pre_dispatch
                          pm_post_dispatch);
 use JSON::XS;
 use List::Util qw(first);
@@ -25,7 +25,7 @@ my $JSON = JSON::XS->new->pretty->utf8;
 
 use constant HANDLER_ERROR_PAGE_HEAD => q{
 <!DOCTYPE html>
-<html lang="en"> 
+<html lang="en">
 <head>
 <title>02ch &raquo; Server Error</title>
 <meta charset="utf-8" />
@@ -42,7 +42,7 @@ use constant HANDLER_ERROR_PAGE_HEAD => q{
 </header>
     <hr />
 
-<div class="container" style="background-color: rgba(170, 0, 0, 0.2);margin-top: 50px;"> 
+<div class="container" style="background-color: rgba(170, 0, 0, 0.2);margin-top: 50px;">
 <p>
 
 };
@@ -50,7 +50,7 @@ use constant HANDLER_ERROR_PAGE_HEAD => q{
 use constant HANDLER_ERROR_PAGE_FOOTER => q{
 
 </p>
-</div> 
+</div>
 <p style="text-align: center;margin-top: 50px;">
 <span style="font-size: small; font-style: italic;">This is a <strong>fatal error</strong> in the <em>request/response handler</em>.
 Please contact the administrator of this site via <a href="mailto:admin@02ch.in">email</a> and ask them to fix this error
@@ -445,7 +445,7 @@ while( $query=CGI::Fast->new )
     elsif( $task eq "baneditwindow" ) {
         my $admin = $query->cookie("wakaadmin");
         my $num = $query->param("num");
-        make_admin_ban_edit($admin, $num);  
+        make_admin_ban_edit($admin, $num);
     }
     elsif( $task eq "adminedit" ) {
         my $admin = $query -> cookie("wakaadmin");
@@ -687,7 +687,7 @@ sub output_json_thread {
     add_images_to_thread(@data) if($data[0]);
 
     if(@data ne 0) {
-        $code = 200;   
+        $code = 200;
     }
     elsif($sth->rows == 0) {
         $code = 404;
@@ -843,7 +843,7 @@ sub json_find_posts {
 
     $find = clean_string(decode_string($find, CHARSET));
     $find =~ s/^\s+|\s+$//g; # trim
-    $in_comment = 1 unless $find; # make the box checked for the first call.    
+    $in_comment = 1 unless $find; # make the box checked for the first call.
 
     my ($sth, $row);
     my ($search, $subject);
@@ -887,7 +887,7 @@ sub json_find_posts {
             }
         }
         if(@results ne 0) {
-            $code = 200;   
+            $code = 200;
         }
         elsif(@results < 1) {
             $code = 404;
@@ -943,7 +943,7 @@ sub output_json_postcount {
     }
 
     if( defined($row) ) {
-        $code = 200;   
+        $code = 200;
     }
     elsif(!$exists) {
         $code = 404;
@@ -1041,7 +1041,7 @@ sub output_json_boardlist {
 
 sub do_json_authentication {
     my ($auth) = @_;
-    my $c_auth; 
+    my $c_auth;
 
     my $leet = is_leet($auth);
     $c_auth = $auth if $leet;
@@ -1060,7 +1060,7 @@ sub do_json_authentication {
 
 sub get_boardspeed {
     my $ret;
- 
+
     my $sth = $dbh->prepare(
         "SELECT COUNT(`num`) AS cnt FROM "
         . $$cfg{SQL_TABLE}
@@ -1068,7 +1068,7 @@ sub get_boardspeed {
     ) or make_sql_error();
     $sth->execute() or make_sql_error();
     $ret = ($sth->fetchrow_array())[0];
- 
+
     return $ret if $ret;
     return 0;
 }
@@ -1347,7 +1347,7 @@ sub show_thread {
     my $loc = get_geolocation(get_remote_addr());
     my $locked = $thread[0]{locked};
 
-    my $output = 
+    my $output =
             $tpl->page({
                 thread       => $thread,
                 title        => $thread[0]{subject},
@@ -1358,7 +1358,7 @@ sub show_thread {
                 dummy        => $thread[$#thread]{num},
                 loc          => $loc,
                 threads      => [ { posts => \@thread } ],
-                admin        => $isAdmin, 
+                admin        => $isAdmin,
                 modclass     => $session[1],
                 locked       => $locked,
                 cfg          => $cfg,
@@ -1379,7 +1379,7 @@ sub find_posts {
 
     $find = clean_string(decode_string($find, CHARSET));
     $find =~ s/^\s+|\s+$//g; # trim
-    $in_comment = 1 unless $find; # make the box checked for the first call.    
+    $in_comment = 1 unless $find; # make the box checked for the first call.
 
     my ($sth, $row);
     my ($search, $subject);
@@ -1486,7 +1486,7 @@ sub get_files {
         $$res{external_upload} = $$res{image} !~ m%^//$pomf_domain% ? 0 : 1;
 
         # static thumbs are not used anymore (for old posts)
-        $$res{thumbnail} = undef if ($$res{thumbnail} =~ m|^\.\./img/|);        
+        $$res{thumbnail} = undef if ($$res{thumbnail} =~ m|^\.\./img/|);
 
         # board path is added by expand_filename
         if($backup) {
@@ -1669,7 +1669,7 @@ sub post_stuff {
     if($parent and $admin) {
         my $sticky_check = $dbh->prepare(
               "SELECT sticky, locked, autosage FROM "
-              . $$cfg{SQL_TABLE} 
+              . $$cfg{SQL_TABLE}
               . " WHERE num=? and parent=0 LIMIT 1;"
             ) or make_sql_error();
         $sticky_check->execute($parent)
@@ -1684,7 +1684,7 @@ sub post_stuff {
             $sticky = $$stickycheck{sticky} ? 0 : $sticky;
             my $stickyupdate = $dbh->prepare(
                   "UPDATE "
-                  . $$cfg{SQL_TABLE} 
+                  . $$cfg{SQL_TABLE}
                   . " SET sticky=? WHERE num=? OR parent=?;"
                 ) or make_sql_error();
             $stickyupdate->execute($sticky, $parent, $parent) or make_sql_error();
@@ -1746,7 +1746,7 @@ sub post_stuff {
     }
 
     # find IP
-    my $ip = get_remote_addr(); 
+    my $ip = get_remote_addr();
     my $ssl = ( $ENV{HTTP_X_ALUHUT} || $ENV{SSL_CIPHER} );
     undef($ssl) unless $ssl;
 
@@ -1838,7 +1838,7 @@ sub post_stuff {
         $name = '';
         $trip = '';
         if($$cfg{ENABLE_RANDOM_NAMES}) {
-            my $names = $$cfg{RANDOM_NAMES}; 
+            my $names = $$cfg{RANDOM_NAMES};
             $name = @$names[rand(@$names)];
         }
         if   ($email) { $email = 'sage'; }
@@ -2452,7 +2452,7 @@ sub process_leetcode {
 
     my $trips = get_settings('trips');
     my $tripkey = $$cfg{TRIPKEY} or "!";
- 
+
     if ( $name =~ /(.*?)(?:#|$tripkey|nya:)(.+)$/ ) {
         ($namepart, $trippart) = ($1, $2);
         $namepart = clean_string($namepart);
@@ -2775,7 +2775,7 @@ sub get_max_sticky {
     # grab all posts from DB
     my $sth=$dbh->prepare("SELECT sticky FROM ".$$cfg{SQL_TABLE}." ORDER BY sticky DESC,lasthit DESC,CASE parent WHEN 0 THEN num ELSE parent END ASC,num ASC;")
          or make_sql_error();
-    $sth->execute() or make_sql_error();   
+    $sth->execute() or make_sql_error();
 
     if ( !$sth->rows ) { return 0; }
 
@@ -2785,7 +2785,7 @@ sub get_max_sticky {
         $max = $$row[0] if ($$row[0] > $max);
     }
 
-    $sth->finish();    
+    $sth->finish();
     return ( $max + 1 );
 }
 
@@ -2877,7 +2877,7 @@ sub delete_all {
 sub delete_stuff {
     my ( $password, $fileonly, $admin, $admin_del, $parent, $ajax, $auth, @posts ) = @_;
     my ($adminDel, $deletebyip) = (0, 0);
-    my $noko = 1; # try to stay in thread after deletion by default 
+    my $noko = 1; # try to stay in thread after deletion by default
 
     $ajax_errors = 1 if $ajax;
     my $leet = is_leet($auth);
@@ -2907,7 +2907,7 @@ sub delete_stuff {
             push @ArrayOfErrors, { post_id => $post, reason => $ip };
             next;
         }
-        $noko = 0 if ( $parent and $post eq $parent ); # the thread is deleted and cannot be redirected to      
+        $noko = 0 if ( $parent and $post eq $parent ); # the thread is deleted and cannot be redirected to
     }
 
     unless (@errors) {
@@ -2952,7 +2952,7 @@ sub delete_post {
     if ( $row = $sth->fetchrow_hashref() ) {
         my $parent_post = get_post($$row{parent});
 
-        return $$locale{S_BADDELPASS} 
+        return $$locale{S_BADDELPASS}
           if ( $password and $$row{password} ne $password );
         return $$locale{S_BADDELIP}
           if ( $deletebyip and ( $numip and $$row{ip} ne $numip ) );
@@ -3324,7 +3324,7 @@ sub backup_stuff { # Delete post or thread.
         }
 
         # Grab all responses.
-        my $sth = $dbh->prepare("SELECT * FROM ".$$this_board{SQL_TABLE}." WHERE parent=? ORDER BY num ASC;") 
+        my $sth = $dbh->prepare("SELECT * FROM ".$$this_board{SQL_TABLE}." WHERE parent=? ORDER BY num ASC;")
             or make_sql_error();
         $sth->execute($$row{num}) or make_sql_error();
 
@@ -3571,7 +3571,7 @@ sub restore_post_or_thread {
         $base_thumbnail =~ s!^.*[\\/]!!; # do the same for thumbnail
 
         rename (
-                  $$this_board{SELFPATH} . '/' . $$this_board{ORPH_DIR} . $$this_board{BACKUP_DIR} . $base_filename, 
+                  $$this_board{SELFPATH} . '/' . $$this_board{ORPH_DIR} . $$this_board{BACKUP_DIR} . $base_filename,
                   $$this_board{SELFPATH} . '/' . $$res{image}
                ) and chmod 0644, $$this_board{SELFPATH}.'/'.$$res{image}
           if ( -e $$this_board{SELFPATH} . '/' . $$this_board{ORPH_DIR} . $$this_board{BACKUP_DIR} . $base_filename );
@@ -3581,7 +3581,7 @@ sub restore_post_or_thread {
                 $$this_board{SELFPATH} . '/' . $$this_board{ORPH_DIR} . $$this_board{BACKUP_DIR} . $base_thumbnail,
                 $$this_board{SELFPATH} . '/' . $$res{thumbnail}
                ) and chmod 0644, $$this_board{SELFPATH} . '/' . $$res{thumbnail}
-          if ( $$res{thumbnail} =~ /^$thumb_dir/ 
+          if ( $$res{thumbnail} =~ /^$thumb_dir/
                 and -e $$this_board{SELFPATH} . '/' . $$this_board{ORPH_DIR} . $$this_board{BACKUP_DIR} . $base_thumbnail);
     }
     $sth2->finish() if $sth2;
@@ -4069,7 +4069,7 @@ sub check_admin_entry {
 }
 
 sub edit_admin_entry { # subroutine for editing entries in the admin table
-    my ( $admin, $num, $comment, 
+    my ( $admin, $num, $comment,
          $sec,   $min, $hour, $day, $month, $year,
          $noexpire
     )=@_;
@@ -4089,7 +4089,7 @@ sub edit_admin_entry { # subroutine for editing entries in the admin table
     make_error("Entry has not created or was removed.") if !$row;
     $comment = clean_string( decode_string( $comment, CHARSET ) );
 
-    # New expiration Date   
+    # New expiration Date
     $expiration = (!$noexpire) ? (timegm($sec, $min, $hour, $day,$month-1,$year) or make_error("date problem")) : 0;
 
     # Close old handler
@@ -4502,7 +4502,7 @@ sub make_view_log_panel {
 
     my @pages = map +{ page => $_ }, ( 1 .. $total );
     foreach my $p (@pages) {
-        $$p{filename} = 
+        $$p{filename} =
           get_script_name(). "?task=viewlog&amp;section=".$$cfg{SELFPATH}."&amp;page=" . $$p{page};
         if ( $$p{page} == $page ) { $$p{current} = 1 }   # current page, no link
     }
@@ -4980,8 +4980,8 @@ sub init_admin_database {
           "ival1 TEXT," .      # Integer value 1 (usually IP)
           "ival2 TEXT," .      # Integer value 2 (usually netmask)
           "sval1 TEXT," .       # String value 1
-          "date INTEGER," .        # Human-readable form of date         
-          "expires INTEGER" .         
+          "date INTEGER," .        # Human-readable form of date
+          "expires INTEGER" .
 
           ");"
     ) or make_sql_error();
@@ -5074,7 +5074,7 @@ sub init_log_database {
         "object2 TEXT,".
         "board TEXT,".
         "time INTEGER,".
-        "ip TEXT".  
+        "ip TEXT".
     ");"
     ) or make_sql_error();
     $sth->execute() or make_sql_error();

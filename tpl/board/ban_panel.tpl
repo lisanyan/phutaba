@@ -119,13 +119,13 @@
 	<td><var $comment></td>
 	<td>
 		<if $date>
-			<time($date, "2ch")>
+			<time ($date, "2ch")>
 		</if>
 		<if !$date>
 			<i>none</i>
 		</if>
 	</td>	
-	<td><if $expires><time($expires, "2ch")><else><em>nevah</em></if></td>
+	<td><if $expires><time ($expires, "2ch")><else><em>nevah</em></if></td>
 	<td>
 	<a href="<var %self>?task=baneditwindow&amp;num=<var $num>&amp;section=<var $$cfg{SELFPATH}>"><var $$locale{S_BANEDIT}></a>
 	<a href="<var %self>?task=removeban&amp;num=<var $num>&amp;section=<var $$cfg{SELFPATH}>" onclick="return areYouSure(this)"><var $$locale{S_BANREMOVE}></a>

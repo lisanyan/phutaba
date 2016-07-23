@@ -1,30 +1,29 @@
 package SimpleCtemplate;
-# Простой и быстрый шаблонизатор. Шаблоны компилируются в перлокод и кешируются в виде методов обьекта-шаблонизатора
+# Simple and fast template engine. Templates are compiled into perlcode and are cached as methods of template engine object
 
 # use strict; # No strict? oh fuck no!
-use Encode; 
+use Encode;
 use utf8;
 use Data::Dumper;
 use POSIX;
 
-#<var $var> - вывод переменной
-# $var - перемерная, изменяется внутри loop,  %var - глобальная переменная, не изменется внутри loop
-#<if УСЛОВИЕ> html контент</else/>(опционально) html контент </if> - условие
-#<loop $hashref> вывод данных используя переменные </loop> - цикл
-#<aloop $arrayref> вывод данных используя переменные </loop> - цикл перебора массива. Текущее значение находится в $_
-#<perleval perl_код  /> - выполнение кода
-#<time($var)> - читаемая строка из таймстампа
-#<include %TMPLDIR%/head.tpl> подгрузка кода из другого файла
+#<var $var> - show variable
+# $var - variable, changes inside loop,  %var - global variable, doesn't change inside loop
+#<if CONDITION> html content<else>(optional)<elsif>(optional) html content </if> - условие
+#<loop $hashref> show data using variables </loop> - loop
+#<aloop $arrayref> show data using variables </loop> - loop through array. Current value is inside $_
+#<perleval perl_code  /> - run perl code
+#<time($vars)> - readable timestamp string
+#<include %TMPLDIR%/head.tpl> load code from file
 
 sub get_captcha_key {
-    my ($parent) = @_;
+	my ($parent) = @_;
 
-    return 'res' . $parent if ($parent);
-    return 'mainpage';
+	return 'res' . $parent if ($parent);
+	return 'mainpage';
 }
 
 sub new {
-
 	my $self = $_[1]? $_[1] : {};
 
 	$self->{globals}={} unless $self->{globals};
@@ -33,75 +32,91 @@ sub new {
 
 	bless $self,'Template_'.$self->{tmpl_dir};
 
-########################## Методы работы с шаблонами ################################
-		#компилирует шаблон из кода/файла и создает метод обьекта. (код/путь к файлу ; имя метода, необязательно, если загружается из файла )
-		# my ($text, %vars);
-		*{'Template_'.$self->{tmpl_dir}.'::load'}=sub { 
-			my ($self,$code,$name)=@_; 
-			
+########################## Working with templates ################################
+		#compiles template from code/file and creates object method. (code/path to file ; name of method, unnecessary if loading from file )
+		*{'Template_'.$self->{tmpl_dir}.'::load'}=sub {
+			my ($self,$code,$name)=@_;
+
 			if(!$name && -e $code){$code=~m|[^A-z]([A-z_-]*?).tpl$|; $name=$1;}
 			die __PACKAGE__.'->load: You must define method name!' unless ($name);
 
-			
+
 			*{'Template_'.$self->{tmpl_dir}.'::'.$name}=$self->compile($code);
-			
+
 			return 1;
 		};
 
-		# (код/путь к файлу)= ссылка на скомпилированный в функцию шаблон
+		# (code/path to file)= reference to compiled template
 		*{'Template_'.$self->{tmpl_dir}.'::compile'}=sub {
 			my ($self,$code)=@_;
 			my $filename=' ';
-			
-			if(-e $code){ #можно и из файла грузить
+			my $str;
+
+			if(-e $code){ #loading from file as well
 				$filename.=$code;
 				open my $tmlf,'<',$code;
 				$code=join '',<$tmlf>;
 				close $tmlf;
 			}
-		###
+		# includes
 			while($code=~m/(<include .*?>)/){
-				while($code=~m/(<include .*?>)/g){ # подгрузка шаблонов
+				while($code=~m/(<include .*?>)/g){
 					my ($incname,$inctext)=($1,$1);
 					$incname=~s/%TMPLDIR%/${$self}{tmpl_dir}/;
-					
+
 					$incname=~m/<include ([^|>]*)\|?(.*?)>/;
 					open my $tmlf,'<',$1;
 					binmode $tmlf;
 					my $inccode = join '',<$tmlf>;
-					
+
 						$inccode='<if %to_file><!--# include virtual="'.$2.'" --></else/>'.$inccode.'</if>' if($2);
-						
+
 					close $tmlf;
 					$code=~s/\Q$inctext/$inccode/g;
 				}
 			}
-		##Обработка
-			$code=~s/<!--[^#].*?-->//sg; #комментарий
-			$code=~s/(')/\\$1/g; #кавычки
+		##Handler
+		while($code=~m!(.*?)(<(/?)(var|const|if|elsif|else|loop|aloop|perleval|time)(?:|\s+(.*?[^\\]))>|$)!sg)
+		{
+			my ($html,$tag,$closing,$name,$args)=($1,$2,$3,$4,$5);
 
-			$code=~s/\$j/##jquery/g; #костыль
-			$code=~s/([^\\])\$([_A-z0-9]+)/$1\$vars{$2}/g; #имена переменны берем только из защищенного массива
-			$code=~s/([^\[\\])%([_A-z0-9]+)/$1\$global{$2}/g; # или глобального массива # который тоже защищен и существет только внутри метода-шаблона
-			$code=~s/##jquery/\$j/g; #костыль
+			$args =~ s/\$([_A-z0-9]+)/\$vars{$1}/sg;
+			$args =~ s/%([_A-z0-9]+)/\$global{$1}/sg;
 
-			#добавляем переменные
-			$code=~s/<var +(.*?)>/'.$1.'/g;
-			$code=~s/<const +(.*?)>/'.&$1.'/g;
-			
-			$code=~s|<loop +(.*?)>|'; for(\@{$1}){my \%vars=%{\$_};\$text.='|g;#циклы
-			$code=~s|<aloop +(.*?)>|'; for(\@{$1}){\$vars{_}=\$_;\$text.='|g;
-			$code=~s^</loop>^'}; \$text.='^g; 
-			
-			$code=~s|<if +(.*?)>|'; if($1){\$text.='|g; #условия
-			$code=~s|</else/>|';}else{ \$text.='|g; 
-			$code=~s|<else>|';}else{ \$text.='|g; 
-			$code=~s|</if>|';}; \$text.='|g; 
-			
-			$code=~s/<time\(+([^,]*?)(,.*?)?\)>/'.Wakaba::make_date($1$2).'/g;#время
-			$code=~s|<perleval +(.*?)/>|'; $1 ;\$text.='|sg; #выполнение кода
-			
-		##Компилируем в анонимную функцию
+			$html=~s/(['\\])/\\$1/g;
+			$str.="\$text.='$html';" if(length $html);
+			$args=~s/\\>/>/g;
+
+			if($tag)
+			{
+				if($closing)
+				{
+					if($name eq 'if') { $str.='}' }
+					elsif($name eq 'loop') { $str.='};' }
+				}
+				else
+				{
+					if($name eq 'var') { $str.='$text.=eval{'.$args.'};' }
+					elsif($name eq 'const') { my $const=eval $args; $const=~s/(['\\])/\\$1/g; $str.='$text.=\''.$const.'\';' }
+					elsif($name eq 'if') { $str.='if(eval{'.$args.'}){' }
+					elsif($name eq 'elsif') { $str.='}elsif(eval{'.$args.'}){' }
+					elsif($name eq 'else') { $str.='}else{' }
+					elsif($name eq 'loop')
+					{ $str.='for(@{'.$args.'}){my %vars=%{$_};' }
+					elsif($name eq 'aloop')
+					{ $str.='for(@{'.$args.'}){$vars{_}=$_;' }
+					elsif($name eq 'perleval')
+					{
+						$args =~ s|^(.+?)/|$1|g;
+						$str.='eval{'.$args.'};'
+					}
+					elsif($name eq 'time')
+					{ $str.='$text.=Wakaba::make_date'.$args.';' }
+				}
+			}
+		}
+
+		##Compiling into anon function
 		my $sub;
 		use strict;
 			eval q |
@@ -115,13 +130,13 @@ sub new {
 			$global{server_name}=$ENV{SERVER_NAME};
 
 			if($globals){$global{$_}=$globals->{$_} for(keys %{$globals});};
-			
-			my $text; 
-			$text='|.$code.q|'; 
+
+			my $text;
+			|.$str.q|
 			return encode('utf8',$text);};|;
 
 			if($@){
-				die __PACKAGE__."- Can't compile template$filename - $@\n $code" if $self->{die_if_compile_error};
+				die __PACKAGE__."- Can't compile template$filename - $@\n $str" if $self->{die_if_compile_error};
 				print __PACKAGE__."- Can't compile template$filename - $@\n";
 				$sub = sub{my ($self,$vars)=@_; Dumper($vars)};
 				print "$filename - Data::Dumper loaded!\n";
@@ -130,32 +145,32 @@ sub new {
 			return $sub;
 		};
 
-		#Подгружает шаблоны из папки и компилирует их
-		*{'Template_'.$self->{tmpl_dir}.'::load_from_dir'}=sub { 
-			my ($self,$dir)=@_; 
-			
+		#Loading templates from folder and compiling them
+		*{'Template_'.$self->{tmpl_dir}.'::load_from_dir'}=sub {
+			my ($self,$dir)=@_;
+
 			for( glob($dir.'*.tpl') ){
 				m|[^A-z]([A-z_-]*?).tpl$|;
 				*{'Template_'.$self->{tmpl_dir}.'::'.$1}=$self->compile($_);
 			}
-			
+
 		};
-		
-########################## Методы шаблонизации ################################
+
+########################## Template methods ################################
 	##########################
 		our $AUTOLOAD;
 		*{'Template_'.$self->{tmpl_dir}.'::AUTOLOAD'}=sub  {
-			my ($self,@vars)=@_; 
+			my ($self,@vars)=@_;
 			print "Undefined method $AUTOLOAD ! Data::Dumper loaded!\n";
 			Dumper(@vars)
 		};
 		*{'Template_'.$self->{tmpl_dir}.'::DESTROY'}=sub {};
-		
+
 	##########################################
-	# сохранялка в файл
+	# saving to file
 		*{'Template_'.$self->{tmpl_dir}.'::to_file'}=sub {return bless([@_],'TemplateSaver')};
 
-	
+
 	$self->load_from_dir($self->{tmpl_dir});
 return $self; }
 
@@ -166,10 +181,10 @@ package TemplateSaver;
 	our $AUTOLOAD;
 	use Data::Dumper;
 	sub AUTOLOAD {
-		
+
 		my $self=shift;
 		$AUTOLOAD=~m/([^:]+)$/;
-		
+
 		open(my $handle,'>',$self->[1]) or die 'Can`t save file '.$self->[1];
 		flock($handle,2); # 2 - LOCK_EX
 		binmode($handle);

@@ -18,7 +18,7 @@
 	<div class="trap">
 		<input type="text" name="name" size="31" />
 		<input type="text" name="link" size="36" />
-	</div>	
+	</div>
 
 	<table>
 	<tbody id="postTableBody">
@@ -98,7 +98,7 @@
 	<hr />
 	<if !%thread>
 		<div id="thread_<var $num>" class="thread">
-	</else/>
+	<else>
 		<div id="thread_<var %thread>" class="thread">
 	</if>
 

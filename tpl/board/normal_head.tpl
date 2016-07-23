@@ -129,7 +129,6 @@
 			</a>
 		</div>
 		<div class="boardname" <if $$cfg{BOARD_DESC}>style="margin-bottom: 5px;"</if>>/<var $$cfg{SELFPATH}>/ &ndash; <var $$cfg{BOARD_NAME}></div>
-		<if $$cfg{BOARD_NAGTXT}><div class="slogan"><h2><var $$cfg{BOARD_NAGTXT}></h2></div></if>
 		<if $$cfg{BOARD_DESC}><div class="slogan">&bdquo;<var $$cfg{BOARD_DESC}>&ldquo;</div></if>
 	</div>
 </header>

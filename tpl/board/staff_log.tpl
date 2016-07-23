@@ -34,13 +34,13 @@
 				<if $object2>
 					<div id="obj_<var $object>" class="hidden"><var $object2></div>
 					<span onmouseover="TagToTip('obj_<var $object>', TITLE, '<var $$locale{S_POSTINFO}>', DELAY, 0, CLICKSTICKY, true, WIDTH, -450)" onmouseout="UnTip()">[No. <var $object>]</span>
-				</else/>
+				<else>
 					No.<var $object>
 				</if>
 			</if>
 		</td>
 		<td>/<var $board>/</td>
-		<td><time($time, "2ch")></td>
+		<td><time ($time, "2ch")></td>
 	</tr>
 </loop>
 <tr><td><br/></td></tr>

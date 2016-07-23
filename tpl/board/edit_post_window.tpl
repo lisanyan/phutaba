@@ -18,7 +18,7 @@
 <tr><td class="postblock"><var $$locale{S_SUBJECT}></td><td><input type="text" name="field3" size="35" value="<var $subject>" />
 <input type="submit" value="<var $$locale{S_SUBMIT}>" /></td></tr>
 <tr><td class="postblock"><var $$locale{S_COMMENT}></td>
-<td><textarea name="field4" cols="48" rows="6"><if $noformat><var $comment></else/><var Wakaba::tag_killa($comment)></if></textarea></td></tr>
+<td><textarea name="field4" cols="48" rows="6"><if $noformat><var $comment><else><var Wakaba::tag_killa($comment)></if></textarea></td></tr>
 <!-- files -->
 <tr id="fileUploadField"><td class="postblock"><var $$locale{S_UPLOADFILE}> (max. <var $$cfg{MAX_FILES}>)</td>
 <td id="fileInput"><div><input type="file" name="file" onchange="file_input_change(<var $$cfg{MAX_FILES}>)" /></div>

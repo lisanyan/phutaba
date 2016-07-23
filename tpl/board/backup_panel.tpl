@@ -12,7 +12,7 @@
 	<hr />
 	<if !%thread>
 		<div id="thread_<var $postnum>" class="thread">
-	</else/>
+	<else>
 		<div id="thread_<var %thread>" class="thread">
 	</if>
 		<loop $posts><include %TMPLDIR%/post_view_backup.tpl></loop>
