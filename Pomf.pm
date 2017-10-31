@@ -19,7 +19,7 @@ sub pomf_sender {
 
 	$request = LWP::UserAgent->new;
 	$request->agent('Pomf.se-PerlUploader/0.1');
-    $request->default_header('token' => 'CwmWq8AYfCy6PRN3OY5OSVYQYS2yemZIvsXSlEcwLAz2osNQBrwqdbUpgwCEB8Qj');
+    # $request->default_header('token' => 'CHANGEME');
 
 	$data = $request->post(
 		$post,
