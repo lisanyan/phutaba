@@ -1,7 +1,7 @@
 <footer>
 	<p>Powered by <img src="/img/phutaba_icon.png" alt="" /> <strong>Phutaba</strong>.<br /></p>
 	<if defined $speed><p>Постов в час: <var $speed></p></if>
-	<p>Зеркало <a href="https://02ch.info">02ch.info</a></p>
+	<p>Зеркало <a href="https://buttflaps.pp.ua/">buttflaps.pp.ua</a></p>
 	<p><em>Report illegal material to <a href="mailto:<var $$cfg{ADMIN_EMAIL}>"><var $$cfg{ADMIN_EMAIL}></a>.</em></p>
 </footer>
 <nav>
@@ -38,6 +38,7 @@
 		board_locale = "<var $$locale{CURRENT}>";
 	var filetypes = "<var Wakaba::get_filetypes()>";
 	var msg_remove_file = "<var $$locale{S_JS_REMOVEFILE}>";
+	var maxfiles = "<var $$cfg{MAX_FILES}>";
 </script>
 
 <script type="text/javascript">

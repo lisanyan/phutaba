@@ -835,6 +835,8 @@ sub clean_string {
     $str =~ s/'/&#39;/g;
     $str =~ s/,/&#44;/g;     # clean up commas for some reason I forgot
 
+    $str =~ s/\xF0\x9F\x92\x94/&#128148;/g;     # fix borked heart symbol
+
     $str =~ s/[\x{202A}-\x{202E}]//g;
 
     $str =~ s/[\x00-\x08\x0b\x0c\x0e-\x1f]//g;    # remove control chars
@@ -1209,7 +1211,7 @@ sub make_date {
     my @currtime = localtime;
     my $tz = strftime("%Z", @ltime);
 
-    if( ($currtime[4] + 1) == 4 && $currtime[3] == 1)
+    if( (($currtime[4] + 1) == 4 && $currtime[3] == 1) && (($ltime[4] + 1) == 4 && $ltime[3] == 1) )
     {
         $ltime[3] = 32;
         --$ltime[4];

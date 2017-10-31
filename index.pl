@@ -26,8 +26,8 @@ my $locale = fetch_locale( $q->cookie("locale") or $$cfg{BOARD_LOCALE} );
 # redirects should have a full URL: http://ernstchan.com/b/
 # but this can be tricky if running behind some proxy
 if ($page eq "") {
-       exit print $q->redirect("https://02ch.in/".DEFAULT_BOARD."/");
-        # exit print $q->redirect("/main");
+       # exit print $q->redirect("https://02ch.in/".DEFAULT_BOARD."/");
+        exit print $q->redirect("/".DEFAULT_BOARD."/");
 }
 
 # print $q->header(-charset => 'utf-8');

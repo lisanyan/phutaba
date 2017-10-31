@@ -18,7 +18,7 @@ use List::Util qw(first);
 use Net::DNS; # DNSBL request
 use Net::IP qw(:PROC);
 use SimpleCtemplate;
-use Pomf qw(pomf_upload);
+use Pomf qw(pomf_sender);
 
 # $CGI::LIST_CONTEXT_WARN = 0; # UFOPORNO
 my $JSON = JSON::XS->new->pretty->utf8;
@@ -32,7 +32,7 @@ use constant HANDLER_ERROR_PAGE_HEAD => q{
 <link rel="shortcut icon" href="/img/favicon.ico" />
 <link rel="stylesheet" type="text/css" href="/static/css/phutaba.css" />
 </head>
-<body>
+<body class="nulldvachin">
 <div class="content">
 <header>
     <div class="header">
@@ -103,7 +103,7 @@ my $tpl = SimpleCtemplate->new({ tmpl_dir => 'tpl/board/' });
 
 return 1 if (caller); # stop here if we're being called externally
 
-pm_manage(n_processes => 3, die_timeout => 10, pm_title => 'perl-fcgi-pm-02ch');
+pm_manage(n_processes => 1, die_timeout => 10, pm_title => 'fcgi-pm-02ch');
 
 # FCGI init
 FASTCGI:
@@ -138,9 +138,9 @@ while( $query=CGI::Fast->new )
     }
 
     $dbh = DBI->connect_cached(SQL_DBI_SOURCE,SQL_USERNAME,SQL_PASSWORD,
-        {AutoCommit => 1} ) or make_error($$locale{S_SQLCONF});
+        {AutoCommit => 1, mysql_enable_utf8 => 0} ) or make_error($$locale{S_SQLCONF});
 
-    my $sth = $dbh->prepare("SET NAMES 'utf8'") or make_error("SPODRO BORDO");
+    my $sth = $dbh->prepare("SET NAMES 'utf8mb4'") or make_error("SPODRO BORDO");
     $sth->execute();
     $sth->finish();
 
@@ -301,7 +301,7 @@ while( $query=CGI::Fast->new )
         my $locked     = $query->param("lock");
         my $autosage   = $query->param("autosage");
         my $ajax       = $query->param("ajax");
-        my @files      = $query->multi_param("file"); # CGI >= 4.08 REQUIRED
+        my @files      = $query->param("file"); # CGI >= 4.08 REQUIRED
 
         post_stuff(
             $parent,  $spam1,     $spam2,     $name,     $email,  $gb2,
@@ -319,7 +319,7 @@ while( $query=CGI::Fast->new )
         my $admindel = $query->param("admindel");
         my $ajax     = $query->param("ajax");
         my $auth     = $query->cookie("wakaauth");
-        my @posts    = $query->multi_param("delete"); # CGI >= 4.08 REQUIRED
+        my @posts    = $query->param("delete"); # CGI >= 4.08 REQUIRED
 
         delete_stuff( $password, $fileonly, $admin, $admindel, $parent, $ajax, $auth, @posts );
     }
@@ -412,7 +412,7 @@ while( $query=CGI::Fast->new )
     }
     elsif ( $task eq "movefiles" ) {
         my $admin = $query->cookie("wakaadmin");
-        my @files = $query->multi_param("file"); # CGI >= 4.08 REQUIRED
+        my @files = $query->param("file"); # CGI >= 4.08 REQUIRED
         move_files($admin, @files);
     }
     # post editing
@@ -434,7 +434,7 @@ while( $query=CGI::Fast->new )
         my $killtrip = $query->param("notrip");
         my $by_admin = $query->param("admin_post");
         my $nopomf = $query->param("nopomf");
-        my @files = $query->multi_param("file"); # CGI >= 4.08 REQUIRED
+        my @files = $query->param("file"); # CGI >= 4.08 REQUIRED
         edit_post(
           $admin,     $num,       $name,     $email,
           $subject,   $comment,   $as_staff, $killtrip,
@@ -487,7 +487,7 @@ while( $query=CGI::Fast->new )
     elsif ($task eq "restorebackups")
     {
         my $admin = $query->cookie("wakaadmin");
-        my @num = $query->multi_param("num"); # CGI >= 4.08 REQUIRED
+        my @num = $query->param("num"); # CGI >= 4.08 REQUIRED
         my $board_name = $query->param("board") or $$cfg{SELFPATH};
         my $handle = lc $query->param("handle");
 
@@ -610,7 +610,7 @@ sub output_json_threads {
 
         my $curr_images = 0;
         my $curr_replies = @replies;
-        do { $curr_images +=  @{$$_{files}} if (exists $$_{files}) } for (@replies);
+        do { $curr_images +=  @{ $$_{files} } if (exists $$_{files}) } for (@replies);
 
         # write the shortened list of replies back
         $$thread{posts}      = [ $parent, @replies ];
@@ -967,6 +967,10 @@ sub output_json_postcount {
     print $JSON->encode(\%json);
 }
 
+# sub get_boardcfg_tpl {
+#     return decode_string($JSON->pretty(0)->encode(get_boardconfig()), CHARSET);
+# }
+
 sub get_boardconfig {
     my ($captcha_only, $standalone) = @_;
     my $loc = get_geolocation(get_remote_addr());
@@ -1245,7 +1249,7 @@ sub show_page {
         # count files in replies - TODO: check for size == 0 for ignoring deleted files
         my $curr_images = 0;
         my $curr_replies = @replies;
-        do { $curr_images +=  @{$$_{files}} if (exists $$_{files}) } for (@replies);
+        do { $curr_images +=  @{ $$_{files} } if (exists $$_{files}) } for (@replies);
 
         # write the shortened list of replies back
         $$thread{posts}      = [ $parent, @replies ];
@@ -1454,7 +1458,6 @@ sub get_files {
     my ($threadid, $postid, $backup, $files) = @_;
     my ($sth, $res, $where, $uploadname);
     my $thumb_dir = $$cfg{THUMB_DIR};
-    my $pomf_domain = $$cfg{POMF_DOMAIN};
 
     $$cfg{SQL_TABLE_IMG} = $$cfg{SQL_BACKUP_IMG_TABLE} if $backup;
 
@@ -1483,14 +1486,14 @@ sub get_files {
         $uploadname = remove_path($$res{uploadname});
         $$res{uploadname} = clean_string($uploadname);
         $$res{displayname} = clean_string(get_displayname($uploadname));
-        $$res{external_upload} = $$res{image} !~ m%^//$pomf_domain% ? 0 : 1;
+        $$res{external_upload} = is_pomf_file($$res{image});
 
         # static thumbs are not used anymore (for old posts)
         $$res{thumbnail} = undef if ($$res{thumbnail} =~ m|^\.\./img/|);
 
         # board path is added by expand_filename
         if($backup) {
-            if ( $$res{image} !~ m%^//$pomf_domain% ) {
+            if ( !is_pomf_file($$res{image}) ) {
                 $$res{image} =~ s!^.*[\\/]!!;
                 $$res{image} = '/' . $$cfg{SELFPATH} . '/' . $$cfg{ORPH_DIR} . $$cfg{BACKUP_DIR} . $$res{image};
             }
@@ -1518,7 +1521,7 @@ sub add_images_to_thread {
     {
         while (@files and $$post{num} == $files[0]{post})
         {
-            push(@{$$post{files}}, shift(@files))
+            push(@{ $$post{files} }, shift(@files))
         }
     }
 }
@@ -1899,7 +1902,7 @@ sub post_stuff {
     }
 
     my $sth;
-
+    # make_error("comment: $comment");
     # finally, write to the database
     eval {
         $dbh->begin_work();
@@ -2195,7 +2198,7 @@ sub dnsbl_check {
 
     return if ($ip =~ /:/); # IPv6
 
-    foreach my $dnsbl_info ( @{$$cfg{DNSBL_INFOS}} ) {
+    foreach my $dnsbl_info ( @{ $$cfg{DNSBL_INFOS} } ) {
         my $dnsbl_host   = @$dnsbl_info[0];
         my $dnsbl_answers = @$dnsbl_info[1];
         my ($result, $resolver);
@@ -2546,7 +2549,7 @@ sub get_file_size {
     # or round using: int($size / 1024 + 0.5)
     $errfsize = sprintf("%.2f", $size / 1024) . " kB &gt; " . $max_size . " kB";
 
-    my $pomf_ext = grep {$_ eq lc$ext} @{$$cfg{POMF_EXTENSIONS}};
+    my $pomf_ext = grep {$_ eq lc$ext} @{ $$cfg{POMF_EXTENSIONS} };
     if ( $size > $max_size * 1024 )
     {
         if ( !$pomf_ext ) {
@@ -2582,7 +2585,6 @@ sub get_preview {
 sub process_file {
     my ( $file, $uploadname, $time, $nopomf ) = @_;
     my $filetypes = $$cfg{FILETYPES};
-    my $pomf_domain = $$cfg{POMF_DOMAIN};
 
     # make sure to read file in binary mode on platforms that care about such things
     binmode $file;
@@ -2599,7 +2601,7 @@ sub process_file {
     make_error($$locale{S_BADFORMAT} . $errfname)
       unless ( $$cfg{ALLOW_UNKNOWN} or $known );
     make_error($$locale{S_BADFORMAT} . $errfname)
-      if ( grep { $_ eq $ext } @{$$cfg{FORBIDDEN_EXTENSIONS}} );
+      if ( grep { $_ eq $ext } @{ $$cfg{FORBIDDEN_EXTENSIONS} } );
     make_error($$locale{S_TOOBIG} . $errfname)
       if ( $$cfg{MAX_IMAGE_WIDTH}  and $width > $$cfg{MAX_IMAGE_WIDTH} );
     make_error($$locale{S_TOOBIG} . $errfname)
@@ -2744,17 +2746,17 @@ sub process_file {
     chmod 0644, $filename; # Make file world-readable
     chmod 0644, $thumbnail if defined($thumbnail); # Make thumbnail (if any) world-readable
 
-    if ( !$nopomf and grep {$_ eq $ext} @{$$cfg{POMF_EXTENSIONS}} )
+    if ( !$nopomf and grep {$_ eq $ext} @{ $$cfg{POMF_EXTENSIONS} } )
     {
-        my $pomf = pomf_upload($filename);
+        my $pomf = pomf_sender($JSON, $filename);
         unlink $filename; # remove file from the disk
 
-        if ( $pomf =~/^id: (.+?)$/ ) {
-            $filename = "//$pomf_domain/$1";
+        if ( $$pomf{success} ) {
+            $filename = @{ $$pomf{files} }[0]->{url};
         }
         else {
             unlink $thumbnail if defined($thumbnail);
-            make_error( clean_string($pomf) );
+            make_error( $$pomf{description} || "idk" );
         }
     }
 
@@ -2913,17 +2915,16 @@ sub delete_stuff {
     unless (@errors) {
         my $redir;
 
-        if ( $noko == 1 and $parent ) {
-            $redir = get_board_path() . "thread/" . $parent;
-            make_http_forward( $redir ) if !$ajax;
-        } else {
-            $redir = get_board_path();
-            make_http_forward( $redir ) if !$ajax;
-        }
+        if ( $noko == 1 and $parent )
+        { $redir = get_board_path() . "thread/" . $parent; }
+        else
+        { $redir = get_board_path(); }
 
         if($ajax) {
             make_json_header();
             print $JSON->encode({redir => $redir});
+        } else {
+            make_http_forward( $redir );
         }
     }
     else {
@@ -3251,7 +3252,7 @@ sub make_backup_posts_panel {
                     add_images_to_row($inner_row, 1);
                     $$inner_row{comment} = resolve_reflinks($$inner_row{comment});
                     $$inner_row{parent_alive} = thread_exists($$inner_row{parent});
-                    $curr_images +=  @{$$inner_row{files}} if (exists $$inner_row{files});
+                    $curr_images +=  @{ $$inner_row{files} } if (exists $$inner_row{files});
                     ++$curr_replies;
                     push @reps, $inner_row;
                 }
@@ -4140,7 +4141,7 @@ sub remove_admin_entry {
 sub make_expiration_date {
     my ($expires,$time)=@_;
 
-    my ($date) = grep { $$_{label} eq $expires } @{$$cfg{BAN_DATES}};
+    my ($date) = grep { $$_{label} eq $expires } @{ $$cfg{BAN_DATES} };
 
     if( defined($date->{time}) ) {
         if( $date->{time}!=0 ) { $expires = $time+$date->{time}; } # Use a predefined expiration time
@@ -4184,12 +4185,12 @@ sub check_moder {
     my @info = ( $nick, $$moders{$nick}{class}, $$moders{$nick}{boards} );
 
     return 0     unless( defined($nick) );
-    return @info unless( @{$info[2]} ); # No board restriction
+    return @info unless( @{ $info[2] } ); # No board restriction
 
-    unless ( defined( first { $_ eq $$cfg{SELFPATH} } @{$info[2]} ) )
+    unless ( defined( first { $_ eq $$cfg{SELFPATH} } @{ $info[2] } ) )
     {
         make_error(
-            sprintf( $$locale{S_NOBOARDACC}, join( ', ', @{$info[2]} ), get_script_name() )
+            sprintf( $$locale{S_NOBOARDACC}, join( ', ', @{ $info[2] } ), get_script_name() )
         ) if($mode ne 'silent');
         return 0;
     }
@@ -4563,6 +4564,16 @@ sub cleanup_log_database {
 # Page creation utils
 #
 
+sub is_pomf_file {
+    my $filename = shift;
+    my $pomf_domain = join("|", @{ $$cfg{POMF_DOMAINS} });
+    if ( $filename =~ m%^(https?:)?//($pomf_domain)% ) {
+        return 1;
+    } else {
+        return 0;
+    }
+}
+
 sub expand_filename {
     my ($filename, $force_http) = @_;
 
@@ -4576,9 +4587,8 @@ sub expand_filename {
 
 sub expand_image_filename {
     my $filename = shift;
-    my $pomf_domain = $$cfg{POMF_DOMAIN};
 
-    if ( $filename =~ m%^//$pomf_domain% ) { return $filename; } # is file on an external server?
+    if ( is_pomf_file($filename) ) { return $filename; } # is file on an external server?
     else { return expand_filename( clean_path($filename) ); }
 }
 
@@ -4608,7 +4618,7 @@ sub make_error {
         print $JSON->encode({
             banned => 0,
             error => $error,
-            error_code => ($not_found ? 400 : 200)
+            error_code => ($not_found ? 404 : 200)
         });
     }
     else {
@@ -4782,7 +4792,7 @@ sub get_stylesheets {
         $sheet{title}=~s/([a-z])([A-Z])/$1 $2/g;
 
         \%sheet;
-    } ( @{$$cfg{STYLESHEETS}} );
+    } ( @{ $$cfg{STYLESHEETS} } );
 
     $stylesheets[0]{default}=1 if(@stylesheets and !$found);
 
@@ -5158,7 +5168,6 @@ sub count_threads {
 sub count_posts {
     my ($parent) = @_;
     my ($sth, $count, $size, $files, $row);
-    my $pomf_domain = $$cfg{POMF_DOMAIN};
 
     if ($parent)
     {
@@ -5185,7 +5194,7 @@ sub count_posts {
 
     while ( $row = $sth->fetchrow_arrayref() )
     {
-        unless ( $$row[1] =~ m%^//$pomf_domain% ) # file is on an external server
+        unless ( is_pomf_file($$row[1]) ) # file is on an external server
         {
             $size += $$row[0];
         }

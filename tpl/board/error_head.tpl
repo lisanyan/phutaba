@@ -15,7 +15,7 @@
 	<meta name="msapplication-config" content="none" />
 </head>
 
-<body>
+<body class="nulldvachin">
 <div class="content">
 
 <nav>
